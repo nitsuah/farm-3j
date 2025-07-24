@@ -1,6 +1,6 @@
 "use client"
 
-import FarmMap from "@/components/farm-map"
+import EnhancedFarmMap from "@/components/enhanced-farm-map"
 import SunNav from "@/components/sun-nav"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
@@ -16,10 +16,11 @@ export default function Home() {
           <section className="-mt-16 relative z-20">
             <div className="bg-white rounded-xl shadow-xl p-6 md:p-8">
               <h2 className="text-3xl font-bold text-green-900 mb-4">Explore Our Farm</h2>
-              <p className="text-green-800 mb-6 max-w-2xl">
-                Click on different areas of our farm to learn more about what we grow and how we operate.
+              <p className="text-green-800 mb-6 max-w-3xl">
+                Welcome to our interactive farm experience! Discover our 200-acre sustainable operation with real-time
+                data, current crop information, and detailed insights into our farming practices.
               </p>
-              <FarmMap />
+              <EnhancedFarmMap />
             </div>
           </section>
         )
@@ -175,7 +176,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#f8f5e6]/60 z-10" />
         <img
           src="/placeholder.svg?height=800&width=1600"
-          alt="PRETTY GOOD FARMS rolling pasture landscape"
+          alt="PRETTY GOOD FARMS rolling green pasture with scattered oak trees and red barn"
           className="absolute inset-0 w-full h-full object-cover"
         />
 
