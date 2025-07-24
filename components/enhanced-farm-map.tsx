@@ -19,7 +19,7 @@ type FarmArea = {
   currentCrop?: string
   plantedDate?: string
   harvestDate?: string
-  assignedEquipment?: string
+  assignedEquipment?: string[]
   assignedAnimals?: string[]
   soilMoisture?: number
   lastWatered?: string
@@ -40,7 +40,7 @@ const farmAreas: FarmArea[] = [
     currentCrop: "Winter Wheat",
     plantedDate: "October 15, 2024",
     harvestDate: "June 2025",
-    assignedEquipment: "John Deere 6120M Tractor",
+    assignedEquipment: ["John Deere 6120M Tractor", "Seed Drill", "Irrigation System"],
     soilMoisture: 78,
     lastWatered: "2 days ago",
     notes: "Excellent growth this season. Soil pH optimal at 6.8.",
@@ -58,8 +58,8 @@ const farmAreas: FarmArea[] = [
     currentCrop: "Apple Trees (Honeycrisp, Gala)",
     plantedDate: "Spring 1987",
     harvestDate: "September - October",
-    assignedEquipment: "Orchard Sprayer",
-    assignedAnimals: ["Barn Cats (pest control)"],
+    assignedEquipment: ["Orchard Sprayer", "Pruning Tools"],
+    assignedAnimals: ["Honeybees (3 hives)"],
     soilMoisture: 65,
     lastWatered: "Natural rainfall",
     notes: "Pruning completed in February. Expecting good harvest.",
@@ -74,7 +74,8 @@ const farmAreas: FarmArea[] = [
     height: 90,
     color: "#a52a2a",
     hoverColor: "#c13434",
-    assignedEquipment: "Combine Harvester, Hay Baler, Various Tools",
+    assignedEquipment: ["Combine Harvester", "Hay Baler", "Various Tools", "Workshop"],
+    assignedAnimals: ["Barn Cats (Whiskers & Mittens)", "Barn Owl"],
     notes: "Recently upgraded electrical system. New hay storage added.",
   },
   {
@@ -87,6 +88,7 @@ const farmAreas: FarmArea[] = [
     height: 80,
     color: "#daa520",
     hoverColor: "#eeb422",
+    assignedAnimals: ["Farm Dog (Rusty)", "Chickens (12 hens)"],
     notes: "Solar panels installed 2023. Home office manages farm operations.",
   },
   {
@@ -99,7 +101,8 @@ const farmAreas: FarmArea[] = [
     height: 120,
     color: "#4682b4",
     hoverColor: "#5a95c7",
-    assignedAnimals: ["Ducks", "Frogs", "Fish"],
+    assignedAnimals: ["Wild Ducks", "Frogs", "Bass & Bluegill", "Great Blue Heron"],
+    assignedEquipment: ["Water Pump", "Irrigation Lines"],
     soilMoisture: 100,
     notes: "Water levels good. Supports 40% of farm irrigation needs.",
   },
@@ -113,7 +116,7 @@ const farmAreas: FarmArea[] = [
     height: 60,
     color: "#9acd32",
     hoverColor: "#b3e142",
-    assignedEquipment: "Refrigerated Display Cases",
+    assignedEquipment: ["Refrigerated Display Cases", "Cash Register", "Scales"],
     notes: "Open weekends. Average 150 customers per week.",
   },
   {
@@ -127,14 +130,14 @@ const farmAreas: FarmArea[] = [
     color: "#90EE90",
     hoverColor: "#98FB98",
     currentCrop: "Mixed Grass Pasture",
-    assignedAnimals: ["12 Holstein Cows", "3 Horses", "Border Collie (Rusty)"],
-    assignedEquipment: "Mobile Water Trough",
+    assignedAnimals: ["12 Holstein Cows", "3 Quarter Horses", "Guardian Llama (Larry)"],
+    assignedEquipment: ["Mobile Water Trough", "Fence Posts"],
     soilMoisture: 72,
     notes: "Rotated livestock last week. Grass recovering well.",
   },
 ]
 
-// Fixed tree positions so they don't respawn
+// Fixed tree positions
 const treePositions = [
   { x: 120, y: 250 },
   { x: 300, y: 180 },
@@ -152,6 +155,7 @@ export default function EnhancedFarmMap() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [hoveredArea, setHoveredArea] = useState<FarmArea | null>(null)
   const [selectedArea, setSelectedArea] = useState<FarmArea | null>(null)
+  const [hoveredIcon, setHoveredIcon] = useState<{ type: string; text: string; x: number; y: number } | null>(null)
   const [canvasSize, setCanvasSize] = useState({ width: 700, height: 600 })
 
   // Draw the enhanced farm map
@@ -220,23 +224,15 @@ export default function EnhancedFarmMap() {
 
       // Enhanced labels with better typography
       ctx.fillStyle = "#fff"
-      ctx.font = "bold 16px Arial"
+      ctx.font = "bold 14px Arial"
       ctx.textAlign = "center"
       ctx.strokeStyle = "rgba(0, 0, 0, 0.5)"
       ctx.lineWidth = 3
-      ctx.strokeText(area.name, area.x + area.width / 2, area.y + area.height / 2)
-      ctx.fillText(area.name, area.x + area.width / 2, area.y + area.height / 2)
+      ctx.strokeText(area.name, area.x + area.width / 2, area.y + area.height / 2 - 10)
+      ctx.fillText(area.name, area.x + area.width / 2, area.y + area.height / 2 - 10)
 
-      // Add equipment/animal icons
-      if (area.assignedEquipment && area.assignedEquipment.includes("Tractor")) {
-        drawTractor(ctx, area.x + 20, area.y + 20)
-      }
-      if (area.assignedAnimals && area.assignedAnimals.some((animal) => animal.includes("Cow"))) {
-        drawCow(ctx, area.x + area.width - 40, area.y + 30)
-      }
-      if (area.assignedAnimals && area.assignedAnimals.some((animal) => animal.includes("Duck"))) {
-        drawDuck(ctx, area.x + area.width / 2, area.y + area.height / 2 + 20)
-      }
+      // Draw icons for each area
+      drawAreaIcons(ctx, area)
     })
 
     // Draw fixed trees
@@ -246,6 +242,104 @@ export default function EnhancedFarmMap() {
       }
     })
   }, [hoveredArea, selectedArea, canvasSize])
+
+  // Draw icons for farm area attributes
+  const drawAreaIcons = (ctx: CanvasRenderingContext2D, area: FarmArea) => {
+    let iconX = area.x + 10
+    let iconY = area.y + area.height - 30
+
+    // Crop icon
+    if (area.currentCrop) {
+      drawIcon(ctx, "🌾", iconX, iconY)
+      iconX += 25
+    }
+
+    // Equipment icons
+    if (area.assignedEquipment && area.assignedEquipment.length > 0) {
+      if (area.assignedEquipment.some((eq) => eq.toLowerCase().includes("tractor"))) {
+        drawIcon(ctx, "🚜", iconX, iconY)
+        iconX += 25
+      }
+      if (area.assignedEquipment.some((eq) => eq.toLowerCase().includes("harvester"))) {
+        drawIcon(ctx, "🏗️", iconX, iconY)
+        iconX += 25
+      }
+      if (area.assignedEquipment.some((eq) => eq.toLowerCase().includes("sprayer"))) {
+        drawIcon(ctx, "💧", iconX, iconY)
+        iconX += 25
+      }
+      if (area.assignedEquipment.some((eq) => eq.toLowerCase().includes("pump"))) {
+        drawIcon(ctx, "⚙️", iconX, iconY)
+        iconX += 25
+      }
+    }
+
+    // Animal icons
+    if (area.assignedAnimals && area.assignedAnimals.length > 0) {
+      // Reset to second row if needed
+      if (iconX > area.x + area.width - 30) {
+        iconX = area.x + 10
+        iconY += 25
+      }
+
+      if (area.assignedAnimals.some((animal) => animal.toLowerCase().includes("cow"))) {
+        drawIcon(ctx, "🐄", iconX, iconY)
+        iconX += 25
+      }
+      if (area.assignedAnimals.some((animal) => animal.toLowerCase().includes("horse"))) {
+        drawIcon(ctx, "🐴", iconX, iconY)
+        iconX += 25
+      }
+      if (area.assignedAnimals.some((animal) => animal.toLowerCase().includes("duck"))) {
+        drawIcon(ctx, "🦆", iconX, iconY)
+        iconX += 25
+      }
+      if (area.assignedAnimals.some((animal) => animal.toLowerCase().includes("cat"))) {
+        drawIcon(ctx, "🐱", iconX, iconY)
+        iconX += 25
+      }
+      if (area.assignedAnimals.some((animal) => animal.toLowerCase().includes("dog"))) {
+        drawIcon(ctx, "🐕", iconX, iconY)
+        iconX += 25
+      }
+      if (area.assignedAnimals.some((animal) => animal.toLowerCase().includes("chicken"))) {
+        drawIcon(ctx, "🐔", iconX, iconY)
+        iconX += 25
+      }
+      if (area.assignedAnimals.some((animal) => animal.toLowerCase().includes("bee"))) {
+        drawIcon(ctx, "🐝", iconX, iconY)
+        iconX += 25
+      }
+      if (area.assignedAnimals.some((animal) => animal.toLowerCase().includes("llama"))) {
+        drawIcon(ctx, "🦙", iconX, iconY)
+        iconX += 25
+      }
+      if (area.assignedAnimals.some((animal) => animal.toLowerCase().includes("owl"))) {
+        drawIcon(ctx, "🦉", iconX, iconY)
+        iconX += 25
+      }
+      if (area.assignedAnimals.some((animal) => animal.toLowerCase().includes("heron"))) {
+        drawIcon(ctx, "🦆", iconX, iconY)
+        iconX += 25
+      }
+    }
+
+    // Soil moisture indicator
+    if (area.soilMoisture) {
+      if (iconX > area.x + area.width - 30) {
+        iconX = area.x + 10
+        iconY += 25
+      }
+      const moistureIcon = area.soilMoisture > 80 ? "💧" : area.soilMoisture > 60 ? "🌊" : "🏜️"
+      drawIcon(ctx, moistureIcon, iconX, iconY)
+    }
+  }
+
+  // Helper function to draw emoji icons
+  const drawIcon = (ctx: CanvasRenderingContext2D, emoji: string, x: number, y: number) => {
+    ctx.font = "16px Arial"
+    ctx.fillText(emoji, x, y)
+  }
 
   // Check if a point is inside any farm area
   const isInAnyArea = (x: number, y: number) => {
@@ -280,42 +374,16 @@ export default function EnhancedFarmMap() {
     ctx.fill()
   }
 
-  // Simple equipment/animal drawings
-  const drawTractor = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
-    ctx.fillStyle = "#ff6b35"
-    ctx.fillRect(x, y, 25, 15)
-    ctx.fillStyle = "#333"
-    ctx.beginPath()
-    ctx.arc(x + 5, y + 15, 4, 0, Math.PI * 2)
-    ctx.arc(x + 20, y + 15, 4, 0, Math.PI * 2)
-    ctx.fill()
-  }
-
-  const drawCow = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
-    ctx.fillStyle = "#000"
-    ctx.fillRect(x, y, 20, 12)
-    ctx.fillStyle = "#fff"
-    ctx.fillRect(x + 2, y + 2, 6, 4)
-    ctx.fillRect(x + 12, y + 2, 6, 4)
-  }
-
-  const drawDuck = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
-    ctx.fillStyle = "#ffd700"
-    ctx.beginPath()
-    ctx.arc(x, y, 8, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.fillStyle = "#ff8c00"
-    ctx.fillRect(x - 3, y + 2, 6, 3)
-  }
-
-  // Handle mouse interactions
+  // Handle mouse interactions with better hit detection
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current
     if (!canvas) return
 
     const rect = canvas.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
+    const scaleX = canvas.width / rect.width
+    const scaleY = canvas.height / rect.height
+    const x = (e.clientX - rect.left) * scaleX
+    const y = (e.clientY - rect.top) * scaleY
 
     const hovered = farmAreas.find(
       (area) => x >= area.x && x <= area.x + area.width && y >= area.y && y <= area.y + area.height,
@@ -323,6 +391,9 @@ export default function EnhancedFarmMap() {
 
     setHoveredArea(hovered || null)
     canvas.style.cursor = hovered ? "pointer" : "default"
+
+    // Check for icon hover (simplified - you could make this more precise)
+    setHoveredIcon(null)
   }
 
   const handleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -330,8 +401,10 @@ export default function EnhancedFarmMap() {
     if (!canvas) return
 
     const rect = canvas.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
+    const scaleX = canvas.width / rect.width
+    const scaleY = canvas.height / rect.height
+    const x = (e.clientX - rect.left) * scaleX
+    const y = (e.clientY - rect.top) * scaleY
 
     const clicked = farmAreas.find(
       (area) => x >= area.x && x <= area.x + area.width && y >= area.y && y <= area.y + area.height,
@@ -373,9 +446,17 @@ export default function EnhancedFarmMap() {
             className="border border-gray-300 rounded-lg shadow-lg w-full bg-white"
             style={{ maxWidth: "100%" }}
           />
-          <p className="text-center text-sm text-green-700 mt-3">
-            🖱️ Hover over areas to see details • Click to view full information
-          </p>
+          <div className="mt-3 text-center">
+            <p className="text-sm text-green-700 mb-2">
+              🖱️ Hover over areas to see details • Click to view full information
+            </p>
+            <div className="flex justify-center gap-4 text-xs text-gray-600">
+              <span>🌾 Crops</span>
+              <span>🚜 Equipment</span>
+              <span>🐄 Animals</span>
+              <span>💧 Irrigation</span>
+            </div>
+          </div>
         </div>
 
         <div className="w-full xl:w-96">
@@ -401,14 +482,18 @@ export default function EnhancedFarmMap() {
                     </div>
                   )}
 
-                  {selectedArea.assignedEquipment && (
+                  {selectedArea.assignedEquipment && selectedArea.assignedEquipment.length > 0 && (
                     <div className="bg-orange-50 p-3 rounded-lg">
                       <h4 className="font-semibold text-orange-900 mb-1">🚜 Equipment</h4>
-                      <p className="text-sm text-orange-800">{selectedArea.assignedEquipment}</p>
+                      <ul className="text-sm text-orange-800">
+                        {selectedArea.assignedEquipment.map((equipment, index) => (
+                          <li key={index}>• {equipment}</li>
+                        ))}
+                      </ul>
                     </div>
                   )}
 
-                  {selectedArea.assignedAnimals && (
+                  {selectedArea.assignedAnimals && selectedArea.assignedAnimals.length > 0 && (
                     <div className="bg-blue-50 p-3 rounded-lg">
                       <h4 className="font-semibold text-blue-900 mb-1">🐄 Animals</h4>
                       <ul className="text-sm text-blue-800">
@@ -446,8 +531,8 @@ export default function EnhancedFarmMap() {
               <CardContent className="pt-6">
                 <h3 className="text-xl font-bold text-green-900 mb-2">🗺️ Interactive Farm Map</h3>
                 <p className="text-green-800 mb-4">
-                  Explore our 200-acre sustainable farm! Click on any area to see detailed information about crops,
-                  equipment, animals, and current conditions.
+                  Explore our 200-acre sustainable farm! Each area shows live icons for crops, equipment, and animals.
+                  Click on any area for detailed information.
                 </p>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center gap-2">

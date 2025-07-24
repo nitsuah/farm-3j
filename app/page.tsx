@@ -13,7 +13,7 @@ export default function Home() {
     switch (activeSection) {
       case "explore":
         return (
-          <section className="-mt-16 relative z-20">
+          <section className="-mt-24 relative z-20">
             <div className="bg-white rounded-xl shadow-xl p-6 md:p-8">
               <h2 className="text-3xl font-bold text-green-900 mb-4">Explore Our Farm</h2>
               <p className="text-green-800 mb-6 max-w-3xl">
@@ -26,7 +26,7 @@ export default function Home() {
         )
       case "about":
         return (
-          <section className="-mt-16 relative z-20">
+          <section className="-mt-24 relative z-20">
             <div className="bg-white rounded-xl shadow-xl p-6 md:p-8">
               <div className="flex flex-col md:flex-row gap-8 items-center">
                 <div className="md:w-1/2">
@@ -59,7 +59,7 @@ export default function Home() {
         )
       case "contact":
         return (
-          <section className="-mt-16 relative z-20">
+          <section className="-mt-24 relative z-20">
             <div className="bg-white rounded-xl shadow-xl p-6 md:p-8">
               <h2 className="text-3xl font-bold text-green-900 mb-6">Contact Us</h2>
               <div className="max-w-2xl mx-auto">
@@ -173,7 +173,7 @@ export default function Home() {
     <div className="min-h-screen bg-[#f8f5e6]">
       {/* Header with pasture background */}
       <header className="relative h-[60vh] overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#f8f5e6]/60 z-10" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#f8f5e6]/40 z-10" />
         <img
           src="/placeholder.svg?height=800&width=1600"
           alt="PRETTY GOOD FARMS rolling green pasture with scattered oak trees and red barn"
