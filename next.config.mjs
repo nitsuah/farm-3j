@@ -10,8 +10,8 @@ const nextConfig = {
       },
     ],
   },
-  // Enable standalone output for Docker deployments
-  output: 'standalone',
+  // Disable standalone output for local builds (Windows symlink issues)
+  // Enable for Docker: output: 'standalone',
   // Enable React strict mode for better development experience
   reactStrictMode: true,
   // Optimize for production
