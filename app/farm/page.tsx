@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { FarmProvider } from '@/lib/farm/FarmContext';
 import { FarmCanvas } from '@/components/farm/FarmCanvas';
@@ -9,8 +9,29 @@ import { NotificationSystem } from '@/components/farm/NotificationSystem';
 import { FarmNotificationWatcher } from '@/components/farm/FarmNotificationWatcher';
 import { TutorialOverlay } from '@/components/farm/TutorialOverlay';
 import { KeyboardControls } from '@/components/farm/KeyboardControls';
+import { GridInteraction } from '@/components/farm/GridInteraction';
+import type { EditorMode } from '@/components/farm/EditorToolbar';
 
 export default function FarmPage() {
+  const [editorMode, setEditorMode] = useState<EditorMode>('select');
+  const [selectedBuildItem, setSelectedBuildItem] = useState<{
+    id: string;
+    name: string;
+    cost: number;
+  } | null>(null);
+  const [selectedAnimal, setSelectedAnimal] = useState<{
+    id: string;
+    type: 'cow' | 'chicken' | 'pig' | 'sheep';
+    name: string;
+    cost: number;
+  } | null>(null);
+  const [showGrid, setShowGrid] = useState(false);
+
+  const handleItemPlaced = () => {
+    setSelectedBuildItem(null);
+    setSelectedAnimal(null);
+  };
+
   return (
     <FarmProvider>
       <NotificationSystem />
@@ -39,13 +60,29 @@ export default function FarmPage() {
         {/* Main Content */}
         <div className="grid h-[calc(100vh-180px)] grid-cols-1 gap-4 lg:grid-cols-4">
           {/* Farm Canvas - Takes up most space */}
-          <div className="h-full lg:col-span-3">
-            <FarmCanvas />
+          <div className="relative h-full lg:col-span-3">
+            <FarmCanvas showGrid={showGrid} />
+            <GridInteraction
+              mode={editorMode}
+              selectedBuildItem={selectedBuildItem}
+              selectedAnimal={selectedAnimal}
+              onItemPlaced={handleItemPlaced}
+              showGrid={showGrid}
+            />
           </div>
 
           {/* Editor Panel - Sidebar */}
           <div className="lg:col-span-1">
-            <FarmEditor />
+            <FarmEditor
+              editorMode={editorMode}
+              onEditorModeChange={setEditorMode}
+              selectedBuildItem={selectedBuildItem}
+              onBuildItemChange={setSelectedBuildItem}
+              selectedAnimal={selectedAnimal}
+              onAnimalChange={setSelectedAnimal}
+              showGrid={showGrid}
+              onShowGridChange={setShowGrid}
+            />
           </div>
         </div>
 

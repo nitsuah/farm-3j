@@ -8,13 +8,30 @@ import { EditorToolbar, EditorMode } from './EditorToolbar';
 import { BuildPanel } from './BuildPanel';
 import { AnimalPanel } from './AnimalPanel';
 
-export function FarmEditor() {
+interface FarmEditorProps {
+  editorMode: EditorMode;
+  onEditorModeChange: (mode: EditorMode) => void;
+  selectedBuildItem: any;
+  onBuildItemChange: (item: any) => void;
+  selectedAnimal: any;
+  onAnimalChange: (animal: any) => void;
+  showGrid: boolean;
+  onShowGridChange: (show: boolean) => void;
+}
+
+export function FarmEditor({
+  editorMode,
+  onEditorModeChange,
+  selectedBuildItem,
+  onBuildItemChange,
+  selectedAnimal,
+  onAnimalChange,
+  showGrid,
+  onShowGridChange,
+}: FarmEditorProps) {
   const { state, dispatch } = useFarm();
   const [showHelp, setShowHelp] = useState(false);
-  const [editorMode, setEditorMode] = useState<EditorMode>('select');
   const [animationSpeed, setAnimationSpeed] = useState(1.0);
-  const [selectedBuildItem, setSelectedBuildItem] = useState<any>(null);
-  const [selectedAnimal, setSelectedAnimal] = useState<any>(null);
 
   const handleSpawnAnimal = (type: 'cow' | 'chicken' | 'pig' | 'sheep') => {
     const costs = { cow: 500, chicken: 100, pig: 300, sheep: 400 };
@@ -74,13 +91,26 @@ export function FarmEditor() {
         <EditorToolbar
           mode={editorMode}
           onModeChange={mode => {
-            setEditorMode(mode);
-            setSelectedBuildItem(null);
-            setSelectedAnimal(null);
+            onEditorModeChange(mode);
+            onBuildItemChange(null);
+            onAnimalChange(null);
           }}
           animationSpeed={animationSpeed}
           onAnimationSpeedChange={setAnimationSpeed}
         />
+      </div>
+
+      {/* Grid Toggle */}
+      <div className="mb-6">
+        <label className="flex items-center gap-2 text-sm text-gray-300">
+          <input
+            type="checkbox"
+            checked={showGrid}
+            onChange={e => onShowGridChange(e.target.checked)}
+            className="h-4 w-4 rounded"
+          />
+          Show Grid Overlay
+        </label>
       </div>
 
       {/* Mode-specific content */}
@@ -88,14 +118,14 @@ export function FarmEditor() {
         {editorMode === 'build' && (
           <BuildPanel
             money={state.money}
-            onItemSelect={setSelectedBuildItem}
+            onItemSelect={onBuildItemChange}
             selectedItem={selectedBuildItem}
           />
         )}
         {editorMode === 'animals' && (
           <AnimalPanel
             money={state.money}
-            onAnimalSelect={setSelectedAnimal}
+            onAnimalSelect={onAnimalChange}
             selectedAnimal={selectedAnimal}
           />
         )}

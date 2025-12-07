@@ -7,7 +7,11 @@ import { IsometricGrid } from './IsometricGrid';
 import { wander, updateTime, shouldAdvanceDay } from '@/lib/farm/gameLogic';
 import { GAME_CONFIG } from '@/lib/farm/constants';
 
-export function FarmCanvas() {
+interface FarmCanvasProps {
+  showGrid?: boolean;
+}
+
+export function FarmCanvas({ showGrid = false }: FarmCanvasProps) {
   const { state, dispatch } = useFarm();
   const animationFrameRef = useRef<number | null>(null);
   const lastUpdateRef = useRef<number>(Date.now());
@@ -135,7 +139,7 @@ export function FarmCanvas() {
       )}
 
       {/* Isometric terrain grid */}
-      <IsometricGrid showGrid={false} />
+      <IsometricGrid showGrid={showGrid} />
 
       {/* Render all entities */}
       {state.entities.map(entity => (
