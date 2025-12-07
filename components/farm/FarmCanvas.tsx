@@ -4,6 +4,7 @@ import React, { useEffect, useRef } from 'react';
 import { useFarm } from '@/lib/farm/FarmContext';
 import { Entity } from './Entity';
 import { wander, updateTime, shouldAdvanceDay } from '@/lib/farm/gameLogic';
+import { GAME_CONFIG } from '@/lib/farm/constants';
 
 export function FarmCanvas() {
   const { state, dispatch } = useFarm();
@@ -31,7 +32,9 @@ export function FarmCanvas() {
             fenceHealth: Math.max(0, state.fenceHealth - 2), // Fences decay over time
           },
         });
-      } else if (Math.abs(newTime - state.time) > 0.1) {
+      } else if (
+        Math.abs(newTime - state.time) > GAME_CONFIG.TIME_UPDATE_THRESHOLD
+      ) {
         dispatch({ type: 'UPDATE_STATS', payload: { time: newTime } });
       }
 
@@ -111,7 +114,7 @@ export function FarmCanvas() {
       {/* Stars at night */}
       {isNight && (
         <div className="absolute inset-0 opacity-70">
-          {[...Array(50)].map((_, i) => (
+          {[...Array(GAME_CONFIG.NIGHT_STAR_COUNT)].map((_, i) => (
             <div
               key={i}
               className="absolute h-1 w-1 animate-pulse rounded-full bg-white"

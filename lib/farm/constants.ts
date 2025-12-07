@@ -8,6 +8,7 @@ export const GAME_CONFIG = {
   // Time system
   TIME_SPEED: 0.1, // Game hours per real second
   HOURS_PER_DAY: 24,
+  TIME_UPDATE_THRESHOLD: 0.1, // Minimum time difference to trigger update
 
   // Animal properties
   ANIMALS: {
@@ -44,6 +45,9 @@ export const GAME_CONFIG = {
   // Decay rates
   FENCE_DECAY_PER_DAY: 2,
   HEALTH_DECAY_PER_DAY: 1,
+
+  // Visual effects
+  NIGHT_STAR_COUNT: 50,
 
   // Costs
   FENCE_REPAIR_COST: 50,

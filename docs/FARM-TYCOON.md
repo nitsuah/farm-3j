@@ -169,10 +169,10 @@ We have a clear path from simple interaction to complex simulation. Before movin
 The user experience (UX) for the Farm Tycoon homepage is centered around the Farm Editor, which facilitates a lightweight, click-and-place building experience inspired by classic tycoon games. This vision aims to provide intuitive control over the environment and the animals.
 
 1. Interaction Modes
-The editor will operate using two primary modes, selected via buttons in the control panel:
+   The editor will operate using two primary modes, selected via buttons in the control panel:
 
 1. Selector / Picker Mode (Default)
-Purpose: Information gathering and minor adjustments.
+   Purpose: Information gathering and minor adjustments.
 
 Action: When the user clicks on an existing entity (animal, fence, structure), a small context box or "Info Panel" appears.
 
@@ -183,7 +183,7 @@ Animals: Displays stats (Health, Hunger, Status). Provides buttons like "Sell," 
 Structures/Fences: Displays status (Health/Decay). Provides a "Repair" button or a "Move" handle.
 
 2. Build Mode
-Purpose: Placing permanent structures, fences, and utility items.
+   Purpose: Placing permanent structures, fences, and utility items.
 
 Action: Clicking the "Build" button slides out a dedicated panel containing buildable categories (Fences, Structures, Utilities).
 
@@ -198,7 +198,7 @@ A translucent ghost image of the selected item snaps to the grid under the curso
 Clicking an empty, valid grid tile places the item and deducts its cost from the player's funds.
 
 2. Animal Spawning (Drag-and-Drop)
-Animal spawning is separated from the general Build Mode to encourage experimentation and immediate interaction:
+   Animal spawning is separated from the general Build Mode to encourage experimentation and immediate interaction:
 
 Location: The "Animals" section of the editor provides icons for each available animal (Cow, Chicken, Pig).
 
@@ -207,7 +207,7 @@ Mechanic: The user can click and drag an animal icon directly from the editor pa
 Spawning Action: Upon releasing the mouse button, the animal is instantiated at that grid location and immediately begins its automated movement (Phase 1 MVP). This provides instant visual gratification.
 
 3. Advanced Controls (Phase 2+)
-The following controls will evolve in later phases to meet the Tycoon vision:
+   The following controls will evolve in later phases to meet the Tycoon vision:
 
 Terrain Picker: A toggle to enter a mode where clicking a large grid area changes its texture (e.g., swapping grass tiles for dirt or pond tiles).
 
@@ -219,7 +219,7 @@ This setup ensures that the user's primary focus remains on the interactive farm
 
 ## Other considerations
 
-Mostly for the other pages/basic needs/nice ot haves
+Mostly for the other pages/basic needs/nice to haves
 
 ### Immediate
 
