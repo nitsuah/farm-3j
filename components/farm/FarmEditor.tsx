@@ -8,8 +8,16 @@ export function FarmEditor() {
   const { state, dispatch } = useFarm();
 
   const handleSpawnAnimal = (type: 'cow' | 'chicken' | 'pig' | 'sheep') => {
+    const costs = { cow: 500, chicken: 100, pig: 300, sheep: 400 };
+    const cost = costs[type];
+
+    if (state.money < cost) {
+      return; // Can't afford
+    }
+
     const newAnimal = spawnAnimal(type);
     dispatch({ type: 'SPAWN_ANIMAL', payload: newAnimal });
+    dispatch({ type: 'UPDATE_STATS', payload: { money: state.money - cost } });
   };
 
   const handleTogglePause = () => {
@@ -84,31 +92,39 @@ export function FarmEditor() {
 
       {/* Spawn Animals Section */}
       <div className="mb-6">
-        <h3 className="mb-2 text-lg font-semibold">🐄 Spawn Animals</h3>
+        <h3 className="mb-2 text-lg font-semibold">🐄 Buy Animals</h3>
         <div className="grid grid-cols-2 gap-2">
           <button
             onClick={() => handleSpawnAnimal('cow')}
-            className="rounded bg-blue-600 px-4 py-2 font-semibold transition-colors hover:bg-blue-700"
+            disabled={state.money < 500}
+            className="rounded bg-blue-600 px-4 py-2 font-semibold transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-600"
           >
-            🐄 Cow ({animalCounts.cow})
+            <div>🐄 Cow</div>
+            <div className="text-xs">$500 ({animalCounts.cow})</div>
           </button>
           <button
             onClick={() => handleSpawnAnimal('chicken')}
-            className="rounded bg-orange-600 px-4 py-2 font-semibold transition-colors hover:bg-orange-700"
+            disabled={state.money < 100}
+            className="rounded bg-orange-600 px-4 py-2 font-semibold transition-colors hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-gray-600"
           >
-            🐔 Chicken ({animalCounts.chicken})
+            <div>🐔 Chicken</div>
+            <div className="text-xs">$100 ({animalCounts.chicken})</div>
           </button>
           <button
             onClick={() => handleSpawnAnimal('pig')}
-            className="rounded bg-pink-600 px-4 py-2 font-semibold transition-colors hover:bg-pink-700"
+            disabled={state.money < 300}
+            className="rounded bg-pink-600 px-4 py-2 font-semibold transition-colors hover:bg-pink-700 disabled:cursor-not-allowed disabled:bg-gray-600"
           >
-            🐷 Pig ({animalCounts.pig})
+            <div>🐷 Pig</div>
+            <div className="text-xs">$300 ({animalCounts.pig})</div>
           </button>
           <button
             onClick={() => handleSpawnAnimal('sheep')}
-            className="rounded bg-gray-600 px-4 py-2 font-semibold transition-colors hover:bg-gray-700"
+            disabled={state.money < 400}
+            className="rounded bg-gray-600 px-4 py-2 font-semibold transition-colors hover:bg-gray-700 disabled:cursor-not-allowed disabled:bg-gray-600"
           >
-            🐑 Sheep ({animalCounts.sheep})
+            <div>🐑 Sheep</div>
+            <div className="text-xs">$400 ({animalCounts.sheep})</div>
           </button>
         </div>
       </div>

@@ -14,9 +14,12 @@
   - [x] Phase 1g: Day/night cycle with time progression
   - [x] Phase 1h: Wander AI behavior for animals
   - [x] Phase 1i: Repair/heal action buttons with costs
-  - [ ] Phase 2a: Grid coordinate system implementation
-  - [ ] Phase 2b: Fence placement and boundary constraints
-  - [ ] Phase 2c: Resource generation and selling mechanics
+  - [x] Phase 1j: Resource production system (milk, eggs, meat, wool)
+  - [x] Phase 1k: Selling mechanics with prices
+  - [x] Phase 1l: Animal purchasing with costs
+  - [ ] Phase 2a: Animal needs system (hunger, happiness)
+  - [ ] Phase 2b: Feeding mechanics with food inventory
+  - [ ] Phase 2c: Grid coordinate system implementation
 - [ ] **Contact Form Enhancements:** Form validation, UI improvements
 - [ ] **Responsiveness Refinement:** Mobile/desktop optimization
 - [ ] **Basic SEO Optimization:** Meta descriptions, image alt text
