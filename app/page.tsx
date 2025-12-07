@@ -4,7 +4,7 @@ import { SustainableFarmScene } from '@/components/animations/SustainableFarmSce
 
 export default function Home() {
   return (
-    <main className="h-[calc(100vh-24rem)] overflow-hidden">
+    <main className="h-[calc(100vh-13rem)] overflow-hidden">
       {/* Hero section with gradient background */}
       <section className="relative h-1/2 overflow-hidden">
         {/* Simple gradient background */}
@@ -36,9 +36,9 @@ export default function Home() {
       </section>
 
       {/* Feature cards section */}
-      <section className="grid h-1/2 grid-cols-3 gap-4 p-4">
+      <section className="grid h-1/2 grid-cols-3 gap-1">
         {/* Card 1 - Fresh Produce */}
-        <div className="relative flex flex-col overflow-hidden rounded-lg bg-white shadow-lg dark:bg-gray-900">
+        <div className="relative flex flex-col overflow-hidden bg-white dark:bg-gray-900">
           <div className="h-1/2">
             <GrowingCropScene />
           </div>
@@ -54,7 +54,7 @@ export default function Home() {
         </div>
 
         {/* Card 2 - Local Community */}
-        <div className="relative flex flex-col overflow-hidden rounded-lg bg-white shadow-lg dark:bg-gray-900">
+        <div className="relative flex flex-col overflow-hidden bg-white dark:bg-gray-900">
           <div className="h-1/2">
             <IsometricTownScene buildings={3} />
           </div>
@@ -69,7 +69,7 @@ export default function Home() {
         </div>
 
         {/* Card 3 - Sustainable Farming */}
-        <div className="relative flex flex-col overflow-hidden rounded-lg bg-white shadow-lg dark:bg-gray-900">
+        <div className="relative flex flex-col overflow-hidden bg-white dark:bg-gray-900">
           <div className="h-1/2">
             <SustainableFarmScene />
           </div>
