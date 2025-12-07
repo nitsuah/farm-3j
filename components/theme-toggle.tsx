@@ -22,14 +22,21 @@ export function ThemeToggle() {
 
   const toggleTheme = () => {
     const newTheme = !isDark;
+    console.log('Toggle clicked! Current:', isDark, 'New:', newTheme);
     setIsDark(newTheme);
     localStorage.setItem('theme', newTheme ? 'dark' : 'light');
 
+    const htmlElement = document.querySelector('html');
     if (newTheme) {
+      htmlElement?.classList.add('dark');
       document.documentElement.classList.add('dark');
+      console.log('Added dark class');
     } else {
+      htmlElement?.classList.remove('dark');
       document.documentElement.classList.remove('dark');
+      console.log('Removed dark class');
     }
+    console.log('HTML classes:', htmlElement?.className);
   };
 
   // Prevent flash during SSR

@@ -16,6 +16,20 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                const theme = localStorage.getItem('theme');
+                if (theme === 'dark') {
+                  document.documentElement.classList.add('dark');
+                }
+              })();
+            `,
+          }}
+        />
+      </head>
       <body className="bg-green-50 dark:bg-black">
         <header className="bg-white shadow-sm dark:bg-green-900">
           <nav className="container mx-auto px-4 py-4">
