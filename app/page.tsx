@@ -4,7 +4,7 @@ import { SustainableFarmScene } from '@/components/animations/SustainableFarmSce
 
 export default function Home() {
   return (
-    <main className="h-[calc(100vh-8rem)] overflow-hidden">
+    <main className="h-[calc(100vh-24rem)] overflow-hidden">
       {/* Hero section with gradient background */}
       <section className="relative h-1/2 overflow-hidden">
         {/* Simple gradient background */}
@@ -12,10 +12,10 @@ export default function Home() {
 
         {/* Hero content */}
         <div className="relative z-10 flex h-full flex-col items-center justify-center">
-          <h1 className="mb-4 text-5xl font-bold text-green-900 drop-shadow-lg dark:text-white">
+          <h1 className="mb-2 text-5xl font-bold text-green-900 drop-shadow-lg dark:text-white">
             Pretty Good Farm
           </h1>
-          <p className="mx-auto mb-8 max-w-2xl text-xl text-green-800 drop-shadow dark:text-green-200">
+          <p className="mx-auto mb-4 max-w-2xl text-xl text-green-800 drop-shadow dark:text-green-200">
             Fresh, locally-grown produce and sustainable farming practices.
           </p>
           <div className="flex gap-4">
@@ -38,15 +38,15 @@ export default function Home() {
       {/* Feature cards section */}
       <section className="grid h-1/2 grid-cols-3 gap-4 p-4">
         {/* Card 1 - Fresh Produce */}
-        <div className="relative overflow-hidden rounded-lg bg-white shadow-lg dark:bg-gray-900">
-          <div className="h-40">
+        <div className="relative flex flex-col overflow-hidden rounded-lg bg-white shadow-lg dark:bg-gray-900">
+          <div className="h-1/2">
             <GrowingCropScene />
           </div>
-          <div className="p-4">
-            <h3 className="mb-2 text-xl font-bold text-green-900 dark:text-white">
+          <div className="flex-1 p-3">
+            <h3 className="mb-1 text-lg font-bold text-green-900 dark:text-white">
               Fresh Produce
             </h3>
-            <p className="text-sm text-green-700 dark:text-green-300">
+            <p className="text-xs text-green-700 dark:text-green-300">
               Watch our crops grow! Seasonal vegetables and fruits grown with
               care.
             </p>
@@ -54,30 +54,30 @@ export default function Home() {
         </div>
 
         {/* Card 2 - Local Community */}
-        <div className="relative overflow-hidden rounded-lg bg-white shadow-lg dark:bg-gray-900">
-          <div className="h-40">
+        <div className="relative flex flex-col overflow-hidden rounded-lg bg-white shadow-lg dark:bg-gray-900">
+          <div className="h-1/2">
             <IsometricTownScene buildings={3} />
           </div>
-          <div className="p-4">
-            <h3 className="mb-2 text-xl font-bold text-green-900 dark:text-white">
+          <div className="flex-1 p-3">
+            <h3 className="mb-1 text-lg font-bold text-green-900 dark:text-white">
               Local Community
             </h3>
-            <p className="text-sm text-green-700 dark:text-green-300">
+            <p className="text-xs text-green-700 dark:text-green-300">
               Supporting our local community with quality, farm-fresh products.
             </p>
           </div>
         </div>
 
         {/* Card 3 - Sustainable Farming */}
-        <div className="relative overflow-hidden rounded-lg bg-white shadow-lg dark:bg-gray-900">
-          <div className="h-40">
+        <div className="relative flex flex-col overflow-hidden rounded-lg bg-white shadow-lg dark:bg-gray-900">
+          <div className="h-1/2">
             <SustainableFarmScene />
           </div>
-          <div className="p-4">
-            <h3 className="mb-2 text-xl font-bold text-green-900 dark:text-white">
+          <div className="flex-1 p-3">
+            <h3 className="mb-1 text-lg font-bold text-green-900 dark:text-white">
               Sustainable Farming
             </h3>
-            <p className="text-sm text-green-700 dark:text-green-300">
+            <p className="text-xs text-green-700 dark:text-green-300">
               Solar, wind, and eco-friendly practices for a healthier future.
             </p>
           </div>

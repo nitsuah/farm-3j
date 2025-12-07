@@ -32,7 +32,7 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-green-50 dark:bg-black">
-        <header className="relative h-24 shadow-sm">
+        <header className="relative h-48 shadow-sm">
           {/* Animated crop header background */}
           <HeaderCropRow />
 
@@ -68,7 +68,7 @@ export default function RootLayout({
           </nav>
         </header>
         {children}
-        <footer className="h-24 bg-green-900 text-white">
+        <footer className="h-48 bg-green-900 text-white">
           <div className="container mx-auto flex h-full items-center justify-center px-4">
             <p className="text-sm">
               &copy; 2025 Pretty Good Farm. All rights reserved.
