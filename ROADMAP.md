@@ -6,11 +6,17 @@
 - [x] Fix CI/CD pipeline lint issues
 - [ ] **UI Overhaul - Farm Tycoon Interactive Homepage (IN PROGRESS)**
   - [x] Phase 1a: State management with FarmContext and useReducer
-  - [ ] Phase 1b: FarmCanvas component with requestAnimationFrame game loop
-  - [ ] Phase 1c: Entity system (base, Animal, StaticAsset components)
-  - [ ] Phase 1d: FarmEditor control panel with spawn buttons
-  - [ ] Phase 1e: Animal sprites and CSS animations
-  - [ ] Phase 1f: Deploy to /farm route for testing
+  - [x] Phase 1b: FarmCanvas component with requestAnimationFrame game loop
+  - [x] Phase 1c: Entity system (base, Animal, StaticAsset components)
+  - [x] Phase 1d: FarmEditor control panel with spawn buttons
+  - [x] Phase 1e: Animal sprites and CSS animations with shadows
+  - [x] Phase 1f: Deploy to /farm route for testing
+  - [x] Phase 1g: Day/night cycle with time progression
+  - [x] Phase 1h: Wander AI behavior for animals
+  - [x] Phase 1i: Repair/heal action buttons with costs
+  - [ ] Phase 2a: Grid coordinate system implementation
+  - [ ] Phase 2b: Fence placement and boundary constraints
+  - [ ] Phase 2c: Resource generation and selling mechanics
 - [ ] **Contact Form Enhancements:** Form validation, UI improvements
 - [ ] **Responsiveness Refinement:** Mobile/desktop optimization
 - [ ] **Basic SEO Optimization:** Meta descriptions, image alt text
