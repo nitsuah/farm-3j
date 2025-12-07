@@ -13,12 +13,12 @@
 
 ## In Progress
 
-- [ ] Review all files added by this PR and improve/fix deploys to work with latest vercel changes (P1, M)
-- [ ] Configure ESLint and Prettier (P3, S)
-- [ ] Design landing page hero section (P1, M)
-- [ ] UI Overhaul - add interactive farm animals and farm site design - see `FARM-TYCOON.md`
+- [ ] UI Overhaul - add interactive farm animals and farm site design - see `docs/FARM-TYCOON.md` & `docs/farm.png`
 
 ## Done
 
 - [x] Set up TypeScript project (P1, S)
 - [x] Initialize Git repository (P3, S)
+- [x] Review all files added by this PR and improve/fix deploys to work with latest vercel changes (P1, M
+- [x] Configure ESLint and Prettier (P3, S)
+- [x] Design landing page hero section (P1, M)
