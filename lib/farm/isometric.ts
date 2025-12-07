@@ -18,8 +18,8 @@ export const GRID_CONFIG = {
   TILE_HEIGHT: 32, // Height of isometric tile in pixels
   GRID_ROWS: 20,
   GRID_COLS: 20,
-  OFFSET_X: 400, // Center the grid on screen
-  OFFSET_Y: 50,
+  OFFSET_X: 640, // Center the grid on screen (adjusted for wider view)
+  OFFSET_Y: 100,
 };
 
 /**
@@ -50,8 +50,8 @@ export function screenToGrid(
     relY / (GRID_CONFIG.TILE_HEIGHT / 2) - relX / (GRID_CONFIG.TILE_WIDTH / 2);
 
   return {
-    gridX: Math.floor(gridX / 2),
-    gridY: Math.floor(gridY / 2),
+    gridX: Math.floor(gridX),
+    gridY: Math.floor(gridY),
   };
 }
 
@@ -85,10 +85,18 @@ export function gridToPercent(
   y: number;
 } {
   const { screenX, screenY } = gridToScreen(gridX, gridY);
-  // Assuming canvas is 1200x800
+  // Calculate canvas dimensions based on grid size
+  // Grid spans: 20x20 tiles, diamond shape means we need width for full diagonal
+  const canvasWidth =
+    GRID_CONFIG.GRID_COLS * GRID_CONFIG.TILE_WIDTH + GRID_CONFIG.OFFSET_X * 2;
+  const canvasHeight =
+    GRID_CONFIG.GRID_ROWS * GRID_CONFIG.TILE_HEIGHT +
+    GRID_CONFIG.OFFSET_Y * 2 +
+    200;
+
   return {
-    x: (screenX / 1200) * 100,
-    y: (screenY / 800) * 100,
+    x: (screenX / canvasWidth) * 100,
+    y: (screenY / canvasHeight) * 100,
   };
 }
 
@@ -96,9 +104,17 @@ export function gridToPercent(
  * Snap entity position to nearest grid tile
  */
 export function snapToGrid(x: number, y: number): { x: number; y: number } {
-  // Convert percentage to screen coords (assuming 1200x800 canvas)
-  const screenX = (x / 100) * 1200;
-  const screenY = (y / 100) * 800;
+  // Calculate canvas dimensions
+  const canvasWidth =
+    GRID_CONFIG.GRID_COLS * GRID_CONFIG.TILE_WIDTH + GRID_CONFIG.OFFSET_X * 2;
+  const canvasHeight =
+    GRID_CONFIG.GRID_ROWS * GRID_CONFIG.TILE_HEIGHT +
+    GRID_CONFIG.OFFSET_Y * 2 +
+    200;
+
+  // Convert percentage to screen coords
+  const screenX = (x / 100) * canvasWidth;
+  const screenY = (y / 100) * canvasHeight;
 
   // Convert to grid and back to get snapped position
   const { gridX, gridY } = screenToGrid(screenX, screenY);
