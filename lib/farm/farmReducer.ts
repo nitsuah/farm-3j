@@ -27,6 +27,12 @@ export const initialFarmState: FarmState = {
   fenceHealth: 65,
   animalHealth: 90,
   isPaused: false,
+  resources: {
+    milk: 15,
+    eggs: 42,
+    meat: 8,
+    wool: 12,
+  },
 };
 
 export function farmReducer(state: FarmState, action: FarmAction): FarmState {
@@ -42,19 +48,25 @@ export function farmReducer(state: FarmState, action: FarmAction): FarmState {
       const { id, x, y, direction } = action.payload;
       return {
         ...state,
-        entities: state.entities.map((entity) =>
+        entities: state.entities.map(entity =>
           entity.id === id
-            ? { ...entity, x, y, direction: direction ?? entity.direction, lastUpdate: Date.now() }
+            ? {
+                ...entity,
+                x,
+                y,
+                direction: direction ?? entity.direction,
+                lastUpdate: Date.now(),
+              }
             : entity
         ),
       };
     }
 
     case 'BATCH_UPDATE_POSITIONS': {
-      const updates = new Map(action.payload.map((p) => [p.id, p]));
+      const updates = new Map(action.payload.map(p => [p.id, p]));
       return {
         ...state,
-        entities: state.entities.map((entity) => {
+        entities: state.entities.map(entity => {
           const update = updates.get(entity.id);
           return update
             ? {
@@ -72,7 +84,7 @@ export function farmReducer(state: FarmState, action: FarmAction): FarmState {
     case 'REMOVE_ENTITY':
       return {
         ...state,
-        entities: state.entities.filter((entity) => entity.id !== action.payload),
+        entities: state.entities.filter(entity => entity.id !== action.payload),
       };
 
     case 'UPDATE_STATS':
@@ -86,6 +98,94 @@ export function farmReducer(state: FarmState, action: FarmAction): FarmState {
         ...state,
         isPaused: !state.isPaused,
       };
+
+    case 'PRODUCE_RESOURCES': {
+      const now = Date.now();
+      const updatedEntities = state.entities.map(entity => {
+        if (!['cow', 'chicken', 'pig', 'sheep'].includes(entity.type)) {
+          return entity;
+        }
+
+        const lastProduced = entity.lastProduced || now;
+        const timeSinceProduction = (now - lastProduced) / 1000; // seconds
+
+        // Produce every 3 seconds
+        if (timeSinceProduction >= 3) {
+          return {
+            ...entity,
+            lastProduced: now,
+            inventory: (entity.inventory || 0) + 1,
+          };
+        }
+
+        return entity;
+      });
+
+      // Collect resources from all animals
+      let newMilk = state.resources.milk;
+      let newEggs = state.resources.eggs;
+      let newMeat = state.resources.meat;
+      let newWool = state.resources.wool;
+
+      updatedEntities.forEach(entity => {
+        if (entity.inventory && entity.inventory > 0) {
+          switch (entity.type) {
+            case 'cow':
+              newMilk += entity.inventory;
+              break;
+            case 'chicken':
+              newEggs += entity.inventory;
+              break;
+            case 'pig':
+              newMeat += entity.inventory;
+              break;
+            case 'sheep':
+              newWool += entity.inventory;
+              break;
+          }
+        }
+      });
+
+      // Clear inventories
+      const clearedEntities = updatedEntities.map(entity => {
+        if (entity.inventory && entity.inventory > 0) {
+          return { ...entity, inventory: 0 };
+        }
+        return entity;
+      });
+
+      return {
+        ...state,
+        entities: clearedEntities,
+        resources: {
+          milk: newMilk,
+          eggs: newEggs,
+          meat: newMeat,
+          wool: newWool,
+        },
+      };
+    }
+
+    case 'SELL_RESOURCE': {
+      const { resource, amount } = action.payload;
+      const prices = { milk: 10, eggs: 5, meat: 20, wool: 15 };
+      const currentAmount = state.resources[resource];
+
+      if (currentAmount < amount) {
+        return state;
+      }
+
+      const revenue = amount * prices[resource];
+
+      return {
+        ...state,
+        money: state.money + revenue,
+        resources: {
+          ...state.resources,
+          [resource]: currentAmount - amount,
+        },
+      };
+    }
 
     default:
       return state;

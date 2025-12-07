@@ -31,10 +31,16 @@ export function spawnAnimal(type: 'cow' | 'chicken' | 'pig' | 'sheep'): Entity {
     velocity: velocities[type],
     direction: Math.random() * Math.PI * 2, // Random initial direction
     lastUpdate: Date.now(),
+    lastProduced: Date.now(),
+    inventory: 0,
   };
 }
 
-export function spawnStatic(type: 'barn' | 'fence' | 'pond', x: number, y: number): Entity {
+export function spawnStatic(
+  type: 'barn' | 'fence' | 'pond',
+  x: number,
+  y: number
+): Entity {
   return {
     id: generateId(type),
     type,

@@ -10,6 +10,7 @@ interface EntityProps {
 export function Entity({ entity }: EntityProps) {
   const rotation = entity.direction ? (entity.direction * 180) / Math.PI : 0;
   const isMoving = entity.velocity && entity.velocity > 0;
+  const hasResources = entity.inventory && entity.inventory > 0;
 
   const style: React.CSSProperties = {
     position: 'absolute',
@@ -101,5 +102,15 @@ export function Entity({ entity }: EntityProps) {
     }
   };
 
-  return <div style={style}>{getEntityContent()}</div>;
+  return (
+    <div style={style}>
+      {getEntityContent()}
+      {/* Resource indicator */}
+      {hasResources && (
+        <div className="absolute -right-2 -top-2 flex h-5 w-5 animate-bounce items-center justify-center rounded-full border-2 border-yellow-600 bg-yellow-400 text-xs font-bold">
+          {entity.inventory}
+        </div>
+      )}
+    </div>
+  );
 }

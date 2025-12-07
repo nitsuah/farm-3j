@@ -35,6 +35,9 @@ export function FarmCanvas() {
         dispatch({ type: 'UPDATE_STATS', payload: { time: newTime } });
       }
 
+      // Produce resources from animals
+      dispatch({ type: 'PRODUCE_RESOURCES' });
+
       // Update positions for all animated entities (animals) using wander behavior
       const updates = state.entities
         .filter(entity => entity.velocity && entity.velocity > 0)

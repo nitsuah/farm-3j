@@ -152,6 +152,46 @@ export function FarmEditor() {
           </div>
         </div>
       </div>
+
+      {/* Resources */}
+      <div className="mt-4 border-t border-gray-700 pt-4">
+        <h3 className="mb-2 text-lg font-semibold">📦 Resources</h3>
+        <div className="space-y-2">
+          {Object.entries(state.resources).map(([resource, amount]) => {
+            const icons = { milk: '🥛', eggs: '🥚', meat: '🥩', wool: '🧶' };
+            const prices = { milk: 10, eggs: 5, meat: 20, wool: 15 };
+            const icon = icons[resource as keyof typeof icons];
+            const price = prices[resource as keyof typeof prices];
+
+            return (
+              <div
+                key={resource}
+                className="flex items-center justify-between text-sm"
+              >
+                <span>
+                  {icon} {resource.charAt(0).toUpperCase() + resource.slice(1)}:{' '}
+                  {amount}
+                </span>
+                <button
+                  onClick={() =>
+                    dispatch({
+                      type: 'SELL_RESOURCE',
+                      payload: {
+                        resource: resource as keyof typeof state.resources,
+                        amount: 1,
+                      },
+                    })
+                  }
+                  disabled={amount < 1}
+                  className="rounded bg-green-600 px-2 py-1 text-xs hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-600"
+                >
+                  Sell ${price}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
