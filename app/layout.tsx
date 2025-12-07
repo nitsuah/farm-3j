@@ -1,5 +1,6 @@
 import type React from 'react';
 import '@/app/globals.css';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export const metadata = {
   title: 'Farm 3J - Fresh Local Produce',
@@ -15,21 +16,27 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-green-50">
-        <header className="bg-white shadow-sm">
+      <body className="bg-green-50 dark:bg-black">
+        <header className="bg-white shadow-sm dark:bg-green-900">
           <nav className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-green-900">Farm 3J</h1>
-              <div className="flex gap-6">
-                <a href="/" className="text-green-700 hover:text-green-900">
+              <h1 className="text-2xl font-bold text-green-900 dark:text-white">
+                Farm 3J
+              </h1>
+              <div className="flex items-center gap-6">
+                <a
+                  href="/"
+                  className="text-green-700 hover:text-green-900 dark:text-green-300 dark:hover:text-white"
+                >
                   Home
                 </a>
                 <a
                   href="/about"
-                  className="text-green-700 hover:text-green-900"
+                  className="text-green-700 hover:text-green-900 dark:text-green-300 dark:hover:text-white"
                 >
                   About
                 </a>
+                <ThemeToggle />
               </div>
             </div>
           </nav>
