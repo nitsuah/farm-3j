@@ -31,7 +31,7 @@ export function NotificationSystem() {
   }
 
   return (
-    <div className="pointer-events-none fixed right-4 top-4 z-50 flex flex-col gap-2">
+    <div className="pointer-events-none fixed top-4 right-4 z-50 flex flex-col gap-2">
       {notifications.map(notification => (
         <div
           key={notification.id}

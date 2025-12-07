@@ -6,7 +6,7 @@ import { farmReducer, initialFarmState } from './farmReducer';
 
 interface FarmContextType {
   state: FarmState;
-  dispatch: React.Dispatch<FarmAction>;
+  dispatch: React.Dispatch;
 }
 
 const FarmContext = createContext<FarmContextType | undefined>(undefined);
@@ -14,7 +14,11 @@ const FarmContext = createContext<FarmContextType | undefined>(undefined);
 export function FarmProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(farmReducer, initialFarmState);
 
-  return <FarmContext.Provider value={{ state, dispatch }}>{children}</FarmContext.Provider>;
+  return (
+    <FarmContext.Provider value={{ state, dispatch }}>
+      {children}
+    </FarmContext.Provider>
+  );
 }
 
 export function useFarm() {
