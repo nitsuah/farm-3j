@@ -7,12 +7,16 @@ import { FarmCanvas } from '@/components/farm/FarmCanvas';
 import { FarmEditor } from '@/components/farm/FarmEditor';
 import { NotificationSystem } from '@/components/farm/NotificationSystem';
 import { FarmNotificationWatcher } from '@/components/farm/FarmNotificationWatcher';
+import { TutorialOverlay } from '@/components/farm/TutorialOverlay';
+import { KeyboardControls } from '@/components/farm/KeyboardControls';
 
 export default function FarmPage() {
   return (
     <FarmProvider>
       <NotificationSystem />
       <FarmNotificationWatcher />
+      <TutorialOverlay />
+      <KeyboardControls />
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-green-900 p-4">
         {/* Header */}
         <header className="mb-4 flex items-center justify-between">

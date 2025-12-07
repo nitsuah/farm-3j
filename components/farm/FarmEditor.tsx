@@ -1,12 +1,13 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useFarm } from '@/lib/farm/FarmContext';
 import { spawnAnimal } from '@/lib/farm/spawner';
 import { addNotification } from '@/lib/farm/notifications';
 
 export function FarmEditor() {
   const { state, dispatch } = useFarm();
+  const [showHelp, setShowHelp] = useState(false);
 
   const handleSpawnAnimal = (type: 'cow' | 'chicken' | 'pig' | 'sheep') => {
     const costs = { cow: 500, chicken: 100, pig: 300, sheep: 400 };
@@ -96,7 +97,41 @@ export function FarmEditor() {
           >
             💊 Heal Animals ($100)
           </button>
+          <button
+            onClick={() => setShowHelp(!showHelp)}
+            className="rounded bg-purple-600 px-4 py-2 font-semibold transition-colors hover:bg-purple-700"
+          >
+            {showHelp ? '❌ Hide Help' : '❓ Keyboard Shortcuts'}
+          </button>
         </div>
+
+        {/* Keyboard shortcuts help panel */}
+        {showHelp && (
+          <div className="mt-4 rounded-lg bg-gray-900 p-4 text-sm">
+            <h4 className="mb-2 font-semibold text-purple-400">
+              ⌨️ Keyboard Shortcuts
+            </h4>
+            <ul className="space-y-1">
+              <li>
+                <kbd className="rounded bg-gray-700 px-2 py-1">Space</kbd> or{' '}
+                <kbd className="rounded bg-gray-700 px-2 py-1">P</kbd> -
+                Pause/Resume
+              </li>
+              <li>
+                <kbd className="rounded bg-gray-700 px-2 py-1">R</kbd> - Repair
+                Fences ($50)
+              </li>
+              <li>
+                <kbd className="rounded bg-gray-700 px-2 py-1">H</kbd> - Heal
+                Animals ($100)
+              </li>
+              <li>
+                <kbd className="rounded bg-gray-700 px-2 py-1">?</kbd> - Show
+                Tutorial
+              </li>
+            </ul>
+          </div>
+        )}
       </div>
 
       {/* Spawn Animals Section */}
@@ -197,28 +232,53 @@ export function FarmEditor() {
                   {icon} {resource.charAt(0).toUpperCase() + resource.slice(1)}:{' '}
                   {amount}
                 </span>
-                <button
-                  onClick={() => {
-                    const prices = { milk: 10, eggs: 5, meat: 20, wool: 15 };
-                    const price = prices[resource as keyof typeof prices];
-                    dispatch({
-                      type: 'SELL_RESOURCE',
-                      payload: {
-                        resource: resource as keyof typeof state.resources,
-                        amount: 1,
-                      },
-                    });
-                    addNotification(
-                      `💰 Sold ${resource} for $${price}!`,
-                      'success',
-                      2000
-                    );
-                  }}
-                  disabled={amount < 1}
-                  className="rounded bg-green-600 px-2 py-1 text-xs hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-600"
-                >
-                  Sell ${price}
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      const prices = { milk: 10, eggs: 5, meat: 20, wool: 15 };
+                      const price = prices[resource as keyof typeof prices];
+                      dispatch({
+                        type: 'SELL_RESOURCE',
+                        payload: {
+                          resource: resource as keyof typeof state.resources,
+                          amount: 1,
+                        },
+                      });
+                      addNotification(
+                        `💰 Sold ${resource} for $${price}!`,
+                        'success',
+                        2000
+                      );
+                    }}
+                    disabled={amount < 1}
+                    className="rounded bg-green-600 px-2 py-1 text-xs hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-600"
+                  >
+                    Sell ${price}
+                  </button>
+                  <button
+                    onClick={() => {
+                      const prices = { milk: 10, eggs: 5, meat: 20, wool: 15 };
+                      const price = prices[resource as keyof typeof prices];
+                      const totalPrice = amount * price;
+                      dispatch({
+                        type: 'SELL_RESOURCE',
+                        payload: {
+                          resource: resource as keyof typeof state.resources,
+                          amount: amount,
+                        },
+                      });
+                      addNotification(
+                        `💰 Sold all ${resource} for $${totalPrice}!`,
+                        'success',
+                        2000
+                      );
+                    }}
+                    disabled={amount < 1}
+                    className="rounded bg-blue-600 px-2 py-1 text-xs hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-600"
+                  >
+                    Sell All
+                  </button>
+                </div>
               </div>
             );
           })}

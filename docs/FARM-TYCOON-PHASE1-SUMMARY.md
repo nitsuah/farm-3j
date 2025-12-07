@@ -150,13 +150,46 @@ app/farm/page.tsx               # Main farm route
 
 Visit: `http://localhost:3000/farm`
 
-1. **Buy Animals**: Click animal buttons (ensure sufficient funds)
-2. **Watch Movement**: Animals wander around with collision detection
-3. **Collect Resources**: Wait 3 seconds, see badges appear on animals
-4. **Sell Resources**: Click sell buttons in resources panel
-5. **Maintain Farm**: Repair fences and heal animals as needed
-6. **Observe Cycle**: Watch day/night transition and time progression
-7. **Get Notifications**: Receive toast alerts for all major events
+1. **Tutorial**: Follow the 5-step onboarding guide (first visit only)
+2. **Buy Animals**: Click animal buttons (ensure sufficient funds)
+3. **Watch Movement**: Animals wander around with collision detection
+4. **Collect Resources**: Wait 3 seconds, see badges appear on animals
+5. **Sell Resources**: Click "Sell" or "Sell All" buttons in resources panel
+6. **Maintain Farm**: Repair fences and heal animals as needed
+7. **Use Shortcuts**: Press Space (pause), R (repair), H (heal), ? (tutorial)
+8. **Observe Cycle**: Watch day/night transition and time progression
+9. **Get Notifications**: Receive toast alerts for all major events
+
+## Latest Additions (Playtesting Readiness)
+
+### User Experience Enhancements
+
+- **Tutorial Overlay**: 5-step guided onboarding with localStorage persistence
+- **Keyboard Shortcuts**:
+  - Space/P: Pause/Resume
+  - R: Repair Fences ($50)
+  - H: Heal Animals ($100)
+  - ?: Restart Tutorial
+- **Help Panel**: In-game reference for keyboard controls
+- **Bulk Selling**: "Sell All" buttons for each resource type
+
+### Visual Polish
+
+- **Enhanced Depth Sorting**: 10x z-index granularity (y \* 10)
+- **Animal Scaling**: Unique scale transforms per animal type
+  - Cow: 1.1x (larger)
+  - Sheep: 1.1x (larger)
+  - Pig: 1.05x (medium)
+  - Chicken: 0.95x (smaller)
+- **3D Barn**: perspective(400px) rotateX(5deg) with shadow underneath
+- **Custom Animations**: Float and glow keyframes in globals.css
+
+### Performance Optimizations
+
+- **React.memo**: Entity component wrapped for reduced re-renders
+- **useMemo**: Style calculations and sky gradient memoized
+- **useCallback**: Sky gradient function optimized
+- **60 FPS Game Loop**: Smooth requestAnimationFrame with delta time
 
 ## Commits in Phase 1
 
@@ -165,13 +198,27 @@ Visit: `http://localhost:3000/farm`
 3. Resource production and selling system
 4. Animal purchasing with costs
 5. Notification system for game events
+6. Dependency updates (GitHub Actions, Tailwind CSS 4)
+7. TypeScript strict mode fixes
+8. Code review feedback (magic numbers)
+9. Playtesting readiness features (tutorial, shortcuts, bulk sell, performance)
 
 ## File Count
 
-- **13 files created/modified**
-- **~1,500 lines of code**
+- **17 files created/modified**
+- **~2,000 lines of code**
 - **7 major features completed**
+- **4 UX enhancements added**
+- **Performance optimizations applied**
+
+## Documentation
+
+- **FARM-TYCOON.md**: Vision and roadmap
+- **FARM-TYCOON-PHASE1-SUMMARY.md**: This implementation summary
+- **PLAYTESTING-GUIDE.md**: Guide for user testing
 
 ---
 
-**Status**: ✅ Phase 1 Complete - Ready for Phase 2 development or user testing/feedback
+**Status**: ✅ Phase 1 Complete - **READY FOR PLAYTESTING** 🎮
+
+See `PLAYTESTING-GUIDE.md` for testing instructions and feedback template.

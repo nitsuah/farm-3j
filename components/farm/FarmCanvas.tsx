@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo, useCallback } from 'react';
 import { useFarm } from '@/lib/farm/FarmContext';
 import { Entity } from './Entity';
 import { wander, updateTime, shouldAdvanceDay } from '@/lib/farm/gameLogic';
@@ -84,8 +84,8 @@ export function FarmCanvas() {
     dispatch,
   ]);
 
-  // Calculate sky color based on time of day
-  const getSkyGradient = () => {
+  // Calculate sky color based on time of day - memoized to avoid recalculation
+  const getSkyGradient = useCallback(() => {
     const hour = state.time;
     if (hour >= 6 && hour < 12) {
       // Morning - light blue to bright blue
@@ -100,15 +100,20 @@ export function FarmCanvas() {
       // Night - dark blue to dark purple
       return 'from-indigo-900 via-purple-900 to-slate-900';
     }
-  };
+  }, [state.time]);
 
-  const isNight = state.time < 6 || state.time >= 20;
+  const isNight = useMemo(
+    () => state.time < 6 || state.time >= 20,
+    [state.time]
+  );
+
+  const skyGradient = getSkyGradient();
 
   return (
     <div className="relative h-full w-full overflow-hidden rounded-lg shadow-2xl">
       {/* Sky gradient background with day/night cycle */}
       <div
-        className={`absolute inset-0 bg-gradient-to-b ${getSkyGradient()} transition-colors duration-1000`}
+        className={`absolute inset-0 bg-gradient-to-b ${skyGradient} transition-colors duration-1000`}
       />
 
       {/* Stars at night */}

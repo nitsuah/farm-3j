@@ -1,28 +1,31 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Entity as EntityType } from '@/lib/farm/types';
 
 interface EntityProps {
   entity: EntityType;
 }
 
-export function Entity({ entity }: EntityProps) {
+export const Entity = React.memo(function Entity({ entity }: EntityProps) {
   const rotation = entity.direction ? (entity.direction * 180) / Math.PI : 0;
   const isMoving = entity.velocity && entity.velocity > 0;
   const hasResources = entity.inventory && entity.inventory > 0;
 
-  const style: React.CSSProperties = {
-    position: 'absolute',
-    left: `${entity.x}%`,
-    top: `${entity.y}%`,
-    transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
-    transition: 'left 0.1s linear, top 0.1s linear, transform 0.1s linear',
-    zIndex: Math.floor(entity.y),
-    filter: isMoving
-      ? 'drop-shadow(2px 4px 6px rgba(0,0,0,0.3))'
-      : 'drop-shadow(1px 2px 3px rgba(0,0,0,0.2))',
-  };
+  const style: React.CSSProperties = useMemo(
+    () => ({
+      position: 'absolute',
+      left: `${entity.x}%`,
+      top: `${entity.y}%`,
+      transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
+      transition: 'left 0.1s linear, top 0.1s linear, transform 0.1s linear',
+      zIndex: Math.floor(entity.y * 10), // Better depth sorting with more granularity
+      filter: isMoving
+        ? 'drop-shadow(2px 4px 6px rgba(0,0,0,0.3))'
+        : 'drop-shadow(1px 2px 3px rgba(0,0,0,0.2))',
+    }),
+    [entity.x, entity.y, rotation, isMoving]
+  );
 
   // Different rendering based on entity type
   const getEntityContent = () => {
@@ -33,6 +36,7 @@ export function Entity({ entity }: EntityProps) {
             className={`flex h-12 w-12 items-center justify-center rounded-lg border-2 border-black bg-white text-3xl ${
               isMoving ? 'animate-bounce' : ''
             }`}
+            style={{ transform: 'scale(1.1)' }}
           >
             🐄
           </div>
@@ -43,6 +47,7 @@ export function Entity({ entity }: EntityProps) {
             className={`flex h-8 w-8 items-center justify-center rounded-lg border-2 border-orange-400 bg-white text-xl ${
               isMoving ? 'animate-pulse' : ''
             }`}
+            style={{ transform: 'scale(0.95)' }}
           >
             🐔
           </div>
@@ -53,6 +58,7 @@ export function Entity({ entity }: EntityProps) {
             className={`flex h-10 w-10 items-center justify-center rounded-lg border-2 border-pink-400 bg-pink-200 text-2xl ${
               isMoving ? 'animate-bounce' : ''
             }`}
+            style={{ transform: 'scale(1.05)' }}
           >
             🐷
           </div>
@@ -63,6 +69,7 @@ export function Entity({ entity }: EntityProps) {
             className={`flex h-10 w-10 items-center justify-center rounded-lg border-2 border-gray-400 bg-white text-2xl ${
               isMoving ? 'animate-bounce' : ''
             }`}
+            style={{ transform: 'scale(1.1)' }}
           >
             🐑
           </div>
@@ -71,9 +78,13 @@ export function Entity({ entity }: EntityProps) {
         return (
           <div
             className="relative rounded-t-3xl border-4 border-red-800 bg-red-600 shadow-2xl"
-            style={{ width: entity.width, height: entity.height }}
+            style={{
+              width: entity.width,
+              height: entity.height,
+              transform: 'perspective(400px) rotateX(5deg)',
+            }}
           >
-            <div className="absolute left-1/2 top-0 h-12 w-16 -translate-x-1/2 rounded-t-2xl border-4 border-red-900 bg-red-800" />
+            <div className="absolute top-0 left-1/2 h-12 w-16 -translate-x-1/2 rounded-t-2xl border-4 border-red-900 bg-red-800" />
             <div className="flex h-3/4 w-full items-center justify-center border-b-4 border-red-800 bg-red-700">
               <div className="h-2/3 w-1/3 rounded-t-lg border-2 border-amber-950 bg-amber-900" />
             </div>
@@ -81,6 +92,8 @@ export function Entity({ entity }: EntityProps) {
               <div className="h-12 w-6 rounded border-2 border-amber-950 bg-amber-900" />
               <div className="h-12 w-6 rounded border-2 border-amber-950 bg-amber-900" />
             </div>
+            {/* Shadow underneath */}
+            <div className="absolute -bottom-2 left-1/2 h-3 w-3/4 -translate-x-1/2 rounded-full bg-black/20 blur-sm" />
           </div>
         );
       case 'fence':
@@ -107,10 +120,10 @@ export function Entity({ entity }: EntityProps) {
       {getEntityContent()}
       {/* Resource indicator */}
       {hasResources && (
-        <div className="absolute -right-2 -top-2 flex h-5 w-5 animate-bounce items-center justify-center rounded-full border-2 border-yellow-600 bg-yellow-400 text-xs font-bold">
+        <div className="absolute -top-2 -right-2 flex h-5 w-5 animate-bounce items-center justify-center rounded-full border-2 border-yellow-600 bg-yellow-400 text-xs font-bold">
           {entity.inventory}
         </div>
       )}
     </div>
   );
-}
+});

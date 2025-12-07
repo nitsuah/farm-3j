@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useFarm } from '@/lib/farm/FarmContext';
 
 export type NotificationType = 'success' | 'warning' | 'error' | 'info';
@@ -96,5 +96,3 @@ export function useFarmNotifications() {
     }
   }, [state.money]);
 }
-
-import { useState } from 'react';
