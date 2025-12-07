@@ -70,9 +70,9 @@ export default function RootLayout({
           </nav>
         </header>
         {children}
-        <footer className="bg-green-900 py-4 text-white">
+        <footer className="bg-green-900 py-1 text-white">
           <div className="container mx-auto px-4 text-center">
-            <p className="text-sm">
+            <p className="text-xs">
               &copy; 2025 Pretty Good Farm. All rights reserved.
             </p>
           </div>

@@ -4,18 +4,18 @@ import { SustainableFarmScene } from '@/components/animations/SustainableFarmSce
 
 export default function Home() {
   return (
-    <main className="h-[calc(100vh-13rem)] overflow-hidden">
-      {/* Hero section with gradient background */}
-      <section className="relative h-1/2 overflow-hidden">
+    <main className="flex h-[calc(100vh-12rem)] flex-col overflow-hidden">
+      {/* Hero section with gradient background - 75% of space */}
+      <section className="relative flex-[3] overflow-hidden">
         {/* Simple gradient background */}
         <div className="absolute inset-0 bg-gradient-to-b from-sky-300 to-green-200 dark:from-sky-950 dark:to-green-950" />
 
         {/* Hero content */}
         <div className="relative z-10 flex h-full flex-col items-center justify-center">
-          <h1 className="mb-2 text-5xl font-bold text-green-900 drop-shadow-lg dark:text-white">
+          <h1 className="mb-0.5 text-5xl font-bold text-green-900 drop-shadow-lg dark:text-white">
             Pretty Good Farm
           </h1>
-          <p className="mx-auto mb-4 max-w-2xl text-xl text-green-800 drop-shadow dark:text-green-200">
+          <p className="mx-auto mb-1 max-w-2xl text-xl text-green-800 drop-shadow dark:text-green-200">
             Fresh, locally-grown produce and sustainable farming practices.
           </p>
           <div className="flex gap-4">
@@ -35,15 +35,15 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Feature cards section */}
-      <section className="grid h-1/2 grid-cols-3 gap-1">
+      {/* Feature cards section - 25% of space */}
+      <section className="grid flex-[1] grid-cols-3 gap-1">
         {/* Card 1 - Fresh Produce */}
         <div className="relative flex flex-col overflow-hidden bg-white dark:bg-gray-900">
-          <div className="h-1/2">
+          <div className="h-3/4">
             <GrowingCropScene />
           </div>
-          <div className="flex-1 p-3">
-            <h3 className="mb-1 text-lg font-bold text-green-900 dark:text-white">
+          <div className="h-1/4 p-2">
+            <h3 className="text-sm font-bold text-green-900 dark:text-white">
               Fresh Produce
             </h3>
             <p className="text-xs text-green-700 dark:text-green-300">
@@ -55,11 +55,11 @@ export default function Home() {
 
         {/* Card 2 - Local Community */}
         <div className="relative flex flex-col overflow-hidden bg-white dark:bg-gray-900">
-          <div className="h-1/2">
+          <div className="h-3/4">
             <IsometricTownScene buildings={3} />
           </div>
-          <div className="flex-1 p-3">
-            <h3 className="mb-1 text-lg font-bold text-green-900 dark:text-white">
+          <div className="h-1/4 p-2">
+            <h3 className="text-sm font-bold text-green-900 dark:text-white">
               Local Community
             </h3>
             <p className="text-xs text-green-700 dark:text-green-300">
@@ -70,11 +70,11 @@ export default function Home() {
 
         {/* Card 3 - Sustainable Farming */}
         <div className="relative flex flex-col overflow-hidden bg-white dark:bg-gray-900">
-          <div className="h-1/2">
+          <div className="h-3/4">
             <SustainableFarmScene />
           </div>
-          <div className="flex-1 p-3">
-            <h3 className="mb-1 text-lg font-bold text-green-900 dark:text-white">
+          <div className="h-1/4 p-2">
+            <h3 className="text-sm font-bold text-green-900 dark:text-white">
               Sustainable Farming
             </h3>
             <p className="text-xs text-green-700 dark:text-green-300">
