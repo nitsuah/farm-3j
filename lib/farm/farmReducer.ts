@@ -1,4 +1,5 @@
 import { FarmState, FarmAction } from './types';
+import { createFencePerimeter } from './structures';
 
 export const initialFarmState: FarmState = {
   entities: [
@@ -8,18 +9,13 @@ export const initialFarmState: FarmState = {
       type: 'barn',
       x: 50,
       y: 40,
+      gridX: 10,
+      gridY: 10,
       width: 200,
       height: 180,
     },
-    // Fences around the perimeter
-    {
-      id: 'fence-1',
-      type: 'fence',
-      x: 10,
-      y: 10,
-      width: 80,
-      height: 10,
-    },
+    // Add fence perimeter
+    ...createFencePerimeter(),
   ],
   money: 5876,
   day: 27,

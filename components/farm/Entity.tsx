@@ -97,11 +97,41 @@ export const Entity = React.memo(function Entity({ entity }: EntityProps) {
           </div>
         );
       case 'fence':
+        const fenceHealth = entity.health || 100;
+        const fenceColor =
+          fenceHealth > 70
+            ? 'bg-amber-700 border-amber-900'
+            : fenceHealth > 30
+              ? 'bg-amber-800 border-amber-950'
+              : 'bg-red-900 border-red-950';
         return (
           <div
-            className="border-2 border-amber-900 bg-amber-700"
+            className={`rounded-sm border-2 ${fenceColor} relative shadow-md`}
             style={{ width: entity.width, height: entity.height }}
-          />
+          >
+            {/* Fence post markers */}
+            {entity.orientation === 'horizontal' ? (
+              <>
+                <div className="absolute top-1/2 left-0 h-3 w-2 -translate-y-1/2 bg-amber-950" />
+                <div className="absolute top-1/2 right-0 h-3 w-2 -translate-y-1/2 bg-amber-950" />
+              </>
+            ) : (
+              <>
+                <div className="absolute top-0 left-1/2 h-2 w-3 -translate-x-1/2 bg-amber-950" />
+                <div className="absolute bottom-0 left-1/2 h-2 w-3 -translate-x-1/2 bg-amber-950" />
+              </>
+            )}
+          </div>
+        );
+      case 'trough':
+        return (
+          <div
+            className="relative rounded-lg border-2 border-gray-600 bg-gray-400 shadow-md"
+            style={{ width: entity.width, height: entity.height }}
+          >
+            <div className="absolute inset-1 rounded bg-gray-500" />
+            <div className="absolute right-1 bottom-1 left-1 h-2 rounded-b bg-blue-300 opacity-60" />
+          </div>
         );
       case 'pond':
         return (

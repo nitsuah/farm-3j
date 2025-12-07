@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useMemo, useCallback } from 'react';
 import { useFarm } from '@/lib/farm/FarmContext';
 import { Entity } from './Entity';
+import { IsometricGrid } from './IsometricGrid';
 import { wander, updateTime, shouldAdvanceDay } from '@/lib/farm/gameLogic';
 import { GAME_CONFIG } from '@/lib/farm/constants';
 
@@ -133,29 +134,8 @@ export function FarmCanvas() {
         </div>
       )}
 
-      {/* Ground layer with grass texture */}
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage: `repeating-linear-gradient(
-            90deg,
-            transparent,
-            transparent 10px,
-            rgba(34, 197, 94, 0.1) 10px,
-            rgba(34, 197, 94, 0.1) 20px
-          ),
-          repeating-linear-gradient(
-            0deg,
-            transparent,
-            transparent 10px,
-            rgba(34, 197, 94, 0.1) 10px,
-            rgba(34, 197, 94, 0.1) 20px
-          )`,
-          backgroundColor: isNight
-            ? 'rgba(22, 101, 52, 0.8)'
-            : 'rgba(34, 197, 94, 0.6)',
-        }}
-      />
+      {/* Isometric terrain grid */}
+      <IsometricGrid showGrid={false} />
 
       {/* Render all entities */}
       {state.entities.map(entity => (

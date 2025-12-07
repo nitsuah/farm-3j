@@ -7,6 +7,7 @@ export type EntityType =
   | 'sheep'
   | 'barn'
   | 'fence'
+  | 'trough'
   | 'pond';
 
 export interface Entity {
@@ -14,6 +15,8 @@ export interface Entity {
   type: EntityType;
   x: number; // Position in pixels or percentage
   y: number;
+  gridX?: number; // Grid position for isometric rendering
+  gridY?: number;
   width?: number;
   height?: number;
   velocity?: number; // Movement speed for animated entities
@@ -21,6 +24,8 @@ export interface Entity {
   lastUpdate?: number; // Timestamp for animation frame tracking
   lastProduced?: number; // Timestamp of last resource production
   inventory?: number; // Resource inventory count
+  health?: number; // Entity health (for fences, buildings)
+  orientation?: 'horizontal' | 'vertical'; // For fence segments
 }
 
 export interface FarmState {

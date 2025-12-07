@@ -4,10 +4,17 @@ import React, { useState } from 'react';
 import { useFarm } from '@/lib/farm/FarmContext';
 import { spawnAnimal } from '@/lib/farm/spawner';
 import { addNotification } from '@/lib/farm/notifications';
+import { EditorToolbar, EditorMode } from './EditorToolbar';
+import { BuildPanel } from './BuildPanel';
+import { AnimalPanel } from './AnimalPanel';
 
 export function FarmEditor() {
   const { state, dispatch } = useFarm();
   const [showHelp, setShowHelp] = useState(false);
+  const [editorMode, setEditorMode] = useState<EditorMode>('select');
+  const [animationSpeed, setAnimationSpeed] = useState(1.0);
+  const [selectedBuildItem, setSelectedBuildItem] = useState<any>(null);
+  const [selectedAnimal, setSelectedAnimal] = useState<any>(null);
 
   const handleSpawnAnimal = (type: 'cow' | 'chicken' | 'pig' | 'sheep') => {
     const costs = { cow: 500, chicken: 100, pig: 300, sheep: 400 };
@@ -58,19 +65,52 @@ export function FarmEditor() {
     }
   };
 
-  const animalCounts = {
-    cow: state.entities.filter(e => e.type === 'cow').length,
-    chicken: state.entities.filter(e => e.type === 'chicken').length,
-    pig: state.entities.filter(e => e.type === 'pig').length,
-    sheep: state.entities.filter(e => e.type === 'sheep').length,
-  };
-
   return (
     <div className="rounded-lg bg-gray-800 p-4 text-white shadow-xl">
       <h2 className="mb-4 text-2xl font-bold text-green-400">🌾 Farm Editor</h2>
 
-      {/* Control Buttons */}
+      {/* Editor Mode Toolbar */}
       <div className="mb-6">
+        <EditorToolbar
+          mode={editorMode}
+          onModeChange={mode => {
+            setEditorMode(mode);
+            setSelectedBuildItem(null);
+            setSelectedAnimal(null);
+          }}
+          animationSpeed={animationSpeed}
+          onAnimationSpeedChange={setAnimationSpeed}
+        />
+      </div>
+
+      {/* Mode-specific content */}
+      <div className="mb-6">
+        {editorMode === 'build' && (
+          <BuildPanel
+            money={state.money}
+            onItemSelect={setSelectedBuildItem}
+            selectedItem={selectedBuildItem}
+          />
+        )}
+        {editorMode === 'animals' && (
+          <AnimalPanel
+            money={state.money}
+            onAnimalSelect={setSelectedAnimal}
+            selectedAnimal={selectedAnimal}
+          />
+        )}
+        {editorMode === 'select' && (
+          <div className="rounded bg-gray-700/50 p-4 text-sm text-gray-300">
+            <p>Click on entities to select and move them.</p>
+            <p className="mt-2 text-xs text-gray-400">
+              This feature is coming soon!
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Control Buttons */}
+      <div className="mb-6 border-t border-gray-700 pt-4">
         <h3 className="mb-2 text-lg font-semibold">Controls</h3>
         <div className="flex flex-col gap-2">
           <button
@@ -132,45 +172,6 @@ export function FarmEditor() {
             </ul>
           </div>
         )}
-      </div>
-
-      {/* Spawn Animals Section */}
-      <div className="mb-6">
-        <h3 className="mb-2 text-lg font-semibold">🐄 Buy Animals</h3>
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            onClick={() => handleSpawnAnimal('cow')}
-            disabled={state.money < 500}
-            className="rounded bg-blue-600 px-4 py-2 font-semibold transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-600"
-          >
-            <div>🐄 Cow</div>
-            <div className="text-xs">$500 ({animalCounts.cow})</div>
-          </button>
-          <button
-            onClick={() => handleSpawnAnimal('chicken')}
-            disabled={state.money < 100}
-            className="rounded bg-orange-600 px-4 py-2 font-semibold transition-colors hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-gray-600"
-          >
-            <div>🐔 Chicken</div>
-            <div className="text-xs">$100 ({animalCounts.chicken})</div>
-          </button>
-          <button
-            onClick={() => handleSpawnAnimal('pig')}
-            disabled={state.money < 300}
-            className="rounded bg-pink-600 px-4 py-2 font-semibold transition-colors hover:bg-pink-700 disabled:cursor-not-allowed disabled:bg-gray-600"
-          >
-            <div>🐷 Pig</div>
-            <div className="text-xs">$300 ({animalCounts.pig})</div>
-          </button>
-          <button
-            onClick={() => handleSpawnAnimal('sheep')}
-            disabled={state.money < 400}
-            className="rounded bg-gray-600 px-4 py-2 font-semibold transition-colors hover:bg-gray-700 disabled:cursor-not-allowed disabled:bg-gray-600"
-          >
-            <div>🐑 Sheep</div>
-            <div className="text-xs">$400 ({animalCounts.sheep})</div>
-          </button>
-        </div>
       </div>
 
       {/* Stats Display */}
