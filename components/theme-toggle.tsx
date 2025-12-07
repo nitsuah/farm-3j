@@ -22,6 +22,7 @@ export function ThemeToggle() {
 
   const toggleTheme = () => {
     const newTheme = !isDark;
+    alert(`Toggling from ${isDark} to ${newTheme}`); // Debug
     setIsDark(newTheme);
     localStorage.setItem('theme', newTheme ? 'dark' : 'light');
 
