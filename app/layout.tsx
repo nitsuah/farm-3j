@@ -34,7 +34,7 @@ export default function RootLayout({
         <header className="bg-white shadow-sm dark:bg-green-900">
           <nav className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-green-900 dark:text-white">
+              <h1 className="text-2xl font-bold text-black dark:text-white">
                 Farm 3J
               </h1>
               <div className="flex items-center gap-6">
