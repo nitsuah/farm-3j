@@ -8,7 +8,7 @@ import { GAME_CONFIG } from '@/lib/farm/constants';
 
 export function FarmCanvas() {
   const { state, dispatch } = useFarm();
-  const animationFrameRef = useRef<number>();
+  const animationFrameRef = useRef<number | null>(null);
   const lastUpdateRef = useRef<number>(Date.now());
 
   useEffect(() => {

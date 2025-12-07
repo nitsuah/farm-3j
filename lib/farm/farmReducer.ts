@@ -63,20 +63,27 @@ export function farmReducer(state: FarmState, action: FarmAction): FarmState {
     }
 
     case 'BATCH_UPDATE_POSITIONS': {
-      const updates = new Map(action.payload.map(p => [p.id, p]));
+      type UpdateType = {
+        id: string;
+        x: number;
+        y: number;
+        direction?: number;
+      };
+      const updates = new Map<string, UpdateType>(
+        action.payload.map((p: UpdateType) => [p.id, p])
+      );
       return {
         ...state,
         entities: state.entities.map(entity => {
           const update = updates.get(entity.id);
-          return update
-            ? {
-                ...entity,
-                x: update.x,
-                y: update.y,
-                direction: update.direction ?? entity.direction,
-                lastUpdate: Date.now(),
-              }
-            : entity;
+          if (!update) return entity;
+          return {
+            ...entity,
+            x: update.x,
+            y: update.y,
+            direction: update.direction ?? entity.direction,
+            lastUpdate: Date.now(),
+          };
         }),
       };
     }

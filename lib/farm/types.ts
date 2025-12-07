@@ -49,7 +49,10 @@ export type FarmAction =
   | { type: 'REMOVE_ENTITY'; payload: string }
   | { type: 'UPDATE_STATS'; payload: Partial }
   | { type: 'TOGGLE_PAUSE' }
-  | { type: 'BATCH_UPDATE_POSITIONS'; payload: Array }
+  | {
+      type: 'BATCH_UPDATE_POSITIONS';
+      payload: Array;
+    }
   | { type: 'PRODUCE_RESOURCES' }
   | {
       type: 'SELL_RESOURCE';
