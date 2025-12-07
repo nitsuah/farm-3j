@@ -3,6 +3,7 @@
 import React from 'react';
 import { useFarm } from '@/lib/farm/FarmContext';
 import { spawnAnimal } from '@/lib/farm/spawner';
+import { addNotification } from '@/lib/farm/notifications';
 
 export function FarmEditor() {
   const { state, dispatch } = useFarm();
@@ -12,12 +13,18 @@ export function FarmEditor() {
     const cost = costs[type];
 
     if (state.money < cost) {
-      return; // Can't afford
+      addNotification(
+        `❌ Not enough money! Need $${cost} to buy a ${type}.`,
+        'error',
+        3000
+      );
+      return;
     }
 
     const newAnimal = spawnAnimal(type);
     dispatch({ type: 'SPAWN_ANIMAL', payload: newAnimal });
     dispatch({ type: 'UPDATE_STATS', payload: { money: state.money - cost } });
+    addNotification(`✅ Purchased ${type} for $${cost}!`, 'success', 2000);
   };
 
   const handleTogglePause = () => {
@@ -33,6 +40,7 @@ export function FarmEditor() {
           money: state.money - 50,
         },
       });
+      addNotification('🔧 Fences repaired!', 'success', 2000);
     }
   };
 
@@ -45,6 +53,7 @@ export function FarmEditor() {
           money: state.money - 100,
         },
       });
+      addNotification('💊 Animals healed!', 'success', 2000);
     }
   };
 
@@ -189,15 +198,22 @@ export function FarmEditor() {
                   {amount}
                 </span>
                 <button
-                  onClick={() =>
+                  onClick={() => {
+                    const prices = { milk: 10, eggs: 5, meat: 20, wool: 15 };
+                    const price = prices[resource as keyof typeof prices];
                     dispatch({
                       type: 'SELL_RESOURCE',
                       payload: {
                         resource: resource as keyof typeof state.resources,
                         amount: 1,
                       },
-                    })
-                  }
+                    });
+                    addNotification(
+                      `💰 Sold ${resource} for $${price}!`,
+                      'success',
+                      2000
+                    );
+                  }}
                   disabled={amount < 1}
                   className="rounded bg-green-600 px-2 py-1 text-xs hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-600"
                 >

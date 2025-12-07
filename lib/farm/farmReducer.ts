@@ -177,6 +177,7 @@ export function farmReducer(state: FarmState, action: FarmAction): FarmState {
 
       const revenue = amount * prices[resource];
 
+      // Note: Notification is handled in the component to avoid import cycle
       return {
         ...state,
         money: state.money + revenue,
