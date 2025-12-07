@@ -46,6 +46,13 @@ export const GAME_CONFIG = {
   FENCE_DECAY_PER_DAY: 2,
   HEALTH_DECAY_PER_DAY: 1,
 
+  // Animal needs
+  HUNGER_INCREASE_PER_HOUR: 5, // Hunger increases by 5 per game hour
+  HAPPINESS_DECREASE_PER_HOUR: 2, // Happiness decreases by 2 per game hour
+  HUNGER_UNHAPPY_THRESHOLD: 60, // Animals become unhappy when hunger > 60
+  HUNGER_STARVING_THRESHOLD: 80, // Animals start losing health when hunger > 80
+  HAPPINESS_PRODUCTION_THRESHOLD: 50, // Animals only produce when happiness > 50
+
   // Visual effects
   NIGHT_STAR_COUNT: 50,
 

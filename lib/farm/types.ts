@@ -26,6 +26,9 @@ export interface Entity {
   inventory?: number; // Resource inventory count
   health?: number; // Entity health (for fences, buildings)
   orientation?: 'horizontal' | 'vertical'; // For fence segments
+  hunger?: number; // Hunger level (0-100, 100 = starving)
+  happiness?: number; // Happiness level (0-100, 100 = very happy)
+  lastNeedUpdate?: number; // Timestamp of last need update
 }
 
 export interface FarmState {

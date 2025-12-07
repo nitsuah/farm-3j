@@ -43,7 +43,10 @@ function removeNotification(id: string) {
 }
 
 function notifyListeners() {
-  notificationListeners.forEach(listener => listener([...notificationQueue]));
+  notificationListeners.forEach(
+    (listener: (notifications: Notification[]) => void) =>
+      listener([...notificationQueue])
+  );
 }
 
 export function useNotifications() {
@@ -58,7 +61,9 @@ export function useNotifications() {
     listener(notificationQueue);
 
     return () => {
-      notificationListeners = notificationListeners.filter(l => l !== listener);
+      notificationListeners = notificationListeners.filter(
+        (l: (notifications: Notification[]) => void) => l !== listener
+      );
     };
   }, []);
 

@@ -4,7 +4,12 @@ import React, { useEffect, useRef, useMemo, useCallback } from 'react';
 import { useFarm } from '@/lib/farm/FarmContext';
 import { Entity } from './Entity';
 import { IsometricGrid } from './IsometricGrid';
-import { wander, updateTime, shouldAdvanceDay } from '@/lib/farm/gameLogic';
+import {
+  wander,
+  updateTime,
+  shouldAdvanceDay,
+  updateAnimalNeeds,
+} from '@/lib/farm/gameLogic';
 import { GAME_CONFIG } from '@/lib/farm/constants';
 
 interface FarmCanvasProps {
@@ -45,6 +50,30 @@ export function FarmCanvas({ showGrid = false }: FarmCanvasProps) {
 
       // Produce resources from animals
       dispatch({ type: 'PRODUCE_RESOURCES' });
+
+      // Update animal needs (hunger and happiness)
+      const needUpdates = state.entities
+        .map(entity => {
+          const updates = updateAnimalNeeds(entity, state.time);
+          if (updates) {
+            return { id: entity.id, ...updates };
+          }
+          return null;
+        })
+        .filter(Boolean);
+
+      if (needUpdates.length > 0) {
+        needUpdates.forEach(update => {
+          dispatch({
+            type: 'UPDATE_STATS',
+            payload: {
+              entities: state.entities.map(e =>
+                e.id === update?.id ? { ...e, ...update } : e
+              ),
+            },
+          });
+        });
+      }
 
       // Update positions for all animated entities (animals) using wander behavior
       const updates = state.entities

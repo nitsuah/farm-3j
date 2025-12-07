@@ -12,9 +12,14 @@ export const Entity = React.memo(function Entity({ entity }: EntityProps) {
   const isMoving = entity.velocity && entity.velocity > 0;
   const hasResources = entity.inventory && entity.inventory > 0;
 
-  const style: React.CSSProperties = useMemo(
+  // Determine if this is an animal type
+  const isAnimal = ['cow', 'chicken', 'pig', 'sheep'].includes(entity.type);
+  const showNeeds =
+    isAnimal && (entity.hunger !== undefined || entity.happiness !== undefined);
+
+  const style = useMemo(
     () => ({
-      position: 'absolute',
+      position: 'absolute' as const,
       left: `${entity.x}%`,
       top: `${entity.y}%`,
       transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
@@ -148,6 +153,57 @@ export const Entity = React.memo(function Entity({ entity }: EntityProps) {
   return (
     <div style={style}>
       {getEntityContent()}
+
+      {/* Need indicators for animals */}
+      {showNeeds && (
+        <div
+          className="absolute -top-8 left-1/2 flex -translate-x-1/2 gap-1"
+          style={{ transform: `translateX(-50%) rotate(${-rotation}deg)` }}
+        >
+          {/* Hunger indicator */}
+          {entity.hunger !== undefined && entity.hunger > 20 && (
+            <div className="flex flex-col items-center">
+              <div
+                className={`text-xs ${
+                  entity.hunger > 60 ? 'text-red-500' : 'text-yellow-500'
+                }`}
+              >
+                🍖
+              </div>
+              <div className="h-1 w-8 overflow-hidden rounded-full bg-gray-300">
+                <div
+                  className={`h-full ${
+                    entity.hunger > 60 ? 'bg-red-500' : 'bg-yellow-500'
+                  }`}
+                  style={{ width: `${entity.hunger}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Happiness indicator */}
+          {entity.happiness !== undefined && entity.happiness < 80 && (
+            <div className="flex flex-col items-center">
+              <div
+                className={`text-xs ${
+                  entity.happiness < 50 ? 'text-red-500' : 'text-blue-500'
+                }`}
+              >
+                {entity.happiness < 50 ? '😢' : '😐'}
+              </div>
+              <div className="h-1 w-8 overflow-hidden rounded-full bg-gray-300">
+                <div
+                  className={`h-full ${
+                    entity.happiness < 50 ? 'bg-red-500' : 'bg-blue-500'
+                  }`}
+                  style={{ width: `${entity.happiness}%` }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Resource indicator */}
       {hasResources && (
         <div className="absolute -top-2 -right-2 flex h-5 w-5 animate-bounce items-center justify-center rounded-full border-2 border-yellow-600 bg-yellow-400 text-xs font-bold">

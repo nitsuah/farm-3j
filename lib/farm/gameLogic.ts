@@ -1,4 +1,5 @@
 import { Entity } from './types';
+import { GAME_CONFIG } from './constants';
 
 // Grid system constants
 export const GRID_SIZE = 20; // 20x20 grid
@@ -120,4 +121,48 @@ export function updateTime(currentTime: number, deltaTime: number): number {
 // Day progression
 export function shouldAdvanceDay(oldTime: number, newTime: number): boolean {
   return oldTime > newTime; // Wrapped around midnight
+}
+
+// Update animal needs (hunger and happiness)
+export function updateAnimalNeeds(
+  entity: Entity,
+  currentTime: number
+): Partial | null {
+  // Only update animals, not structures
+  const animalTypes = ['cow', 'chicken', 'pig', 'sheep'];
+  if (!animalTypes.includes(entity.type)) {
+    return null;
+  }
+
+  // Initialize needs if not set
+  const hunger = entity.hunger ?? 0;
+  const happiness = entity.happiness ?? 100;
+  const lastNeedUpdate = entity.lastNeedUpdate ?? currentTime;
+
+  // Calculate time elapsed in game hours
+  const hoursElapsed = currentTime - lastNeedUpdate;
+
+  // Only update if enough time has passed (0.1 game hours = 1 second real time)
+  if (hoursElapsed < 0.1) {
+    return null;
+  }
+
+  // Update hunger (increases over time)
+  let newHunger = Math.min(
+    100,
+    hunger + GAME_CONFIG.HUNGER_INCREASE_PER_HOUR * hoursElapsed
+  );
+
+  // Update happiness (decreases over time, more so if hungry)
+  let happinessDecay = GAME_CONFIG.HAPPINESS_DECREASE_PER_HOUR * hoursElapsed;
+  if (newHunger > GAME_CONFIG.HUNGER_UNHAPPY_THRESHOLD) {
+    happinessDecay *= 2; // Unhappy animals lose happiness faster
+  }
+  let newHappiness = Math.max(0, happiness - happinessDecay);
+
+  return {
+    hunger: Number(newHunger.toFixed(1)),
+    happiness: Number(newHappiness.toFixed(1)),
+    lastNeedUpdate: currentTime,
+  };
 }

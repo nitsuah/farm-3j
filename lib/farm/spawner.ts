@@ -33,6 +33,9 @@ export function spawnAnimal(type: 'cow' | 'chicken' | 'pig' | 'sheep'): Entity {
     lastUpdate: Date.now(),
     lastProduced: Date.now(),
     inventory: 0,
+    hunger: 0, // Start with no hunger
+    happiness: 100, // Start fully happy
+    lastNeedUpdate: Date.now(),
   };
 }
 
