@@ -17,9 +17,12 @@
   - [x] Phase 1j: Resource production system (milk, eggs, meat, wool)
   - [x] Phase 1k: Selling mechanics with prices
   - [x] Phase 1l: Animal purchasing with costs
+  - [x] Phase 1m: Toast notification system for game events
   - [ ] Phase 2a: Animal needs system (hunger, happiness)
   - [ ] Phase 2b: Feeding mechanics with food inventory
   - [ ] Phase 2c: Grid coordinate system implementation
+  - [ ] Phase 2d: Advanced AI pathfinding
+  - [ ] Phase 2e: Fence placement tool
 - [ ] **Contact Form Enhancements:** Form validation, UI improvements
 - [ ] **Responsiveness Refinement:** Mobile/desktop optimization
 - [ ] **Basic SEO Optimization:** Meta descriptions, image alt text
