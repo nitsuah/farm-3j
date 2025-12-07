@@ -10,13 +10,17 @@ export function HeaderCropRow() {
   const [harvestedCrops, setHarvestedCrops] = useState<Set>(new Set());
 
   // Define 10 rows with different depths (scale and opacity for perspective)
-  const rows = Array.from({ length: 10 }, (_, rowIdx) => ({
-    depth: rowIdx,
-    bottom: 8 + rowIdx * 6, // Stack rows vertically
-    scale: 0.4 + rowIdx * 0.06, // Smaller in back, larger in front
-    opacity: 0.3 + rowIdx * 0.07, // Dimmer in back, brighter in front
-    cropCount: 20,
-  }));
+  // Row 0 is farthest (top, small), Row 9 is closest (bottom, large)
+  const rows = Array.from({ length: 10 }, (_, rowIdx) => {
+    const normalizedDepth = rowIdx / 9; // 0 (far) to 1 (near)
+    return {
+      depth: rowIdx,
+      bottom: 16 + (9 - rowIdx) * 5, // Far rows higher up, near rows lower
+      scale: 0.3 + normalizedDepth * 0.7, // 0.3 (far) to 1.0 (near)
+      opacity: 0.4 + normalizedDepth * 0.6, // 0.4 (far) to 1.0 (near)
+      cropCount: 20,
+    };
+  });
 
   useEffect(() => {
     // Show tractor after crops are fully grown (8 seconds)
@@ -53,8 +57,8 @@ export function HeaderCropRow() {
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-gradient-to-b from-sky-400 to-sky-200 dark:from-sky-900 dark:to-sky-800">
-      {/* Ground/Soil */}
-      <div className="absolute right-0 bottom-0 left-0 h-16 bg-amber-800 dark:bg-amber-950" />
+      {/* Ground/Soil with depth gradient */}
+      <div className="absolute right-0 bottom-0 left-0 h-20 bg-gradient-to-b from-amber-700 to-amber-900 dark:from-amber-900 dark:to-black" />
 
       {/* Multiple rows of crops at different depths */}
       {rows.map(row => (
