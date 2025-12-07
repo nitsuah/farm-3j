@@ -129,13 +129,30 @@ export const Entity = React.memo(function Entity({ entity }: EntityProps) {
           </div>
         );
       case 'trough':
+        const foodLevel = entity.foodLevel ?? 0;
+        const foodPercentage = foodLevel;
         return (
           <div
             className="relative rounded-lg border-2 border-gray-600 bg-gray-400 shadow-md"
             style={{ width: entity.width, height: entity.height }}
           >
             <div className="absolute inset-1 rounded bg-gray-500" />
-            <div className="absolute right-1 bottom-1 left-1 h-2 rounded-b bg-blue-300 opacity-60" />
+            {/* Food level indicator */}
+            <div
+              className="absolute right-1 bottom-1 left-1 rounded-b bg-amber-500 transition-all"
+              style={{ height: `${Math.max(10, foodPercentage * 0.6)}%` }}
+            />
+            {/* Food level percentage text */}
+            {foodLevel > 0 && (
+              <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white drop-shadow">
+                {Math.round(foodLevel)}%
+              </div>
+            )}
+            {foodLevel === 0 && (
+              <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-red-600">
+                Empty
+              </div>
+            )}
           </div>
         );
       case 'pond':

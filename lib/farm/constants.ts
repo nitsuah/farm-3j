@@ -53,6 +53,13 @@ export const GAME_CONFIG = {
   HUNGER_STARVING_THRESHOLD: 80, // Animals start losing health when hunger > 80
   HAPPINESS_PRODUCTION_THRESHOLD: 50, // Animals only produce when happiness > 50
 
+  // Trough and feeding
+  TROUGH_CAPACITY: 100, // Maximum food units in a trough
+  TROUGH_REFILL_COST: 20, // Cost to refill a trough
+  FEEDING_DISTANCE: 10, // Percentage distance to be considered "at" a trough
+  FEEDING_RATE: 30, // Hunger reduced per feeding session
+  HUNGER_SEEK_THRESHOLD: 50, // Animals seek food when hunger > 50
+
   // Visual effects
   NIGHT_STAR_COUNT: 50,
 

@@ -1,5 +1,6 @@
 import { Entity } from './types';
 import { gridToPercent } from './isometric';
+import { GAME_CONFIG } from './constants';
 
 /**
  * Create a fence entity at the specified grid position
@@ -40,6 +41,7 @@ export function createTrough(gridX: number, gridY: number): Entity {
     gridY,
     width: 40,
     height: 30,
+    foodLevel: GAME_CONFIG.TROUGH_CAPACITY, // Start with full food
   };
 }
 

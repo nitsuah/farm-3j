@@ -166,3 +166,67 @@ export function updateAnimalNeeds(
     lastNeedUpdate: currentTime,
   };
 }
+
+// Find nearest trough with food
+export function findNearestTrough(
+  animal: Entity,
+  troughs: Entity[]
+): Entity | null {
+  const troughsWithFood = troughs.filter(
+    t => t.type === 'trough' && (t.foodLevel ?? 0) > 0
+  );
+
+  if (troughsWithFood.length === 0) return null;
+
+  let nearest: Entity | null = null;
+  let minDistance = Infinity;
+
+  for (const trough of troughsWithFood) {
+    const distance = getDistance(animal, trough);
+    if (distance < minDistance) {
+      minDistance = distance;
+      nearest = trough;
+    }
+  }
+
+  return nearest;
+}
+
+// Check if animal can feed from trough
+export function canFeedFromTrough(animal: Entity, trough: Entity): boolean {
+  const distance = getDistance(animal, trough);
+  return distance < GAME_CONFIG.FEEDING_DISTANCE && (trough.foodLevel ?? 0) > 0;
+}
+
+// Feed animal from trough
+export function feedAnimal(
+  animal: Entity,
+  trough: Entity
+): { animal: Partial; trough: Partial } | null {
+  if (!canFeedFromTrough(animal, trough)) return null;
+
+  const currentHunger = animal.hunger ?? 0;
+  const currentFood = trough.foodLevel ?? 0;
+
+  // Reduce hunger
+  const newHunger = Math.max(0, currentHunger - GAME_CONFIG.FEEDING_RATE);
+
+  // Consume food from trough
+  const foodConsumed = Math.min(GAME_CONFIG.FEEDING_RATE, currentFood);
+  const newFoodLevel = currentFood - foodConsumed;
+
+  // Increase happiness when feeding
+  const currentHappiness = animal.happiness ?? 100;
+  const newHappiness = Math.min(100, currentHappiness + 10);
+
+  return {
+    animal: {
+      hunger: Number(newHunger.toFixed(1)),
+      happiness: Number(newHappiness.toFixed(1)),
+      isFeeding: true,
+    },
+    trough: {
+      foodLevel: Number(newFoodLevel.toFixed(1)),
+    },
+  };
+}

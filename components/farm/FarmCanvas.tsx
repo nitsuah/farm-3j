@@ -9,6 +9,9 @@ import {
   updateTime,
   shouldAdvanceDay,
   updateAnimalNeeds,
+  findNearestTrough,
+  feedAnimal,
+  moveTowards,
 } from '@/lib/farm/gameLogic';
 import { GAME_CONFIG } from '@/lib/farm/constants';
 
@@ -75,10 +78,82 @@ export function FarmCanvas({ showGrid = false }: FarmCanvasProps) {
         });
       }
 
-      // Update positions for all animated entities (animals) using wander behavior
+      // Handle feeding: animals seek troughs when hungry
+      const troughs = state.entities.filter(e => e.type === 'trough');
+      const animals = state.entities.filter(e =>
+        ['cow', 'chicken', 'pig', 'sheep'].includes(e.type)
+      );
+
+      animals.forEach(animal => {
+        const hunger = animal.hunger ?? 0;
+
+        // If hungry enough, try to feed
+        if (hunger > GAME_CONFIG.HUNGER_SEEK_THRESHOLD) {
+          const nearestTrough = findNearestTrough(animal, troughs);
+
+          if (nearestTrough) {
+            const feedResult = feedAnimal(animal, nearestTrough);
+
+            if (feedResult) {
+              // Update both animal and trough
+              dispatch({
+                type: 'UPDATE_STATS',
+                payload: {
+                  entities: state.entities.map(e => {
+                    if (e.id === animal.id) {
+                      return { ...e, ...feedResult.animal };
+                    }
+                    if (e.id === nearestTrough.id) {
+                      return { ...e, ...feedResult.trough };
+                    }
+                    return e;
+                  }),
+                },
+              });
+            }
+          }
+        } else {
+          // Not feeding anymore
+          if (animal.isFeeding) {
+            dispatch({
+              type: 'UPDATE_STATS',
+              payload: {
+                entities: state.entities.map(e =>
+                  e.id === animal.id ? { ...e, isFeeding: false } : e
+                ),
+              },
+            });
+          }
+        }
+      });
+
+      // Update positions for all animated entities (animals)
       const updates = state.entities
         .filter(entity => entity.velocity && entity.velocity > 0)
         .map(entity => {
+          const hunger = entity.hunger ?? 0;
+
+          // If hungry and not currently feeding, move towards nearest trough
+          if (hunger > GAME_CONFIG.HUNGER_SEEK_THRESHOLD && !entity.isFeeding) {
+            const nearestTrough = findNearestTrough(entity, troughs);
+            if (nearestTrough) {
+              const movement = moveTowards(
+                entity.x,
+                entity.y,
+                nearestTrough.x,
+                nearestTrough.y,
+                (entity.velocity || 0) * deltaTime * 10
+              );
+              return {
+                id: entity.id,
+                x: movement.x,
+                y: movement.y,
+                direction: movement.direction,
+              };
+            }
+          }
+
+          // Otherwise, use normal wander behavior
           const { x, y, direction } = wander(
             entity.x,
             entity.y,

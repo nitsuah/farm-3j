@@ -29,6 +29,8 @@ export interface Entity {
   hunger?: number; // Hunger level (0-100, 100 = starving)
   happiness?: number; // Happiness level (0-100, 100 = very happy)
   lastNeedUpdate?: number; // Timestamp of last need update
+  foodLevel?: number; // Food level for troughs (0-100)
+  isFeeding?: boolean; // Animal is currently feeding
 }
 
 export interface FarmState {
