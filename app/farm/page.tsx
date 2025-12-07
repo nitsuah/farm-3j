@@ -60,15 +60,20 @@ export default function FarmPage() {
         {/* Main Content */}
         <div className="grid h-[calc(100vh-180px)] grid-cols-1 gap-4 lg:grid-cols-4">
           {/* Farm Canvas - Takes up most space */}
-          <div className="relative h-full lg:col-span-3">
-            <FarmCanvas showGrid={showGrid} />
-            <GridInteraction
-              mode={editorMode}
-              selectedBuildItem={selectedBuildItem}
-              selectedAnimal={selectedAnimal}
-              onItemPlaced={handleItemPlaced}
-              showGrid={showGrid}
-            />
+          <div className="relative h-full overflow-hidden lg:col-span-3">
+            <div
+              className="relative"
+              style={{ width: '1200px', height: '800px', margin: '0 auto' }}
+            >
+              <FarmCanvas showGrid={showGrid} />
+              <GridInteraction
+                mode={editorMode}
+                selectedBuildItem={selectedBuildItem}
+                selectedAnimal={selectedAnimal}
+                onItemPlaced={handleItemPlaced}
+                showGrid={showGrid}
+              />
+            </div>
           </div>
 
           {/* Editor Panel - Sidebar */}
