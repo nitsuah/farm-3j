@@ -8,6 +8,7 @@ export function HeaderCropRow() {
   const [showTractor, setShowTractor] = useState(false);
   const [tractorPosition, setTractorPosition] = useState(-10);
   const [harvestedCrops, setHarvestedCrops] = useState<Set>(new Set());
+  const [cycleKey, setCycleKey] = useState(0); // Force re-render on cycle
 
   // Define 10 rows with different depths (scale and opacity for perspective)
   // Row 0 is farthest (top, small), Row 9 is closest (bottom, large)
@@ -24,26 +25,28 @@ export function HeaderCropRow() {
   });
 
   useEffect(() => {
-    // Show tractor after crops are fully grown (8 seconds)
-    const tractorTimer = setTimeout(() => {
+    // Complete cycle: grow (8s) → harvest (10s) → reset
+    const growTimer = setTimeout(() => {
       setShowTractor(true);
     }, 8000);
 
-    return () => clearTimeout(tractorTimer);
-  }, []);
+    const harvestTimer = setTimeout(() => {
+      setShowTractor(false);
+      setHarvestedCrops(new Set());
+      setTractorPosition(-10);
+    }, 18000); // 8s grow + 10s harvest
 
-  useEffect(() => {
-    if (showTractor) {
-      // Reset after harvest complete (10 seconds for tractor to cross)
-      const resetTimer = setTimeout(() => {
-        setShowTractor(false);
-        setHarvestedCrops(new Set());
-        setTractorPosition(-10);
-      }, 10000);
+    // Loop: restart cycle after complete
+    const loopTimer = setTimeout(() => {
+      setCycleKey(prev => prev + 1); // Trigger new cycle
+    }, 18500); // Small delay before restart
 
-      return () => clearTimeout(resetTimer);
-    }
-  }, [showTractor]);
+    return () => {
+      clearTimeout(growTimer);
+      clearTimeout(harvestTimer);
+      clearTimeout(loopTimer);
+    };
+  }, [cycleKey]); // Re-run when cycle restarts
 
   const handleTractorPositionChange = (pos: number) => {
     setTractorPosition(pos);
