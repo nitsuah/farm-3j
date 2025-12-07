@@ -22,15 +22,22 @@ export function ThemeToggle() {
 
   const toggleTheme = () => {
     const newTheme = !isDark;
-    alert(`Toggling from ${isDark} to ${newTheme}`); // Debug
     setIsDark(newTheme);
     localStorage.setItem('theme', newTheme ? 'dark' : 'light');
 
+    const html = document.documentElement;
     if (newTheme) {
-      document.documentElement.classList.add('dark');
+      html.classList.add('dark');
     } else {
-      document.documentElement.classList.remove('dark');
+      html.classList.remove('dark');
     }
+
+    // Force a re-render check
+    console.log('After toggle:', {
+      newTheme,
+      htmlClasses: html.classList.toString(),
+      bodyBgColor: window.getComputedStyle(document.body).backgroundColor,
+    });
   };
 
   // Prevent flash during SSR
