@@ -2,10 +2,18 @@
 
 ## Near Term (0-3 Months)
 
-- [ ] UI Overhaul - add interactive farm animals and farm site design
-- [ ] **Contact Form Enhancements:** Improve user experience of the contact form. Rationale: Address initial user feedback and improve lead generation. Scope: Form validation, UI improvements, submission confirmation. Success: Increased form submission rate, positive user feedback. Risks: Form usability issues persist.
-- [ ] **Responsiveness Refinement:** Ensure optimal viewing experience across devices. Rationale: Capture mobile users and improve accessibility. Scope: Testing and adjustments for common screen sizes. Success: Consistent layout and functionality on mobile and desktop. Risks: Unexpected layout issues on specific devices.
-- [ ] **Basic SEO Optimization:** Implement fundamental SEO practices. Rationale: Increase organic traffic and visibility. Scope: Meta descriptions, image alt text, basic keyword research (TODO: DEFINE KEYWORDS). Success: Increased website traffic from search engines. Risks: Limited impact due to competitive landscape.
+- [x] Configure ESLint and Prettier for code quality
+- [x] Fix CI/CD pipeline lint issues
+- [ ] **UI Overhaul - Farm Tycoon Interactive Homepage (IN PROGRESS)**
+  - [x] Phase 1a: State management with FarmContext and useReducer
+  - [ ] Phase 1b: FarmCanvas component with requestAnimationFrame game loop
+  - [ ] Phase 1c: Entity system (base, Animal, StaticAsset components)
+  - [ ] Phase 1d: FarmEditor control panel with spawn buttons
+  - [ ] Phase 1e: Animal sprites and CSS animations
+  - [ ] Phase 1f: Deploy to /farm route for testing
+- [ ] **Contact Form Enhancements:** Form validation, UI improvements
+- [ ] **Responsiveness Refinement:** Mobile/desktop optimization
+- [ ] **Basic SEO Optimization:** Meta descriptions, image alt text
 
 ## Mid Term (3-6 Months)
 

@@ -11,6 +11,12 @@ export default function Home() {
           </p>
           <div className="flex justify-center gap-4">
             <a
+              href="/farm"
+              className="rounded-lg bg-green-600 px-6 py-3 text-white transition-colors hover:bg-green-700"
+            >
+              🌾 Interactive Farm Demo
+            </a>
+            <a
               href="/about"
               className="rounded-lg bg-green-600 px-6 py-3 text-white transition-colors hover:bg-green-700"
             >
