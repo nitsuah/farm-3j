@@ -36,6 +36,8 @@ export function ThemeToggle() {
     console.log('After toggle:', {
       newTheme,
       htmlClasses: html.classList.toString(),
+      htmlHasDark: html.classList.contains('dark'),
+      bodyClasses: document.body.className,
       bodyBgColor: window.getComputedStyle(document.body).backgroundColor,
     });
   };
