@@ -4,21 +4,34 @@ Thank you for your interest in contributing! We welcome contributions from every
 
 ## 📋 Table of Contents
 
-- [Code of Conduct](#code-of-conduct)
-- [Getting Started](#getting-started)
-- [How to Contribute](#how-to-contribute)
-- [Development Setup](#development-setup)
-- [Pull Request Process](#pull-request-process)
-- [Coding Standards](#coding-standards)
-- [Testing](#testing)
-- [Linting](#linting)
-- [Reporting Bugs](#reporting-bugs)
-- [Suggesting Features](#suggesting-features)
-- [Releases](#releases)
-- [Issues](#issues)
-- [Pull Requests (PRs)](#pull-requests-prs)
-- [Branching](#branching)
-- [Commit Messages](#commit-messages)
+- [Contributing to farm-3j](#contributing-to-farm-3j)
+  - [📋 Table of Contents](#-table-of-contents)
+  - [🤝 Code of Conduct](#-code-of-conduct)
+  - [🚀 Getting Started](#-getting-started)
+  - [💡 How to Contribute](#-how-to-contribute)
+    - [Types of Contributions](#types-of-contributions)
+    - [Before You Start](#before-you-start)
+  - [🛠️ Development Setup](#️-development-setup)
+    - [Prerequisites](#prerequisites)
+    - [Installation](#installation)
+  - [🔄 Pull Request Process](#-pull-request-process)
+  - [📝 Coding Standards](#-coding-standards)
+    - [General Guidelines](#general-guidelines)
+    - [Language-Specific Standards](#language-specific-standards)
+    - [Testing](#testing)
+    - [Documentation](#documentation)
+  - [Testing Commands](#testing-commands)
+  - [Linting](#linting)
+  - [🐛 Reporting Bugs](#-reporting-bugs)
+  - [💡 Suggesting Features](#-suggesting-features)
+  - [Releases](#releases)
+  - [Issues](#issues)
+  - [Pull Requests (PRs)](#pull-requests-prs)
+  - [Branching](#branching)
+  - [Commit Messages](#commit-messages)
+  - [🙏 Recognition](#-recognition)
+  - [📄 License](#-license)
+  - [📧 Questions?](#-questions)
 
 ## 🤝 Code of Conduct
 
@@ -28,15 +41,20 @@ This project adheres to a Code of Conduct. By participating, you are expected to
 
 1. **Fork the repository** on GitHub
 2. **Clone your fork** locally:
+
    ```bash
    git clone https://github.com/YOUR_USERNAME/farm-3j.git
    cd farm-3j
    ```
+
 3. **Add the upstream repository**:
+
    ```bash
    git remote add upstream https://github.com/nitsuah/farm-3j.git
    ```
+
 4. **Create a new branch** for your changes:
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
@@ -155,7 +173,7 @@ npm run dev
 - Update CHANGELOG.md for notable changes
 - Include inline comments for complex logic
 
-## Testing
+## Testing Commands
 
 ```bash
 # Run all tests

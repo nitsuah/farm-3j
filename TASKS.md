@@ -14,7 +14,8 @@
 
 ## In Progress
 
-- [ ] Develop product catalog page (P1, L)
+- [ ] Review all files added by this PR and improve/fix deploys to work with latest vercel changes (P1, M)
+- [ ] Develop product catalog page with extensibility in mind for updates b2b/b2c, keep it simple products meat, eggs, milk, etc. (P1, L)
 - [ ] Integrate with email service for form submissions (P2, M)
 
 ## Done

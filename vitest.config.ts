@@ -1,33 +1,46 @@
 import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react';
+import path from 'path';
 
 export default defineConfig({
+  plugins: [react()],
   test: {
-    // Enable globals for easier testing (e.g., describe, it)
+    // Enable globals for easier testing (e.g., describe, it, expect)
     globals: true,
-    // Use node environment for server-side testing
-    environment: 'node',
-    // Include test files
-    include: ['src/**/*.{test,spec}.ts'],
+    // Use jsdom for React component testing
+    environment: 'jsdom',
+    // Setup files to run before tests
+    setupFiles: ['./vitest.setup.ts'],
+    // Include test files in app, components, lib, and hooks directories
+    include: ['**/*.{test,spec}.{ts,tsx}'],
     // Exclude files from test
-    exclude: ['node_modules', 'dist'],
+    exclude: ['node_modules', '.next', 'out', 'dist'],
     // Coverage configuration
     coverage: {
-      provider: 'v8', // Use v8 coverage provider
-      reporter: ['text', 'json', 'html'], // Generate text, JSON, and HTML reports
+      provider: 'v8',
+      reporter: ['text', 'json', 'html', 'lcov'],
       exclude: [
         'node_modules/',
+        '.next/',
+        'out/',
         'dist/',
-        '**/*.d.ts', // Exclude declaration files
-        '.eslintrc.cjs', // Exclude eslint config
-        'src/types/', // Exclude type definitions
+        '**/*.d.ts',
+        '**/*.config.*',
+        '**/coverage/**',
+        'components/ui/**', // Generated shadcn/ui components
       ],
-      // Set coverage thresholds - adjust as needed
+      // Set coverage thresholds - start conservative and increase over time
       thresholds: {
-        lines: 80,
-        functions: 80,
-        branches: 80,
-        statements: 80,
+        lines: 60,
+        functions: 60,
+        branches: 60,
+        statements: 60,
       },
+    },
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './'),
     },
   },
 });

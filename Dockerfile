@@ -1,17 +1,21 @@
-# Multi-stage Dockerfile for Node.js applications
-# Adjust base images and commands based on your specific needs
+# Multi-stage Dockerfile for Next.js with pnpm
+# Optimized for production deployments
 
 # ================================
 # Stage 1: Dependencies
 # ================================
 FROM node:20-alpine AS deps
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Copy package files for caching
-COPY package*.json ./
+# Install pnpm
+RUN npm install -g pnpm
 
-# Install dependencies (production only)
-RUN npm ci --only=production
+# Copy package files
+COPY package.json pnpm-lock.yaml ./
+
+# Install dependencies
+RUN pnpm install --frozen-lockfile
 
 # ================================
 # Stage 2: Builder
@@ -19,15 +23,20 @@ RUN npm ci --only=production
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Copy package files and install all dependencies (including devDependencies)
-COPY package*.json ./
-RUN npm ci
+# Install pnpm
+RUN npm install -g pnpm
 
-# Copy source code
+# Copy dependencies from deps stage
+COPY --from=deps /app/node_modules ./node_modules
+
+# Copy all source files
 COPY . .
 
+# Set environment variable for Next.js to generate standalone output
+ENV NEXT_TELEMETRY_DISABLED 1
+
 # Build the application
-RUN npm run build
+RUN pnpm run build
 
 # ================================
 # Stage 3: Runner
@@ -36,27 +45,32 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 
 # Set to production environment
-ENV NODE_ENV production
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
 # Create non-root user for security
 RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 appuser --ingroup nodejs
+RUN adduser --system --uid 1001 nextjs
 
-# Copy necessary files from previous stages
-COPY --from=deps --chown=appuser:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=appuser:nodejs /app/.next ./.next
-COPY --from=builder --chown=appuser:nodejs /app/public ./public
-COPY --from=builder --chown=appuser:nodejs /app/package*.json ./
+# Copy public folder for static files
+COPY --from=builder /app/public ./public
+
+# Create .next directory with correct permissions
+RUN mkdir .next
+RUN chown nextjs:nodejs .next
+
+# Copy Next.js build output
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 # Switch to non-root user
-USER appuser
+USER nextjs
 
 # Expose the application port
 EXPOSE 3000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
 
 # Start the application
-CMD ["npm", "start"]
+CMD ["node", "server.js"]

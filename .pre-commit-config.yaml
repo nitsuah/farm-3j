@@ -1,32 +1,33 @@
 repos:
   # General hooks
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v4.6.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-yaml
       - id: check-added-large-files
+        args: ['--maxkb=1000']
       - id: check-merge-conflict
+      - id: detect-private-key
 
-  # JavaScript/TypeScript hooks
-  - repo: https://github.com/stylistic-org/eslint-plugin
-    rev: v4.1.0 # Use a recent stable version
-    hooks:
-      - id: eslint
-        types: [typescript, javascript]
-        exclude: 'node_modules/' # Or specific files/dirs if needed
-        args: [--fix]
-
-  - repo: https://github.com/prettier/prettier
-    rev: 3.1.0 # Use a recent stable version
+  # Prettier for formatting
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.1.0
     hooks:
       - id: prettier
-        types: [typescript, javascript, css, json, markdown] # Adjust file types as needed
-        exclude: 'node_modules/' # Or specific files/dirs if needed
+        types_or: [javascript, jsx, ts, tsx, json, yaml, markdown, css]
+        exclude: '^(pnpm-lock\.yaml|package-lock\.json|\.next/|out/)'
+        additional_dependencies:
+          - prettier@3.1.0
 
-  # Security hooks
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+  # ESLint for linting (runs locally)
+  - repo: local
     hooks:
-      - id: detect-private-key
+      - id: eslint
+        name: eslint
+        entry: pnpm exec eslint
+        language: system
+        types: [javascript, jsx, ts, tsx]
+        exclude: '^(\.next/|out/|node_modules/)'
+        args: ['--fix', '--max-warnings=0']
