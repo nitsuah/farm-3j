@@ -16,6 +16,6 @@ const nextConfig = {
   reactStrictMode: true,
   // Optimize for production
   poweredByHeader: false,
-}
+};
 
-export default nextConfig
+export default nextConfig;

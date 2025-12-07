@@ -8,13 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - Implemented basic contact form structure.
 - Added initial styling for a clean and responsive layout.
 
 ### Changed
+
 - Refactored form submission logic for improved reliability.
 
 ### Fixed
+
 - Resolved minor styling issues on mobile devices.
 
 ### Deprecated
@@ -26,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - YYYY-MM-DD
 
 ### Added
+
 - Project initialization
 
 [Unreleased]: https://github.com/nitsuah/farm-3j/compare/v0.1.0...HEAD

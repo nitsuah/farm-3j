@@ -11,12 +11,17 @@ describe('Utils', () => {
     });
 
     it('handles conditional classes', () => {
-      const result = cn('base', true && 'conditional', false && 'hidden');
+      const condition1 = true;
+      const condition2 = false;
+      const result = cn(
+        'base',
+        condition1 && 'conditional',
+        condition2 && 'hidden'
+      );
       expect(result).toContain('base');
       expect(result).toContain('conditional');
       expect(result).not.toContain('hidden');
     });
-
     it('handles undefined and null values', () => {
       const result = cn('valid', undefined, null, 'another');
       expect(result).toBeTruthy();

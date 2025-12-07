@@ -3,21 +3,26 @@ import tseslint from 'typescript-eslint';
 import prettier from 'eslint-config-prettier';
 
 export default tseslint.config(
-  eslint.configs.recommended,
-  ...tseslint.configs.recommended,
-  prettier,
   {
     ignores: [
       'dist/',
       'node_modules/',
       'build/',
       '.next/',
+      '.next/**',
       'out/',
       'coverage/',
       '*.config.js',
       '*.config.mjs',
       '*.config.ts',
+      'scripts/**',
+      'public/**',
     ],
+  },
+  eslint.configs.recommended,
+  ...tseslint.configs.recommended,
+  prettier,
+  {
     languageOptions: {
       parserOptions: {
         ecmaVersion: 'latest',
