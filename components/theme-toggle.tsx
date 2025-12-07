@@ -26,20 +26,17 @@ export function ThemeToggle() {
     localStorage.setItem('theme', newTheme ? 'dark' : 'light');
 
     const html = document.documentElement;
+    const body = document.body;
+
     if (newTheme) {
       html.classList.add('dark');
+      // Force inline style as fallback
+      body.style.backgroundColor = 'black';
     } else {
       html.classList.remove('dark');
+      // Force inline style as fallback
+      body.style.backgroundColor = 'rgb(240, 253, 244)'; // green-50
     }
-
-    // Force a re-render check
-    console.log('After toggle:', {
-      newTheme,
-      htmlClasses: html.classList.toString(),
-      htmlHasDark: html.classList.contains('dark'),
-      bodyClasses: document.body.className,
-      bodyBgColor: window.getComputedStyle(document.body).backgroundColor,
-    });
   };
 
   // Prevent flash during SSR
