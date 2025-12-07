@@ -4,18 +4,18 @@ import { SustainableFarmScene } from '@/components/animations/SustainableFarmSce
 
 export default function Home() {
   return (
-    <main className="flex h-[calc(100vh-12rem)] flex-col overflow-hidden">
-      {/* Hero section with gradient background - 75% of space */}
-      <section className="relative flex-[3] overflow-hidden">
+    <main className="flex h-[calc(100vh-13rem)] flex-col overflow-hidden">
+      {/* Hero section with gradient background - 50% of space */}
+      <section className="relative flex-[1] overflow-hidden">
         {/* Simple gradient background */}
         <div className="absolute inset-0 bg-gradient-to-b from-sky-300 to-green-200 dark:from-sky-950 dark:to-green-950" />
 
         {/* Hero content */}
-        <div className="relative z-10 flex h-full flex-col items-center justify-center">
-          <h1 className="mb-0.5 text-5xl font-bold text-green-900 drop-shadow-lg dark:text-white">
+        <div className="relative z-10 flex h-full flex-col items-center justify-center gap-1">
+          <h1 className="text-5xl font-bold text-green-900 drop-shadow-lg dark:text-white">
             Pretty Good Farm
           </h1>
-          <p className="mx-auto mb-1 max-w-2xl text-xl text-green-800 drop-shadow dark:text-green-200">
+          <p className="mx-auto max-w-2xl text-xl text-green-800 drop-shadow dark:text-green-200">
             Fresh, locally-grown produce and sustainable farming practices.
           </p>
           <div className="flex gap-4">
@@ -36,50 +36,52 @@ export default function Home() {
       </section>
 
       {/* Feature cards section - 25% of space */}
-      <section className="grid flex-[1] grid-cols-3 gap-1">
+      <section className="grid flex-1 grid-cols-1 gap-1 md:grid-cols-3">
         {/* Card 1 - Fresh Produce */}
-        <div className="relative flex flex-col overflow-hidden bg-white dark:bg-gray-900">
-          <div className="h-3/4">
-            <GrowingCropScene />
-          </div>
-          <div className="h-1/4 p-2">
-            <h3 className="text-sm font-bold text-green-900 dark:text-white">
+        <div className="relative flex overflow-hidden border border-green-200 bg-white md:flex-col dark:border-gray-700 dark:bg-gray-800">
+          {/* Mobile: text on left (w-1/2), Desktop: text on top (h-2/5) */}
+          <div className="flex w-1/2 flex-col justify-center p-2 md:h-2/5 md:w-full">
+            <h3 className="text-sm font-bold text-green-900 dark:text-green-400">
               Fresh Produce
             </h3>
-            <p className="text-xs text-green-700 dark:text-green-300">
+            <p className="text-xs text-green-700 dark:text-green-200">
               Watch our crops grow! Seasonal vegetables and fruits grown with
               care.
             </p>
           </div>
+          {/* Mobile: animation on right (w-1/2), Desktop: animation on bottom (h-3/5) */}
+          <div className="w-1/2 md:h-3/5 md:w-full">
+            <GrowingCropScene />
+          </div>
         </div>
 
         {/* Card 2 - Local Community */}
-        <div className="relative flex flex-col overflow-hidden bg-white dark:bg-gray-900">
-          <div className="h-3/4">
-            <IsometricTownScene buildings={3} />
-          </div>
-          <div className="h-1/4 p-2">
-            <h3 className="text-sm font-bold text-green-900 dark:text-white">
+        <div className="relative flex overflow-hidden border border-green-200 bg-white md:flex-col dark:border-gray-700 dark:bg-gray-800">
+          <div className="flex w-1/2 flex-col justify-center p-2 md:h-2/5 md:w-full">
+            <h3 className="text-sm font-bold text-green-900 dark:text-green-400">
               Local Community
             </h3>
-            <p className="text-xs text-green-700 dark:text-green-300">
+            <p className="text-xs text-green-700 dark:text-green-200">
               Supporting our local community with quality, farm-fresh products.
             </p>
+          </div>
+          <div className="w-1/2 md:h-3/5 md:w-full">
+            <IsometricTownScene buildings={3} />
           </div>
         </div>
 
         {/* Card 3 - Sustainable Farming */}
-        <div className="relative flex flex-col overflow-hidden bg-white dark:bg-gray-900">
-          <div className="h-3/4">
-            <SustainableFarmScene />
-          </div>
-          <div className="h-1/4 p-2">
-            <h3 className="text-sm font-bold text-green-900 dark:text-white">
+        <div className="relative flex overflow-hidden border border-green-200 bg-white md:flex-col dark:border-gray-700 dark:bg-gray-800">
+          <div className="flex w-1/2 flex-col justify-center p-2 md:h-2/5 md:w-full">
+            <h3 className="text-sm font-bold text-green-900 dark:text-green-400">
               Sustainable Farming
             </h3>
-            <p className="text-xs text-green-700 dark:text-green-300">
+            <p className="text-xs text-green-700 dark:text-green-200">
               Solar, wind, and eco-friendly practices for a healthier future.
             </p>
+          </div>
+          <div className="w-1/2 md:h-3/5 md:w-full">
+            <SustainableFarmScene />
           </div>
         </div>
       </section>

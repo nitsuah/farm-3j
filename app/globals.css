@@ -33,6 +33,75 @@
     }
   }
 
+  @keyframes trickle {
+    0% {
+      transform: translateY(-10px);
+      opacity: 0.8;
+    }
+    100% {
+      transform: translateY(10px);
+      opacity: 0.2;
+    }
+  }
+
+  @keyframes waterfall {
+    0% {
+      transform: translateY(0);
+      opacity: 0.8;
+    }
+    100% {
+      transform: translateY(200px);
+      opacity: 0;
+    }
+  }
+
+  @keyframes lightning {
+    0%,
+    90%,
+    100% {
+      opacity: 0;
+    }
+    92%,
+    94%,
+    96% {
+      opacity: 1;
+    }
+    93%,
+    95% {
+      opacity: 0.3;
+    }
+  }
+
+  @keyframes birdFly {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-5px);
+    }
+  }
+
+  @keyframes raindrop {
+    0% {
+      transform: translateY(0) translateX(0);
+      opacity: 0.1;
+    }
+    30% {
+      opacity: 0.7;
+    }
+    70% {
+      opacity: 0.8;
+    }
+    95% {
+      opacity: 0.3;
+    }
+    100% {
+      transform: translateY(200px) translateX(-30px);
+      opacity: 0;
+    }
+  }
+
   .animate-slide-in-right {
     animation: slide-in-right 0.3s ease-out;
   }

@@ -38,41 +38,75 @@ export default function RootLayout({
 
           {/* Navigation overlay - positioned in sky portion */}
           <nav className="absolute top-0 right-0 left-0 z-10">
-            <div className="container mx-auto flex items-center justify-between px-4 py-3">
-              <div className="flex items-center gap-2 rounded-lg bg-black/30 px-3 py-1 backdrop-blur-sm">
-                <span className="text-2xl">🌾</span>
-                <h1 className="text-2xl font-bold text-white drop-shadow-lg">
-                  PG Farm
-                </h1>
-              </div>
-              <div className="flex items-center gap-6 rounded-lg bg-black/30 px-4 py-2 backdrop-blur-sm">
+            <div className="container mx-auto px-4 py-3">
+              {/* Desktop: horizontal layout */}
+              <div className="hidden items-center justify-between md:flex">
                 <a
                   href="/"
-                  className="font-medium text-white drop-shadow hover:text-green-200"
+                  className="flex items-center gap-2 rounded-lg bg-black/30 px-3 py-1 backdrop-blur-sm transition-colors hover:bg-black/40"
                 >
-                  Home
+                  <span className="text-2xl">🌾</span>
+                  <h1 className="text-2xl font-bold text-white drop-shadow-lg">
+                    PG Farm
+                  </h1>
                 </a>
+                <div className="flex items-center gap-6 rounded-lg bg-black/30 px-4 py-2 backdrop-blur-sm">
+                  <a
+                    href="/about"
+                    className="font-medium text-white drop-shadow hover:text-green-200"
+                  >
+                    About
+                  </a>
+                  <a
+                    href="/farm"
+                    className="font-medium text-white drop-shadow hover:text-green-200"
+                  >
+                    Farm Game
+                  </a>
+                </div>
+              </div>
+
+              {/* Mobile: vertical layout stacked on left */}
+              <div className="flex flex-col gap-2 md:hidden">
+                {/* PG Farm title - acts as home button */}
                 <a
-                  href="/about"
-                  className="font-medium text-white drop-shadow hover:text-green-200"
+                  href="/"
+                  className="flex w-fit items-center gap-2 rounded-lg bg-black/30 px-3 py-1 backdrop-blur-sm transition-colors hover:bg-black/40"
                 >
-                  About
+                  <span className="text-2xl">🌾</span>
+                  <h1 className="text-2xl font-bold text-white drop-shadow-lg">
+                    PG Farm
+                  </h1>
                 </a>
-                <a
-                  href="/farm"
-                  className="font-medium text-white drop-shadow hover:text-green-200"
-                >
-                  Farm Game
-                </a>
-                <ThemeToggle />
+
+                {/* Mobile nav buttons stacked vertically */}
+                <div className="flex w-fit flex-col gap-1">
+                  {/* About - question mark icon */}
+                  <a
+                    href="/about"
+                    className="flex items-center justify-center rounded-lg bg-black/30 p-2 backdrop-blur-sm transition-colors hover:bg-black/40"
+                    title="About"
+                  >
+                    <span className="text-xl text-white drop-shadow">❓</span>
+                  </a>
+
+                  {/* Farm Game - play icon */}
+                  <a
+                    href="/farm"
+                    className="flex items-center justify-center rounded-lg bg-black/30 p-2 backdrop-blur-sm transition-colors hover:bg-black/40"
+                    title="Play Farm Game"
+                  >
+                    <span className="text-xl text-white drop-shadow">▶️</span>
+                  </a>
+                </div>
               </div>
             </div>
           </nav>
         </header>
         {children}
-        <footer className="bg-green-900 py-1 text-white">
+        <footer className="bg-green-900 py-3 text-white">
           <div className="container mx-auto px-4 text-center">
-            <p className="text-xs">
+            <p className="text-sm">
               &copy; 2025 Pretty Good Farm. All rights reserved.
             </p>
           </div>

@@ -27,10 +27,10 @@ export function Tractor({
         const newPos =
           direction === 'right'
             ? prev >= 110
-              ? -10
+              ? 110 // Stop at end, don't loop
               : prev + 1
             : prev <= -10
-              ? 110
+              ? -10 // Stop at start, don't loop
               : prev - 1;
         return newPos;
       });

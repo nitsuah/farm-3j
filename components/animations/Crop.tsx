@@ -36,7 +36,7 @@ export function Crop({
     <div
       className="inline-block transition-all duration-500"
       style={{
-        transform: `scale(${0.5 + stage * 0.17})`,
+        transform: `scale(${0.5 + stage * 0.375})`, // 0.5 at stage 0, 2.0 at stage 3 (grows to 2x)
         opacity: 0.6 + stage * 0.1,
       }}
     >

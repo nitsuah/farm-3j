@@ -2,7 +2,7 @@
 
 ## Home page
 
-- header
+- header bar -
 - MIDDLE CARDS
   - produce -
   - community -
