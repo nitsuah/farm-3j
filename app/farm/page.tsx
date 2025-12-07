@@ -93,13 +93,7 @@ export default function FarmPage() {
 
         {/* Footer Info */}
         <footer className="mt-4 text-center text-sm text-gray-400">
-          <p>
-            Built with Next.js, React Context, and requestAnimationFrame • See{' '}
-            <code className="rounded bg-gray-700 px-2 py-1">
-              docs/FARM-TYCOON.md
-            </code>{' '}
-            for architecture details
-          </p>
+          <p></p>
         </footer>
       </div>
     </FarmProvider>
