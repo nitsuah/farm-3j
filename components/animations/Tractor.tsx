@@ -30,7 +30,7 @@ export function Tractor({ speed = 5, direction = 'right' }: TractorProps) {
       style={{
         left: `${position}%`,
         bottom: '10%',
-        transform: direction === 'left' ? 'scaleX(-1)' : 'none',
+        transform: direction === 'right' ? 'scaleX(-1)' : 'none',
       }}
     >
       🚜

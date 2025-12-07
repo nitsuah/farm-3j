@@ -1,6 +1,7 @@
 import type React from 'react';
 import '@/app/globals.css';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { HeaderCropRow } from '@/components/animations/HeaderCropRow';
 
 export const metadata = {
   title: 'Pretty Good Farm - Fresh Local Produce',
@@ -31,30 +32,34 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-green-50 dark:bg-black">
-        <header className="h-16 bg-white shadow-sm dark:bg-green-900">
-          <nav className="container mx-auto flex h-full items-center justify-between px-4">
-            <div className="flex items-center gap-2">
+        <header className="relative h-24 shadow-sm">
+          {/* Animated crop header background */}
+          <HeaderCropRow />
+
+          {/* Navigation overlay */}
+          <nav className="absolute inset-0 z-10 container mx-auto flex h-full items-center justify-between px-4">
+            <div className="flex items-center gap-2 rounded-lg bg-black/30 px-3 py-1 backdrop-blur-sm">
               <span className="text-2xl">🌾</span>
-              <h1 className="text-2xl font-bold text-black dark:text-white">
+              <h1 className="text-2xl font-bold text-white drop-shadow-lg">
                 PG Farm
               </h1>
             </div>
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-6 rounded-lg bg-black/30 px-4 py-2 backdrop-blur-sm">
               <a
                 href="/"
-                className="text-green-700 hover:text-green-900 dark:text-green-300 dark:hover:text-white"
+                className="font-medium text-white drop-shadow hover:text-green-200"
               >
                 Home
               </a>
               <a
                 href="/about"
-                className="text-green-700 hover:text-green-900 dark:text-green-300 dark:hover:text-white"
+                className="font-medium text-white drop-shadow hover:text-green-200"
               >
                 About
               </a>
               <a
                 href="/farm"
-                className="text-green-700 hover:text-green-900 dark:text-green-300 dark:hover:text-white"
+                className="font-medium text-white drop-shadow hover:text-green-200"
               >
                 Farm Game
               </a>
@@ -63,7 +68,7 @@ export default function RootLayout({
           </nav>
         </header>
         {children}
-        <footer className="h-16 bg-green-900 text-white">
+        <footer className="h-24 bg-green-900 text-white">
           <div className="container mx-auto flex h-full items-center justify-center px-4">
             <p className="text-sm">
               &copy; 2025 Pretty Good Farm. All rights reserved.

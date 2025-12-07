@@ -1,25 +1,21 @@
-import { Cornfield } from '@/components/animations/Cornfield';
 import { GrowingCropScene } from '@/components/animations/GrowingCropScene';
 import { IsometricTownScene } from '@/components/animations/IsometricTownScene';
 import { SustainableFarmScene } from '@/components/animations/SustainableFarmScene';
 
 export default function Home() {
   return (
-    <main className="h-[calc(100vh-4rem)] overflow-hidden">
-      {/* Hero section with animated cornfield background */}
+    <main className="h-[calc(100vh-8rem)] overflow-hidden">
+      {/* Hero section with gradient background */}
       <section className="relative h-1/2 overflow-hidden">
-        {/* Animated background */}
-        <div className="absolute inset-0 bg-gradient-to-b from-sky-300 to-green-200 dark:from-sky-950 dark:to-green-950">
-          <Cornfield rows={5} cols={12} withTractor={true} />
-        </div>
+        {/* Simple gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-b from-sky-300 to-green-200 dark:from-sky-950 dark:to-green-950" />
 
         {/* Hero content */}
-        <div className="relative z-10 flex h-full flex-col items-center justify-center bg-black/20 dark:bg-black/40">
-          <div className="mb-4 text-6xl">🌾</div>
-          <h1 className="mb-4 text-5xl font-bold text-white drop-shadow-lg">
+        <div className="relative z-10 flex h-full flex-col items-center justify-center">
+          <h1 className="mb-4 text-5xl font-bold text-green-900 drop-shadow-lg dark:text-white">
             Pretty Good Farm
           </h1>
-          <p className="mx-auto mb-8 max-w-2xl text-xl text-white drop-shadow">
+          <p className="mx-auto mb-8 max-w-2xl text-xl text-green-800 drop-shadow dark:text-green-200">
             Fresh, locally-grown produce and sustainable farming practices.
           </p>
           <div className="flex gap-4">

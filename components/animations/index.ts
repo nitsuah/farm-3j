@@ -5,3 +5,4 @@ export { Cornfield } from './Cornfield';
 export { GrowingCropScene } from './GrowingCropScene';
 export { IsometricTownScene } from './IsometricTownScene';
 export { SustainableFarmScene } from './SustainableFarmScene';
+export { HeaderCropRow } from './HeaderCropRow';
