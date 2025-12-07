@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface TractorProps {
   speed?: number;
@@ -14,6 +14,12 @@ export function Tractor({
   onPositionChange,
 }: TractorProps) {
   const [position, setPosition] = useState(direction === 'right' ? -10 : 110);
+  const onPositionChangeRef = useRef(onPositionChange);
+
+  // Keep ref updated
+  useEffect(() => {
+    onPositionChangeRef.current = onPositionChange;
+  }, [onPositionChange]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -26,15 +32,19 @@ export function Tractor({
             : prev <= -10
               ? 110
               : prev - 1;
-        if (onPositionChange) {
-          onPositionChange(newPos);
-        }
         return newPos;
       });
     }, 100 / speed);
 
     return () => clearInterval(interval);
-  }, [speed, direction, onPositionChange]);
+  }, [speed, direction]);
+
+  // Report position changes in separate effect
+  useEffect(() => {
+    if (onPositionChangeRef.current) {
+      onPositionChangeRef.current(position);
+    }
+  }, [position]);
 
   return (
     <div

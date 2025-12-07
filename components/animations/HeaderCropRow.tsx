@@ -15,9 +15,10 @@ export function HeaderCropRow() {
     const normalizedDepth = rowIdx / 9; // 0 (far) to 1 (near)
     return {
       depth: rowIdx,
-      bottom: 16 + (9 - rowIdx) * 5, // Far rows higher up, near rows lower
+      bottom: 20 + (9 - rowIdx) * 7, // More vertical spacing: 20-83px
       scale: 0.3 + normalizedDepth * 0.7, // 0.3 (far) to 1.0 (near)
       opacity: 0.4 + normalizedDepth * 0.6, // 0.4 (far) to 1.0 (near)
+      offsetX: (9 - rowIdx) * 3, // Diagonal offset: far rows shifted right
       cropCount: 20,
     };
   });
@@ -58,7 +59,7 @@ export function HeaderCropRow() {
   return (
     <div className="relative h-full w-full overflow-hidden bg-gradient-to-b from-sky-400 to-sky-200 dark:from-sky-900 dark:to-sky-800">
       {/* Ground/Soil with depth gradient */}
-      <div className="absolute right-0 bottom-0 left-0 h-20 bg-gradient-to-b from-amber-700 to-amber-900 dark:from-amber-900 dark:to-black" />
+      <div className="absolute right-0 bottom-0 left-0 h-24 bg-gradient-to-b from-amber-700 to-amber-900 dark:from-amber-900 dark:to-black" />
 
       {/* Multiple rows of crops at different depths */}
       {rows.map(row => (
@@ -68,6 +69,7 @@ export function HeaderCropRow() {
           style={{
             bottom: `${row.bottom}px`,
             opacity: row.opacity,
+            transform: `translateX(${row.offsetX}%)`,
           }}
         >
           {Array.from({ length: row.cropCount }).map((_, cropIdx) => {
