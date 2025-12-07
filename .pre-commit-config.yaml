@@ -1,0 +1,33 @@
+repos:
+  # General hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+      - id: detect-private-key
+
+  # Prettier for formatting
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.1.0
+    hooks:
+      - id: prettier
+        types_or: [javascript, jsx, ts, tsx, json, yaml, markdown, css]
+        exclude: '^(pnpm-lock\.yaml|package-lock\.json|\.next/|out/)'
+        additional_dependencies:
+          - prettier@3.1.0
+
+  # ESLint for linting (runs locally)
+  - repo: local
+    hooks:
+      - id: eslint
+        name: eslint
+        entry: pnpm exec eslint
+        language: system
+        types: [javascript, jsx, ts, tsx]
+        exclude: '^(\.next/|out/|node_modules/)'
+        args: ['--fix', '--max-warnings=0']

@@ -41,7 +41,7 @@ const fetchUser = async (id: string): Promise<User> => {
 **Example (Bad):**
 
 ```typescript
-const fetchUser = async (id) => {
+const fetchUser = async id => {
   // ...
 };
 ```
@@ -126,7 +126,7 @@ test('renders the component with the correct name', () => {
 ## Common Pitfalls to Avoid
 
 - Avoid using `any` type in TypeScript.
-- Don't bypass TypeScript errors without a valid reason.  If you must, add a comment explaining why.
+- Don't bypass TypeScript errors without a valid reason. If you must, add a comment explaining why.
 - Don't commit `console.log` statements. Use a debugger instead.
 - Don't hardcode configuration values.
 - Don't skip error handling.

@@ -4,7 +4,7 @@ This document outlines key metrics for monitoring the health and performance of 
 
 ## Key Metrics
 
-| Metric                        | Current | Target  | Status     |
-| ----------------------------- | ------- | ------- | ---------- |
-| Test Coverage                 | 0%      | 80%     | 🔴         |
-| Number of Unit Tests          | 0       | 100     | 🔴         |
+| Metric               | Current | Target | Status |
+| -------------------- | ------- | ------ | ------ |
+| Test Coverage        | 0%      | 80%    | 🔴     |
+| Number of Unit Tests | 0       | 100    | 🔴     |
