@@ -4,20 +4,20 @@
 version: 2
 updates:
   # Enable version updates for npm (JavaScript/TypeScript projects)
+  # Security updates are automatically handled by Dependabot
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
       time: "09:00"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 10
     reviewers:
       - "nitsuah"
     assignees:
       - "nitsuah"
     labels:
       - "dependencies"
-      - "automated"
     commit-message:
       prefix: "chore(deps)"
 
@@ -28,7 +28,7 @@ updates:
       interval: "weekly"
       day: "monday"
       time: "09:00"
-    open-pull-requests-limit: 3
+    open-pull-requests-limit: 5
     reviewers:
       - "nitsuah"
     labels:
@@ -36,18 +36,3 @@ updates:
       - "github-actions"
     commit-message:
       prefix: "chore(ci)"
-
-  # Enable security updates
-  - package-ecosystem: "npm"
-    directory: "/"
-    schedule:
-      interval: "daily"
-    open-pull-requests-limit: 5
-    reviewers:
-      - "nitsuah"
-    assignees:
-      - "nitsuah"
-    labels:
-      - "security"
-    commit-message:
-      prefix: "fix(security)"
