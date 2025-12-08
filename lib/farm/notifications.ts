@@ -12,7 +12,7 @@ export interface Notification {
 
 // Simple notification queue
 let notificationQueue: Notification[] = [];
-let notificationListeners: Array = [];
+let notificationListeners: Array<(notifications: Notification[]) => void> = [];
 
 export function addNotification(
   message: string,

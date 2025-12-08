@@ -43,7 +43,7 @@ export function GridInteraction({
 
       // Handle animal placement
       if (mode === 'animals' && selectedAnimal) {
-        const costs: Record = {
+        const costs: Record<string, number> = {
           cow: 500,
           chicken: 100,
           pig: 300,
