@@ -7,6 +7,7 @@ export function SustainableFarmScene() {
   const [pigRotation, setPigRotation] = useState(0);
   const [pigJumpOffset, setPigJumpOffset] = useState(0);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [cloudPosition, setCloudPosition] = useState(0);
 
   // Check theme on mount and watch for changes
   useEffect(() => {
@@ -61,10 +62,61 @@ export function SustainableFarmScene() {
     return () => clearInterval(interval);
   }, []);
 
+  // Animate clouds
+  useEffect(() => {
+    const cloudInterval = setInterval(() => {
+      setCloudPosition(prev => (prev + 0.5) % 110);
+    }, 100);
+
+    return () => clearInterval(cloudInterval);
+  }, []);
+
   return (
     <div className="relative h-full w-full overflow-hidden">
       {/* Sky background */}
       <div className="absolute inset-0 bg-gradient-to-b from-sky-400 via-amber-200 to-green-200 dark:from-sky-900 dark:via-amber-950 dark:to-green-950" />
+
+      {/* Dark overlay for night */}
+      {isDarkMode && <div className="absolute inset-0 z-[1] bg-black/40" />}
+
+      {/* Stars at night */}
+      {isDarkMode && (
+        <div className="absolute inset-0 z-[2]">
+          {Array.from({ length: 25 }, (_, i) => {
+            const x = 5 + ((i * 17 + Math.sin(i) * 20) % 90);
+            const y = 3 + ((i * 7 + Math.cos(i) * 15) % 12);
+            const size = Math.sin(i) > 0 ? 'text-[4px]' : 'text-[3px]';
+            const delay = `${(i % 5) * 0.3}s`;
+            return (
+              <div
+                key={`star-${i}`}
+                className={`absolute ${size} animate-twinkle`}
+                style={{ left: `${x}%`, top: `${y}%`, animationDelay: delay }}
+              >
+                ⭐
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Clouds in day mode */}
+      {!isDarkMode && (
+        <>
+          <div
+            className="absolute top-[0.5%] z-[2] text-4xl opacity-70 transition-all"
+            style={{ left: `${cloudPosition}%` }}
+          >
+            ☁️
+          </div>
+          <div
+            className="absolute top-[2%] z-[2] text-3xl opacity-60 transition-all"
+            style={{ left: `${(cloudPosition + 40) % 110}%` }}
+          >
+            ☁️
+          </div>
+        </>
+      )}
 
       {/* Renewable energy icon watermark in background */}
       <div className="absolute inset-0 flex items-center justify-center">
@@ -154,7 +206,7 @@ export function SustainableFarmScene() {
       <div
         className="absolute right-[30%] z-[7] text-3xl"
         style={{
-          bottom: `${64 + pigJumpOffset}px`,
+          bottom: `${48 + pigJumpOffset}px`,
           transition: 'bottom 0.05s linear',
         }}
       >
@@ -162,7 +214,7 @@ export function SustainableFarmScene() {
       </div>
 
       {/* Pig #3 - stationary near hay */}
-      <div className="absolute right-[50%] bottom-16 z-[7] text-3xl">🐷</div>
+      <div className="absolute right-[50%] bottom-14 z-[7] text-3xl">🐷</div>
 
       {/* Hay bale - repositioned */}
       <div className="absolute right-[20%] bottom-16 z-[6] flex flex-col items-center">

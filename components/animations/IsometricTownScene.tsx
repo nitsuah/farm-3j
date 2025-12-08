@@ -9,6 +9,23 @@ interface IsometricTownProps {
 export function IsometricTownScene({ buildings = 3 }: IsometricTownProps) {
   const [passingCarPosition, setPassingCarPosition] = useState(-20);
   const [peoplePositions, setPeoplePositions] = useState([35, 55]);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  // Check theme on mount and watch for changes
+  useEffect(() => {
+    setIsDarkMode(document.documentElement.classList.contains('dark'));
+
+    const observer = new MutationObserver(() => {
+      setIsDarkMode(document.documentElement.classList.contains('dark'));
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   // Passing car animation - drives by continuously
   useEffect(() => {
@@ -55,14 +72,20 @@ export function IsometricTownScene({ buildings = 3 }: IsometricTownProps) {
 
       {/* Roadside stand */}
       <div className="absolute bottom-10 left-1/2 flex -translate-x-1/2 items-end gap-3">
-        {/* Basket, SALE sign and farmer on the left */}
+        {/* Basket, SALE/CLOSED sign and farmer on the left */}
         <div className="flex items-end gap-2">
-          <div className="mb-1 text-xl">🧺</div>
+          {!isDarkMode && <div className="mb-1 text-xl">🧺</div>}
           <div className="flex flex-col items-center gap-1">
-            <div className="rounded bg-yellow-400 px-2 py-1 text-xs font-bold text-red-600 shadow-lg dark:bg-yellow-500">
-              SALE!
+            <div
+              className={`rounded px-2 py-1 text-xs font-bold shadow-lg ${
+                isDarkMode
+                  ? 'bg-gray-600 text-white dark:bg-gray-700'
+                  : 'bg-yellow-400 text-red-600 dark:bg-yellow-500'
+              }`}
+            >
+              {isDarkMode ? '' : 'SALE!'}
             </div>
-            <div className="text-2xl">🧑‍🌾</div>
+            {!isDarkMode && <div className="text-2xl">🧑‍🌾</div>}
           </div>
         </div>
 
@@ -77,46 +100,67 @@ export function IsometricTownScene({ buildings = 3 }: IsometricTownProps) {
 
           {/* Stand table with produce clustered in piles */}
           <div className="relative flex h-12 w-32 items-end justify-center rounded bg-amber-700 px-2 pb-2 dark:bg-amber-900">
-            {/* Left pile */}
-            <div className="relative mr-2 flex flex-col items-center">
-              <span className="text-lg">🍎</span>
-              <span className="-mt-2 text-lg">🍎</span>
-            </div>
-            {/* Center pile */}
-            <div className="relative mx-1 flex flex-col items-center">
-              <span className="text-lg">🥕</span>
-              <span className="-mt-2 text-lg">🌽</span>
-            </div>
-            {/* Right pile */}
-            <div className="relative ml-2 flex flex-col items-center">
-              <span className="text-lg">🍅</span>
-              <span className="-mt-2 text-lg">🥬</span>
-            </div>
+            {!isDarkMode ? (
+              <>
+                {/* Left pile */}
+                <div className="relative mr-2 flex flex-col items-center">
+                  <span className="text-lg">🍎</span>
+                  <span className="-mt-2 text-lg">🍎</span>
+                </div>
+                {/* Center pile */}
+                <div className="relative mx-1 flex flex-col items-center">
+                  <span className="text-lg">🥕</span>
+                  <span className="-mt-2 text-lg">🌽</span>
+                </div>
+                {/* Right pile */}
+                <div className="relative ml-2 flex flex-col items-center">
+                  <span className="text-lg">🍅</span>
+                  <span className="-mt-2 text-lg">🥬</span>
+                </div>
+              </>
+            ) : (
+              /* "FRESH IN AM" sign in dark mode */
+              <div className="flex h-full items-center justify-center">
+                <div className="rounded bg-green-700 px-3 py-1 text-[10px] font-semibold text-white shadow-md">
+                  FRESH IN AM
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Parked cars (parallel parked between road and stand) */}
-      <div className="absolute right-[1%] bottom-9 hidden text-3xl md:block">
-        🚙
-      </div>
-      <div className="absolute right-[2%] bottom-15 hidden text-3xl md:block">
-        🚗
-      </div>
+      {!isDarkMode && (
+        <>
+          <div className="absolute right-[1%] bottom-9 hidden text-3xl md:block">
+            🚙
+          </div>
+          <div className="absolute right-[2%] bottom-15 hidden text-3xl md:block">
+            🚗
+          </div>
+        </>
+      )}
 
       {/* Customers/shoppers - 2 browsing in front, family at farmer */}
-      {peoplePositions.map((pos, idx) => (
-        <div
-          key={idx}
-          className="absolute bottom-10 hidden text-xl transition-all duration-200"
-          style={{ left: `${40 + pos * 0.2}%` }}
-        >
-          {idx === 0 ? '🚶' : '🚶‍♀️'}
-        </div>
-      ))}
+      {!isDarkMode && (
+        <>
+          {peoplePositions.map((pos, idx) => (
+            <div
+              key={idx}
+              className="absolute bottom-10 hidden text-xl transition-all duration-200"
+              style={{ left: `${40 + pos * 0.2}%` }}
+            >
+              {idx === 0 ? '🚶' : '🚶‍♀️'}
+            </div>
+          ))}
 
-      {/* Family talking to farmer - stationary */}
-      <div className="absolute bottom-11 left-[calc(50%-3rem)] text-xl">👨‍👩‍👧</div>
+          {/* Family talking to farmer - stationary */}
+          <div className="absolute bottom-11 left-[calc(50%-3rem)] text-xl">
+            👨‍👩‍👧
+          </div>
+        </>
+      )}
 
       {/* Passing car driving by on road */}
       <div
