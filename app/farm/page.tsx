@@ -46,20 +46,6 @@ export default function FarmPage() {
         <div className="flex h-full">
           {/* Main canvas area */}
           <div className="relative flex-1">
-            <div className="absolute top-4 left-4 z-10 flex items-center gap-4">
-              <div className="rounded-lg bg-black/70 px-4 py-2 backdrop-blur-sm">
-                <h1 className="text-xl font-bold text-white">
-                  🌾 Harvest Haven Farm
-                </h1>
-              </div>
-              <Link
-                href="/"
-                className="rounded-lg bg-green-600/90 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-green-700"
-              >
-                ← Home
-              </Link>
-            </div>
-
             {/* Farm Canvas - Fullscreen */}
             <div className="relative h-full w-full">
               <FarmCanvas showGrid={showGrid} />
