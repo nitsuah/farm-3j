@@ -57,11 +57,11 @@ export type FarmAction =
       payload: { id: string; x: number; y: number; direction?: number };
     }
   | { type: 'REMOVE_ENTITY'; payload: string }
-  | { type: 'UPDATE_STATS'; payload: Partial<FarmState> }
+  | { type: 'UPDATE_STATS'; payload: Partial }
   | { type: 'TOGGLE_PAUSE' }
   | {
       type: 'BATCH_UPDATE_POSITIONS';
-      payload: Array<{ id: string; x: number; y: number; direction?: number }>;
+      payload: Array;
     }
   | { type: 'PRODUCE_RESOURCES' }
   | {

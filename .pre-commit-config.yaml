@@ -31,3 +31,11 @@ repos:
         types: [javascript, jsx, ts, tsx]
         exclude: '^(\.next/|out/|node_modules/)'
         args: ['--fix', '--max-warnings=0']
+
+      # TypeScript type checking
+      - id: tsc
+        name: TypeScript type check
+        entry: pnpm run type-check
+        language: system
+        types: [ts, tsx]
+        pass_filenames: false

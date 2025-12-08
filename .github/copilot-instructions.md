@@ -33,7 +33,7 @@ interface User {
   email: string;
 }
 
-const fetchUser = async (id: string): Promise<User> => {
+const fetchUser = async (id: string): Promise => {
   // ...
 };
 ```

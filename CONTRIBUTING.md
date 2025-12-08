@@ -108,6 +108,7 @@ npm run dev
 2. **Make your changes** following the coding standards
 
 3. **Test your changes** thoroughly:
+
    - Run all existing tests
    - Add new tests for new features
    - Ensure all tests pass
@@ -120,6 +121,7 @@ npm run dev
    ```
 
    Follow [Conventional Commits](https://www.conventionalcommits.org/):
+
    - `feat:` for new features
    - `fix:` for bug fixes
    - `docs:` for documentation changes
@@ -134,6 +136,7 @@ npm run dev
    ```
 
 6. **Open a Pull Request** on GitHub:
+
    - Provide a clear title and description
    - Reference any related issues
    - Include screenshots/videos for UI changes

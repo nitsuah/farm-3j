@@ -101,7 +101,7 @@ export const Entity = React.memo(function Entity({ entity }: EntityProps) {
             <div className="absolute -bottom-2 left-1/2 h-3 w-3/4 -translate-x-1/2 rounded-full bg-black/20 blur-sm" />
           </div>
         );
-      case 'fence':
+      case 'fence': {
         const fenceHealth = entity.health || 100;
         const fenceColor =
           fenceHealth > 70
@@ -128,7 +128,8 @@ export const Entity = React.memo(function Entity({ entity }: EntityProps) {
             )}
           </div>
         );
-      case 'trough':
+      }
+      case 'trough': {
         const foodLevel = entity.foodLevel ?? 0;
         const foodPercentage = foodLevel;
         return (
@@ -155,6 +156,7 @@ export const Entity = React.memo(function Entity({ entity }: EntityProps) {
             )}
           </div>
         );
+      }
       case 'pond':
         return (
           <div

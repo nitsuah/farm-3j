@@ -127,7 +127,7 @@ export function shouldAdvanceDay(oldTime: number, newTime: number): boolean {
 export function updateAnimalNeeds(
   entity: Entity,
   currentTime: number
-): Partial<Entity> | null {
+): Partial | null {
   // Only update animals, not structures
   const animalTypes = ['cow', 'chicken', 'pig', 'sheep'];
   if (!animalTypes.includes(entity.type)) {
@@ -202,7 +202,7 @@ export function canFeedFromTrough(animal: Entity, trough: Entity): boolean {
 export function feedAnimal(
   animal: Entity,
   trough: Entity
-): { animal: Partial<Entity>; trough: Partial<Entity> } | null {
+): { animal: Partial; trough: Partial } | null {
   if (!canFeedFromTrough(animal, trough)) return null;
 
   const currentHunger = animal.hunger ?? 0;

@@ -6,7 +6,7 @@ import { farmReducer, initialFarmState } from './farmReducer';
 
 interface FarmContextType {
   state: FarmState;
-  dispatch: React.Dispatch<FarmAction>;
+  dispatch: React.Dispatch;
 }
 
 const FarmContext = createContext<FarmContextType | undefined>(undefined);
