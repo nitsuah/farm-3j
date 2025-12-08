@@ -1,5 +1,11 @@
-/* Tailwind CSS v4 - using new @import syntax instead of @tailwind directives */
+/* Tailwind CSS v4 */
 @import 'tailwindcss';
+
+/* Dark mode configuration */
+@theme {
+  --color-dark-bg: rgb(0, 0, 0);
+  --color-light-bg: rgb(240, 253, 244);
+}
 
 @layer utilities {
   @keyframes slide-in-right {

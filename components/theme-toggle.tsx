@@ -10,150 +10,62 @@ export function ThemeToggle() {
     setMounted(true);
     // Check localStorage on mount
     const stored = localStorage.getItem('theme');
+    console.log('Initial theme from localStorage:', stored);
     const isDarkMode = stored === 'dark';
     setIsDark(isDarkMode);
-
-    const html = document.documentElement;
-    const body = document.body;
-    const header = document.querySelector('header');
-    const cards = document.querySelectorAll(
-      '.rounded-lg.bg-white, .bg-white.p-6, .bg-white.p-8'
-    );
-    const headings = document.querySelectorAll('h1, h2, h3');
-    const paragraphs = document.querySelectorAll('p');
-    const labels = document.querySelectorAll('label');
-    const inputs = document.querySelectorAll('input, textarea');
-    const contactButton = document.querySelector('a[href="#contact"]');
+    console.log('Setting isDark to:', isDarkMode);
 
     if (isDarkMode) {
-      html.classList.add('dark');
-      body.style.backgroundColor = 'black';
-      if (header) header.style.backgroundColor = '#166534';
-      cards.forEach(card => {
-        (card as HTMLElement).style.backgroundColor = 'black';
-        (card as HTMLElement).style.border = '1px solid #166534';
-      });
-      headings.forEach(h => {
-        (h as HTMLElement).style.color = 'white';
-      });
-      paragraphs.forEach(p => {
-        (p as HTMLElement).style.color = '#86efac';
-      });
-      labels.forEach(l => {
-        (l as HTMLElement).style.color = '#86efac';
-      });
-      inputs.forEach(input => {
-        (input as HTMLElement).style.backgroundColor = '#1f2937';
-        (input as HTMLElement).style.color = 'white';
-        (input as HTMLElement).style.borderColor = '#166534';
-      });
-      if (contactButton) {
-        (contactButton as HTMLElement).style.backgroundColor = 'transparent';
-        (contactButton as HTMLElement).style.color = '#86efac';
-        (contactButton as HTMLElement).style.borderColor = '#86efac';
-      }
+      document.documentElement.classList.add('dark');
+      console.log('Added dark class to html');
     } else {
-      html.classList.remove('dark');
-      body.style.backgroundColor = 'rgb(240, 253, 244)';
-      if (header) header.style.backgroundColor = '#166534';
-      cards.forEach(card => {
-        (card as HTMLElement).style.backgroundColor = 'white';
-        (card as HTMLElement).style.border = 'none';
-      });
-      headings.forEach(h => {
-        (h as HTMLElement).style.color = '#14532d';
-      });
-      paragraphs.forEach(p => {
-        (p as HTMLElement).style.color = '#15803d';
-      });
-      labels.forEach(l => {
-        (l as HTMLElement).style.color = '#14532d';
-      });
-      inputs.forEach(input => {
-        (input as HTMLElement).style.backgroundColor = 'white';
-        (input as HTMLElement).style.color = '#14532d';
-        (input as HTMLElement).style.borderColor = '#16a34a';
-      });
-      if (contactButton) {
-        (contactButton as HTMLElement).style.backgroundColor = 'white';
-        (contactButton as HTMLElement).style.color = '#16a34a';
-        (contactButton as HTMLElement).style.borderColor = '#16a34a';
-      }
+      document.documentElement.classList.remove('dark');
+      console.log('Removed dark class from html');
     }
+    console.log('HTML classes:', document.documentElement.className);
   }, []);
 
   const toggleTheme = () => {
+    console.log('Toggle clicked! Current isDark:', isDark);
     const newTheme = !isDark;
+    console.log('New theme will be:', newTheme ? 'dark' : 'light');
     setIsDark(newTheme);
     localStorage.setItem('theme', newTheme ? 'dark' : 'light');
-
-    const html = document.documentElement;
-    const body = document.body;
-    const header = document.querySelector('header');
-    const cards = document.querySelectorAll(
-      '.rounded-lg.bg-white, .bg-white.p-6, .bg-white.p-8'
-    );
-    const headings = document.querySelectorAll('h1, h2, h3');
-    const paragraphs = document.querySelectorAll('p');
-    const labels = document.querySelectorAll('label');
-    const inputs = document.querySelectorAll('input, textarea');
-    const contactButton = document.querySelector('a[href="#contact"]');
+    console.log('Saved to localStorage:', newTheme ? 'dark' : 'light');
 
     if (newTheme) {
-      html.classList.add('dark');
-      body.style.backgroundColor = 'black';
-      if (header) header.style.backgroundColor = '#166534'; // green-900
-      cards.forEach(card => {
-        (card as HTMLElement).style.backgroundColor = 'black';
-        (card as HTMLElement).style.border = '1px solid #166534';
-      });
-      headings.forEach(h => {
-        (h as HTMLElement).style.color = 'white';
-      });
-      paragraphs.forEach(p => {
-        (p as HTMLElement).style.color = '#86efac'; // green-300
-      });
-      labels.forEach(l => {
-        (l as HTMLElement).style.color = '#86efac'; // green-300
-      });
-      inputs.forEach(input => {
-        (input as HTMLElement).style.backgroundColor = '#1f2937'; // gray-800
-        (input as HTMLElement).style.color = 'white';
-        (input as HTMLElement).style.borderColor = '#166534';
-      });
-      if (contactButton) {
-        (contactButton as HTMLElement).style.backgroundColor = 'transparent';
-        (contactButton as HTMLElement).style.color = '#86efac';
-        (contactButton as HTMLElement).style.borderColor = '#86efac';
-      }
+      document.documentElement.classList.add('dark');
+      console.log('Added dark class');
     } else {
-      html.classList.remove('dark');
-      body.style.backgroundColor = 'rgb(240, 253, 244)'; // green-50
-      if (header) header.style.backgroundColor = '#166534'; // green-900 for light mode too
-      cards.forEach(card => {
-        (card as HTMLElement).style.backgroundColor = 'white';
-        (card as HTMLElement).style.border = 'none';
-      });
-      headings.forEach(h => {
-        (h as HTMLElement).style.color = '#14532d'; // green-900
-      });
-      paragraphs.forEach(p => {
-        (p as HTMLElement).style.color = '#15803d'; // green-700
-      });
-      labels.forEach(l => {
-        (l as HTMLElement).style.color = '#14532d'; // green-900
-      });
-      inputs.forEach(input => {
-        (input as HTMLElement).style.backgroundColor = 'white';
-        (input as HTMLElement).style.color = '#14532d'; // green-900
-        (input as HTMLElement).style.borderColor = '#16a34a'; // green-600
-      });
-      if (contactButton) {
-        (contactButton as HTMLElement).style.backgroundColor = 'white';
-        (contactButton as HTMLElement).style.color = '#16a34a';
-        (contactButton as HTMLElement).style.borderColor = '#16a34a';
-      }
+      document.documentElement.classList.remove('dark');
+      console.log('Removed dark class');
     }
+    console.log(
+      'HTML classes after toggle:',
+      document.documentElement.className
+    );
+
+    // Check after a delay to see if styles applied
+    setTimeout(() => {
+      const body = document.body;
+      const computedBg = window.getComputedStyle(body).backgroundColor;
+      const bodyClasses = body.className;
+      console.log('Body classes:', bodyClasses);
+      console.log('Body computed background after 100ms:', computedBg);
+      console.log(
+        'HTML has dark class:',
+        document.documentElement.classList.contains('dark')
+      );
+
+      // Check a specific card element
+      const card = document.querySelector('.bg-white');
+      if (card) {
+        console.log(
+          'Card computed background:',
+          window.getComputedStyle(card as Element).backgroundColor
+        );
+      }
+    }, 100);
   };
 
   // Prevent flash during SSR
@@ -171,10 +83,11 @@ export function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      className="rounded-lg border-2 border-green-600 px-4 py-2 text-sm font-medium text-green-600 transition-colors hover:bg-green-50 dark:border-green-400 dark:text-green-400 dark:hover:bg-green-900"
+      className="flex items-center justify-center rounded-full bg-white/20 p-2 text-2xl backdrop-blur-sm transition-all hover:bg-white/30 dark:bg-black/20 dark:hover:bg-black/30"
       aria-label="Toggle dark mode"
+      title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
     >
-      {isDark ? '☀️ Light' : '🌙 Dark'}
+      {isDark ? '☀️' : '🌙'}
     </button>
   );
 }

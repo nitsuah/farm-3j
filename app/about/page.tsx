@@ -7,7 +7,7 @@ export default function AboutPage() {
   const [isContactOpen, setIsContactOpen] = useState(false);
 
   return (
-    <main className="min-h-screen">
+    <main className="flex-1">
       <div className="container mx-auto px-4 py-16">
         <div className="mb-8 flex items-center justify-between">
           <h1 className="text-4xl font-bold text-black dark:text-white">
@@ -28,11 +28,11 @@ export default function AboutPage() {
           <p className="mb-4 text-green-700 dark:text-green-300">
             Pretty Good Farm (formerly Farm 3J) has been dedicated to
             sustainable farming practices and providing fresh, locally-grown
-            produce to our community for years. We believe in working with
-            nature, not against it.
+            produce to our community for years.
           </p>
           <p className="mb-4 text-green-700 dark:text-green-300">
-            Our farm specializes in seasonal vegetables, fruits, and sustainable
+            We believe in working with nature, not against it. Our farm
+            specializes in seasonal vegetables, fruits, and sustainable
             agricultural practices that prioritize soil health and environmental
             stewardship.
           </p>

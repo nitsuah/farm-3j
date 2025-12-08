@@ -31,7 +31,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="bg-green-50 dark:bg-black">
+      <body className="flex min-h-screen flex-col bg-green-50 dark:bg-black">
         <header className="relative h-48 shadow-sm">
           {/* Animated crop header background */}
           <HeaderCropRow />
@@ -104,7 +104,7 @@ export default function RootLayout({
           </nav>
         </header>
         {children}
-        <footer className="bg-green-900 py-3 text-white">
+        <footer className="bg-white py-3 text-green-900 dark:bg-green-900 dark:text-white">
           <div className="container mx-auto px-4 text-center">
             <p className="text-sm">
               &copy; 2025 Pretty Good Farm. All rights reserved.
