@@ -15,7 +15,7 @@ export function HeaderCropRow() {
   const [showClouds, setShowClouds] = useState(true);
   const [cloudOpacity, setCloudOpacity] = useState(0.8);
   const [cloudPosition, setCloudPosition] = useState(0);
-  const [birdPosition, setBirdPosition] = useState(0);
+  const [birdPosition, setBirdPosition] = useState(115); // Start from right
 
   // Define 10 rows with different depths (scale and opacity for perspective)
   // Row 0 is farthest (top, small), Row 9 is closest (bottom, large)
@@ -114,11 +114,11 @@ export function HeaderCropRow() {
 
     const birdInterval = setInterval(() => {
       setBirdPosition(prev => {
-        const newPos = prev + 1;
-        if (newPos > 115) {
+        const newPos = prev - 1; // Move right to left
+        if (newPos < -10) {
           // Wait until fully off screen
           setShowBirds(false);
-          return -10;
+          return 115; // Start from right
         }
         return newPos;
       });
@@ -459,7 +459,7 @@ export function HeaderCropRow() {
               left: `${birdPosition}%`,
               transform: 'translateX(-50%)',
               transition: 'left 0.1s linear',
-              animation: 'birdFly 0.5s ease-in-out infinite',
+              animation: 'birdFly 0.4s ease-in-out infinite',
             }}
           >
             🦅
@@ -470,8 +470,8 @@ export function HeaderCropRow() {
               left: `${birdPosition + 5}%`,
               transform: 'translateX(-50%)',
               transition: 'left 0.1s linear',
-              animation: 'birdFly 0.5s ease-in-out infinite',
-              animationDelay: '0.25s',
+              animation: 'birdFly 0.4s ease-in-out infinite',
+              animationDelay: '0.2s',
             }}
           >
             🦅

@@ -11,14 +11,14 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-b from-sky-300 to-green-200 dark:from-sky-950 dark:to-green-950" />
 
         {/* Hero content */}
-        <div className="relative z-10 flex h-full flex-col items-center justify-center gap-1">
-          <h1 className="text-5xl font-bold text-green-900 drop-shadow-lg dark:text-white">
+        <div className="relative z-10 flex h-full flex-col items-center justify-center gap-1 px-6 py-6 md:px-4 md:py-0">
+          <h1 className="text-4xl font-bold text-green-900 drop-shadow-lg md:text-5xl dark:text-white">
             Pretty Good Farm
           </h1>
-          <p className="mx-auto max-w-2xl text-xl text-green-800 drop-shadow dark:text-green-200">
+          <p className="mx-auto max-w-2xl px-4 text-center text-xl text-green-800 drop-shadow md:px-0 dark:text-green-200">
             Fresh, locally-grown produce and sustainable farming practices.
           </p>
-          <div className="flex gap-4">
+          <div className="mb-6 flex gap-4 md:mb-4">
             <a
               href="/farm"
               className="rounded-lg bg-green-600 px-6 py-3 text-white shadow-lg transition-all hover:bg-green-700 hover:shadow-xl"
@@ -36,15 +36,15 @@ export default function Home() {
       </section>
 
       {/* Feature cards section - 25% of space */}
-      <section className="grid flex-1 grid-cols-1 gap-1 md:grid-cols-3">
+      <section className="grid flex-[0.425] grid-cols-1 gap-1 md:flex-[0.85] md:grid-cols-3 lg:gap-2">
         {/* Card 1 - Fresh Produce */}
         <div className="relative flex overflow-hidden border border-green-200 bg-white md:flex-col dark:border-gray-700 dark:bg-gray-800">
           {/* Mobile: text on left (w-1/2), Desktop: text on top (h-2/5) */}
-          <div className="flex w-1/2 flex-col justify-center p-2 md:h-2/5 md:w-full">
-            <h3 className="text-sm font-bold text-green-900 dark:text-green-400">
+          <div className="flex w-1/2 flex-col justify-center p-2 md:h-2/5 md:w-full lg:p-4">
+            <h3 className="text-sm font-bold text-green-900 lg:text-base dark:text-green-400">
               Fresh Produce
             </h3>
-            <p className="text-xs text-green-700 dark:text-green-200">
+            <p className="text-xs text-green-700 lg:text-sm dark:text-green-200">
               Watch our crops grow! Seasonal vegetables and fruits grown with
               care.
             </p>
@@ -57,11 +57,11 @@ export default function Home() {
 
         {/* Card 2 - Local Community */}
         <div className="relative flex overflow-hidden border border-green-200 bg-white md:flex-col dark:border-gray-700 dark:bg-gray-800">
-          <div className="flex w-1/2 flex-col justify-center p-2 md:h-2/5 md:w-full">
-            <h3 className="text-sm font-bold text-green-900 dark:text-green-400">
+          <div className="flex w-1/2 flex-col justify-center p-2 md:h-2/5 md:w-full lg:p-4">
+            <h3 className="text-sm font-bold text-green-900 lg:text-base dark:text-green-400">
               Local Community
             </h3>
-            <p className="text-xs text-green-700 dark:text-green-200">
+            <p className="text-xs text-green-700 lg:text-sm dark:text-green-200">
               Supporting our local community with quality, farm-fresh products.
             </p>
           </div>
@@ -72,11 +72,11 @@ export default function Home() {
 
         {/* Card 3 - Sustainable Farming */}
         <div className="relative flex overflow-hidden border border-green-200 bg-white md:flex-col dark:border-gray-700 dark:bg-gray-800">
-          <div className="flex w-1/2 flex-col justify-center p-2 md:h-2/5 md:w-full">
-            <h3 className="text-sm font-bold text-green-900 dark:text-green-400">
+          <div className="flex w-1/2 flex-col justify-center p-2 md:h-2/5 md:w-full lg:p-4">
+            <h3 className="text-sm font-bold text-green-900 lg:text-base dark:text-green-400">
               Sustainable Farming
             </h3>
-            <p className="text-xs text-green-700 dark:text-green-200">
+            <p className="text-xs text-green-700 lg:text-sm dark:text-green-200">
               Solar, wind, and eco-friendly practices for a healthier future.
             </p>
           </div>
