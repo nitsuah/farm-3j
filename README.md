@@ -1,4 +1,4 @@
-# Farm contact website
+# Farm 3J - Interactive Farm Website
 
 _Automatically synced with your [v0.dev](https://v0.dev) deployments_
 
@@ -6,6 +6,43 @@ _Automatically synced with your [v0.dev](https://v0.dev) deployments_
 [![Built with v0](https://img.shields.io/badge/Built%20with-v0.dev-black?style=for-the-badge)](https://v0.dev/chat/projects/9OcXcTTsfCh)
 
 ## Overview
+
+Farm 3J is an interactive farm website featuring:
+
+- **Animated Homepage**: Dynamic farm scene with weather effects, day/night cycle, animated crops, trees, mountains, and wildlife
+- **Farm Tycoon Game**: Isometric farm simulation with resource management, animal care, and building placement
+- **Responsive Design**: Optimized for mobile and desktop with adaptive layouts
+- **Dark Mode**: Theme toggle integrated into the animated sun
+
+## Features
+
+### Homepage Animations
+
+- Rain cycles with storm clouds and lightning
+- Growing crops with tractor harvesting
+- Moving clouds and flying birds
+- Dense forest with trees and bushes
+- Mountain ranges with depth
+- Interactive sun theme toggle
+
+### Farm Tycoon Game (`/farm`)
+
+- Grid-based isometric rendering
+- Animal management (cows, chickens, pigs, sheep)
+- Resource production and economy
+- Building placement (fences, troughs)
+- Day/night cycle
+- Tutorial system and keyboard shortcuts
+
+See `docs/FARM-TYCOON-PHASE1-SUMMARY.md` for complete game documentation.
+
+## Tech Stack
+
+- **Framework**: Next.js 15 with App Router
+- **Language**: TypeScript (strict mode)
+- **Styling**: Tailwind CSS v4
+- **State Management**: React Context + useReducer
+- **Animation**: CSS + requestAnimationFrame
 
 This repository will stay in sync with your deployed chats on [v0.dev](https://v0.dev).
 Any changes you make to your deployed app will be automatically pushed to this repository from [v0.dev](https://v0.dev).

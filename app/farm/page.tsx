@@ -38,7 +38,10 @@ export default function FarmPage() {
       <FarmNotificationWatcher />
       <TutorialOverlay />
       <KeyboardControls />
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-green-900 p-4">
+      <div
+        className="min-h-screen bg-gradient-to-b from-sky-200 to-green-100 dark:from-gray-900 dark:to-gray-800"
+        suppressHydrationWarning
+      >
         {/* Header */}
         <header className="mb-4 flex items-center justify-between">
           <div>

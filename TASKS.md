@@ -33,6 +33,10 @@
 - [x] Configure ESLint and Prettier (P3, S)
 - [x] Fix CI/CD pipeline lint script issues (P1, S)
 - [x] Design landing page hero section (P1, M)
+- [x] Create animated farm header with weather effects, crops, trees, and landscape (P1, L)
+- [x] Implement interactive theme toggle (sun button) (P2, S)
+- [x] Add responsive design for mobile and desktop (P1, M)
+- [x] Fix SSR hydration issues with Math.sin() calculations (P2, S)
 - [x] **Farm Tycoon Phase 1 - Complete MVP** (P1, XL)
   - [x] State management with FarmContext and useReducer
   - [x] FarmCanvas with 60 FPS game loop
