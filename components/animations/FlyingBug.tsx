@@ -4,38 +4,63 @@ import { useEffect, useState } from 'react';
 
 interface FlyingBugProps {
   type?: 'bee' | 'butterfly' | 'bird';
+  startX?: number;
+  startY?: number;
 }
 
-export function FlyingBug({ type = 'bee' }: FlyingBugProps) {
-  const [position, setPosition] = useState({ x: 10, y: 30 });
-  const [direction, setDirection] = useState({ x: 1, y: 0.5 });
+export function FlyingBug({
+  type = 'bee',
+  startX = 50,
+  startY = 30,
+}: FlyingBugProps) {
+  const [position, setPosition] = useState({
+    x: startX,
+    y: startY,
+  });
+  const [angle, setAngle] = useState(0);
 
   useEffect(() => {
     const interval = setInterval(() => {
       setPosition(prev => {
-        let newX = prev.x + direction.x;
-        let newY = prev.y + direction.y;
-        let newDir = { ...direction };
+        let newAngle = angle;
 
-        // Bounce off edges
+        // Different movement patterns based on type
+        if (type === 'butterfly') {
+          // Erratic zigzag pattern
+          newAngle += (Math.random() - 0.5) * 0.5;
+        } else if (type === 'bee') {
+          // Figure-8 pattern
+          newAngle += 0.1;
+        } else {
+          // Smooth curved flight
+          newAngle += 0.05;
+        }
+
+        const speed = type === 'butterfly' ? 1.5 : type === 'bee' ? 2 : 1;
+        let newX = prev.x + Math.cos(newAngle) * speed;
+        let newY = prev.y + Math.sin(newAngle) * speed * 0.5; // Less vertical movement
+
+        // Bounce off edges with angle change
         if (newX > 90 || newX < 10) {
-          newDir.x = -direction.x;
+          newAngle = Math.PI - newAngle;
+          newX = Math.max(10, Math.min(90, newX));
         }
-        if (newY > 70 || newY < 10) {
-          newDir.y = -direction.y;
+        if (newY > 80 || newY < 50) {
+          newAngle = -newAngle;
+          newY = Math.max(50, Math.min(80, newY));
         }
 
-        setDirection(newDir);
+        setAngle(newAngle);
 
         return {
-          x: Math.max(10, Math.min(90, newX)),
-          y: Math.max(10, Math.min(70, newY)),
+          x: newX,
+          y: newY,
         };
       });
     }, 50);
 
     return () => clearInterval(interval);
-  }, [direction]);
+  }, [angle, type]);
 
   const getEmoji = () => {
     if (type === 'bee') return '🐝';
@@ -46,11 +71,11 @@ export function FlyingBug({ type = 'bee' }: FlyingBugProps) {
 
   return (
     <div
-      className="absolute text-2xl transition-all duration-100"
+      className="absolute text-sm transition-all duration-100"
       style={{
         left: `${position.x}%`,
         top: `${position.y}%`,
-        transform: direction.x > 0 ? 'scaleX(1)' : 'scaleX(-1)',
+        transform: Math.cos(angle) > 0 ? 'scaleX(1)' : 'scaleX(-1)',
       }}
     >
       {getEmoji()}

@@ -638,16 +638,22 @@ export function HeaderCropRow() {
       {/* Stars - shown in dark mode only, twinkling effect */}
       {isDarkMode && (
         <div className="absolute inset-0 z-[2]">
-          {Array.from({ length: 30 }).map((_, i) => {
-            const leftPos = (i * 13 + 7) % 100;
-            const topPos = (i * 4 + 1) % 15; // Moved up to top 15% of header
+          {/* Regular random stars */}
+          {Array.from({ length: 40 }).map((_, i) => {
+            // More dispersed random positioning
+            const leftPos =
+              (i * 23 + Math.sin(i * 1.5) * 15 + Math.cos(i * 0.7) * 12) % 100;
+            const topPos =
+              (i * 7.3 + Math.cos(i * 2) * 4 + Math.sin(i * 1.2) * 3) % 12; // Top 12% of header
             const size =
-              i % 3 === 0
-                ? 'text-[6px]'
-                : i % 3 === 1
-                  ? 'text-[5px]'
-                  : 'text-[4px]';
-            const delay = (i * 0.3) % 2;
+              i % 4 === 0
+                ? 'text-[3px]'
+                : i % 4 === 1
+                  ? 'text-[4px]'
+                  : i % 4 === 2
+                    ? 'text-[3.5px]'
+                    : 'text-[3px]';
+            const delay = (i * 0.4) % 2.5;
             return (
               <div
                 key={i}
@@ -663,6 +669,30 @@ export function HeaderCropRow() {
               </div>
             );
           })}
+
+          {/* Big Dipper constellation */}
+          {[
+            { left: 15, top: 4 }, // Start of handle
+            { left: 18, top: 5.5 },
+            { left: 21, top: 6 },
+            { left: 24, top: 5 }, // End of handle/start of bowl
+            { left: 27, top: 3.5 },
+            { left: 30, top: 5 },
+            { left: 27, top: 6.5 }, // Bottom of bowl
+          ].map((star, i) => (
+            <div
+              key={`dipper-${i}`}
+              className="absolute text-[5px]"
+              style={{
+                left: `${star.left}%`,
+                top: `${star.top}%`,
+                animation: 'twinkle 4s ease-in-out infinite',
+                animationDelay: `${i * 0.2}s`,
+              }}
+            >
+              ⭐
+            </div>
+          ))}
         </div>
       )}
 
@@ -791,7 +821,7 @@ export function HeaderCropRow() {
       {/* Trees - varied heights and natural spread, IN FRONT of mountains/horizon - SOLID FOREST */}
       <div
         className="absolute right-0 bottom-20 left-0 z-[2] flex justify-around px-0 transition-opacity duration-1000"
-        style={{ opacity: showRain ? 0.25 : 0.6 }}
+        style={{ opacity: showRain ? 0.25 : isDarkMode ? 0.25 : 0.6 }}
       >
         {Array.from({ length: 180 }).map((_, i) => {
           // Varied tree sizes for natural look
@@ -825,7 +855,7 @@ export function HeaderCropRow() {
       {/* Bushes - overlapping lower part of trees for dense forest floor */}
       <div
         className="absolute right-0 bottom-18 left-0 z-[3] flex justify-around px-0 transition-opacity duration-1000"
-        style={{ opacity: showRain ? 0.2 : 0.55 }}
+        style={{ opacity: showRain ? 0.2 : isDarkMode ? 0.2 : 0.55 }}
       >
         {Array.from({ length: 90 }).map((_, i) => {
           // Varied bush sizes
@@ -903,15 +933,16 @@ export function HeaderCropRow() {
             <div
               className="absolute z-[11]"
               style={{
-                left: `${tractorPosition + 8}%`,
-                bottom: '20px',
-                width: '100px',
-                height: '60px',
+                left: `calc(${tractorPosition}% + 3em)`,
+                bottom: '10%',
+                width: '5em',
+                height: '2.5em',
                 background:
-                  'linear-gradient(90deg, rgba(255, 255, 200, 0.4) 0%, rgba(255, 255, 200, 0) 100%)',
+                  'linear-gradient(90deg, rgba(255, 255, 200, 0.6) 0%, rgba(255, 255, 200, 0) 100%)',
                 clipPath: 'polygon(0% 40%, 100% 0%, 100% 100%, 0% 60%)',
-                filter: 'blur(8px)',
+                filter: 'blur(4px)',
                 pointerEvents: 'none',
+                transform: 'translateY(20%)',
               }}
             />
           )}

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 
 interface CropProps {
-  type?: 'corn' | 'wheat' | 'carrot';
+  type?: 'corn' | 'wheat' | 'carrot' | 'tomato' | 'lettuce' | 'potato';
   growthStage?: number; // 0-3
   animate?: boolean;
 }
@@ -29,6 +29,9 @@ export function Crop({
     if (type === 'corn') return stage >= 2 ? '🌽' : '🌱';
     if (type === 'wheat') return stage >= 2 ? '🌾' : '🌱';
     if (type === 'carrot') return stage >= 2 ? '🥕' : '🌱';
+    if (type === 'tomato') return stage >= 2 ? '🍅' : '🌱';
+    if (type === 'lettuce') return stage >= 2 ? '🥬' : '🌱';
+    if (type === 'potato') return stage >= 2 ? '🥔' : '🌱';
     return '🌱';
   };
 

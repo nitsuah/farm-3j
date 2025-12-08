@@ -51,7 +51,7 @@ export default function Home() {
             </p>
           </div>
           {/* Mobile: animation on right (w-1/2), Desktop: animation on bottom (h-3/5) */}
-          <div className="w-1/2 md:h-1 md:w-full">
+          <div className="w-1/2 md:h-3/4 md:w-full">
             <GrowingCropScene />
           </div>
         </div>
@@ -66,7 +66,7 @@ export default function Home() {
               Supporting our local community with quality, farm-fresh products.
             </p>
           </div>
-          <div className="w-1/2 md:h-1 md:w-full">
+          <div className="w-1/2 md:h-3/4 md:w-full">
             <IsometricTownScene buildings={3} />
           </div>
         </div>
@@ -81,7 +81,7 @@ export default function Home() {
               Solar, wind, and eco-friendly practices for a healthier future.
             </p>
           </div>
-          <div className="w-1/2 md:h-1 md:w-full">
+          <div className="w-1/2 md:h-3/4 md:w-full">
             <SustainableFarmScene />
           </div>
         </div>
