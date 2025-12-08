@@ -29,7 +29,7 @@ export default function AboutPage() {
       <div className="container mx-auto px-4 py-16">
         <div className="mb-8 flex items-center justify-between">
           <h1 className="text-4xl font-bold text-black dark:text-white">
-            About Pretty Good Farm
+            About Pretty Good Farms
           </h1>
           <button
             onClick={() => setIsContactOpen(true)}
@@ -44,9 +44,9 @@ export default function AboutPage() {
             Our Story
           </h2>
           <p className="mb-4 text-green-700 dark:text-green-300">
-            Pretty Good Farm (formerly Farm 3J) has been dedicated to
-            sustainable farming practices and providing fresh, locally-grown
-            produce to our community for years.
+            Pretty Good Farms has been dedicated to sustainable farming
+            practices and providing fresh, locally-grown produce to our
+            community for years.
           </p>
           <p className="mb-4 text-green-700 dark:text-green-300">
             We believe in working with nature, not against it. Our farm

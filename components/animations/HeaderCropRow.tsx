@@ -67,7 +67,7 @@ export function HeaderCropRow() {
         footer.style.color = 'rgb(20, 83, 45)';
       }
       document.querySelectorAll('h1, h2, h3').forEach(el => {
-        // Don't change header PG Farm text
+        // Don't change header PG Farms text
         if (!(el as HTMLElement).closest('header')) {
           (el as HTMLElement).style.color = 'rgb(20, 83, 45)';
         }
@@ -207,128 +207,127 @@ export function HeaderCropRow() {
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-gradient-to-b from-sky-400 to-sky-200 dark:from-sky-900 dark:to-sky-800">
-      {/* Grey storm overlay - covers entire header during rain */}
-      {showRain && (
-        <div className="absolute inset-0 z-[1] bg-gray-600/40 dark:bg-gray-900/50" />
+      {/* Grey storm overlay in light mode, dark night overlay in dark mode */}
+      {showRain && !isDarkMode && (
+        <div className="absolute inset-0 z-[1] bg-gray-600/40" />
       )}
+      {isDarkMode && <div className="absolute inset-0 z-[1] bg-black/60" />}
 
-      {/* Sun - top right corner, hidden during rain, acts as theme toggle */}
-      {!showRain && (
-        <button
-          onClick={() => {
-            const html = document.documentElement;
-            const isDark = html.classList.contains('dark');
-            console.log('Sun clicked! Current isDark:', isDark);
+      {/* Sun/Moon button - always visible */}
+      <button
+        onClick={() => {
+          const html = document.documentElement;
+          const isDark = html.classList.contains('dark');
+          console.log('Sun clicked! Current isDark:', isDark);
 
-            if (isDark) {
-              html.classList.remove('dark');
-              localStorage.setItem('theme', 'light');
-              console.log('Switched to light mode');
-              setIsDarkMode(false);
+          if (isDark) {
+            html.classList.remove('dark');
+            localStorage.setItem('theme', 'light');
+            console.log('Switched to light mode');
+            setIsDarkMode(false);
 
-              // Manually apply light mode styles
-              document.body.style.backgroundColor = 'rgb(240, 253, 244)'; // bg-green-50
-              document
-                .querySelectorAll('.bg-white:not([data-theme-button])')
-                .forEach(el => {
-                  (el as HTMLElement).style.backgroundColor = 'white';
-                });
-              document.querySelectorAll('.dark\\:bg-gray-900').forEach(el => {
+            // Manually apply light mode styles
+            document.body.style.backgroundColor = 'rgb(240, 253, 244)'; // bg-green-50
+            document
+              .querySelectorAll('.bg-white:not([data-theme-button])')
+              .forEach(el => {
                 (el as HTMLElement).style.backgroundColor = 'white';
               });
-              // Hero section gradient
-              const heroGradient = document.querySelector('.dark\\:bg-black');
-              if (heroGradient) {
-                (heroGradient as HTMLElement).style.background = 'white';
+            document.querySelectorAll('.dark\\:bg-gray-900').forEach(el => {
+              (el as HTMLElement).style.backgroundColor = 'white';
+            });
+            // Hero section gradient
+            const heroGradient = document.querySelector('.dark\\:bg-black');
+            if (heroGradient) {
+              (heroGradient as HTMLElement).style.background = 'white';
+            }
+            // Footer
+            const footer = document.querySelector('footer');
+            if (footer) {
+              footer.style.backgroundColor = 'white';
+              footer.style.color = 'rgb(20, 83, 45)';
+            }
+            // Fix text colors for light mode
+            document.querySelectorAll('h1, h2, h3').forEach(el => {
+              // Don't change header PG Farm text
+              if (!(el as HTMLElement).closest('header')) {
+                (el as HTMLElement).style.color = 'rgb(20, 83, 45)'; // green-900
               }
-              // Footer
-              const footer = document.querySelector('footer');
-              if (footer) {
-                footer.style.backgroundColor = 'white';
-                footer.style.color = 'rgb(20, 83, 45)';
-              }
-              // Fix text colors for light mode
-              document.querySelectorAll('h1, h2, h3').forEach(el => {
-                // Don't change header PG Farm text
-                if (!(el as HTMLElement).closest('header')) {
-                  (el as HTMLElement).style.color = 'rgb(20, 83, 45)'; // green-900
-                }
-              });
-              document.querySelectorAll('p').forEach(el => {
-                (el as HTMLElement).style.color = 'rgb(21, 128, 61)'; // green-700
-              });
-              // Fix nav About link - remove any styles
-              const navAboutLinks = document.querySelectorAll(
-                'nav a[href="/about"]'
-              );
-              navAboutLinks.forEach(link => {
-                (link as HTMLElement).style.backgroundColor = '';
-                (link as HTMLElement).style.border = '';
-              });
-            } else {
-              html.classList.add('dark');
-              localStorage.setItem('theme', 'dark');
-              console.log('Switched to dark mode');
-              setIsDarkMode(true);
+            });
+            document.querySelectorAll('p').forEach(el => {
+              (el as HTMLElement).style.color = 'rgb(21, 128, 61)'; // green-700
+            });
+            // Fix nav About link - remove any styles
+            const navAboutLinks = document.querySelectorAll(
+              'nav a[href="/about"]'
+            );
+            navAboutLinks.forEach(link => {
+              (link as HTMLElement).style.backgroundColor = '';
+              (link as HTMLElement).style.border = '';
+            });
+          } else {
+            html.classList.add('dark');
+            localStorage.setItem('theme', 'dark');
+            console.log('Switched to dark mode');
+            setIsDarkMode(true);
 
-              // Manually apply dark mode styles
-              document.body.style.backgroundColor = 'rgb(0, 0, 0)'; // black
-              document
-                .querySelectorAll('.bg-white:not([data-theme-button])')
-                .forEach(el => {
-                  (el as HTMLElement).style.backgroundColor = 'rgb(0, 0, 0)';
-                });
-              document.querySelectorAll('.dark\\:bg-gray-800').forEach(el => {
+            // Manually apply dark mode styles
+            document.body.style.backgroundColor = 'rgb(0, 0, 0)'; // black
+            document
+              .querySelectorAll('.bg-white:not([data-theme-button])')
+              .forEach(el => {
                 (el as HTMLElement).style.backgroundColor = 'rgb(0, 0, 0)';
               });
-              // Hero section solid black - force it
-              const heroGradient = document.querySelector('.dark\\:bg-black');
-              if (heroGradient) {
-                (heroGradient as HTMLElement).style.background = 'rgb(0, 0, 0)';
-                (heroGradient as HTMLElement).style.backgroundColor =
-                  'rgb(0, 0, 0)';
-              }
-              // Footer
-              const footer = document.querySelector('footer');
-              if (footer) {
-                footer.style.backgroundColor = 'rgb(20, 83, 45)';
-                footer.style.color = 'white';
-              }
-              // Fix text colors for dark mode (exclude header)
-              document.querySelectorAll('h1, h2, h3').forEach(el => {
-                if (!(el as HTMLElement).closest('header')) {
-                  (el as HTMLElement).style.color = 'white';
-                }
-              });
-              document.querySelectorAll('p').forEach(el => {
-                (el as HTMLElement).style.color = 'rgb(134, 239, 172)'; // green-300
-              });
+            document.querySelectorAll('.dark\\:bg-gray-800').forEach(el => {
+              (el as HTMLElement).style.backgroundColor = 'rgb(0, 0, 0)';
+            });
+            // Hero section solid black - force it
+            const heroGradient = document.querySelector('.dark\\:bg-black');
+            if (heroGradient) {
+              (heroGradient as HTMLElement).style.background = 'rgb(0, 0, 0)';
+              (heroGradient as HTMLElement).style.backgroundColor =
+                'rgb(0, 0, 0)';
             }
-            console.log('HTML classes:', html.className);
-
-            // Log computed styles to verify
-            setTimeout(() => {
-              const body = document.body;
-              const card = document.querySelector('.bg-white');
-              console.log(
-                'Body bg:',
-                window.getComputedStyle(body).backgroundColor
-              );
-              if (card) {
-                console.log(
-                  'Card bg:',
-                  window.getComputedStyle(card).backgroundColor
-                );
+            // Footer
+            const footer = document.querySelector('footer');
+            if (footer) {
+              footer.style.backgroundColor = 'rgb(20, 83, 45)';
+              footer.style.color = 'white';
+            }
+            // Fix text colors for dark mode (exclude header)
+            document.querySelectorAll('h1, h2, h3').forEach(el => {
+              if (!(el as HTMLElement).closest('header')) {
+                (el as HTMLElement).style.color = 'white';
               }
-            }, 100);
-          }}
-          className="absolute top-2 right-4 z-[20] cursor-pointer text-4xl transition-transform hover:scale-110 active:scale-95"
-          title="Toggle theme"
-          aria-label="Toggle dark/light mode"
-        >
-          {isDarkMode ? '🌙' : '☀️'}
-        </button>
-      )}
+            });
+            document.querySelectorAll('p').forEach(el => {
+              (el as HTMLElement).style.color = 'rgb(134, 239, 172)'; // green-300
+            });
+          }
+          console.log('HTML classes:', html.className);
+
+          // Log computed styles to verify
+          setTimeout(() => {
+            const body = document.body;
+            const card = document.querySelector('.bg-white');
+            console.log(
+              'Body bg:',
+              window.getComputedStyle(body).backgroundColor
+            );
+            if (card) {
+              console.log(
+                'Card bg:',
+                window.getComputedStyle(card).backgroundColor
+              );
+            }
+          }, 100);
+        }}
+        className="absolute top-2 right-4 z-[20] cursor-pointer text-4xl transition-transform hover:scale-110 active:scale-95"
+        title="Toggle theme"
+        aria-label="Toggle dark/light mode"
+      >
+        {isDarkMode ? '🌙' : '☀️'}
+      </button>
 
       {/* Mountains - behind horizon with varied heights, TIGHT like Smoky Mountains */}
       <div
@@ -511,8 +510,8 @@ export function HeaderCropRow() {
         </div>
       </div>
 
-      {/* Clouds - fade in/out and move slowly, hidden during storm */}
-      {!showRain && (
+      {/* Clouds - fade in/out and move slowly, hidden during storm and in dark mode */}
+      {!showRain && !isDarkMode && (
         <>
           {/* Basic single clouds */}
           <div
@@ -636,8 +635,39 @@ export function HeaderCropRow() {
         </>
       )}
 
-      {/* Rain - shown at start of cycle, trickling down like our crops */}
-      {showRain && (
+      {/* Stars - shown in dark mode only, twinkling effect */}
+      {isDarkMode && (
+        <div className="absolute inset-0 z-[2]">
+          {Array.from({ length: 30 }).map((_, i) => {
+            const leftPos = (i * 13 + 7) % 100;
+            const topPos = (i * 4 + 1) % 15; // Moved up to top 15% of header
+            const size =
+              i % 3 === 0
+                ? 'text-[6px]'
+                : i % 3 === 1
+                  ? 'text-[5px]'
+                  : 'text-[4px]';
+            const delay = (i * 0.3) % 2;
+            return (
+              <div
+                key={i}
+                className={`absolute ${size}`}
+                style={{
+                  left: `${leftPos}%`,
+                  top: `${topPos}%`,
+                  animation: 'twinkle 3s ease-in-out infinite',
+                  animationDelay: `${delay}s`,
+                }}
+              >
+                ⭐
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Rain - shown at start of cycle in light mode only */}
+      {showRain && !isDarkMode && (
         <>
           {/* Storm clouds - THICK FOG-LIKE LAYER, moving right to left */}
           <div className="absolute top-0 right-0 left-0 z-10 h-24 overflow-hidden">
@@ -867,11 +897,30 @@ export function HeaderCropRow() {
 
       {/* Tractor */}
       {showTractor && (
-        <Tractor
-          speed={3}
-          direction="right"
-          onPositionChange={handleTractorPositionChange}
-        />
+        <>
+          {/* Headlight beam in dark mode */}
+          {isDarkMode && (
+            <div
+              className="absolute z-[11]"
+              style={{
+                left: `${tractorPosition + 8}%`,
+                bottom: '20px',
+                width: '100px',
+                height: '60px',
+                background:
+                  'linear-gradient(90deg, rgba(255, 255, 200, 0.4) 0%, rgba(255, 255, 200, 0) 100%)',
+                clipPath: 'polygon(0% 40%, 100% 0%, 100% 100%, 0% 60%)',
+                filter: 'blur(8px)',
+                pointerEvents: 'none',
+              }}
+            />
+          )}
+          <Tractor
+            speed={3}
+            direction="right"
+            onPositionChange={handleTractorPositionChange}
+          />
+        </>
       )}
     </div>
   );

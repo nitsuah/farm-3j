@@ -4,7 +4,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { HeaderCropRow } from '@/components/animations/HeaderCropRow';
 
 export const metadata = {
-  title: 'Pretty Good Farm - Fresh Local Produce',
+  title: 'Pretty Good Farms - Fresh Local Produce',
   description:
     'Sustainable farming with a focus on community and quality produce.',
   generator: 'Next.js',
@@ -68,14 +68,14 @@ export default function RootLayout({
 
               {/* Mobile: vertical layout stacked on left */}
               <div className="flex flex-col gap-2 md:hidden">
-                {/* PG Farm title - acts as home button */}
+                {/* PG Farms title - acts as home button */}
                 <a
                   href="/"
                   className="flex w-fit items-center gap-2 rounded-lg bg-black/30 px-3 py-1 backdrop-blur-sm transition-colors hover:bg-black/40"
                 >
                   <span className="text-2xl">🌾</span>
                   <h1 className="text-2xl font-bold text-white drop-shadow-lg">
-                    PG Farm
+                    PG Farms
                   </h1>
                 </a>
 
@@ -107,7 +107,7 @@ export default function RootLayout({
         <footer className="bg-white py-3 text-green-900 dark:bg-green-900 dark:text-white">
           <div className="container mx-auto px-4 text-center">
             <p className="text-sm">
-              &copy; 2025 Pretty Good Farm. All rights reserved.
+              &copy; 2025 Pretty Good Farms. All rights reserved.
             </p>
           </div>
         </footer>

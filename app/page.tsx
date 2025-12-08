@@ -13,7 +13,7 @@ export default function Home() {
         {/* Hero content */}
         <div className="relative top-4 z-10 flex h-full flex-col items-center justify-center gap-4 px-6 py-6 md:px-4 md:py-0">
           <h1 className="text-4xl font-bold text-green-900 drop-shadow-lg md:text-5xl dark:text-white">
-            Pretty Good Farm
+            Pretty Good Farms
           </h1>
           <p className="mx-auto max-w-2xl px-4 text-center text-xl text-green-800 drop-shadow md:px-0 dark:text-green-200">
             Fresh, locally-grown produce and sustainable farming practices.
