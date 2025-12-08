@@ -71,7 +71,7 @@ export function FlyingBug({
 
   return (
     <div
-      className="absolute text-sm transition-all duration-100"
+      className="absolute z-[10] text-sm transition-all duration-100"
       style={{
         left: `${position.x}%`,
         top: `${position.y}%`,

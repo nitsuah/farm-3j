@@ -276,10 +276,8 @@ export function GrowingCropScene() {
       </div>
 
       {/* Flying bugs with different paths */}
-      <div className="z-[9]">
-        <FlyingBug type="bee" startX={20} startY={65} />
-        <FlyingBug type="butterfly" startX={70} startY={60} />
-      </div>
+      <FlyingBug type="bee" startX={20} startY={65} />
+      <FlyingBug type="butterfly" startX={70} startY={60} />
 
       {/* Crawling roly poly - smaller and near bottom row */}
       <div
