@@ -58,7 +58,9 @@ export function useNotifications() {
     listener(notificationQueue);
 
     return () => {
-      notificationListeners = notificationListeners.filter(l => l !== listener);
+      notificationListeners = notificationListeners.filter(
+        (l: (notification: Notification[]) => void) => l !== listener
+      );
     };
   }, []);
 
