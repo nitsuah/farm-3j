@@ -43,7 +43,10 @@ function removeNotification(id: string) {
 }
 
 function notifyListeners() {
-  notificationListeners.forEach(listener => listener([...notificationQueue]));
+  notificationListeners.forEach(
+    (listener: (notifications: Notification[]) => void) =>
+      listener([...notificationQueue])
+  );
 }
 
 export function useNotifications() {
