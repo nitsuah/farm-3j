@@ -74,7 +74,10 @@ export default function FarmPage() {
           </div>
 
           {/* Compact Editor Sidebar */}
-          <div className="h-full w-80 shrink-0 overflow-y-auto border-l border-gray-700 bg-gray-900/95 backdrop-blur-sm">
+          <div
+            className="h-full w-80 shrink-0 overflow-y-auto border-l border-gray-700 bg-gray-900/95 backdrop-blur-sm"
+            suppressHydrationWarning
+          >
             <FarmEditor
               editorMode={editorMode}
               onEditorModeChange={setEditorMode}

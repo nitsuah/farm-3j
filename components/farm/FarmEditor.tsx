@@ -83,7 +83,10 @@ export function FarmEditor({
   };
 
   return (
-    <div className="rounded-lg bg-gray-800 p-4 text-white shadow-xl">
+    <div
+      className="rounded-lg bg-gray-800 p-4 text-white shadow-xl"
+      suppressHydrationWarning
+    >
       <h2 className="mb-4 text-2xl font-bold text-green-400">🌾 Farm Editor</h2>
 
       {/* Editor Mode Toolbar */}
