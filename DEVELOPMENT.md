@@ -83,7 +83,6 @@ farm-3j/
    ```
 
 2. **Make your changes**
-
    - Write code following the project conventions
    - Add tests for new functionality
    - Update documentation as needed
