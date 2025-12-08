@@ -130,22 +130,20 @@ export function FarmEditor({
           />
         )}
         {editorMode === 'select' && (
-          <div className="rounded bg-gray-700/50 p-4 text-sm text-gray-300">
-            <p>Click on entities to select and move them.</p>
-            <p className="mt-2 text-xs text-gray-400">
-              This feature is coming soon!
-            </p>
+          <div className="rounded bg-gray-800 p-3 text-xs text-gray-300">
+            <p>Click entities to select and move them.</p>
+            <p className="mt-1 text-gray-400">Coming soon!</p>
           </div>
         )}
       </div>
 
-      {/* Control Buttons */}
-      <div className="mb-6 border-t border-gray-700 pt-4">
-        <h3 className="mb-2 text-lg font-semibold">Controls</h3>
-        <div className="flex flex-col gap-2">
+      {/* Control Buttons - Compact */}
+      <div className="border-t border-gray-700 pt-3">
+        <h3 className="mb-2 text-sm font-semibold">Controls</h3>
+        <div className="flex flex-col gap-1.5">
           <button
             onClick={handleTogglePause}
-            className={`rounded px-4 py-2 font-semibold transition-colors ${
+            className={`rounded px-3 py-1.5 text-sm font-semibold transition-colors ${
               state.isPaused
                 ? 'bg-green-600 hover:bg-green-700'
                 : 'bg-yellow-600 hover:bg-yellow-700'
@@ -156,98 +154,110 @@ export function FarmEditor({
           <button
             onClick={handleRepairFences}
             disabled={state.money < 50 || state.fenceHealth >= 100}
-            className="rounded bg-amber-600 px-4 py-2 font-semibold transition-colors hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-gray-600"
+            className="rounded bg-amber-600 px-3 py-1.5 text-sm font-semibold transition-colors hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-gray-700 disabled:opacity-50"
           >
-            🔧 Repair Fences ($50)
+            🔧 Repair ($50)
           </button>
           <button
             onClick={handleHealAnimals}
             disabled={state.money < 100 || state.animalHealth >= 100}
-            className="rounded bg-red-600 px-4 py-2 font-semibold transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-gray-600"
+            className="rounded bg-red-600 px-3 py-1.5 text-sm font-semibold transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-gray-700 disabled:opacity-50"
           >
-            💊 Heal Animals ($100)
+            💊 Heal ($100)
           </button>
           <button
             onClick={() => setShowHelp(!showHelp)}
-            className="rounded bg-purple-600 px-4 py-2 font-semibold transition-colors hover:bg-purple-700"
+            className="rounded bg-purple-600 px-3 py-1.5 text-sm font-semibold transition-colors hover:bg-purple-700"
           >
-            {showHelp ? '❌ Hide Help' : '❓ Keyboard Shortcuts'}
+            {showHelp ? '❌ Close' : '❓ Shortcuts'}
           </button>
         </div>
 
-        {/* Keyboard shortcuts help panel */}
+        {/* Keyboard shortcuts help panel - Compact */}
         {showHelp && (
-          <div className="mt-4 rounded-lg bg-gray-900 p-4 text-sm">
-            <h4 className="mb-2 font-semibold text-purple-400">
-              ⌨️ Keyboard Shortcuts
+          <div className="mt-2 rounded-lg bg-gray-950 p-2 text-xs">
+            <h4 className="mb-1 text-xs font-semibold text-purple-400">
+              ⌨️ Shortcuts
             </h4>
-            <ul className="space-y-1">
-              <li>
-                <kbd className="rounded bg-gray-700 px-2 py-1">Space</kbd> or{' '}
-                <kbd className="rounded bg-gray-700 px-2 py-1">P</kbd> -
-                Pause/Resume
+            <ul className="space-y-0.5">
+              <li className="flex items-center gap-1">
+                <kbd className="rounded bg-gray-800 px-1.5 py-0.5 text-[10px]">
+                  Space
+                </kbd>
+                <span className="text-gray-400">Pause</span>
               </li>
-              <li>
-                <kbd className="rounded bg-gray-700 px-2 py-1">R</kbd> - Repair
-                Fences ($50)
+              <li className="flex items-center gap-1">
+                <kbd className="rounded bg-gray-800 px-1.5 py-0.5 text-[10px]">
+                  R
+                </kbd>
+                <span className="text-gray-400">Repair</span>
               </li>
-              <li>
-                <kbd className="rounded bg-gray-700 px-2 py-1">H</kbd> - Heal
-                Animals ($100)
+              <li className="flex items-center gap-1">
+                <kbd className="rounded bg-gray-800 px-1.5 py-0.5 text-[10px]">
+                  H
+                </kbd>
+                <span className="text-gray-400">Heal</span>
               </li>
-              <li>
-                <kbd className="rounded bg-gray-700 px-2 py-1">?</kbd> - Show
-                Tutorial
+              <li className="flex items-center gap-1">
+                <kbd className="rounded bg-gray-800 px-1.5 py-0.5 text-[10px]">
+                  ?
+                </kbd>
+                <span className="text-gray-400">Tutorial</span>
+              </li>
+              <li className="flex items-center gap-1">
+                <kbd className="rounded bg-gray-800 px-1.5 py-0.5 text-[10px]">
+                  Esc
+                </kbd>
+                <span className="text-gray-400">Cancel</span>
               </li>
             </ul>
           </div>
         )}
       </div>
 
-      {/* Stats Display */}
-      <div className="border-t border-gray-700 pt-4">
-        <h3 className="mb-2 text-lg font-semibold">📊 Farm Stats</h3>
-        <div className="space-y-1 text-sm">
-          <div className="flex justify-between">
-            <span>💰 Money:</span>
-            <span className="font-bold text-green-400">${state.money}</span>
+      {/* Farm Stats - Compact at bottom */}
+      <div className="mt-3 border-t border-gray-700 pt-3">
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div className="rounded bg-gray-800 p-2">
+            <div className="text-gray-400">Money</div>
+            <div className="font-bold text-yellow-400">
+              ${state.money.toFixed(0)}
+            </div>
           </div>
-          <div className="flex justify-between">
-            <span>📅 Day:</span>
-            <span className="font-bold">{state.day}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>🕐 Time:</span>
-            <span className="font-bold">
+          <div className="rounded bg-gray-800 p-2">
+            <div className="text-gray-400">Day {state.day}</div>
+            <div className="font-bold">
               {Math.floor(state.time)}:
               {String(Math.floor((state.time % 1) * 60)).padStart(2, '0')}
-            </span>
+            </div>
           </div>
-          <div className="flex justify-between">
-            <span>🪵 Fence Health:</span>
-            <span className="font-bold text-yellow-400">
-              {state.fenceHealth}%
-            </span>
+          <div className="rounded bg-gray-800 p-2">
+            <div className="text-gray-400">Fence</div>
+            <div
+              className={`font-bold ${
+                state.fenceHealth > 50
+                  ? 'text-green-400'
+                  : state.fenceHealth > 25
+                    ? 'text-yellow-400'
+                    : 'text-red-400'
+              }`}
+            >
+              {state.fenceHealth.toFixed(0)}%
+            </div>
           </div>
-          <div className="flex justify-between">
-            <span>❤️ Animal Health:</span>
-            <span className="font-bold text-red-400">
-              {state.animalHealth}%
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span>🐾 Total Animals:</span>
-            <span className="font-bold">
+          <div className="rounded bg-gray-800 p-2">
+            <div className="text-gray-400">Animals</div>
+            <div className="font-bold text-red-400">
               {state.entities.filter(e => e.velocity && e.velocity > 0).length}
-            </span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Resources */}
-      <div className="mt-4 border-t border-gray-700 pt-4">
-        <h3 className="mb-2 text-lg font-semibold">📦 Resources</h3>
-        <div className="space-y-2">
+      {/* Resources - Compact */}
+      <div className="mt-3 border-t border-gray-700 pt-3">
+        <h3 className="mb-2 text-sm font-semibold">📦 Resources</h3>
+        <div className="space-y-1.5">
           {Object.entries(state.resources).map(([resource, amount]) => {
             const icons = { milk: '🥛', eggs: '🥚', meat: '🥩', wool: '🧶' };
             const prices = { milk: 10, eggs: 5, meat: 20, wool: 15 };
@@ -257,17 +267,14 @@ export function FarmEditor({
             return (
               <div
                 key={resource}
-                className="flex items-center justify-between text-sm"
+                className="flex items-center justify-between text-xs"
               >
-                <span>
-                  {icon} {resource.charAt(0).toUpperCase() + resource.slice(1)}:{' '}
-                  {amount}
+                <span className="flex items-center gap-1">
+                  {icon} <span className="font-semibold">{amount}</span>
                 </span>
-                <div className="flex gap-2">
+                <div className="flex gap-1">
                   <button
                     onClick={() => {
-                      const prices = { milk: 10, eggs: 5, meat: 20, wool: 15 };
-                      const price = prices[resource as keyof typeof prices];
                       dispatch({
                         type: 'SELL_RESOURCE',
                         payload: {
@@ -282,20 +289,18 @@ export function FarmEditor({
                       );
                     }}
                     disabled={amount < 1}
-                    className="rounded bg-green-600 px-2 py-1 text-xs hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-600"
+                    className="rounded bg-green-600 px-2 py-0.5 text-[10px] hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-700 disabled:opacity-50"
                   >
-                    Sell ${price}
+                    ${price}
                   </button>
                   <button
                     onClick={() => {
-                      const prices = { milk: 10, eggs: 5, meat: 20, wool: 15 };
-                      const price = prices[resource as keyof typeof prices];
                       const totalPrice = amount * price;
                       dispatch({
                         type: 'SELL_RESOURCE',
                         payload: {
                           resource: resource as keyof typeof state.resources,
-                          amount: amount,
+                          amount,
                         },
                       });
                       addNotification(
@@ -305,9 +310,9 @@ export function FarmEditor({
                       );
                     }}
                     disabled={amount < 1}
-                    className="rounded bg-blue-600 px-2 py-1 text-xs hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-600"
+                    className="rounded bg-green-700 px-2 py-0.5 text-[10px] hover:bg-green-800 disabled:cursor-not-allowed disabled:bg-gray-700 disabled:opacity-50"
                   >
-                    Sell All
+                    All
                   </button>
                 </div>
               </div>

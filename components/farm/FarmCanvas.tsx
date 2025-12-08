@@ -12,6 +12,7 @@ import {
   findNearestTrough,
   feedAnimal,
   moveTowards,
+  getFenceBounds,
 } from '@/lib/farm/gameLogic';
 import { GAME_CONFIG } from '@/lib/farm/constants';
 
@@ -128,6 +129,7 @@ export function FarmCanvas({ showGrid = false }: FarmCanvasProps) {
       });
 
       // Update positions for all animated entities (animals)
+      const fenceBounds = getFenceBounds();
       const updates = state.entities
         .filter(entity => entity.velocity && entity.velocity > 0)
         .map(entity => {
@@ -149,26 +151,43 @@ export function FarmCanvas({ showGrid = false }: FarmCanvasProps) {
                 x: movement.x,
                 y: movement.y,
                 direction: movement.direction,
+                hitFence: false,
               };
             }
           }
 
-          // Otherwise, use normal wander behavior
-          const { x, y, direction } = wander(
+          // Otherwise, use normal wander behavior with fence collision
+          const wanderResult = wander(
             entity.x,
             entity.y,
             entity.direction || 0,
             entity.velocity || 0,
-            deltaTime
+            deltaTime,
+            fenceBounds
           );
 
           return {
             id: entity.id,
-            x,
-            y,
-            direction,
+            x: wanderResult.x,
+            y: wanderResult.y,
+            direction: wanderResult.direction,
+            hitFence: wanderResult.hitFence,
           };
         });
+
+      // Apply fence damage for animals that hit fences
+      const fenceHits = updates.filter(u => u.hitFence);
+      if (fenceHits.length > 0 && state.fenceHealth > 0) {
+        // Each fence hit reduces fence health by 0.5%
+        const damagePerHit = 0.5;
+        const totalDamage = fenceHits.length * damagePerHit;
+        dispatch({
+          type: 'UPDATE_STATS',
+          payload: {
+            fenceHealth: Math.max(0, state.fenceHealth - totalDamage),
+          },
+        });
+      }
 
       if (updates.length > 0) {
         dispatch({ type: 'BATCH_UPDATE_POSITIONS', payload: updates });

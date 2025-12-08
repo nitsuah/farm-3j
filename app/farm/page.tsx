@@ -39,35 +39,29 @@ export default function FarmPage() {
       <TutorialOverlay />
       <KeyboardControls />
       <div
-        className="min-h-screen bg-gradient-to-b from-sky-200 to-green-100 dark:from-gray-900 dark:to-gray-800"
+        className="fixed inset-0 overflow-hidden bg-gradient-to-b from-sky-200 to-green-100 dark:from-gray-900 dark:to-gray-800"
         suppressHydrationWarning
       >
-        {/* Header */}
-        <header className="mb-4 flex items-center justify-between">
-          <div>
-            <h1 className="mb-2 text-4xl font-bold text-white">
-              🌾 Harvest Haven Farm - Interactive Demo
-            </h1>
-            <p className="text-gray-300">
-              Phase 1 MVP: Basic entity spawning and movement simulation
-            </p>
-          </div>
-          <Link
-            href="/"
-            className="rounded-lg bg-green-600 px-6 py-2 font-semibold text-white transition-colors hover:bg-green-700"
-          >
-            ← Back to Home
-          </Link>
-        </header>
+        {/* Fullscreen farm game - header hidden */}
+        <div className="flex h-full">
+          {/* Main canvas area */}
+          <div className="relative flex-1">
+            <div className="absolute top-4 left-4 z-10 flex items-center gap-4">
+              <div className="rounded-lg bg-black/70 px-4 py-2 backdrop-blur-sm">
+                <h1 className="text-xl font-bold text-white">
+                  🌾 Harvest Haven Farm
+                </h1>
+              </div>
+              <Link
+                href="/"
+                className="rounded-lg bg-green-600/90 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-green-700"
+              >
+                ← Home
+              </Link>
+            </div>
 
-        {/* Main Content */}
-        <div className="grid h-[calc(100vh-180px)] grid-cols-1 gap-4 lg:grid-cols-4">
-          {/* Farm Canvas - Takes up most space */}
-          <div className="relative h-full overflow-hidden lg:col-span-3">
-            <div
-              className="relative"
-              style={{ width: '1200px', height: '800px', margin: '0 auto' }}
-            >
+            {/* Farm Canvas - Fullscreen */}
+            <div className="relative h-full w-full">
               <FarmCanvas showGrid={showGrid} />
               <GridInteraction
                 mode={editorMode}
@@ -79,8 +73,8 @@ export default function FarmPage() {
             </div>
           </div>
 
-          {/* Editor Panel - Sidebar */}
-          <div className="lg:col-span-1">
+          {/* Compact Editor Sidebar */}
+          <div className="h-full w-80 shrink-0 overflow-y-auto border-l border-gray-700 bg-gray-900/95 backdrop-blur-sm">
             <FarmEditor
               editorMode={editorMode}
               onEditorModeChange={setEditorMode}
@@ -93,11 +87,6 @@ export default function FarmPage() {
             />
           </div>
         </div>
-
-        {/* Footer Info */}
-        <footer className="mt-4 text-center text-sm text-gray-400">
-          <p></p>
-        </footer>
       </div>
     </FarmProvider>
   );

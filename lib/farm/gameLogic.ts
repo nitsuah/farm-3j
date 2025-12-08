@@ -32,6 +32,49 @@ export function isInBounds(x: number, y: number): boolean {
   return x >= 5 && x <= 95 && y >= 5 && y <= 95;
 }
 
+// Check if animal collides with a fence
+export function checkFenceCollision(
+  animal: Entity,
+  fences: Entity[]
+): Entity | null {
+  for (const fence of fences) {
+    if (!fence.gridX || !fence.gridY) continue;
+
+    // Convert animal position to grid coordinates
+    const animalGrid = toGridCoords(animal.x, animal.y);
+
+    // Check if animal is near the fence position
+    const distance = Math.sqrt(
+      Math.pow(animalGrid.gridX - fence.gridX, 2) +
+        Math.pow(animalGrid.gridY - fence.gridY, 2)
+    );
+
+    // If animal is very close to fence (within 1 grid cell)
+    if (distance < 1.5) {
+      return fence;
+    }
+  }
+  return null;
+}
+
+// Calculate fence boundary for collision (inner perimeter)
+export function getFenceBounds(): {
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+} {
+  // Fence perimeter is at grid positions 2 and 17
+  // Convert to percentage coordinates
+  const innerBounds = {
+    minX: 3 * CELL_SIZE, // Grid 3 (inside fence at grid 2)
+    maxX: 17 * CELL_SIZE, // Grid 17 (inside fence at grid 17)
+    minY: 3 * CELL_SIZE,
+    maxY: 17 * CELL_SIZE,
+  };
+  return innerBounds;
+}
+
 // Calculate distance between two entities
 export function getDistance(entity1: Entity, entity2: Entity): number {
   const dx = entity1.x - entity2.x;
@@ -72,15 +115,17 @@ export function moveTowards(
   };
 }
 
-// Wander behavior - random movement with occasional direction changes
+// Wander behavior - random movement with occasional direction changes and fence collision
 export function wander(
   x: number,
   y: number,
   direction: number,
   velocity: number,
-  deltaTime: number
-): { x: number; y: number; direction: number } {
+  deltaTime: number,
+  fenceBounds?: { minX: number; maxX: number; minY: number; maxY: number }
+): { x: number; y: number; direction: number; hitFence: boolean } {
   let newDirection = direction;
+  let hitFence = false;
 
   // Random direction change (5% chance per frame)
   if (Math.random() < 0.05) {
@@ -91,20 +136,31 @@ export function wander(
   let newX = x + Math.cos(newDirection) * velocity * deltaTime * 10;
   let newY = y + Math.sin(newDirection) * velocity * deltaTime * 10;
 
-  // Bounce off boundaries
-  if (newX < 5 || newX > 95) {
+  // Use fence bounds if provided, otherwise use screen bounds
+  const bounds = fenceBounds || {
+    minX: 5,
+    maxX: 95,
+    minY: 5,
+    maxY: 95,
+  };
+
+  // Bounce off boundaries and detect fence collision
+  if (newX < bounds.minX || newX > bounds.maxX) {
     newDirection = Math.PI - newDirection;
-    newX = Math.max(5, Math.min(95, newX));
+    newX = Math.max(bounds.minX, Math.min(bounds.maxX, newX));
+    hitFence = !!fenceBounds; // Only count as fence hit if fence bounds are provided
   }
-  if (newY < 5 || newY > 95) {
+  if (newY < bounds.minY || newY > bounds.maxY) {
     newDirection = -newDirection;
-    newY = Math.max(5, Math.min(95, newY));
+    newY = Math.max(bounds.minY, Math.min(bounds.maxY, newY));
+    hitFence = !!fenceBounds; // Only count as fence hit if fence bounds are provided
   }
 
   return {
     x: Number(newX.toFixed(2)),
     y: Number(newY.toFixed(2)),
     direction: newDirection,
+    hitFence,
   };
 }
 
@@ -127,7 +183,7 @@ export function shouldAdvanceDay(oldTime: number, newTime: number): boolean {
 export function updateAnimalNeeds(
   entity: Entity,
   currentTime: number
-): Partial<Entity> | null {
+): Partial | null {
   // Only update animals, not structures
   const animalTypes = ['cow', 'chicken', 'pig', 'sheep'];
   if (!animalTypes.includes(entity.type)) {
@@ -202,7 +258,7 @@ export function canFeedFromTrough(animal: Entity, trough: Entity): boolean {
 export function feedAnimal(
   animal: Entity,
   trough: Entity
-): { animal: Partial<Entity>; trough: Partial<Entity> } | null {
+): { animal: Partial; trough: Partial } | null {
   if (!canFeedFromTrough(animal, trough)) return null;
 
   const currentHunger = animal.hunger ?? 0;
