@@ -27,9 +27,11 @@ export function HeaderCropRow() {
     const isDark = document.documentElement.classList.contains('dark');
     if (isDark) {
       document.body.style.backgroundColor = 'rgb(0, 0, 0)';
-      document.querySelectorAll('.bg-white').forEach(el => {
-        (el as HTMLElement).style.backgroundColor = 'rgb(17, 24, 39)';
-      });
+      document
+        .querySelectorAll('.bg-white:not([data-theme-button])')
+        .forEach(el => {
+          (el as HTMLElement).style.backgroundColor = 'rgb(0, 0, 0)';
+        });
       const heroGradient = document.querySelector('.dark\\:bg-black');
       if (heroGradient) {
         (heroGradient as HTMLElement).style.background = 'rgb(0, 0, 0)';
@@ -48,17 +50,13 @@ export function HeaderCropRow() {
       document.querySelectorAll('p').forEach(el => {
         (el as HTMLElement).style.color = 'rgb(134, 239, 172)';
       });
-      const learnMoreBtn = document.querySelector('a[href="/about"]');
-      if (learnMoreBtn && !(learnMoreBtn as HTMLElement).closest('nav')) {
-        (learnMoreBtn as HTMLElement).style.color = 'white';
-        (learnMoreBtn as HTMLElement).style.border = '2px solid white';
-        (learnMoreBtn as HTMLElement).style.backgroundColor = 'rgb(20, 83, 45)';
-      }
     } else {
       document.body.style.backgroundColor = 'rgb(240, 253, 244)';
-      document.querySelectorAll('.bg-white').forEach(el => {
-        (el as HTMLElement).style.backgroundColor = 'white';
-      });
+      document
+        .querySelectorAll('.bg-white:not([data-theme-button])')
+        .forEach(el => {
+          (el as HTMLElement).style.backgroundColor = 'white';
+        });
       const heroGradient = document.querySelector('.dark\\:bg-black');
       if (heroGradient) {
         (heroGradient as HTMLElement).style.background = 'white';
@@ -77,12 +75,6 @@ export function HeaderCropRow() {
       document.querySelectorAll('p').forEach(el => {
         (el as HTMLElement).style.color = 'rgb(21, 128, 61)';
       });
-      const learnMoreBtn = document.querySelector('a[href="/about"]');
-      if (learnMoreBtn && !(learnMoreBtn as HTMLElement).closest('nav')) {
-        (learnMoreBtn as HTMLElement).style.color = 'black';
-        (learnMoreBtn as HTMLElement).style.border = '2px solid black';
-        (learnMoreBtn as HTMLElement).style.backgroundColor = 'white';
-      }
       // Fix nav About link - remove any styles
       const navAboutLinks = document.querySelectorAll('nav a[href="/about"]');
       navAboutLinks.forEach(link => {
@@ -236,9 +228,11 @@ export function HeaderCropRow() {
 
               // Manually apply light mode styles
               document.body.style.backgroundColor = 'rgb(240, 253, 244)'; // bg-green-50
-              document.querySelectorAll('.bg-white').forEach(el => {
-                (el as HTMLElement).style.backgroundColor = 'white';
-              });
+              document
+                .querySelectorAll('.bg-white:not([data-theme-button])')
+                .forEach(el => {
+                  (el as HTMLElement).style.backgroundColor = 'white';
+                });
               document.querySelectorAll('.dark\\:bg-gray-900').forEach(el => {
                 (el as HTMLElement).style.backgroundColor = 'white';
               });
@@ -263,16 +257,6 @@ export function HeaderCropRow() {
               document.querySelectorAll('p').forEach(el => {
                 (el as HTMLElement).style.color = 'rgb(21, 128, 61)'; // green-700
               });
-              // Fix Learn More button text and border
-              const learnMoreBtn = document.querySelector('a[href="/about"]');
-              if (
-                learnMoreBtn &&
-                !(learnMoreBtn as HTMLElement).closest('nav')
-              ) {
-                (learnMoreBtn as HTMLElement).style.color = 'black';
-                (learnMoreBtn as HTMLElement).style.border = '2px solid black';
-                (learnMoreBtn as HTMLElement).style.backgroundColor = 'white';
-              }
               // Fix nav About link - remove any styles
               const navAboutLinks = document.querySelectorAll(
                 'nav a[href="/about"]'
@@ -289,11 +273,13 @@ export function HeaderCropRow() {
 
               // Manually apply dark mode styles
               document.body.style.backgroundColor = 'rgb(0, 0, 0)'; // black
-              document.querySelectorAll('.bg-white').forEach(el => {
-                (el as HTMLElement).style.backgroundColor = 'rgb(17, 24, 39)'; // gray-900
-              });
-              document.querySelectorAll('.dark\\:bg-gray-900').forEach(el => {
-                (el as HTMLElement).style.backgroundColor = 'rgb(17, 24, 39)';
+              document
+                .querySelectorAll('.bg-white:not([data-theme-button])')
+                .forEach(el => {
+                  (el as HTMLElement).style.backgroundColor = 'rgb(0, 0, 0)';
+                });
+              document.querySelectorAll('.dark\\:bg-gray-800').forEach(el => {
+                (el as HTMLElement).style.backgroundColor = 'rgb(0, 0, 0)';
               });
               // Hero section solid black - force it
               const heroGradient = document.querySelector('.dark\\:bg-black');
@@ -317,17 +303,6 @@ export function HeaderCropRow() {
               document.querySelectorAll('p').forEach(el => {
                 (el as HTMLElement).style.color = 'rgb(134, 239, 172)'; // green-300
               });
-              // Fix Learn More button
-              const learnMoreBtn = document.querySelector('a[href="/about"]');
-              if (
-                learnMoreBtn &&
-                !(learnMoreBtn as HTMLElement).closest('nav')
-              ) {
-                (learnMoreBtn as HTMLElement).style.color = 'white';
-                (learnMoreBtn as HTMLElement).style.border = '2px solid white';
-                (learnMoreBtn as HTMLElement).style.backgroundColor =
-                  'rgb(20, 83, 45)';
-              }
             }
             console.log('HTML classes:', html.className);
 

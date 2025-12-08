@@ -1,10 +1,28 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ContactModal } from '@/components/ContactModal';
 
 export default function AboutPage() {
   const [isContactOpen, setIsContactOpen] = useState(false);
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    // Check initial theme
+    setIsDark(document.documentElement.classList.contains('dark'));
+
+    // Watch for theme changes
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <main className="flex-1">
@@ -42,33 +60,79 @@ export default function AboutPage() {
           <h2 className="mb-4 text-2xl font-bold text-green-900 dark:text-white">
             Our Values
           </h2>
-          <ul className="space-y-3 text-green-700 dark:text-green-300">
-            <li className="flex items-start">
+          <ul className="space-y-3" data-theme-protected="true">
+            <li
+              className="flex items-start"
+              style={{
+                color: isDark ? 'rgb(134, 239, 172)' : 'rgb(17, 24, 39)',
+              }}
+            >
               <span className="mr-2 font-bold">🌱</span>
               <span>
-                <strong>Sustainability:</strong> We practice crop rotation,
-                composting, and natural pest management.
+                <strong
+                  style={{
+                    color: isDark ? 'rgb(134, 239, 172)' : 'rgb(20, 83, 45)',
+                  }}
+                >
+                  Sustainability:
+                </strong>{' '}
+                We practice crop rotation, composting, and natural pest
+                management.
               </span>
             </li>
-            <li className="flex items-start">
+            <li
+              className="flex items-start"
+              style={{
+                color: isDark ? 'rgb(134, 239, 172)' : 'rgb(17, 24, 39)',
+              }}
+            >
               <span className="mr-2 font-bold">🤝</span>
               <span>
-                <strong>Community:</strong> Supporting local families with
-                fresh, healthy food options.
+                <strong
+                  style={{
+                    color: isDark ? 'rgb(134, 239, 172)' : 'rgb(20, 83, 45)',
+                  }}
+                >
+                  Community:
+                </strong>{' '}
+                Supporting local families with fresh, healthy food options.
               </span>
             </li>
-            <li className="flex items-start">
+            <li
+              className="flex items-start"
+              style={{
+                color: isDark ? 'rgb(134, 239, 172)' : 'rgb(17, 24, 39)',
+              }}
+            >
               <span className="mr-2 font-bold">⭐</span>
               <span>
-                <strong>Quality:</strong> Every harvest is carefully tended and
-                picked at peak freshness.
+                <strong
+                  style={{
+                    color: isDark ? 'rgb(134, 239, 172)' : 'rgb(20, 83, 45)',
+                  }}
+                >
+                  Quality:
+                </strong>{' '}
+                Every harvest is carefully tended and picked at peak freshness.
               </span>
             </li>
-            <li className="flex items-start">
+            <li
+              className="flex items-start"
+              style={{
+                color: isDark ? 'rgb(134, 239, 172)' : 'rgb(17, 24, 39)',
+              }}
+            >
               <span className="mr-2 font-bold">📚</span>
               <span>
-                <strong>Education:</strong> Sharing our knowledge about
-                sustainable agriculture with visitors.
+                <strong
+                  style={{
+                    color: isDark ? 'rgb(134, 239, 172)' : 'rgb(20, 83, 45)',
+                  }}
+                >
+                  Education:
+                </strong>{' '}
+                Sharing our knowledge about sustainable agriculture with
+                visitors.
               </span>
             </li>
           </ul>
