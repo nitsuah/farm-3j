@@ -6,6 +6,7 @@ import {
   screenToGrid,
   isValidGridPosition,
   gridToPercent,
+  gridToScreen,
 } from '@/lib/farm/isometric';
 import { spawnAnimal } from '@/lib/farm/spawner';
 import { createFence, createTrough } from '@/lib/farm/structures';
@@ -43,7 +44,7 @@ export function GridInteraction({
 
       // Handle animal placement
       if (mode === 'animals' && selectedAnimal) {
-        const costs: Record<string, number> = {
+        const costs: Record = {
           cow: 500,
           chicken: 100,
           pig: 300,
@@ -177,16 +178,43 @@ export function GridInteraction({
     >
       {/* Hover indicator */}
       {hoverGrid && (mode === 'animals' || mode === 'build') && (
-        <div
-          className="pointer-events-none absolute h-16 w-16 rounded border-2 border-dashed border-white bg-white/20"
+        <svg
+          className="pointer-events-none absolute"
           style={{
-            left: `${(gridToPercent(hoverGrid.x, hoverGrid.y).x / 100) * 100}%`,
-            top: `${(gridToPercent(hoverGrid.x, hoverGrid.y).y / 100) * 100}%`,
-            transform: 'translate(-50%, -50%)',
+            left: 0,
+            top: 0,
+            width: '100%',
+            height: '100%',
             zIndex: 999,
           }}
-        />
+        >
+          <HoverTile gridX={hoverGrid.x} gridY={hoverGrid.y} />
+        </svg>
       )}
     </div>
+  );
+}
+
+// Hover tile component that renders an isometric diamond
+function HoverTile({ gridX, gridY }: { gridX: number; gridY: number }) {
+  const { screenX, screenY } = gridToScreen(gridX, gridY);
+  const tileWidth = 64;
+  const tileHeight = 32;
+
+  const points = `
+    ${screenX},${screenY}
+    ${screenX + tileWidth / 2},${screenY + tileHeight / 2}
+    ${screenX},${screenY + tileHeight}
+    ${screenX - tileWidth / 2},${screenY + tileHeight / 2}
+  `;
+
+  return (
+    <polygon
+      points={points}
+      fill="rgba(255, 255, 255, 0.2)"
+      stroke="white"
+      strokeWidth="2"
+      strokeDasharray="4 4"
+    />
   );
 }

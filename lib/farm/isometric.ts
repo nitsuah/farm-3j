@@ -44,14 +44,19 @@ export function screenToGrid(
   const relX = screenX - GRID_CONFIG.OFFSET_X;
   const relY = screenY - GRID_CONFIG.OFFSET_Y;
 
+  // Correct isometric to grid conversion
   const gridX =
-    relX / (GRID_CONFIG.TILE_WIDTH / 2) + relY / (GRID_CONFIG.TILE_HEIGHT / 2);
+    (relX / (GRID_CONFIG.TILE_WIDTH / 2) +
+      relY / (GRID_CONFIG.TILE_HEIGHT / 2)) /
+    2;
   const gridY =
-    relY / (GRID_CONFIG.TILE_HEIGHT / 2) - relX / (GRID_CONFIG.TILE_WIDTH / 2);
+    (relY / (GRID_CONFIG.TILE_HEIGHT / 2) -
+      relX / (GRID_CONFIG.TILE_WIDTH / 2)) /
+    2;
 
   return {
-    gridX: Math.floor(gridX / 2),
-    gridY: Math.floor(gridY / 2),
+    gridX: Math.floor(gridX),
+    gridY: Math.floor(gridY),
   };
 }
 
