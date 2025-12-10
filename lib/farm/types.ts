@@ -1,0 +1,70 @@
+// Core entity types for Farm Tycoon simulation
+
+export type EntityType =
+  | 'cow'
+  | 'chicken'
+  | 'pig'
+  | 'sheep'
+  | 'barn'
+  | 'fence'
+  | 'trough'
+  | 'pond';
+
+export interface Entity {
+  id: string;
+  type: EntityType;
+  x: number; // Position in pixels or percentage
+  y: number;
+  gridX?: number; // Grid position for isometric rendering
+  gridY?: number;
+  width?: number;
+  height?: number;
+  velocity?: number; // Movement speed for animated entities
+  direction?: number; // Angle in radians for movement
+  lastUpdate?: number; // Timestamp for animation frame tracking
+  lastProduced?: number; // Timestamp of last resource production
+  inventory?: number; // Resource inventory count
+  health?: number; // Entity health (for fences, buildings)
+  orientation?: 'horizontal' | 'vertical'; // For fence segments
+  hunger?: number; // Hunger level (0-100, 100 = starving)
+  happiness?: number; // Happiness level (0-100, 100 = very happy)
+  lastNeedUpdate?: number; // Timestamp of last need update
+  foodLevel?: number; // Food level for troughs (0-100)
+  isFeeding?: boolean; // Animal is currently feeding
+}
+
+export interface FarmState {
+  entities: Entity[];
+  money: number;
+  day: number;
+  time: number; // Time of day (0-24)
+  fenceHealth: number;
+  animalHealth: number;
+  isPaused: boolean;
+  resources: {
+    milk: number;
+    eggs: number;
+    meat: number;
+    wool: number;
+  };
+}
+
+export type FarmAction =
+  | { type: 'SPAWN_ANIMAL'; payload: Entity }
+  | { type: 'SPAWN_STATIC'; payload: Entity }
+  | {
+      type: 'UPDATE_POSITION';
+      payload: { id: string; x: number; y: number; direction?: number };
+    }
+  | { type: 'REMOVE_ENTITY'; payload: string }
+  | { type: 'UPDATE_STATS'; payload: Partial<FarmState> }
+  | { type: 'TOGGLE_PAUSE' }
+  | {
+      type: 'BATCH_UPDATE_POSITIONS';
+      payload: Array<{ id: string; x: number; y: number; direction?: number }>;
+    }
+  | { type: 'PRODUCE_RESOURCES' }
+  | {
+      type: 'SELL_RESOURCE';
+      payload: { resource: keyof FarmState['resources']; amount: number };
+    };

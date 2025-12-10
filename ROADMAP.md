@@ -2,10 +2,42 @@
 
 ## Near Term (0-3 Months)
 
-- [ ] UI Overhaul - add interactive farm animals and farm site design
-- [ ] **Contact Form Enhancements:** Improve user experience of the contact form. Rationale: Address initial user feedback and improve lead generation. Scope: Form validation, UI improvements, submission confirmation. Success: Increased form submission rate, positive user feedback. Risks: Form usability issues persist.
-- [ ] **Responsiveness Refinement:** Ensure optimal viewing experience across devices. Rationale: Capture mobile users and improve accessibility. Scope: Testing and adjustments for common screen sizes. Success: Consistent layout and functionality on mobile and desktop. Risks: Unexpected layout issues on specific devices.
-- [ ] **Basic SEO Optimization:** Implement fundamental SEO practices. Rationale: Increase organic traffic and visibility. Scope: Meta descriptions, image alt text, basic keyword research (TODO: DEFINE KEYWORDS). Success: Increased website traffic from search engines. Risks: Limited impact due to competitive landscape.
+- [x] Configure ESLint and Prettier for code quality
+- [x] Fix CI/CD pipeline lint issues
+- [ ] **UI Overhaul - Farm Tycoon Interactive Homepage (IN PROGRESS)**
+  - [x] Phase 1a: State management with FarmContext and useReducer
+  - [x] Phase 1b: FarmCanvas component with requestAnimationFrame game loop
+  - [x] Phase 1c: Entity system (base, Animal, StaticAsset components)
+  - [x] Phase 1d: FarmEditor control panel with spawn buttons
+  - [x] Phase 1e: Animal sprites and CSS animations with shadows
+  - [x] Phase 1f: Deploy to /farm route for testing
+  - [x] Phase 1g: Day/night cycle with time progression
+  - [x] Phase 1h: Wander AI behavior for animals
+  - [x] Phase 1i: Repair/heal action buttons with costs
+  - [x] Phase 1j: Resource production system (milk, eggs, meat, wool)
+  - [x] Phase 1k: Selling mechanics with prices
+  - [x] Phase 1l: Animal purchasing with costs
+  - [x] Phase 1m: Toast notification system for game events
+  - [x] Phase 1n: Tutorial overlay with localStorage persistence
+  - [x] Phase 1o: Keyboard shortcuts (Space/P, R, H, ?)
+  - [x] Phase 1p: Bulk selling with "Sell All" buttons
+  - [x] Phase 1q: Performance optimizations (React.memo, useMemo, useCallback)
+  - [x] **Phase 2a: Isometric coordinate system implementation**
+  - [x] **Phase 2b: Grid-based terrain tiles (grass, pasture, dirt, pond)**
+  - [x] **Phase 2c: Visible fence entities with health indicators**
+  - [x] **Phase 2d: Editor sidebar with Build/Animals/Select modes**
+  - [x] **Phase 2e: Click-to-place system with snap-to-grid**
+  - [x] **Phase 2f: Grid overlay toggle for placement visualization**
+  - [ ] Phase 2g: Animal needs system (hunger, happiness decay)
+  - [ ] Phase 2h: Feeding mechanics with food inventory and troughs
+  - [ ] Phase 2i: Advanced AI pathfinding (avoid obstacles, seek resources)
+  - [ ] Phase 2j: Dynamic fence placement tool (build custom paddocks)
+  - [ ] Phase 2k: Terrain editing (change tile types)
+  - [ ] Phase 2l: Save/load game state to localStorage
+  - [ ] Phase 2m: Multiple building types (coops, pens, silos)
+- [ ] **Contact Form Enhancements:** Form validation, UI improvements
+- [ ] **Responsiveness Refinement:** Mobile/desktop optimization
+- [ ] **Basic SEO Optimization:** Meta descriptions, image alt text
 
 ## Mid Term (3-6 Months)
 

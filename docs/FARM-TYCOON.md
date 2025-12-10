@@ -162,4 +162,82 @@ We will break the development into three main phases:
 
 We have a clear path from simple interaction to complex simulation. Before moving to the advanced phases, we need to solidify the Phase 1 foundation.
 
-**Question:** Would you like to start by focusing on Phase 1, Step C (Isometric Display), or should we define the new Grid Coordinate System first?
+## Expectations from Phase 1 Completion
+
+🖱️ User Interaction Vision: The Farm Editor
+
+The user experience (UX) for the Farm Tycoon homepage is centered around the Farm Editor, which facilitates a lightweight, click-and-place building experience inspired by classic tycoon games. This vision aims to provide intuitive control over the environment and the animals.
+
+1. Interaction Modes
+   The editor will operate using two primary modes, selected via buttons in the control panel:
+
+1. Selector / Picker Mode (Default)
+   Purpose: Information gathering and minor adjustments.
+
+Action: When the user clicks on an existing entity (animal, fence, structure), a small context box or "Info Panel" appears.
+
+Context Panel Features:
+
+Animals: Displays stats (Health, Hunger, Status). Provides buttons like "Sell," "Cure," or "Inspect."
+
+Structures/Fences: Displays status (Health/Decay). Provides a "Repair" button or a "Move" handle.
+
+2. Build Mode
+   Purpose: Placing permanent structures, fences, and utility items.
+
+Action: Clicking the "Build" button slides out a dedicated panel containing buildable categories (Fences, Structures, Utilities).
+
+Placement Mechanics (Grid-Based):
+
+User selects an item (e.g., "Wooden Fence" or "Trough") from the Build Panel.
+
+The editor canvas changes to display a grid overlay.
+
+A translucent ghost image of the selected item snaps to the grid under the cursor.
+
+Clicking an empty, valid grid tile places the item and deducts its cost from the player's funds.
+
+2. Animal Spawning (Drag-and-Drop)
+   Animal spawning is separated from the general Build Mode to encourage experimentation and immediate interaction:
+
+Location: The "Animals" section of the editor provides icons for each available animal (Cow, Chicken, Pig).
+
+Mechanic: The user can click and drag an animal icon directly from the editor panel onto the farm canvas.
+
+Spawning Action: Upon releasing the mouse button, the animal is instantiated at that grid location and immediately begins its automated movement (Phase 1 MVP). This provides instant visual gratification.
+
+3. Advanced Controls (Phase 2+)
+   The following controls will evolve in later phases to meet the Tycoon vision:
+
+Terrain Picker: A toggle to enter a mode where clicking a large grid area changes its texture (e.g., swapping grass tiles for dirt or pond tiles).
+
+Financial Summary: A persistent overlay (separate from the main editor) displaying the current Money total, resource counters (e.g., Eggs, Milk), and the current Game Clock (Date/Time).
+
+Global Fix Button (MVP Placeholder): The "Fix All Fences" or "Cure All Disease" button acts as a temporary, immediate fix for complex simulation issues until the full "Repair" logic (Phase 3) is implemented. This ensures the player can reset the game state if a broken element breaks the experience.
+
+This setup ensures that the user's primary focus remains on the interactive farm display, while the editor acts as an intuitive, overlay toolkit.
+
+## Other considerations
+
+Mostly for the other pages/basic needs/nice to haves
+
+### Immediate
+
+1. Add backend for contact form (email service integration)
+2. Add real content and images
+3. Implement proper product catalog
+4. Set up environment variables for APIs
+
+### Soon
+
+1. Add more pages (Products, Contact, etc. some exist)
+2. Implement e-commerce features if needed (ie: a market, see existing roadmap and tasks not related to tycoon)
+3. Add authentication if required
+4. Set up analytics
+
+### Testing
+
+1. Write more unit tests (currently at 0% coverage)
+2. Add integration tests
+3. Set up E2E testing with Playwright or Cypress
+4. Get to 50% coverage
