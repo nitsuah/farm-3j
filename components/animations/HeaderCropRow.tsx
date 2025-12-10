@@ -7,7 +7,9 @@ import { Tractor } from './Tractor';
 export function HeaderCropRow() {
   const [showTractor, setShowTractor] = useState(false);
   const [tractorPosition, setTractorPosition] = useState(-10);
-  const [harvestedCrops, setHarvestedCrops] = useState<Set<number>>(new Set());
+  const [harvestedCrops, setHarvestedCrops] = useState<Set<number>>(
+    new Set()
+  );
   const [cycleKey, setCycleKey] = useState(0); // Force re-render on cycle
   const [showRain, setShowRain] = useState(false);
   const [isSecondRain, setIsSecondRain] = useState(false);
