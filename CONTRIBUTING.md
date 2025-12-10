@@ -506,7 +506,6 @@ pnpm type-check
 If you have questions, feel free to:
 
 - Open an issue with the `question` label
-- Join our [community chat/forum] (TODO: ADD_LINK)
 - Contact the maintainers at [contact@email.com]
 
 Thank you for contributing! 🎉
