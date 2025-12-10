@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useFarm } from '@/lib/farm/FarmContext';
 import { spawnAnimal } from '@/lib/farm/spawner';
 import { addNotification } from '@/lib/farm/notifications';
+import { GAME_CONFIG } from '@/lib/farm/constants';
 import { EditorToolbar, EditorMode } from './EditorToolbar';
 import { BuildPanel } from './BuildPanel';
 import { AnimalPanel } from './AnimalPanel';
@@ -34,8 +35,7 @@ export function FarmEditor({
   const [animationSpeed, setAnimationSpeed] = useState(1.0);
 
   const handleSpawnAnimal = (type: 'cow' | 'chicken' | 'pig' | 'sheep') => {
-    const costs = { cow: 500, chicken: 100, pig: 300, sheep: 400 };
-    const cost = costs[type];
+    const cost = GAME_CONFIG.ANIMALS[type].price;
 
     if (state.money < cost) {
       addNotification(

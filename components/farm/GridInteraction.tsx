@@ -11,6 +11,7 @@ import {
 import { spawnAnimal } from '@/lib/farm/spawner';
 import { createFence, createTrough } from '@/lib/farm/structures';
 import { addNotification } from '@/lib/farm/notifications';
+import { GAME_CONFIG } from '@/lib/farm/constants';
 
 interface GridInteractionProps {
   mode: 'select' | 'build' | 'animals';
@@ -44,13 +45,10 @@ export function GridInteraction({
 
       // Handle animal placement
       if (mode === 'animals' && selectedAnimal) {
-        const costs: Record = {
-          cow: 500,
-          chicken: 100,
-          pig: 300,
-          sheep: 400,
-        };
-        const cost = costs[selectedAnimal.type];
+        const cost =
+          GAME_CONFIG.ANIMALS[
+            selectedAnimal.type as keyof typeof GAME_CONFIG.ANIMALS
+          ]?.price || 0;
 
         if (state.money < cost) {
           addNotification(

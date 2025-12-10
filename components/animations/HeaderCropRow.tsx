@@ -7,7 +7,7 @@ import { Tractor } from './Tractor';
 export function HeaderCropRow() {
   const [showTractor, setShowTractor] = useState(false);
   const [tractorPosition, setTractorPosition] = useState(-10);
-  const [harvestedCrops, setHarvestedCrops] = useState<Set<number>>(new Set());
+  const [harvestedCrops, setHarvestedCrops] = useState<Set>(new Set());
   const [cycleKey, setCycleKey] = useState(0); // Force re-render on cycle
   const [showRain, setShowRain] = useState(false);
   const [isSecondRain, setIsSecondRain] = useState(false);
@@ -218,12 +218,10 @@ export function HeaderCropRow() {
         onClick={() => {
           const html = document.documentElement;
           const isDark = html.classList.contains('dark');
-          console.log('Sun clicked! Current isDark:', isDark);
 
           if (isDark) {
             html.classList.remove('dark');
             localStorage.setItem('theme', 'light');
-            console.log('Switched to light mode');
             setIsDarkMode(false);
 
             // Manually apply light mode styles
@@ -268,7 +266,6 @@ export function HeaderCropRow() {
           } else {
             html.classList.add('dark');
             localStorage.setItem('theme', 'dark');
-            console.log('Switched to dark mode');
             setIsDarkMode(true);
 
             // Manually apply dark mode styles
@@ -304,23 +301,6 @@ export function HeaderCropRow() {
               (el as HTMLElement).style.color = 'rgb(134, 239, 172)'; // green-300
             });
           }
-          console.log('HTML classes:', html.className);
-
-          // Log computed styles to verify
-          setTimeout(() => {
-            const body = document.body;
-            const card = document.querySelector('.bg-white');
-            console.log(
-              'Body bg:',
-              window.getComputedStyle(body).backgroundColor
-            );
-            if (card) {
-              console.log(
-                'Card bg:',
-                window.getComputedStyle(card).backgroundColor
-              );
-            }
-          }, 100);
         }}
         className="absolute top-2 right-4 z-[20] cursor-pointer text-4xl transition-transform hover:scale-110 active:scale-95"
         title="Toggle theme"

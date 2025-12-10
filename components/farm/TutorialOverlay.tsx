@@ -83,7 +83,9 @@ export function TutorialOverlay() {
       <div className="fixed top-1/2 left-1/2 z-[9999] w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg border-2 border-green-500 bg-gray-800 p-6 shadow-2xl">
         {/* Header */}
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-white">{step.title}</h2>
+          <h2 className="text-2xl font-bold text-white">
+            {step?.title || 'Tutorial'}
+          </h2>
           <button
             onClick={handleSkip}
             className="text-gray-400 transition-colors hover:text-white"
@@ -94,7 +96,7 @@ export function TutorialOverlay() {
         </div>
 
         {/* Content */}
-        <p className="mb-6 text-lg text-gray-300">{step.content}</p>
+        <p className="mb-6 text-lg text-gray-300">{step?.content || ''}</p>
 
         {/* Progress Dots */}
         <div className="mb-6 flex justify-center gap-2">

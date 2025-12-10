@@ -24,18 +24,18 @@ export function createDefaultTerrain(
     for (let x = 0; x < cols; x++) {
       // Create a pond in the middle-left area
       if (x >= 4 && x <= 7 && y >= 8 && y <= 11) {
-        terrain[y][x] = { gridX: x, gridY: y, type: 'pond' };
+        terrain[y]![x] = { gridX: x, gridY: y, type: 'pond' };
       }
       // Create some dirt paths
       else if (
         (x === 10 && y >= 5 && y <= 15) ||
         (y === 10 && x >= 5 && x <= 15)
       ) {
-        terrain[y][x] = { gridX: x, gridY: y, type: 'dirt' };
+        terrain[y]![x] = { gridX: x, gridY: y, type: 'dirt' };
       }
       // Default to pasture
       else {
-        terrain[y][x] = { gridX: x, gridY: y, type: 'pasture' };
+        terrain[y]![x] = { gridX: x, gridY: y, type: 'pasture' };
       }
     }
   }
