@@ -12,7 +12,7 @@ export interface Notification {
 
 // Simple notification queue
 let notificationQueue: Notification[] = [];
-let notificationListeners: Array<(notifications: Notification[]) => void> = [];
+let notificationListeners: ((notifications: Notification[]) => void)[] = [];
 
 export function addNotification(
   message: string,
@@ -47,6 +47,12 @@ function notifyListeners() {
     (listener: (notifications: Notification[]) => void) =>
       listener([...notificationQueue])
   );
+}
+
+// Test utility to clear all notifications
+export function clearNotifications() {
+  notificationQueue = [];
+  notifyListeners();
 }
 
 export function useNotifications() {
