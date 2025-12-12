@@ -2,13 +2,13 @@
 
 ## Core Metrics
 
-| Metric        | Value | Notes                                                                                                                                                                                 |
-| ------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Code Coverage | 81%   | Core lib/ coverage: 81.22% (✅ Target: 75%+). gameLogic: 95.4%, spawner: 100%, isometric: 100%, terrain: 100%, structures: 100%, farmReducer: 94.44%. UI components excluded Phase 1. |
-| Build Time    | ~3.5s | Test execution with coverage (175 tests)                                                                                                                                              |
-| Bundle Size   | TBD   | Not measured yet                                                                                                                                                                      |
-| Test Files    | 7     | utils, gameLogic, farmReducer, spawner, isometric, terrain, structures                                                                                                                |
-| Test Cases    | 175   | All tests passing - comprehensive game logic, terrain, and state management coverage                                                                                                  |
+| Metric        | Value | Notes                                                                                                                                                                                                  |
+| ------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Code Coverage | 91%   | Core lib/ coverage: 91.09% (✅✅ Target: 90%+). gameLogic: 95.4%, spawner: 100%, isometric: 100%, terrain: 100%, structures: 100%, farmReducer: 94.44%, notifications: 73.52%. UI components excluded. |
+| Build Time    | ~4.1s | Test execution with coverage (199 tests)                                                                                                                                                               |
+| Bundle Size   | TBD   | Not measured yet                                                                                                                                                                                       |
+| Test Files    | 8     | utils, gameLogic, farmReducer, spawner, isometric, terrain, structures, notifications                                                                                                                  |
+| Test Cases    | 199   | All tests passing - comprehensive game logic, terrain, state management, and notification system coverage                                                                                              |
 
 ## Health
 
@@ -18,7 +18,7 @@
 | PR Turnaround | TBD        | Typical merge time   |
 | Skipped Tests | 0          | All tests passing    |
 | Health Score  | TBD        | Overall health score |
-| Last Updated  | 2025-01-11 | Last audit date      |
+| Last Updated  | 2025-01-12 | Last audit date      |
 
 <!--
 AGENT INSTRUCTIONS:
