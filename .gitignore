@@ -10,6 +10,8 @@
 # production
 /build
 
+/coverage
+
 # debug
 npm-debug.log*
 yarn-debug.log*
