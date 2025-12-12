@@ -2,13 +2,13 @@
 
 ## Core Metrics
 
-| Metric        | Value | Notes                                                                                                            |
-| ------------- | ----- | ---------------------------------------------------------------------------------------------------------------- |
-| Code Coverage | 0.1%  | Total codebase coverage. Statements: 0.09%, Branches: 0%, Functions: 0.35%, Lines: 0.1%. Only utils.ts is tested |
-| Build Time    | TBD   | Not measured yet                                                                                                 |
-| Bundle Size   | TBD   | Not measured yet                                                                                                 |
-| Test Files    | 1     | All vitest unit tests passing (utils)                                                                            |
-| Test Cases    | 3     | All tests passing (cn className merger tests)                                                                    |
+| Metric        | Value | Notes                                                                                                                                |
+| ------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Code Coverage | 41%   | Core lib/ coverage: 41.22%. gameLogic: 50.57%, spawner: 100%, isometric: 76.47%, structures: 88.88%. UI components excluded Phase 1. |
+| Build Time    | ~3s   | Test execution with coverage                                                                                                         |
+| Bundle Size   | TBD   | Not measured yet                                                                                                                     |
+| Test Files    | 5     | utils, gameLogic, farmReducer, spawner, isometric                                                                                    |
+| Test Cases    | 104   | All tests passing - comprehensive game logic coverage                                                                                |
 
 ## Health
 
