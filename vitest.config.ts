@@ -20,7 +20,6 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
-      all: true, // Include all source files in coverage report, not just tested ones
       include: ['lib/**/*.{ts,tsx}'],
       exclude: [
         'node_modules/',

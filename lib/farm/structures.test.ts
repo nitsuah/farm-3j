@@ -104,7 +104,11 @@ describe('createFencePerimeter', () => {
     );
 
     expect(topFences.length).toBe(16); // x from 2 to 17 inclusive
-    expect(topFences.every(f => f.gridX >= 2 && f.gridX <= 17)).toBe(true);
+    expect(
+      topFences.every(
+        f => f.gridX !== undefined && f.gridX >= 2 && f.gridX <= 17
+      )
+    ).toBe(true);
   });
 
   it('creates bottom horizontal fences', () => {
@@ -114,7 +118,11 @@ describe('createFencePerimeter', () => {
     );
 
     expect(bottomFences.length).toBe(16);
-    expect(bottomFences.every(f => f.gridX >= 2 && f.gridX <= 17)).toBe(true);
+    expect(
+      bottomFences.every(
+        f => f.gridX !== undefined && f.gridX >= 2 && f.gridX <= 17
+      )
+    ).toBe(true);
   });
 
   it('creates left vertical fences', () => {
@@ -124,7 +132,11 @@ describe('createFencePerimeter', () => {
     );
 
     expect(leftFences.length).toBe(14); // y from 3 to 16 inclusive
-    expect(leftFences.every(f => f.gridY >= 3 && f.gridY <= 16)).toBe(true);
+    expect(
+      leftFences.every(
+        f => f.gridY !== undefined && f.gridY >= 3 && f.gridY <= 16
+      )
+    ).toBe(true);
   });
 
   it('creates right vertical fences', () => {
@@ -134,7 +146,11 @@ describe('createFencePerimeter', () => {
     );
 
     expect(rightFences.length).toBe(14);
-    expect(rightFences.every(f => f.gridY >= 3 && f.gridY <= 16)).toBe(true);
+    expect(
+      rightFences.every(
+        f => f.gridY !== undefined && f.gridY >= 3 && f.gridY <= 16
+      )
+    ).toBe(true);
   });
 
   it('creates complete perimeter with correct total count', () => {
