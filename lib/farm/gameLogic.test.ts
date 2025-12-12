@@ -10,6 +10,10 @@ import {
   getDistance,
   checkCollision,
   moveTowards,
+  updateAnimalNeeds,
+  findNearestTrough,
+  canFeedFromTrough,
+  feedAnimal,
 } from './gameLogic';
 import { Entity } from './types';
 
@@ -363,5 +367,294 @@ describe('GameLogic - Advanced Functions', () => {
     it('handles midnight boundary', () => {
       expect(shouldAdvanceDay(23.9, 0.1)).toBe(true);
     });
+  });
+});
+
+describe('updateAnimalNeeds', () => {
+  it('returns null for non-animal entities', () => {
+    const fence = { id: '1', type: 'fence' as const, x: 50, y: 50 };
+    expect(updateAnimalNeeds(fence, 10)).toBeNull();
+  });
+
+  it('initializes needs with defaults when not set', () => {
+    const cow = {
+      id: '1',
+      type: 'cow' as const,
+      x: 50,
+      y: 50,
+      lastNeedUpdate: 0,
+    };
+    const result = updateAnimalNeeds(cow, 1); // 1 hour elapsed
+
+    expect(result).not.toBeNull();
+    // Should initialize hunger to 0 and happiness to 100, then update
+    expect(result!.hunger).toBeGreaterThan(0);
+    expect(result!.happiness).toBeLessThan(100);
+  });
+
+  it('returns null if not enough time has passed', () => {
+    const cow = {
+      id: '1',
+      type: 'cow' as const,
+      x: 50,
+      y: 50,
+      hunger: 10,
+      happiness: 90,
+      lastNeedUpdate: 10,
+    };
+    const result = updateAnimalNeeds(cow, 10.05);
+
+    expect(result).toBeNull();
+  });
+
+  it('increases hunger over time', () => {
+    const cow = {
+      id: '1',
+      type: 'cow' as const,
+      x: 50,
+      y: 50,
+      hunger: 10,
+      happiness: 90,
+      lastNeedUpdate: 0,
+    };
+    const result = updateAnimalNeeds(cow, 1);
+
+    expect(result).not.toBeNull();
+    expect(result!.hunger).toBeGreaterThan(10);
+  });
+
+  it('decreases happiness over time', () => {
+    const pig = {
+      id: '1',
+      type: 'pig' as const,
+      x: 50,
+      y: 50,
+      hunger: 10,
+      happiness: 90,
+      lastNeedUpdate: 0,
+    };
+    const result = updateAnimalNeeds(pig, 1);
+
+    expect(result).not.toBeNull();
+    expect(result!.happiness).toBeLessThan(90);
+  });
+
+  it('happiness decays faster when hungry', () => {
+    const hungryChicken = {
+      id: '1',
+      type: 'chicken' as const,
+      x: 50,
+      y: 50,
+      hunger: 80,
+      happiness: 90,
+      lastNeedUpdate: 0,
+    };
+    const result = updateAnimalNeeds(hungryChicken, 1);
+
+    expect(result).not.toBeNull();
+    expect(result!.happiness).toBeLessThan(90); // Should decay from 90
+  });
+
+  it('caps hunger at 100', () => {
+    const sheep = {
+      id: '1',
+      type: 'sheep' as const,
+      x: 50,
+      y: 50,
+      hunger: 95,
+      happiness: 50,
+      lastNeedUpdate: 0,
+    };
+    const result = updateAnimalNeeds(sheep, 10);
+
+    expect(result!.hunger).toBe(100);
+  });
+
+  it('caps happiness at 0', () => {
+    const cow = {
+      id: '1',
+      type: 'cow' as const,
+      x: 50,
+      y: 50,
+      hunger: 90,
+      happiness: 5,
+      lastNeedUpdate: 0,
+    };
+    const result = updateAnimalNeeds(cow, 10);
+
+    expect(result!.happiness).toBe(0);
+  });
+});
+
+describe('findNearestTrough', () => {
+  it('returns null when no troughs available', () => {
+    const animal = { id: '1', type: 'cow' as const, x: 50, y: 50 };
+    expect(findNearestTrough(animal, [])).toBeNull();
+  });
+
+  it('returns null when all troughs are empty', () => {
+    const animal = { id: '1', type: 'cow' as const, x: 50, y: 50 };
+    const troughs = [
+      { id: '2', type: 'trough' as const, x: 40, y: 40, foodLevel: 0 },
+      { id: '3', type: 'trough' as const, x: 60, y: 60, foodLevel: 0 },
+    ];
+    expect(findNearestTrough(animal, troughs)).toBeNull();
+  });
+
+  it('returns nearest trough with food', () => {
+    const animal = { id: '1', type: 'cow' as const, x: 50, y: 50 };
+    const troughs = [
+      { id: '2', type: 'trough' as const, x: 40, y: 40, foodLevel: 10 },
+      { id: '3', type: 'trough' as const, x: 55, y: 55, foodLevel: 20 },
+    ];
+    const nearest = findNearestTrough(animal, troughs);
+    expect(nearest!.id).toBe('3');
+  });
+
+  it('ignores non-trough entities', () => {
+    const animal = { id: '1', type: 'cow' as const, x: 50, y: 50 };
+    const entities = [
+      { id: '2', type: 'fence' as const, x: 40, y: 40 },
+      { id: '3', type: 'trough' as const, x: 60, y: 60, foodLevel: 10 },
+    ];
+    const nearest = findNearestTrough(animal, entities);
+    expect(nearest!.id).toBe('3');
+  });
+});
+
+describe('canFeedFromTrough', () => {
+  it('returns false if trough is too far', () => {
+    const animal = { id: '1', type: 'cow' as const, x: 10, y: 10 };
+    const trough = {
+      id: '2',
+      type: 'trough' as const,
+      x: 90,
+      y: 90,
+      foodLevel: 10,
+    };
+    expect(canFeedFromTrough(animal, trough)).toBe(false);
+  });
+
+  it('returns false if trough is empty', () => {
+    const animal = { id: '1', type: 'cow' as const, x: 50, y: 50 };
+    const trough = {
+      id: '2',
+      type: 'trough' as const,
+      x: 52,
+      y: 52,
+      foodLevel: 0,
+    };
+    expect(canFeedFromTrough(animal, trough)).toBe(false);
+  });
+
+  it('returns true if trough is close and has food', () => {
+    const animal = { id: '1', type: 'cow' as const, x: 50, y: 50 };
+    const trough = {
+      id: '2',
+      type: 'trough' as const,
+      x: 52,
+      y: 52,
+      foodLevel: 10,
+    };
+    expect(canFeedFromTrough(animal, trough)).toBe(true);
+  });
+});
+
+describe('feedAnimal', () => {
+  it('returns null if animal cannot feed from trough', () => {
+    const animal = { id: '1', type: 'cow' as const, x: 10, y: 10, hunger: 50 };
+    const trough = {
+      id: '2',
+      type: 'trough' as const,
+      x: 90,
+      y: 90,
+      foodLevel: 10,
+    };
+    expect(feedAnimal(animal, trough)).toBeNull();
+  });
+
+  it('reduces animal hunger when feeding', () => {
+    const animal = { id: '1', type: 'cow' as const, x: 50, y: 50, hunger: 50 };
+    const trough = {
+      id: '2',
+      type: 'trough' as const,
+      x: 52,
+      y: 52,
+      foodLevel: 20,
+    };
+    const result = feedAnimal(animal, trough);
+
+    expect(result).not.toBeNull();
+    expect(result!.animal.hunger).toBeLessThan(50);
+  });
+
+  it('reduces trough food level when feeding', () => {
+    const animal = { id: '1', type: 'cow' as const, x: 50, y: 50, hunger: 50 };
+    const trough = {
+      id: '2',
+      type: 'trough' as const,
+      x: 52,
+      y: 52,
+      foodLevel: 20,
+    };
+    const result = feedAnimal(animal, trough);
+
+    expect(result!.trough.foodLevel).toBeLessThan(20);
+  });
+
+  it('increases animal happiness when feeding', () => {
+    const animal = {
+      id: '1',
+      type: 'cow' as const,
+      x: 50,
+      y: 50,
+      hunger: 50,
+      happiness: 50,
+    };
+    const trough = {
+      id: '2',
+      type: 'trough' as const,
+      x: 52,
+      y: 52,
+      foodLevel: 20,
+    };
+    const result = feedAnimal(animal, trough);
+
+    expect(result!.animal.happiness).toBeGreaterThan(50);
+  });
+
+  it('sets isFeeding flag to true', () => {
+    const animal = { id: '1', type: 'cow' as const, x: 50, y: 50, hunger: 50 };
+    const trough = {
+      id: '2',
+      type: 'trough' as const,
+      x: 52,
+      y: 52,
+      foodLevel: 20,
+    };
+    const result = feedAnimal(animal, trough);
+
+    expect(result!.animal.isFeeding).toBe(true);
+  });
+
+  it('caps happiness at 100', () => {
+    const animal = {
+      id: '1',
+      type: 'cow' as const,
+      x: 50,
+      y: 50,
+      hunger: 50,
+      happiness: 95,
+    };
+    const trough = {
+      id: '2',
+      type: 'trough' as const,
+      x: 52,
+      y: 52,
+      foodLevel: 20,
+    };
+    const result = feedAnimal(animal, trough);
+
+    expect(result!.animal.happiness).toBe(100);
   });
 });

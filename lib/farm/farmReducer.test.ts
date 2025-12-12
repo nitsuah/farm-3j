@@ -477,4 +477,230 @@ describe('FarmReducer', () => {
       expect(state.entities.find(e => e.id === 'temp-1')).toBeUndefined();
     });
   });
+
+  describe('PRODUCE_RESOURCES Action', () => {
+    it('tracks production time correctly', () => {
+      const testState = {
+        ...initialFarmState,
+        entities: [
+          {
+            id: 'cow1',
+            type: 'cow' as const,
+            x: 50,
+            y: 50,
+            inventory: 0,
+            lastProduced: Date.now(),
+          },
+        ],
+      };
+
+      const newState = farmReducer(testState, { type: 'PRODUCE_RESOURCES' });
+      // Should not produce yet since just initialized
+      expect(newState.entities[0]!.inventory).toBe(0);
+    });
+
+    it('does not produce if insufficient time has passed', () => {
+      const testState = {
+        ...initialFarmState,
+        entities: [
+          {
+            id: 'cow1',
+            type: 'cow' as const,
+            x: 50,
+            y: 50,
+            lastProduced: Date.now() - 1000, // 1 second ago
+            inventory: 0,
+          },
+        ],
+      };
+
+      const newState = farmReducer(testState, { type: 'PRODUCE_RESOURCES' });
+      expect(newState.entities[0]!.inventory).toBe(0);
+    });
+
+    it('collects milk from cows', () => {
+      const testState = {
+        ...initialFarmState,
+        entities: [
+          {
+            id: 'cow1',
+            type: 'cow' as const,
+            x: 50,
+            y: 50,
+            inventory: 5,
+          },
+        ],
+        resources: { milk: 10, eggs: 0, meat: 0, wool: 0 },
+      };
+
+      const newState = farmReducer(testState, { type: 'PRODUCE_RESOURCES' });
+      expect(newState.resources.milk).toBe(15);
+      expect(newState.entities[0]!.inventory).toBe(0);
+    });
+
+    it('collects eggs from chickens', () => {
+      const testState = {
+        ...initialFarmState,
+        entities: [
+          {
+            id: 'chicken1',
+            type: 'chicken' as const,
+            x: 50,
+            y: 50,
+            inventory: 3,
+          },
+        ],
+        resources: { milk: 0, eggs: 5, meat: 0, wool: 0 },
+      };
+
+      const newState = farmReducer(testState, { type: 'PRODUCE_RESOURCES' });
+      expect(newState.resources.eggs).toBe(8);
+      expect(newState.entities[0]!.inventory).toBe(0);
+    });
+
+    it('collects meat from pigs', () => {
+      const testState = {
+        ...initialFarmState,
+        entities: [
+          {
+            id: 'pig1',
+            type: 'pig' as const,
+            x: 50,
+            y: 50,
+            inventory: 2,
+          },
+        ],
+        resources: { milk: 0, eggs: 0, meat: 7, wool: 0 },
+      };
+
+      const newState = farmReducer(testState, { type: 'PRODUCE_RESOURCES' });
+      expect(newState.resources.meat).toBe(9);
+      expect(newState.entities[0]!.inventory).toBe(0);
+    });
+
+    it('collects wool from sheep', () => {
+      const testState = {
+        ...initialFarmState,
+        entities: [
+          {
+            id: 'sheep1',
+            type: 'sheep' as const,
+            x: 50,
+            y: 50,
+            inventory: 4,
+          },
+        ],
+        resources: { milk: 0, eggs: 0, meat: 0, wool: 12 },
+      };
+
+      const newState = farmReducer(testState, { type: 'PRODUCE_RESOURCES' });
+      expect(newState.resources.wool).toBe(16);
+      expect(newState.entities[0]!.inventory).toBe(0);
+    });
+
+    it('handles multiple animals producing simultaneously', () => {
+      const testState = {
+        ...initialFarmState,
+        entities: [
+          { id: 'cow1', type: 'cow' as const, x: 50, y: 50, inventory: 2 },
+          {
+            id: 'chicken1',
+            type: 'chicken' as const,
+            x: 60,
+            y: 60,
+            inventory: 3,
+          },
+          { id: 'pig1', type: 'pig' as const, x: 70, y: 70, inventory: 1 },
+        ],
+        resources: { milk: 0, eggs: 0, meat: 0, wool: 0 },
+      };
+
+      const newState = farmReducer(testState, { type: 'PRODUCE_RESOURCES' });
+      expect(newState.resources.milk).toBe(2);
+      expect(newState.resources.eggs).toBe(3);
+      expect(newState.resources.meat).toBe(1);
+    });
+  });
+
+  describe('SELL_RESOURCE Action', () => {
+    it('sells milk and increases money', () => {
+      const testState = {
+        ...initialFarmState,
+        resources: { milk: 10, eggs: 0, meat: 0, wool: 0 },
+        money: 100,
+      };
+
+      const newState = farmReducer(testState, {
+        type: 'SELL_RESOURCE',
+        payload: { resource: 'milk', amount: 5 },
+      });
+
+      expect(newState.resources.milk).toBe(5);
+      expect(newState.money).toBe(150); // 5 milk × 10 = 50 + 100
+    });
+
+    it('sells eggs and increases money', () => {
+      const testState = {
+        ...initialFarmState,
+        resources: { milk: 0, eggs: 20, meat: 0, wool: 0 },
+        money: 50,
+      };
+
+      const newState = farmReducer(testState, {
+        type: 'SELL_RESOURCE',
+        payload: { resource: 'eggs', amount: 10 },
+      });
+
+      expect(newState.resources.eggs).toBe(10);
+      expect(newState.money).toBe(100); // 10 eggs × 5 = 50 + 50
+    });
+
+    it('sells meat and increases money', () => {
+      const testState = {
+        ...initialFarmState,
+        resources: { milk: 0, eggs: 0, meat: 8, wool: 0 },
+        money: 0,
+      };
+
+      const newState = farmReducer(testState, {
+        type: 'SELL_RESOURCE',
+        payload: { resource: 'meat', amount: 3 },
+      });
+
+      expect(newState.resources.meat).toBe(5);
+      expect(newState.money).toBe(60); // 3 meat × 20 = 60
+    });
+
+    it('sells wool and increases money', () => {
+      const testState = {
+        ...initialFarmState,
+        resources: { milk: 0, eggs: 0, meat: 0, wool: 12 },
+        money: 75,
+      };
+
+      const newState = farmReducer(testState, {
+        type: 'SELL_RESOURCE',
+        payload: { resource: 'wool', amount: 4 },
+      });
+
+      expect(newState.resources.wool).toBe(8);
+      expect(newState.money).toBe(135); // 4 wool × 15 = 60 + 75
+    });
+
+    it('does not sell if insufficient resources', () => {
+      const testState = {
+        ...initialFarmState,
+        resources: { milk: 3, eggs: 0, meat: 0, wool: 0 },
+        money: 100,
+      };
+
+      const newState = farmReducer(testState, {
+        type: 'SELL_RESOURCE',
+        payload: { resource: 'milk', amount: 10 },
+      });
+
+      expect(newState.resources.milk).toBe(3); // Unchanged
+      expect(newState.money).toBe(100); // Unchanged
+    });
+  });
 });

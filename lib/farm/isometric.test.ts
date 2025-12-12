@@ -5,6 +5,8 @@ import {
   isValidGridPosition,
   calculateZIndex,
   GRID_CONFIG,
+  gridToPercent,
+  snapToGrid,
 } from './isometric';
 
 describe('Isometric Utilities', () => {
@@ -176,6 +178,36 @@ describe('Isometric Utilities', () => {
 
       expect(back).toBeLessThan(middle);
       expect(middle).toBeLessThan(front);
+    });
+  });
+
+  describe('snapToGrid', () => {
+    it('snaps position to nearest grid tile', () => {
+      const result = snapToGrid(52.3, 48.7);
+      const { gridX, gridY } = screenToGrid(
+        (52.3 / 100) * 1200,
+        (48.7 / 100) * 800
+      );
+      const expected = gridToPercent(gridX, gridY);
+
+      expect(result.x).toBeCloseTo(expected.x, 1);
+      expect(result.y).toBeCloseTo(expected.y, 1);
+    });
+
+    it('snaps to grid and returns valid coordinates', () => {
+      const result = snapToGrid(52, 48);
+
+      // Should return a valid grid-snapped position
+      expect(result.x).toBeDefined();
+      expect(result.y).toBeDefined();
+      expect(typeof result.x).toBe('number');
+      expect(typeof result.y).toBe('number');
+    });
+
+    it('handles corner positions', () => {
+      const result = snapToGrid(0, 0);
+      expect(result.x).toBeDefined();
+      expect(result.y).toBeDefined();
     });
   });
 });

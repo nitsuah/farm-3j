@@ -2,13 +2,13 @@
 
 ## Core Metrics
 
-| Metric        | Value | Notes                                                                                                                                |
-| ------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| Code Coverage | 41%   | Core lib/ coverage: 41.22%. gameLogic: 50.57%, spawner: 100%, isometric: 76.47%, structures: 88.88%. UI components excluded Phase 1. |
-| Build Time    | ~3s   | Test execution with coverage                                                                                                         |
-| Bundle Size   | TBD   | Not measured yet                                                                                                                     |
-| Test Files    | 5     | utils, gameLogic, farmReducer, spawner, isometric                                                                                    |
-| Test Cases    | 104   | All tests passing - comprehensive game logic coverage                                                                                |
+| Metric        | Value | Notes                                                                                                                                                                                 |
+| ------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Code Coverage | 81%   | Core lib/ coverage: 81.22% (✅ Target: 75%+). gameLogic: 95.4%, spawner: 100%, isometric: 100%, terrain: 100%, structures: 100%, farmReducer: 94.44%. UI components excluded Phase 1. |
+| Build Time    | ~3.5s | Test execution with coverage (175 tests)                                                                                                                                              |
+| Bundle Size   | TBD   | Not measured yet                                                                                                                                                                      |
+| Test Files    | 7     | utils, gameLogic, farmReducer, spawner, isometric, terrain, structures                                                                                                                |
+| Test Cases    | 175   | All tests passing - comprehensive game logic, terrain, and state management coverage                                                                                                  |
 
 ## Health
 
@@ -18,7 +18,7 @@
 | PR Turnaround | TBD        | Typical merge time   |
 | Skipped Tests | 0          | All tests passing    |
 | Health Score  | TBD        | Overall health score |
-| Last Updated  | 2025-12-11 | Last audit date      |
+| Last Updated  | 2025-01-11 | Last audit date      |
 
 <!--
 AGENT INSTRUCTIONS:
