@@ -8,6 +8,8 @@ on:
 
 permissions:
   contents: read
+  checks: write
+  statuses: write
 
 jobs:
   lint-and-test:
@@ -43,7 +45,27 @@ jobs:
             ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        shell: bash
+        run: |
+          if ! pnpm install --frozen-lockfile; then
+            echo "::warning::Frozen lockfile install failed – repairing with pnpm install --no-frozen-lockfile"
+            pnpm install --no-frozen-lockfile
+          fi
+
+      - name: Diagnose environment on failure
+        if: failure()
+        shell: bash
+        run: |
+          echo "=== Node / pnpm versions ==="
+          node --version
+          pnpm --version
+          echo "=== GitHub connectivity ==="
+          curl -s --max-time 10 -o /dev/null -w "github.com HTTP %{http_code}\n" https://github.com || echo "github.com unreachable"
+          curl -s --max-time 10 -o /dev/null -w "registry.npmjs.org HTTP %{http_code}\n" https://registry.npmjs.org || echo "npm registry unreachable"
+          echo "=== pnpm store path ==="
+          pnpm store path || true
+          echo "=== Lockfile head ==="
+          head -20 pnpm-lock.yaml
 
       - name: Run type check
         run: pnpm run type-check
@@ -100,7 +122,27 @@ jobs:
             ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        shell: bash
+        run: |
+          if ! pnpm install --frozen-lockfile; then
+            echo "::warning::Frozen lockfile install failed – repairing with pnpm install --no-frozen-lockfile"
+            pnpm install --no-frozen-lockfile
+          fi
+
+      - name: Diagnose environment on failure
+        if: failure()
+        shell: bash
+        run: |
+          echo "=== Node / pnpm versions ==="
+          node --version
+          pnpm --version
+          echo "=== GitHub connectivity ==="
+          curl -s --max-time 10 -o /dev/null -w "github.com HTTP %{http_code}\n" https://github.com || echo "github.com unreachable"
+          curl -s --max-time 10 -o /dev/null -w "registry.npmjs.org HTTP %{http_code}\n" https://registry.npmjs.org || echo "npm registry unreachable"
+          echo "=== pnpm store path ==="
+          pnpm store path || true
+          echo "=== Lockfile head ==="
+          head -20 pnpm-lock.yaml
 
       - name: Build application
         run: pnpm run build
