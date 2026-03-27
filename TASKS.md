@@ -1,55 +1,45 @@
-# Tasks
+# TASKS
+
+Last Updated: 2026-03-27
 
 ## Todo
 
-- [ ] Integrate with email service for form submissions (P2, M)
-- [ ] Develop product market page with extensibility in mind for updates b2b/b2c, keep it simple products meat, eggs, milk, etc. for sale/pickup/pre-sale (P1, L)
-- [ ] Implement contact form submission modal to market (P1, S)
-- [ ] Create reusable button component (P2, S)
-- [ ] Set up basic routing with React Router (P2, M)
-- [ ] Style the navigation bar (P1, S)
-- [ ] Implement image carousel for product display (P2, L)
-- [ ] Write unit tests for form validation (P3, M)
+### P0 - Blockers
+
+- [ ] Fix the Docker dependency stage so `patches/` is available before `pnpm install`.
+  - Priority: P0
+  - Acceptance Criteria: `docker build` succeeds from a clean checkout without manual file copies.
+
+- [ ] Add a CI Docker smoke test.
+  - Priority: P0
+  - Acceptance Criteria: CI catches Docker build and startup regressions.
+
+### P1 - Near-Term
+
+- [ ] Complete Farm Tycoon phase 2 core systems.
+  - Priority: P1
+  - Context: animal needs, feeding, and fence tooling still need to finish the playable loop.
+  - Acceptance Criteria: the systems are available in the UI and covered by deterministic tests.
+
+- [ ] Ship the contact-to-market conversion path.
+  - Priority: P1
+  - Acceptance Criteria: the site has a validated form submission path with confirmation and error handling.
+
+### P2 - Growth Backlog
+
+- [ ] Build content and discovery surfaces.
+  - Priority: P2
+  - Context: gallery, blog or news, SEO, and accessibility work still trail the playable product work.
+  - Acceptance Criteria: Lighthouse and accessibility baselines are tracked and improved release-over-release.
+
+- [ ] Plan and implement ecommerce phase 1.
+  - Priority: P2
+  - Acceptance Criteria: product catalog and checkout flow are complete with a payment provider.
 
 ## In Progress
 
-- [ ] **Farm Tycoon Phase 2 - Isometric Tycoon Game** (see `docs/FARM-TYCOON.md`)
-  - [ ] Implement animal needs system (hunger, happiness) (P1, L)
-  - [ ] Add feeding mechanics with trough interaction (P1, M)
-  - [ ] Create advanced pathfinding AI (avoid obstacles, seek food) (P2, L)
-  - [ ] Build dynamic fence placement tool (drag-to-build) (P1, M)
-  - [ ] Add terrain editing mode (change tile types) (P2, M)
-  - [ ] Implement save/load game state (P2, M)
-  - [ ] Add multiple building types (coops, pens, silos) (P2, L)
-  - [ ] Create pixel art sprite replacements for emojis (P3, XL)
-  - [ ] Add sound effects for actions (P3, M)
-  - [ ] Implement market price fluctuations (P2, S)
-
 ## Done
 
-- [x] Set up TypeScript project (P1, S)
-- [x] Initialize Git repository (P3, S)
-- [x] Review all files added by this PR and improve/fix deploys to work with latest vercel changes (P1, M)
-- [x] Configure ESLint and Prettier (P3, S)
-- [x] Fix CI/CD pipeline lint script issues (P1, S)
-- [x] Design landing page hero section (P1, M)
-- [x] Create animated farm header with weather effects, crops, trees, and landscape (P1, L)
-- [x] Implement interactive theme toggle (sun button) (P2, S)
-- [x] Add responsive design for mobile and desktop (P1, M)
-- [x] Fix SSR hydration issues with Math.sin() calculations (P2, S)
-- [x] **Farm Tycoon Phase 1 - Complete MVP** (P1, XL)
-  - [x] State management with FarmContext and useReducer
-  - [x] FarmCanvas with 60 FPS game loop
-  - [x] Entity system with animals and buildings
-  - [x] Day/night cycle with dynamic sky
-  - [x] Resource production and economic system
-  - [x] Tutorial overlay and keyboard shortcuts
-  - [x] Notification system and bulk selling
-  - [x] Performance optimizations
-- [x] **Farm Tycoon Phase 2a-f - Isometric Grid Foundation** (P1, XL)
-  - [x] Isometric coordinate transformation system
-  - [x] Grid-based terrain rendering
-  - [x] Visible fence entities
-  - [x] Editor sidebar with mode selection
-  - [x] Click-to-place interaction system
-  - [x] Grid overlay toggle
+- [x] Project foundation, linting, and CI baseline.
+- [x] Farm Tycoon phase 1 MVP.
+- [x] Farm Tycoon phase 2a-2f isometric foundation.

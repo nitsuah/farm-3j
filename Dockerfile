@@ -14,6 +14,9 @@ RUN npm install -g pnpm
 # Copy package files
 COPY package.json pnpm-lock.yaml ./
 
+# Copy patched dependency files required by pnpm-lock.yaml
+COPY patches ./patches
+
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 
@@ -34,6 +37,7 @@ COPY . .
 
 # Set environment variable for Next.js to generate standalone output
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV DOCKER=1
 
 # Build the application
 RUN pnpm run build
