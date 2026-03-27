@@ -13,7 +13,7 @@ Last Updated: 2026-03-27
 - [ ] Finish the animal needs loop.
 - [ ] Finish feeding mechanics and inventory interactions.
 - [ ] Finish fence placement and terrain editing workflows.
-- [ ] Add save or load state and building expansion follow-on work.
+- [ ] Add save/load state and building expansion follow-on work.
 
 ## 2026 Q3 - Product and Content Surface
 

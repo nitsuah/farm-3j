@@ -30,7 +30,7 @@ Last Updated: 2026-03-27
 - [ ] Build content and discovery surfaces.
   - Priority: P2
   - Context: gallery, blog or news, SEO, and accessibility work still trail the playable product work.
-  - Acceptance Criteria: Lighthouse and accessibility baselines are tracked and improved release over release.
+  - Acceptance Criteria: Lighthouse and accessibility baselines are tracked and improved release-over-release.
 
 - [ ] Plan and implement ecommerce phase 1.
   - Priority: P2
