@@ -11,6 +11,12 @@ updates:
       interval: 'weekly'
       day: 'monday'
       time: '09:00'
+    ignore:
+      # Mitigated via pnpm patchedDependencies in package.json + pnpm-lock.yaml.
+      # Dependabot cannot resolve this transitive path to 5.x yet due upstream constraints.
+      - dependency-name: 'brace-expansion'
+        versions:
+          - '<5.0.5'
     open-pull-requests-limit: 10
     reviewers:
       - 'nitsuah'
