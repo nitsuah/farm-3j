@@ -24,11 +24,14 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: '22'
+          cache: 'pnpm'
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v5
-        with:
-          version: 9
+      - name: Enable Corepack and pnpm
+        shell: bash
+        run: |
+          corepack enable
+          corepack prepare pnpm@9.0.0 --activate
+          pnpm --version
 
       - name: Get pnpm store directory
         id: pnpm-cache
@@ -58,7 +61,8 @@ jobs:
         run: |
           echo "=== Node / pnpm versions ==="
           node --version
-          pnpm --version
+          corepack --version || echo "corepack unavailable"
+          pnpm --version || echo "pnpm unavailable"
           echo "=== GitHub connectivity ==="
           curl -s --max-time 10 -o /dev/null -w "github.com HTTP %{http_code}\n" https://github.com || echo "github.com unreachable"
           curl -s --max-time 10 -o /dev/null -w "registry.npmjs.org HTTP %{http_code}\n" https://registry.npmjs.org || echo "npm registry unreachable"
@@ -101,11 +105,14 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: '22'
+          cache: 'pnpm'
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v5
-        with:
-          version: 9
+      - name: Enable Corepack and pnpm
+        shell: bash
+        run: |
+          corepack enable
+          corepack prepare pnpm@9.0.0 --activate
+          pnpm --version
 
       - name: Get pnpm store directory
         id: pnpm-cache
@@ -135,7 +142,8 @@ jobs:
         run: |
           echo "=== Node / pnpm versions ==="
           node --version
-          pnpm --version
+          corepack --version || echo "corepack unavailable"
+          pnpm --version || echo "pnpm unavailable"
           echo "=== GitHub connectivity ==="
           curl -s --max-time 10 -o /dev/null -w "github.com HTTP %{http_code}\n" https://github.com || echo "github.com unreachable"
           curl -s --max-time 10 -o /dev/null -w "registry.npmjs.org HTTP %{http_code}\n" https://registry.npmjs.org || echo "npm registry unreachable"
