@@ -16,7 +16,10 @@ if (!packageJson.scripts[requestedScript]) {
 }
 
 const workspacePath = path.resolve(process.cwd());
-const workspaceName = path.basename(workspacePath).toLowerCase().replace(/[^a-z0-9]+/g, '-');
+const workspaceName = path
+  .basename(workspacePath)
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, '-');
 const nodeModulesVolume = `${workspaceName}-node-modules`;
 const pnpmStoreVolume = `${workspaceName}-pnpm-store`;
 const packageManager = packageJson.packageManager;
@@ -35,7 +38,13 @@ const dockerArgs = [
   'node:22-alpine',
   'sh',
   '-lc',
-  `corepack enable && corepack prepare ${packageManager} --activate && pnpm config set store-dir /pnpm/store && pnpm install --frozen-lockfile --reporter=silent && pnpm run ${requestedScript}`,
+  [
+    'corepack enable',
+    `corepack prepare ${packageManager} --activate`,
+    'pnpm config set store-dir /pnpm/store',
+    'pnpm install --frozen-lockfile --reporter=silent',
+    `pnpm run ${requestedScript}`,
+  ].join(' && '),
 ];
 
 const result = spawnSync('docker', dockerArgs, {
@@ -43,7 +52,9 @@ const result = spawnSync('docker', dockerArgs, {
 });
 
 if (result.error) {
-  console.error('Failed to start Docker. Ensure Docker is installed and running.');
+  console.error(
+    'Failed to start Docker. Ensure Docker is installed and running.'
+  );
   console.error(result.error.message);
   process.exit(1);
 }
