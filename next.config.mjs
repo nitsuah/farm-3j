@@ -10,8 +10,8 @@ const nextConfig = {
       },
     ],
   },
-  // Disable standalone output for local builds (Windows symlink issues)
-  // Enable for Docker: output: 'standalone',
+  // Keep local Windows builds stable while enabling Docker standalone output.
+  output: process.env.DOCKER === '1' ? 'standalone' : undefined,
   // Enable React strict mode for better development experience
   reactStrictMode: true,
   // Optimize for production
