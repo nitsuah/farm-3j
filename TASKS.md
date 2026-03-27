@@ -2,7 +2,9 @@
 
 Last Updated: 2026-03-27
 
-## P0 - Blockers
+## Todo
+
+### P0 - Blockers
 
 - [ ] Fix the Docker dependency stage so `patches/` is available before `pnpm install`.
   - Priority: P0
@@ -12,7 +14,7 @@ Last Updated: 2026-03-27
   - Priority: P0
   - Acceptance Criteria: CI catches Docker build and startup regressions.
 
-## P1 - Near-Term
+### P1 - Near-Term
 
 - [ ] Complete Farm Tycoon phase 2 core systems.
   - Priority: P1
@@ -23,7 +25,7 @@ Last Updated: 2026-03-27
   - Priority: P1
   - Acceptance Criteria: the site has a validated form submission path with confirmation and error handling.
 
-## P2 - Growth Backlog
+### P2 - Growth Backlog
 
 - [ ] Build content and discovery surfaces.
   - Priority: P2
@@ -33,6 +35,8 @@ Last Updated: 2026-03-27
 - [ ] Plan and implement ecommerce phase 1.
   - Priority: P2
   - Acceptance Criteria: product catalog and checkout flow are complete with a payment provider.
+
+## In Progress
 
 ## Done
 
