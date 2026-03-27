@@ -73,6 +73,11 @@
     "yaml": "^2.8.3",
     "zod": "^4.3.6"
   },
+  "pnpm": {
+    "overrides": {
+      "brace-expansion": "5.0.5"
+    }
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@tailwindcss/postcss": "^4.2.2",
