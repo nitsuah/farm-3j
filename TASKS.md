@@ -6,13 +6,17 @@ Last Updated: 2026-03-27
 
 ### P0 - Blockers
 
-- [ ] Fix the Docker dependency stage so `patches/` is available before `pnpm install`.
+- [x] Fix the Docker dependency stage so `patches/` is available before `pnpm install`.
   - Priority: P0
   - Acceptance Criteria: `docker build` succeeds from a clean checkout without manual file copies.
+  - Completed: 2026-03-27
+  - Evidence: local `docker build -t farm-devops-check .` succeeds from repo root.
 
-- [ ] Add a CI Docker smoke test.
+- [x] Add a CI Docker smoke test.
   - Priority: P0
   - Acceptance Criteria: CI catches Docker build and startup regressions.
+  - Completed: 2026-03-27
+  - Evidence: `.github/workflows/docker-smoke.yml` builds the image, starts the container, and verifies HTTP readiness.
 
 ### P1 - Near-Term
 
