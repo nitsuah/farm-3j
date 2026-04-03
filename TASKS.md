@@ -1,6 +1,6 @@
 # TASKS
 
-Last Updated: 2026-03-27
+Last Updated: 2026-04-03 (pmo/q2-2026-planning)
 
 ## Todo
 
@@ -22,8 +22,13 @@ Last Updated: 2026-03-27
 
 - [ ] Complete Farm Tycoon phase 2 core systems.
   - Priority: P1
-  - Context: animal needs, feeding, and fence tooling still need to finish the playable loop.
-  - Acceptance Criteria: the systems are available in the UI and covered by deterministic tests.
+  - Context: animal needs, feeding, and fence tooling still need to finish the playable loop. This is the Q2 gate before shifting to commercial product work.
+  - Acceptance Criteria: animal lifecycle (needs, hunger, happiness), feeding mechanics, fence placement, and save/load are all functional and covered by deterministic tests; full loop validated in Docker.
+
+- [ ] Refresh README and deployment notes with actual release path.
+  - Priority: P1
+  - Context: Docker build is fixed but docs still lag behind the actual state.
+  - Acceptance Criteria: README reflects Docker-first usage, correct env setup, and live vs. in-progress feature status.
 
 - [ ] Ship the contact-to-market conversion path.
   - Priority: P1

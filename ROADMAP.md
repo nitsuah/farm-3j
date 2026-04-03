@@ -1,19 +1,22 @@
 # ROADMAP
 
-Last Updated: 2026-03-27
+Last Updated: 2026-04-03 (pmo/q2-2026-planning)
 
 ## 2026 Q1 - Runtime and Release Integrity
 
-- [ ] Fix the Docker dependency stage so the image builds cleanly.
-- [ ] Add Docker smoke coverage to CI.
+- [x] Fix the Docker dependency stage so the image builds cleanly.
+- [x] Add Docker smoke coverage to CI.
 - [ ] Refresh README and deployment notes around the actual release path.
 
 ## 2026 Q2 - Farm Tycoon Phase 2 Completion
 
-- [ ] Finish the animal needs loop.
+> Q2 priority: close out the core gameplay loop before shifting focus to the commercial product surface.
+
+- [ ] Finish the animal needs loop (hunger, thirst, happiness lifecycle).
 - [ ] Finish feeding mechanics and inventory interactions.
 - [ ] Finish fence placement and terrain editing workflows.
 - [ ] Add save/load state and building expansion follow-on work.
+- [ ] Validate the full gameplay loop end-to-end in Docker (start game → build → feed animals → save → reload).
 
 ## 2026 Q3 - Product and Content Surface
 
