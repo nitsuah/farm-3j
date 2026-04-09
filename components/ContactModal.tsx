@@ -37,8 +37,8 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
   const handleChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    const { id, value } = event.target;
-    setFormData((prev) => ({ ...prev, [id]: value }));
+    const { name, value } = event.target;
+    setFormData((prev) => ({ ...prev, [name as keyof ContactFormData]: value }));
     if (feedbackType) {
       resetFeedback();
     }
@@ -148,6 +148,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
             <input
               type="text"
               id="name"
+              name="name"
               value={formData.name}
               onChange={handleChange}
               className="w-full rounded-lg border border-green-300 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-green-500 dark:border-green-700 dark:bg-gray-800 dark:text-white"
@@ -167,6 +168,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
             <input
               type="email"
               id="email"
+              name="email"
               value={formData.email}
               onChange={handleChange}
               className="w-full rounded-lg border border-green-300 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-green-500 dark:border-green-700 dark:bg-gray-800 dark:text-white"
@@ -185,6 +187,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
             </label>
             <textarea
               id="message"
+              name="message"
               rows={4}
               value={formData.message}
               onChange={handleChange}
@@ -196,7 +199,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
 
           {feedbackType && (
             <div
-              role="status"
+              role={feedbackType === 'error' ? 'alert' : 'status'}
               className={`rounded-md px-4 py-3 text-sm ${
                 feedbackType === 'success'
                   ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200'

@@ -8,8 +8,14 @@ const contactSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  let body: unknown;
   try {
-    const body: unknown = await request.json();
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Malformed request payload.' }, { status: 400 });
+  }
+
+  try {
     const parsed = contactSchema.safeParse(body);
 
     if (!parsed.success) {
@@ -49,10 +55,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, delivery: 'webhook' }, { status: 200 });
     }
 
-    console.info('Contact submission received without webhook configured', payload);
+    console.warn('Contact submission received without webhook configured', {
+      delivery: 'local-log',
+      source: payload.source,
+      submittedAt: payload.submittedAt,
+    });
 
     return NextResponse.json({ success: true, delivery: 'local-log' }, { status: 200 });
   } catch {
-    return NextResponse.json({ error: 'Malformed request payload.' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'An unexpected error occurred. Please try again.' },
+      { status: 500 }
+    );
   }
 }

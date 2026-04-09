@@ -52,7 +52,7 @@ describe('ContactModal', () => {
     expect(await screen.findByText('Thanks! Your message was sent. We will follow up soon.')).toBeInTheDocument();
   });
 
-  it('shows validation error and does not call fetch when message is too short', async () => {
+  it('shows validation error and does not call fetch when name is too short', async () => {
     const user = userEvent.setup();
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
