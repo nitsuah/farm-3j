@@ -16,6 +16,8 @@ interface RateLimitEntry {
   windowStart: number;
 }
 
+// NOTE: In-memory rate limiting works per-process. In a multi-instance or
+// serverless deployment, use a shared store (e.g., Redis/Vercel KV) instead.
 const rateLimitStore = new Map<string, RateLimitEntry>();
 
 function getClientIp(request: NextRequest): string {
@@ -31,6 +33,12 @@ function checkRateLimit(ip: string): boolean {
   const entry = rateLimitStore.get(ip);
 
   if (!entry || now - entry.windowStart >= RATE_LIMIT_WINDOW_MS) {
+    // Opportunistically clean up expired entries to avoid unbounded growth
+    for (const [key, val] of rateLimitStore) {
+      if (now - val.windowStart >= RATE_LIMIT_WINDOW_MS) {
+        rateLimitStore.delete(key);
+      }
+    }
     rateLimitStore.set(ip, { count: 1, windowStart: now });
     return false;
   }
