@@ -117,7 +117,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
       {/* Background with animation */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
+        onClick={isSubmitting ? undefined : onClose}
       >
         <div className="h-full w-full opacity-30">
           <Cornfield rows={8} cols={16} withTractor={true} />
@@ -128,7 +128,9 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
       <div className="relative z-10 w-full max-w-md rounded-lg bg-white p-8 shadow-2xl dark:bg-gray-900">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-2xl text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          disabled={isSubmitting}
+          aria-label="Close"
+          className="absolute top-4 right-4 text-2xl text-gray-500 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-40 dark:text-gray-400 dark:hover:text-gray-200"
         >
           ×
         </button>

@@ -7,7 +7,51 @@ const contactSchema = z.object({
   message: z.string().trim().min(10).max(2000),
 });
 
+const RATE_LIMIT_MAX = 5;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const WEBHOOK_TIMEOUT_MS = 10_000;
+
+interface RateLimitEntry {
+  count: number;
+  windowStart: number;
+}
+
+const rateLimitStore = new Map<string, RateLimitEntry>();
+
+function getClientIp(request: NextRequest): string {
+  return (
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+    request.headers.get('x-real-ip') ??
+    'unknown'
+  );
+}
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitStore.get(ip);
+
+  if (!entry || now - entry.windowStart >= RATE_LIMIT_WINDOW_MS) {
+    rateLimitStore.set(ip, { count: 1, windowStart: now });
+    return false;
+  }
+
+  if (entry.count >= RATE_LIMIT_MAX) {
+    return true;
+  }
+
+  entry.count += 1;
+  return false;
+}
+
 export async function POST(request: NextRequest) {
+  const clientIp = getClientIp(request);
+  if (checkRateLimit(clientIp)) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again later.' },
+      { status: 429, headers: { 'Retry-After': '60' } }
+    );
+  }
+
   let body: unknown;
   try {
     body = await request.json();
@@ -37,13 +81,27 @@ export async function POST(request: NextRequest) {
     const webhookUrl = process.env.FARM_CONTACT_WEBHOOK_URL;
 
     if (webhookUrl) {
-      const webhookResponse = await fetch(webhookUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
+      let webhookResponse: Response;
+      try {
+        webhookResponse = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+          signal: AbortSignal.timeout(WEBHOOK_TIMEOUT_MS),
+        });
+      } catch (err) {
+        const isTimeout = err instanceof DOMException && err.name === 'TimeoutError';
+        return NextResponse.json(
+          {
+            error: isTimeout
+              ? 'Message delivery timed out. Please try again shortly.'
+              : 'Message delivery failed. Please try again shortly.',
+          },
+          { status: isTimeout ? 504 : 502 }
+        );
+      }
 
       if (!webhookResponse.ok) {
         return NextResponse.json(
