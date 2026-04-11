@@ -21,7 +21,9 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
     message: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [feedbackType, setFeedbackType] = useState<'success' | 'error' | null>(null);
+  const [feedbackType, setFeedbackType] = useState<'success' | 'error' | null>(
+    null
+  );
   const [feedbackMessage, setFeedbackMessage] = useState('');
 
   const setFeedback = (type: 'success' | 'error', message: string) => {
@@ -38,7 +40,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = event.target;
-    setFormData((prev) => ({ ...prev, [name as keyof ContactFormData]: value }));
+    setFormData(prev => ({ ...prev, [name as keyof ContactFormData]: value }));
     if (feedbackType) {
       resetFeedback();
     }
@@ -101,10 +103,16 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
         return;
       }
 
-      setFeedback('success', 'Thanks! Your message was sent. We will follow up soon.');
+      setFeedback(
+        'success',
+        'Thanks! Your message was sent. We will follow up soon.'
+      );
       setFormData({ name: '', email: '', message: '' });
     } catch {
-      setFeedback('error', 'Network error while sending your message. Please try again.');
+      setFeedback(
+        'error',
+        'Network error while sending your message. Please try again.'
+      );
     } finally {
       setIsSubmitting(false);
     }

@@ -64,7 +64,10 @@ export async function POST(request: NextRequest) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: 'Malformed request payload.' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Malformed request payload.' },
+      { status: 400 }
+    );
   }
 
   try {
@@ -73,8 +76,9 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json(
         {
-          error: 'Invalid contact submission. Please check your name, email, and message.',
-          details: parsed.error.issues.map((issue) => issue.message),
+          error:
+            'Invalid contact submission. Please check your name, email, and message.',
+          details: parsed.error.issues.map(issue => issue.message),
         },
         { status: 400 }
       );
@@ -100,7 +104,8 @@ export async function POST(request: NextRequest) {
           signal: AbortSignal.timeout(WEBHOOK_TIMEOUT_MS),
         });
       } catch (err) {
-        const isTimeout = err instanceof DOMException && err.name === 'TimeoutError';
+        const isTimeout =
+          err instanceof DOMException && err.name === 'TimeoutError';
         return NextResponse.json(
           {
             error: isTimeout
@@ -118,7 +123,10 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      return NextResponse.json({ success: true, delivery: 'webhook' }, { status: 200 });
+      return NextResponse.json(
+        { success: true, delivery: 'webhook' },
+        { status: 200 }
+      );
     }
 
     console.warn('Contact submission received without webhook configured', {
@@ -127,7 +135,10 @@ export async function POST(request: NextRequest) {
       submittedAt: payload.submittedAt,
     });
 
-    return NextResponse.json({ success: true, delivery: 'local-log' }, { status: 200 });
+    return NextResponse.json(
+      { success: true, delivery: 'local-log' },
+      { status: 200 }
+    );
   } catch {
     return NextResponse.json(
       { error: 'An unexpected error occurred. Please try again.' },

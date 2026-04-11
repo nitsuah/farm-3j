@@ -45,11 +45,16 @@ describe('ContactModal', () => {
       body: JSON.stringify({
         name: 'Farmer Jane',
         email: 'jane@example.com',
-        message: 'I would like to learn more about your farm products and updates.',
+        message:
+          'I would like to learn more about your farm products and updates.',
       }),
     });
 
-    expect(await screen.findByText('Thanks! Your message was sent. We will follow up soon.')).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        'Thanks! Your message was sent. We will follow up soon.'
+      )
+    ).toBeInTheDocument();
   });
 
   it('shows validation error and does not call fetch when name is too short', async () => {
@@ -75,7 +80,9 @@ describe('ContactModal', () => {
     const user = userEvent.setup();
     const fetchMock = vi.fn().mockResolvedValue({
       ok: false,
-      json: async () => ({ error: 'Message delivery failed. Please try again shortly.' }),
+      json: async () => ({
+        error: 'Message delivery failed. Please try again shortly.',
+      }),
     });
     vi.stubGlobal('fetch', fetchMock);
 
@@ -83,10 +90,17 @@ describe('ContactModal', () => {
 
     await user.type(screen.getByLabelText('Name'), 'Farmer John');
     await user.type(screen.getByLabelText('Email'), 'john@example.com');
-    await user.type(screen.getByLabelText('Message'), 'Need details on bulk produce ordering next week.');
+    await user.type(
+      screen.getByLabelText('Message'),
+      'Need details on bulk produce ordering next week.'
+    );
 
     await user.click(screen.getByRole('button', { name: 'Send Message' }));
 
-    expect(await screen.findByText('Message delivery failed. Please try again shortly.')).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        'Message delivery failed. Please try again shortly.'
+      )
+    ).toBeInTheDocument();
   });
 });
