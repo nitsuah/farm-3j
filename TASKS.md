@@ -30,10 +30,6 @@ Last Updated: 2026-04-03 (pmo/q2-2026-planning)
   - Context: Docker build is fixed but docs still lag behind the actual state.
   - Acceptance Criteria: README reflects Docker-first usage, correct env setup, and live vs. in-progress feature status.
 
-- [ ] Ship the contact-to-market conversion path.
-  - Priority: P1
-  - Acceptance Criteria: the site has a validated form submission path with confirmation and error handling.
-
 ### P2 - Growth Backlog
 
 - [ ] Build content and discovery surfaces.
@@ -52,3 +48,6 @@ Last Updated: 2026-04-03 (pmo/q2-2026-planning)
 - [x] Project foundation, linting, and CI baseline.
 - [x] Farm Tycoon phase 1 MVP.
 - [x] Farm Tycoon phase 2a-2f isometric foundation.
+- [x] Ship the contact-to-market conversion path.
+  - Completed: 2026-04-03
+  - Evidence: `components/ContactModal.tsx`, `app/api/contact/route.ts`, `components/ContactModal.test.tsx`

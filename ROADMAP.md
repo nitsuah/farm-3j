@@ -20,7 +20,7 @@ Last Updated: 2026-04-03 (pmo/q2-2026-planning)
 
 ## 2026 Q3 - Product and Content Surface
 
-- [ ] Complete the contact and market conversion flow.
+- [x] Ship the validated contact form submission path with server-side validation and success/error feedback.
 - [ ] Improve the product gallery and catalog surface.
 - [ ] Add a blog or news publishing path.
 

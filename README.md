@@ -59,6 +59,13 @@ Continue building your app on:
 
 **[https://v0.dev/chat/projects/9OcXcTTsfCh](https://v0.dev/chat/projects/9OcXcTTsfCh)**
 
+## Contact Form Delivery
+
+The About page contact modal now submits to `POST /api/contact` with server-side validation.
+
+- `FARM_CONTACT_WEBHOOK_URL` (optional): when set, submissions are forwarded to this webhook.
+- If the webhook is not configured, submissions are still accepted and logged server-side (`delivery: local-log`) so the UI keeps a validated success/error flow in non-production setups.
+
 ## How It Works
 
 1. Create and modify your project using [v0.dev](https://v0.dev)
