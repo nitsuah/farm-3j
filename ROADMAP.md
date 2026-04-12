@@ -6,7 +6,7 @@ Last Updated: 2026-04-03 (pmo/q2-2026-planning)
 
 - [x] Fix the Docker dependency stage so the image builds cleanly.
 - [x] Add Docker smoke coverage to CI.
-- [ ] Refresh README and deployment notes around the actual release path.
+- [x] Refresh README and deployment notes around the actual release path.
 
 ## 2026 Q2 - Farm Tycoon Phase 2 Completion
 

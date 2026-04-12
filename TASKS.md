@@ -25,10 +25,12 @@ Last Updated: 2026-04-03 (pmo/q2-2026-planning)
   - Context: animal needs, feeding, and fence tooling still need to finish the playable loop. This is the Q2 gate before shifting to commercial product work.
   - Acceptance Criteria: animal lifecycle (needs, hunger, happiness), feeding mechanics, fence placement, and save/load are all functional and covered by deterministic tests; full loop validated in Docker.
 
-- [ ] Refresh README and deployment notes with actual release path.
+- [x] Refresh README and deployment notes with actual release path.
   - Priority: P1
   - Context: Docker build is fixed but docs still lag behind the actual state.
   - Acceptance Criteria: README reflects Docker-first usage, correct env setup, and live vs. in-progress feature status.
+  - Completed: 2026-04-12
+  - Evidence: README.md now includes Docker dev quick-start, phase status clarification, and Q2 planning context.
 
 ### P2 - Growth Backlog
 
