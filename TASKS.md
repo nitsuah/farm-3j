@@ -17,7 +17,17 @@ Last Updated: 2026-04-13 (Farm RTS MVP focus)
 - [ ] Build content and discovery surfaces (gallery, blog, SEO, accessibility)
 - [ ] Plan and implement ecommerce phase 1.
 
-## In Progress
+
+## Unfinished Todos (RTS Farm Game)
+
+- [ ] Add stone resource nodes
+- [ ] Add animal units (chickens, cows, pigs) with grazing AI
+- [ ] Implement grazing logic and food meter
+- [ ] Enable building placement on valid tiles
+- [ ] Ensure farmers render in front of barn and are always selectable
+- [ ] Add box selection for multiple units
+- [ ] Lay groundwork for control groups
+- [ ] Add buttons to train animal units
 
 ## Done
 
