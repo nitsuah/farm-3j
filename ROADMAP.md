@@ -6,6 +6,7 @@ Last Updated: 2026-04-13 (Farm RTS MVP focus)
 ## 2026 Q2–Q3: Farm RTS MVP
 
 - [ ] Complete all MVP milestones as defined in docs/Farm_RTS_Game_Manual.md and docs/FARM-RTS-TODO.md
+	- Progress: Zoom levels and tile types implemented (Milestone 1)
 	- Core: map/camera, resource, worker, building, win/lose
 	- Stretch: combat, AI, upgrades, polish
 

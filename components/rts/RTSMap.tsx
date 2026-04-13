@@ -5,6 +5,22 @@ import React, { useState, useEffect, useRef } from 'react';
 
   const gridSize = 9;
   const tileSize = 64;
+
+  // Tile types: grass, dirt, water, trees, rocks
+  type TileType = 'grass' | 'dirt' | 'water' | 'tree' | 'rock';
+  const [zoom, setZoom] = useState(1);
+  // Simple map: center is grass, some water, dirt, rocks
+  const [tiles] = useState<TileType[][]>([
+    ['grass','grass','water','water','water','grass','grass','grass','grass'],
+    ['grass','grass','water','grass','grass','grass','rock','grass','grass'],
+    ['grass','dirt','grass','grass','grass','grass','rock','grass','grass'],
+    ['grass','dirt','grass','tree','tree','grass','grass','dirt','grass'],
+    ['grass','dirt','grass','tree','grass','grass','grass','dirt','grass'],
+    ['grass','dirt','grass','grass','grass','grass','grass','dirt','grass'],
+    ['grass','dirt','rock','rock','grass','grass','grass','dirt','grass'],
+    ['grass','grass','grass','grass','grass','water','water','grass','grass'],
+    ['grass','grass','grass','grass','grass','water','water','grass','grass'],
+  ]);
   // Resource nodes: trees and gold mine
   const [trees, setTrees] = useState([
     { x: 2, y: 2, amount: 50 },
@@ -43,6 +59,15 @@ import React, { useState, useEffect, useRef } from 'react';
 
   // Handle worker movement animation
   // Worker movement and gather/deposit logic
+  // Zoom controls
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      setZoom(z => Math.max(0.5, Math.min(2, z + (e.deltaY < 0 ? 0.25 : -0.25))));
+    };
+    window.addEventListener('wheel', handleWheel, { passive: false });
+    return () => window.removeEventListener('wheel', handleWheel);
+  }, []);
+
   useEffect(() => {
     const speed = 0.025;
     let gatherTimeout: number | null = null;
@@ -192,13 +217,19 @@ import React, { useState, useEffect, useRef } from 'react';
             border: '2px dashed #fbbf24', // debug border
             background: 'none',
             pointerEvents: 'auto',
-            transform: `translate(${camera.x}px,${camera.y}px)`
+            transform: `translate(${camera.x}px,${camera.y}px) scale(${zoom})`
           }}
         >
         {[...Array(gridSize)].map((_, i) =>
           [...Array(gridSize)].map((_, j) => {
             const isoX = (i - j) * tileSize + gridSize * tileSize / 2;
             const isoY = (i + j) * tileSize / 2;
+            // Tile color by type
+            let fill = '#14532d';
+            if (tiles[i][j] === 'dirt') fill = '#a16207';
+            if (tiles[i][j] === 'water') fill = '#2563eb';
+            if (tiles[i][j] === 'rock') fill = '#64748b';
+            if (tiles[i][j] === 'tree') fill = '#166534';
             return (
               <polygon
                 key={`tile-${i}-${j}`}
@@ -210,7 +241,7 @@ import React, { useState, useEffect, useRef } from 'react';
                     [isoX + tileSize, isoY + tileSize]
                   ].map(p => p.join(",")).join(" ")
                 }
-                fill="#14532d"
+                fill={fill}
                 stroke="#222"
                 strokeWidth={2}
                 onContextMenu={e => {
@@ -224,6 +255,10 @@ import React, { useState, useEffect, useRef } from 'react';
             );
           })
         )}
+                      {/* Zoom UI */}
+                      <div style={{ position: 'absolute', top: 56, right: 24, zIndex: 10, background: 'rgba(0,0,0,0.7)', color: '#fff', padding: '4px 12px', borderRadius: 6, fontSize: 14 }}>
+                        Zoom: {zoom}x (scroll to zoom)
+                      </div>
                 {/* Worker unit */}
                 {(() => {
                   const wx = worker.x;

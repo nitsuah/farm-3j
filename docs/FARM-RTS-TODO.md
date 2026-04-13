@@ -5,8 +5,8 @@ _This file is the actionable engineering breakdown for the Farm RTS MVP, directl
 ## Milestone 1: Core Map & Camera
 - [x] Isometric tile grid renders correctly
 - [x] Smooth WASD camera pan
-- [ ] Zoom levels (2 minimum)
-- [ ] Tile types: grass, dirt, water, trees, rocks
+- [x] Zoom levels (2 minimum)
+- [x] Tile types: grass, dirt, water, trees, rocks
 - [ ] Debug overlay: show grid, tile coordinates, FPS
 
 ## Milestone 2: Main Building & UI
