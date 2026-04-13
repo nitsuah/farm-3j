@@ -1,34 +1,29 @@
+
 # ROADMAP
 
-Last Updated: 2026-04-03 (pmo/q2-2026-planning)
+Last Updated: 2026-04-13 (Farm RTS MVP focus)
 
-## 2026 Q1 - Runtime and Release Integrity
+## 2026 Q2–Q3: Farm RTS MVP
 
-- [x] Fix the Docker dependency stage so the image builds cleanly.
-- [x] Add Docker smoke coverage to CI.
-- [ ] Refresh README and deployment notes around the actual release path.
+- [ ] Complete all MVP milestones as defined in docs/Farm_RTS_Game_Manual.md and docs/FARM-RTS-TODO.md
+	- Core: map/camera, resource, worker, building, win/lose
+	- Stretch: combat, AI, upgrades, polish
 
-## 2026 Q2 - Farm Tycoon Phase 2 Completion
+## 2026 Q4: Product and Content Surface
 
-> Q2 priority: close out the core gameplay loop before shifting focus to the commercial product surface.
+- [ ] Improve the product gallery and catalog surface.
+- [ ] Add a blog or news publishing path.
+- [ ] Ship ecommerce phase 1.
+- [ ] Evaluate subscription or recurring-order follow-ons.
+- [ ] Harden accessibility and SEO for a broader launch.
+
+## Legacy Tycoon Tasks (on hold)
 
 - [ ] Finish the animal needs loop (hunger, thirst, happiness lifecycle).
 - [ ] Finish feeding mechanics and inventory interactions.
 - [ ] Finish fence placement and terrain editing workflows.
 - [ ] Add save/load state and building expansion follow-on work.
 - [ ] Validate the full gameplay loop end-to-end in Docker (start game → build → feed animals → save → reload).
-
-## 2026 Q3 - Product and Content Surface
-
-- [x] Ship the validated contact form submission path with server-side validation and success/error feedback.
-- [ ] Improve the product gallery and catalog surface.
-- [ ] Add a blog or news publishing path.
-
-## 2026 Q4 - Revenue and Platform Growth
-
-- [ ] Ship ecommerce phase 1.
-- [ ] Evaluate subscription or recurring-order follow-ons.
-- [ ] Harden accessibility and SEO for a broader launch.
 
 ## Done
 
