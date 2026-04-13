@@ -36,8 +36,35 @@ const RTSMap: React.FC = () => {
     { x: 6, y: 3, amount: 50 },
     { x: 4, y: 7, amount: 50 },
     { x: 7, y: 6, amount: 50 },
+    { x: 3, y: 9, amount: 50 },
+    { x: 9, y: 3, amount: 50 },
+    { x: 10, y: 10, amount: 50 },
+    { x: 1, y: 10, amount: 50 },
+    { x: 11, y: 2, amount: 50 },
+    { x: 8, y: 9, amount: 50 },
   ]);
   const [goldMine, setGoldMine] = useState({ x: 1, y: 7, amount: 100 });
+
+  // Selection state: 'worker' | 'farmhouse' | null
+  const [selectedType, setSelectedType] = useState<'worker' | 'farmhouse' | null>('worker');
+  // Track selected worker (id) if any
+  const [selectedWorkerId, setSelectedWorkerId] = useState<number | null>(1);
+  // Farmhouse state
+  const [farmhouse, setFarmhouse] = useState<{ built: boolean; level: number }>({ built: false, level: 0 });
+  // Upgrade costs per level
+  const farmhouseUpgradeCosts = [
+    { gold: 50, lumber: 50 }, // Build
+    { gold: 100, lumber: 100 }, // Upgrade 1
+    { gold: 200, lumber: 200 }, // Upgrade 2
+  ];
+  // Max level
+  const maxFarmhouseLevel = farmhouseUpgradeCosts.length - 1;
+  // Upgrade storage per level (for demo, not enforced)
+  const farmhouseStorage = [
+    { gold: 100, lumber: 100 },
+    { gold: 200, lumber: 200 },
+    { gold: 400, lumber: 400 },
+  ];
 
   // Camera state
   // Camera state
@@ -54,27 +81,24 @@ const RTSMap: React.FC = () => {
   // Resource state
   const [resources, setResources] = useState({ gold: 0, lumber: 0 });
 
-  // Worker state
+  // Worker state (multi-worker)
   type WorkerState = {
+    id: number;
     x: number;
     y: number;
     selected: boolean;
     movingTo: null | { x: number; y: number };
-    gathering?: null | { type: 'tree' | 'gold', idx: number };
+    gathering: null | { type: 'tree' | 'gold', idx: number };
     carrying: { gold: number; lumber: number };
     state: 'idle' | 'moving' | 'gathering' | 'returning';
   };
   // Barn location (center of map for now)
-  const barnPos = { x: 6, y: 6 };
-  const [worker, setWorker] = useState<WorkerState>({
-    x: 5,
-    y: 5,
-    selected: false,
-    movingTo: null,
-    gathering: null,
-    carrying: { gold: 0, lumber: 0 },
-    state: 'idle',
-  });
+  const barnPos = { x: 4, y: 4 };
+  // Start with 2 workers for testing
+  const [workers, setWorkers] = useState<WorkerState[]>([
+    { id: 1, x: 5, y: 5, selected: true, movingTo: null, gathering: null, carrying: { gold: 0, lumber: 0 }, state: 'idle' },
+    { id: 2, x: 7, y: 7, selected: false, movingTo: null, gathering: null, carrying: { gold: 0, lumber: 0 }, state: 'idle' },
+  ]);
   const animationRef = useRef<number | null>(null);
   // FPS counter
   const [fps, setFps] = useState(0);
@@ -95,7 +119,7 @@ const RTSMap: React.FC = () => {
     loop();
     return () => { running = false; };
   }, []);
-  const debugState = JSON.stringify({ worker, resources, trees, goldMine }, null, 2);
+  const debugState = JSON.stringify({ workers, resources, trees, goldMine }, null, 2);
   // ...existing code...
 
   // Handle worker movement animation
@@ -110,153 +134,124 @@ const RTSMap: React.FC = () => {
     return () => window.removeEventListener('wheel', handleWheel);
   }, []);
 
+  // Multi-worker animation loop
   useEffect(() => {
     const speed = 0.025;
-    let gatherTimeout: number | null = null;
+    let gatherTimeouts: Record<number, number> = {};
     function animate() {
-      setWorker((w: WorkerState) => {
+      setWorkers((ws) => ws.map((w) => {
         // If moving to a target
         if (w.movingTo) {
           const dx = w.movingTo.x - w.x;
           const dy = w.movingTo.y - w.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 0.05) {
+          const epsilon = 0.1;
+          if (dist < epsilon) {
             // Arrived at destination
             if (w.gathering && w.state !== 'returning') {
-              // Arrived at resource node, start gathering
               return { ...w, x: w.movingTo.x, y: w.movingTo.y, movingTo: null, state: 'gathering' };
             }
             if (w.state === 'returning') {
-              // Deposit resources at barn
-              setResources((r: typeof resources) => ({
-                gold: r.gold + w.carrying.gold,
-                lumber: r.lumber + w.carrying.lumber
-              }));
-              // Resume gathering if node still has resources, else find nearest of same type
-              if (w.gathering) {
-                if (w.gathering.type === 'tree') {
-                  // If original node still has resources
-                  if (trees[w.gathering.idx]?.amount > 0) {
-                    return {
-                      ...w,
-                      x: w.movingTo.x,
-                      y: w.movingTo.y,
-                      movingTo: { x: trees[w.gathering.idx].x, y: trees[w.gathering.idx].y },
-                      carrying: { gold: 0, lumber: 0 },
-                      state: 'moving',
-                    };
-                  }
-                  // Find nearest available tree
-                  const available = trees
-                    .map((t, i) => ({ ...t, idx: i }))
-                    .filter(t => t.amount > 0);
-                  if (available.length > 0) {
-                    // Find nearest
-                    const { x: wx, y: wy } = w;
-                    const nearest = available.reduce((a, b) => {
-                      const da = Math.abs(a.x - wx) + Math.abs(a.y - wy);
-                      const db = Math.abs(b.x - wx) + Math.abs(b.y - wy);
-                      return da < db ? a : b;
-                    });
-                    return {
-                      ...w,
-                      x: w.movingTo.x,
-                      y: w.movingTo.y,
-                      movingTo: { x: nearest.x, y: nearest.y },
-                      gathering: { type: 'tree', idx: nearest.idx },
-                      carrying: { gold: 0, lumber: 0 },
-                      state: 'moving',
-                    };
-                  }
-                } else if (w.gathering.type === 'gold') {
-                  if (goldMine.amount > 0) {
-                    return {
-                      ...w,
-                      x: w.movingTo.x,
-                      y: w.movingTo.y,
-                      movingTo: { x: goldMine.x, y: goldMine.y },
-                      carrying: { gold: 0, lumber: 0 },
-                      state: 'moving',
-                    };
+              // Only deposit if at barn (epsilon check)
+              const atBarn = Math.abs(w.movingTo.x - barnPos.x) < epsilon && Math.abs(w.movingTo.y - barnPos.y) < epsilon;
+              if (atBarn) {
+                setResources((r) => ({
+                  gold: r.gold + w.carrying.gold,
+                  lumber: r.lumber + w.carrying.lumber
+                }));
+                // Resume gathering if node still has resources, else find nearest of same type
+                if (w.gathering) {
+                  if (w.gathering.type === 'tree') {
+                    if (trees[w.gathering.idx]?.amount > 0) {
+                      return { ...w, x: w.movingTo.x, y: w.movingTo.y, movingTo: { x: trees[w.gathering.idx].x, y: trees[w.gathering.idx].y }, gathering: { type: 'tree', idx: w.gathering.idx }, carrying: { gold: 0, lumber: 0 }, state: 'moving' };
+                    }
+                    const available = trees.map((t, i) => ({ ...t, idx: i })).filter(t => t.amount > 0);
+                    if (available.length > 0) {
+                      const { x: wx, y: wy } = w;
+                      const nearest = available.reduce((a, b) => {
+                        const da = Math.abs(a.x - wx) + Math.abs(a.y - wy);
+                        const db = Math.abs(b.x - wx) + Math.abs(b.y - wy);
+                        return da < db ? a : b;
+                      });
+                      return { ...w, x: w.movingTo.x, y: w.movingTo.y, movingTo: { x: nearest.x, y: nearest.y }, gathering: { type: 'tree', idx: nearest.idx }, carrying: { gold: 0, lumber: 0 }, state: 'moving' };
+                    }
+                  } else if (w.gathering.type === 'gold') {
+                    if (goldMine.amount > 0) {
+                      return { ...w, x: w.movingTo.x, y: w.movingTo.y, movingTo: { x: goldMine.x, y: goldMine.y }, gathering: { type: 'gold', idx: 0 }, carrying: { gold: 0, lumber: 0 }, state: 'moving' };
+                    }
                   }
                 }
-              }
-              // Otherwise, idle (but preserve gathering if possible)
-              let gathering = w.gathering;
-              // If there are still nodes of this type, keep gathering field
-              if (w.gathering) {
-                if (w.gathering.type === 'tree') {
-                  const available = trees.filter(t => t.amount > 0);
-                  if (available.length === 0) gathering = null;
-                } else if (w.gathering.type === 'gold') {
-                  if (goldMine.amount <= 0) gathering = null;
+                let gathering = w.gathering;
+                if (w.gathering) {
+                  if (w.gathering.type === 'tree') {
+                    const available = trees.filter(t => t.amount > 0);
+                    if (available.length === 0) gathering = null;
+                  } else if (w.gathering.type === 'gold') {
+                    if (goldMine.amount <= 0) gathering = null;
+                  }
                 }
+                return { ...w, x: w.movingTo.x, y: w.movingTo.y, movingTo: null, carrying: { gold: 0, lumber: 0 }, state: gathering ? 'moving' : 'idle', gathering };
+              } else {
+                // Not at barn yet, keep moving
+                return { ...w, x: w.movingTo.x, y: w.movingTo.y, movingTo: { x: barnPos.x, y: barnPos.y }, state: 'returning' };
               }
-              return {
-                ...w,
-                x: w.movingTo.x,
-                y: w.movingTo.y,
-                movingTo: null,
-                carrying: { gold: 0, lumber: 0 },
-                state: gathering ? 'moving' : 'idle',
-                gathering,
-              };
             }
-            // Otherwise, just stop
             return { ...w, x: w.movingTo.x, y: w.movingTo.y, movingTo: null, state: 'idle' };
           }
-          return {
-            ...w,
-            x: w.x + dx * speed,
-            y: w.y + dy * speed,
-            state: w.gathering ? 'moving' : w.state,
-          };
+          return { ...w, x: w.x + dx * speed, y: w.y + dy * speed, state: w.gathering ? 'moving' : w.state };
         }
-        // If gathering
+        // If gathering, check if carrying max and force return if so
         if (w.state === 'gathering' && w.gathering) {
-          // Simulate gather delay
-          if (!gatherTimeout) {
-            gatherTimeout = window.setTimeout(() => {
-              setWorker((w2: WorkerState) => {
-                if (w2.state !== 'gathering' || !w2.gathering) return w2;
-                // Carry cap: 10 per trip
-                if (w2.gathering.type === 'tree') {
-                  const idx = w2.gathering.idx;
-                  if (trees[idx]?.amount > 0 && w2.carrying.lumber < 10) {
-                    setTrees((ts: typeof trees) => ts.map((t, i) => i === idx ? { ...t, amount: Math.max(0, t.amount - 10) } : t));
-                    return {
-                      ...w2,
-                      carrying: { ...w2.carrying, lumber: w2.carrying.lumber + 10 },
-                      state: 'returning',
-                      movingTo: { ...barnPos },
-                    };
+          // Tree logic
+          if (w.gathering.type === 'tree') {
+            const idx = w.gathering.idx;
+            if (w.carrying.lumber >= 10 && w.carrying.gold === 0) {
+              // Force return to barn
+              return { ...w, state: 'returning', movingTo: { x: barnPos.x, y: barnPos.y } };
+            }
+            if (!gatherTimeouts[w.id]) {
+              gatherTimeouts[w.id] = window.setTimeout(() => {
+                setWorkers((ws2) => ws2.map((w2) => {
+                  if (w2.id !== w.id) return w2;
+                  if (w2.state !== 'gathering' || !w2.gathering) return w2;
+                  if (trees[idx]?.amount > 0 && w2.carrying.lumber < 10 && w2.carrying.gold === 0) {
+                    setTrees((ts) => ts.map((t, i) => i === idx ? { ...t, amount: Math.max(0, t.amount - 10) } : t));
+                    return { ...w2, carrying: { gold: 0, lumber: w2.carrying.lumber + 10 }, state: 'returning', movingTo: { x: barnPos.x, y: barnPos.y } };
                   }
-                } else if (w2.gathering.type === 'gold') {
-                  if (goldMine.amount > 0 && w2.carrying.gold < 10) {
-                    setGoldMine((gm: typeof goldMine) => ({ ...gm, amount: Math.max(0, gm.amount - 10) }));
-                    return {
-                      ...w2,
-                      carrying: { ...w2.carrying, gold: w2.carrying.gold + 10 },
-                      state: 'returning',
-                      movingTo: { ...barnPos },
-                    };
+                  return w2;
+                }));
+              }, 900);
+            }
+          } else if (w.gathering.type === 'gold') {
+            if (w.carrying.gold >= 10 && w.carrying.lumber === 0) {
+              // Force return to barn
+              return { ...w, state: 'returning', movingTo: { x: barnPos.x, y: barnPos.y } };
+            }
+            if (!gatherTimeouts[w.id]) {
+              gatherTimeouts[w.id] = window.setTimeout(() => {
+                setWorkers((ws2) => ws2.map((w2) => {
+                  if (w2.id !== w.id) return w2;
+                  if (w2.state !== 'gathering' || !w2.gathering) return w2;
+                  if (goldMine.amount > 0 && w2.carrying.gold < 10 && w2.carrying.lumber === 0) {
+                    setGoldMine((gm) => ({ ...gm, amount: Math.max(0, gm.amount - 10) }));
+                    return { ...w2, carrying: { gold: w2.carrying.gold + 10, lumber: 0 }, state: 'returning', movingTo: { x: barnPos.x, y: barnPos.y } };
                   }
-                }
-                return w2;
-              });
-            }, 900); // 0.9s gather time
+                  return w2;
+                }));
+              }, 900);
+            }
           }
         }
         return w;
-      });
+      }));
       animationRef.current = requestAnimationFrame(animate);
     }
     animationRef.current = requestAnimationFrame(animate);
     return () => {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
-      if (gatherTimeout) clearTimeout(gatherTimeout);
+      Object.values(gatherTimeouts).forEach(clearTimeout);
     };
-  }, [worker.movingTo, worker.state, worker.gathering, trees, goldMine]);
+  }, [trees, goldMine, workers]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -346,10 +341,12 @@ const RTSMap: React.FC = () => {
             const isoY = (i + j) * tileSize / 2;
             // Tile color by type
             let fill = '#14532d';
-            if (tiles[i][j] === 'dirt') fill = '#a16207';
+                    if (tiles[i][j] === 'dirt') fill = '#a16207';
             if (tiles[i][j] === 'water') fill = '#2563eb';
             if (tiles[i][j] === 'rock') fill = '#64748b';
             if (tiles[i][j] === 'tree') fill = '#166534';
+            // If any selected worker, allow move
+            const anySelected = workers.some(w => w.selected);
             return (
               <g key={`tile-${i}-${j}`}>
                 {/* Tile polygon */}
@@ -365,11 +362,9 @@ const RTSMap: React.FC = () => {
                   strokeWidth={2}
                   onContextMenu={e => {
                     e.preventDefault();
-                    if (worker.selected) {
-                      setWorker(w => ({ ...w, movingTo: { x: i, y: j }, gathering: null, state: 'moving' }));
-                    }
+                    setWorkers(ws => ws.map(w => w.selected ? { ...w, movingTo: { x: i, y: j }, gathering: null, state: 'moving' } : w));
                   }}
-                  style={{ cursor: worker.selected ? 'pointer' : undefined }}
+                          style={{ cursor: anySelected ? 'pointer' : undefined }}
                 />
                 {/* Grid coordinate label */}
                 <text
@@ -386,14 +381,22 @@ const RTSMap: React.FC = () => {
             );
           })
         )}
-        {/* Worker unit */}
-        {(() => {
+        {/* Worker units */}
+        {workers.map(worker => {
           const wx = worker.x;
           const wy = worker.y;
           const isoX = (wx - wy) * tileSize + gridSize * tileSize / 2 + tileSize;
           const isoY = (wx + wy) * tileSize / 2 + tileSize / 2;
           return (
-            <g key="worker" onClick={() => setWorker(w => ({ ...w, selected: !w.selected }))} style={{ cursor: 'pointer' }}>
+            <g
+              key={`worker-${worker.id}`}
+              onClick={e => {
+                setSelectedType('worker');
+                setSelectedWorkerId(worker.id);
+                setWorkers(ws => ws.map(w => ({ ...w, selected: w.id === worker.id })));
+              }}
+              style={{ cursor: 'pointer' }}
+            >
               {/* Selection ring */}
               {worker.selected && (
                 <ellipse cx={isoX + tileSize / 2} cy={isoY + 32} rx={22} ry={10} fill="none" stroke="#38bdf8" strokeWidth={4} />
@@ -407,7 +410,7 @@ const RTSMap: React.FC = () => {
               )}
             </g>
           );
-        })()}
+        })}
         {/* Trees (resource nodes) */}
         {trees.map(({ x, y, amount }, idx) => {
           if (amount <= 0) return null;
@@ -418,14 +421,10 @@ const RTSMap: React.FC = () => {
               style={{ cursor: 'pointer', opacity: amount > 0 ? 1 : 0.2 }}
               onContextMenu={e => {
                 e.preventDefault();
-                if (worker.selected && amount > 0) {
-                  setWorker(w => ({
-                    ...w,
-                    movingTo: { x, y },
-                    gathering: { type: 'tree', idx },
-                    state: 'moving',
-                  }));
-                }
+                setWorkers(ws => {
+                  // Only command selected workers
+                  return ws.map(w => w.selected && amount > 0 ? { ...w, movingTo: { x, y }, gathering: { type: 'tree', idx }, state: 'moving' } : w);
+                });
               }}
             >
               <ellipse cx={isoX + tileSize / 2} cy={isoY + 10} rx={18} ry={28} fill="#166534" stroke="#052e16" strokeWidth={3} />
@@ -447,14 +446,10 @@ const RTSMap: React.FC = () => {
               style={{ cursor: 'pointer', opacity: amount > 0 ? 1 : 0.2 }}
               onContextMenu={e => {
                 e.preventDefault();
-                if (worker.selected && amount > 0) {
-                  setWorker(w => ({
-                    ...w,
-                    movingTo: { x, y },
-                    gathering: { type: 'gold', idx: 0 },
-                    state: 'moving',
-                  }));
-                }
+                setWorkers(ws => {
+                  // Only command selected workers
+                  return ws.map(w => w.selected && amount > 0 ? { ...w, movingTo: { x, y }, gathering: { type: 'gold', idx: 0 }, state: 'moving' } : w);
+                });
               }}
             >
               <ellipse cx={isoX + tileSize / 2} cy={isoY + 24} rx={28} ry={20} fill="#fde68a" stroke="#b45309" strokeWidth={4} />
@@ -467,7 +462,14 @@ const RTSMap: React.FC = () => {
           );
         })()}
         {/* Main Barn (Town Hall) */}
-        <g>
+        <g
+          style={{ cursor: 'pointer' }}
+          onClick={() => {
+            setSelectedType('farmhouse');
+            setWorkers(ws => ws.map(w => ({ ...w, selected: false })));
+            setSelectedWorkerId(null);
+          }}
+        >
           <rect
             x={(4 - 4) * tileSize + gridSize * tileSize / 2 + tileSize}
             y={(4 + 4) * tileSize / 2 + tileSize / 2}
@@ -492,6 +494,49 @@ const RTSMap: React.FC = () => {
         </g>
         </svg>
       </div>
+      {/* Lower UI: pass selection and handlers to RTSUI */}
+      <RTSUI
+        selectedType={selectedType}
+        selectedWorker={workers.find(w => w.id === selectedWorkerId) || null}
+        farmhouse={farmhouse}
+        farmhouseUpgradeCosts={farmhouseUpgradeCosts}
+        farmhouseStorage={farmhouseStorage}
+        resources={resources}
+        onFarmhouseAction={(action: string) => {
+          // Action: 'build', 'upgrade', 'train', 'buildHayShed'
+          if (action === 'build' || action === 'upgrade') {
+            const level = farmhouse.built ? farmhouse.level : 0;
+            const isMax = farmhouse.built && farmhouse.level >= maxFarmhouseLevel;
+            const cost = farmhouseUpgradeCosts[level];
+            const canAfford = resources.gold >= cost.gold && resources.lumber >= cost.lumber;
+            if (isMax || !canAfford) return;
+            setResources(r => ({ gold: r.gold - cost.gold, lumber: r.lumber - cost.lumber }));
+            setFarmhouse(fh => fh.built ? { built: true, level: fh.level + 1 } : { built: true, level: 1 });
+          } else if (action === 'train') {
+            const farmerCost = { gold: 30, lumber: 0 };
+            if (resources.gold < farmerCost.gold) return;
+            setResources(r => ({ ...r, gold: r.gold - farmerCost.gold }));
+            setWorkers(ws => [
+              ...ws,
+              {
+                id: ws.length ? Math.max(...ws.map(w => w.id)) + 1 : 1,
+                x: barnPos.x,
+                y: barnPos.y,
+                selected: false,
+                movingTo: null,
+                gathering: null,
+                carrying: { gold: 0, lumber: 0 },
+                state: 'idle',
+              },
+            ]);
+          } else if (action === 'buildHayShed') {
+            const hayShedCost = { gold: 40, lumber: 60 };
+            if (resources.gold < hayShedCost.gold || resources.lumber < hayShedCost.lumber) return;
+            setResources(r => ({ gold: r.gold - hayShedCost.gold, lumber: r.lumber - hayShedCost.lumber }));
+            alert('Click a grass tile to place the Hay Shed! (Placement UI coming soon)');
+          }
+        }}
+      />
       {/* Zoom UI */}
       <div style={{ position: 'absolute', top: 56, right: 24, zIndex: 10, background: 'rgba(0,0,0,0.7)', color: '#fff', padding: '4px 12px', borderRadius: 6, fontSize: 14 }}>
         Zoom: {zoom}x (scroll to zoom)
