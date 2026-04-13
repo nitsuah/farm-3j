@@ -20,6 +20,7 @@ const BUILD_ITEMS: BuildItem[] = [
   },
   { id: 'fence-v', name: 'Vertical Fence', icon: '┃', cost: 10, type: 'fence' },
   { id: 'trough', name: 'Trough', icon: '🪣', cost: 50, type: 'structure' },
+  { id: 'barn', name: 'Barn', icon: '🏠', cost: 1000, type: 'structure' },
 ];
 
 interface BuildPanelProps {

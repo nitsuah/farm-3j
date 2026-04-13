@@ -13,6 +13,7 @@ import {
   feedAnimal,
   moveTowards,
   getFenceBounds,
+  gatherResources,
 } from '@/lib/farm/gameLogic';
 import { GAME_CONFIG } from '@/lib/farm/constants';
 
@@ -52,8 +53,13 @@ export function FarmCanvas({ showGrid = false }: FarmCanvasProps) {
         dispatch({ type: 'UPDATE_STATS', payload: { time: newTime } });
       }
 
+
       // Produce resources from animals
       dispatch({ type: 'PRODUCE_RESOURCES' });
+
+      // Gather resources (hay, water, tractor, irrigation)
+      const newResources = gatherResources(state.resources, deltaTime);
+      dispatch({ type: 'UPDATE_STATS', payload: { resources: newResources } });
 
       // Update animal needs (hunger and happiness)
       const needUpdates = state.entities

@@ -1,6 +1,7 @@
-'use client';
+"use client";
 
 import React, { useState } from 'react';
+import { ThreeJSFarmView } from './ThreeJSFarmView';
 import { useFarm } from '@/lib/farm/FarmContext';
 import { spawnAnimal } from '@/lib/farm/spawner';
 import { addNotification } from '@/lib/farm/notifications';
@@ -8,6 +9,23 @@ import { GAME_CONFIG } from '@/lib/farm/constants';
 import { EditorToolbar, EditorMode } from './EditorToolbar';
 import { BuildPanel } from './BuildPanel';
 import { AnimalPanel } from './AnimalPanel';
+import { BarnPanel } from './BarnPanel';
+import { TechTreePanel } from './TechTreePanel';
+  // Tech tree state
+  const [showTechTree, setShowTechTree] = useState(false);
+  const [unlockedTechs, setUnlockedTechs] = useState<string[]>([]);
+  // Tech unlock logic
+  const handleUnlockTech = (node: any) => {
+    // Deduct resources
+    const newResources = { ...state.resources };
+    Object.entries(node.cost).forEach(([res, amt]) => {
+      newResources[res] = (newResources[res] || 0) - amt;
+    });
+    setUnlockedTechs(list => [...list, node.id]);
+    dispatch({ type: 'UPDATE_STATS', payload: { resources: newResources } });
+    addNotification(`🔓 Unlocked: ${node.name}`, 'success', 2000);
+    // Optionally: node.effect();
+  };
 
 interface FarmEditorProps {
   editorMode: EditorMode;
@@ -33,6 +51,29 @@ export function FarmEditor({
   const { state, dispatch } = useFarm();
   const [showHelp, setShowHelp] = useState(false);
   const [animationSpeed, setAnimationSpeed] = useState(1.0);
+  // Barn training queue: [{ unit, remaining }]
+  const [barnTrainingQueue, setBarnTrainingQueue] = useState<{ unit: any; remaining: number }[]>([]);
+
+  // Simulate training timer
+  React.useEffect(() => {
+    if (barnTrainingQueue.length === 0) return;
+    const timer = setInterval(() => {
+      setBarnTrainingQueue(queue => {
+        if (queue.length === 0) return queue;
+        const [first, ...rest] = queue;
+        if (first.remaining <= 1) {
+          // Training complete: spawn unit
+          const newAnimal = spawnAnimal(first.unit.type);
+          dispatch({ type: 'SPAWN_ANIMAL', payload: newAnimal });
+          dispatch({ type: 'UPDATE_STATS', payload: { money: state.money } });
+          addNotification(`✅ Trained ${first.unit.name} at the Barn!`, 'success', 2000);
+          return rest;
+        }
+        return [{ ...first, remaining: first.remaining - 1 }, ...rest];
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [barnTrainingQueue.length, dispatch, state.money]);
 
   const handleSpawnAnimal = (type: 'cow' | 'chicken' | 'pig' | 'sheep') => {
     const cost = GAME_CONFIG.ANIMALS[type].price;
@@ -132,6 +173,25 @@ export function FarmEditor({
             selectedAnimal={selectedAnimal}
           />
         )}
+        {/* Show BarnPanel if a Barn is selected for training */}
+        {selectedBuildItem?.id === 'barn' && (
+          <BarnPanel
+            money={state.money}
+            onTrain={unit => {
+              if (state.money < unit.cost) {
+                addNotification(`❌ Not enough money! Need $${unit.cost} to train a ${unit.name}.`, 'error', 3000);
+                return;
+              }
+              setBarnTrainingQueue(queue => [
+                ...queue,
+                { unit, remaining: unit.trainTime },
+              ]);
+              dispatch({ type: 'UPDATE_STATS', payload: { money: state.money - unit.cost } });
+              addNotification(`🚜 Training ${unit.name} at the Barn...`, 'info', 1500);
+            }}
+            trainingQueue={barnTrainingQueue}
+          />
+        )}
         {editorMode === 'select' && (
           <div className="rounded bg-gray-800 p-3 text-xs text-gray-300">
             <p>Click entities to select and move them.</p>
@@ -144,6 +204,22 @@ export function FarmEditor({
       <div className="border-t border-gray-700 pt-3">
         <h3 className="mb-2 text-sm font-semibold">Controls</h3>
         <div className="flex flex-col gap-1.5">
+                    <button
+                      onClick={() => setShowTechTree(v => !v)}
+                      className="rounded bg-blue-700 px-3 py-1.5 text-sm font-semibold transition-colors hover:bg-blue-800"
+                    >
+                      {showTechTree ? '❌ Close Tech Tree' : '🧬 Tech Tree'}
+                    </button>
+                {/* Tech Tree Panel */}
+                {showTechTree && (
+                  <div className="mt-4">
+                    <TechTreePanel
+                      resources={state.resources}
+                      onUnlock={handleUnlockTech}
+                      unlockedTechs={unlockedTechs}
+                    />
+                  </div>
+                )}
           <button
             onClick={handleTogglePause}
             className={`rounded px-3 py-1.5 text-sm font-semibold transition-colors ${
@@ -218,8 +294,22 @@ export function FarmEditor({
         )}
       </div>
 
+      {/* Isolinear/3D View Toggle */}
+      <div className="mt-3">
+        <button
+          className="mb-2 rounded bg-cyan-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-cyan-800"
+          onClick={() => setShow3D(v => !v)}
+        >
+          {show3D ? 'Switch to Classic View' : 'Switch to 3D Isolinear View'}
+        </button>
+        {show3D && (
+          <div className="mb-4">
+            <ThreeJSFarmView />
+          </div>
+        )}
+      </div>
       {/* Farm Stats - Compact at bottom */}
-      <div className="mt-3 border-t border-gray-700 pt-3">
+      <div className="border-t border-gray-700 pt-3">
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div className="rounded bg-gray-800 p-2">
             <div className="text-gray-400">Money</div>
@@ -262,10 +352,29 @@ export function FarmEditor({
         <h3 className="mb-2 text-sm font-semibold">📦 Resources</h3>
         <div className="space-y-1.5">
           {Object.entries(state.resources).map(([resource, amount]) => {
-            const icons = { milk: '🥛', eggs: '🥚', meat: '🥩', wool: '🧶' };
-            const prices = { milk: 10, eggs: 5, meat: 20, wool: 15 };
-            const icon = icons[resource as keyof typeof icons];
-            const price = prices[resource as keyof typeof prices];
+            const icons = {
+              milk: '🥛',
+              eggs: '🥚',
+              meat: '🥩',
+              wool: '🧶',
+              hay: '🌾',
+              water: '💧',
+              tractor: '🚜',
+              irrigation: '💦',
+            };
+            const prices = {
+              milk: 10,
+              eggs: 5,
+              meat: 20,
+              wool: 15,
+              hay: 2,
+              water: 1,
+              tractor: 200,
+              irrigation: 100,
+            };
+            const sellable = ['milk', 'eggs', 'meat', 'wool', 'hay', 'water'];
+            const icon = icons[resource as keyof typeof icons] || '❓';
+            const price = prices[resource as keyof typeof prices] || 0;
 
             return (
               <div
@@ -275,49 +384,51 @@ export function FarmEditor({
                 <span className="flex items-center gap-1">
                   {icon} <span className="font-semibold">{amount}</span>
                 </span>
-                <div className="flex gap-1">
-                  <button
-                    onClick={() => {
-                      dispatch({
-                        type: 'SELL_RESOURCE',
-                        payload: {
-                          resource: resource as keyof typeof state.resources,
-                          amount: 1,
-                        },
-                      });
-                      addNotification(
-                        `💰 Sold ${resource} for $${price}!`,
-                        'success',
-                        2000
-                      );
-                    }}
-                    disabled={amount < 1}
-                    className="rounded bg-green-600 px-2 py-0.5 text-[10px] hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-700 disabled:opacity-50"
-                  >
-                    ${price}
-                  </button>
-                  <button
-                    onClick={() => {
-                      const totalPrice = amount * price;
-                      dispatch({
-                        type: 'SELL_RESOURCE',
-                        payload: {
-                          resource: resource as keyof typeof state.resources,
-                          amount,
-                        },
-                      });
-                      addNotification(
-                        `💰 Sold all ${resource} for $${totalPrice}!`,
-                        'success',
-                        2000
-                      );
-                    }}
-                    disabled={amount < 1}
-                    className="rounded bg-green-700 px-2 py-0.5 text-[10px] hover:bg-green-800 disabled:cursor-not-allowed disabled:bg-gray-700 disabled:opacity-50"
-                  >
-                    All
-                  </button>
-                </div>
+                {sellable.includes(resource) ? (
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => {
+                        dispatch({
+                          type: 'SELL_RESOURCE',
+                          payload: {
+                            resource: resource as keyof typeof state.resources,
+                            amount: 1,
+                          },
+                        });
+                        addNotification(
+                          `💰 Sold ${resource} for $${price}!`,
+                          'success',
+                          2000
+                        );
+                      }}
+                      disabled={amount < 1}
+                      className="rounded bg-green-600 px-2 py-0.5 text-[10px] hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-700 disabled:opacity-50"
+                    >
+                      ${price}
+                    </button>
+                    <button
+                      onClick={() => {
+                        const totalPrice = amount * price;
+                        dispatch({
+                          type: 'SELL_RESOURCE',
+                          payload: {
+                            resource: resource as keyof typeof state.resources,
+                            amount,
+                          },
+                        });
+                        addNotification(
+                          `💰 Sold all ${resource} for $${totalPrice}!`,
+                          'success',
+                          2000
+                        );
+                      }}
+                      disabled={amount < 1}
+                      className="rounded bg-green-700 px-2 py-0.5 text-[10px] hover:bg-green-800 disabled:cursor-not-allowed disabled:bg-gray-700 disabled:opacity-50"
+                    >
+                      All
+                    </button>
+                  </div>
+                ) : null}
               </div>
             );
           })}

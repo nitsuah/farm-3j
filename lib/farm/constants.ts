@@ -63,6 +63,14 @@ export const GAME_CONFIG = {
   // Visual effects
   NIGHT_STAR_COUNT: 50,
 
+  // Resource management
+  RESOURCE_TYPES: ['milk', 'eggs', 'meat', 'wool', 'hay', 'water', 'tractor', 'irrigation'],
+  RESOURCE_GATHER_RATES: {
+    hay: 2, // per hour
+    water: 3,
+    tractor: 0.1, // rare, per hour
+    irrigation: 0.05,
+  },
   // Costs
   FENCE_REPAIR_COST: 50,
   ANIMAL_HEAL_COST: 100,
