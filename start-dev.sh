@@ -2,4 +2,5 @@
 set -e
 npm install -g pnpm
 pnpm install
-exec pnpm run dev
+pnpm add detect-port@^1.3.0
+node scripts/find-port.js

@@ -1,3 +1,81 @@
+"use client";
+import React, { useState, useEffect, useRef } from 'react';
+
+const RTSMap: React.FC = () => {
+  // Debug: show worker and resource state
+  // ...existing code...
+  const gridSize = 13; // expanded map
+  const tileSize = 64;
+
+  // Tile types: grass, dirt, water, trees, rocks
+  type TileType = 'grass' | 'dirt' | 'water' | 'tree' | 'rock';
+  const [zoom, setZoom] = useState(1);
+  // Generate a full 13x13 map so rendering indexes always match gridSize.
+  const [tiles] = useState<TileType[][]>(() =>
+    Array.from({ length: gridSize }, (_, i) =>
+      Array.from({ length: gridSize }, (_, j) => {
+        if ((i >= 1 && i <= 3 && j >= 1 && j <= 2) || (i >= 8 && i <= 10 && j >= 8 && j <= 9)) {
+          return 'water';
+        }
+        if ((i === 3 || i === 4) && (j === 6 || j === 7)) {
+          return 'tree';
+        }
+        if ((i === 6 || i === 7) && (j === 2 || j === 3)) {
+          return 'rock';
+        }
+        if (j === 4 || i === 5) {
+          return 'dirt';
+        }
+        return 'grass';
+      })
+    )
+  );
+  // Resource nodes: trees and gold mine
+  const [trees, setTrees] = useState([
+    { x: 2, y: 2, amount: 50 },
+    { x: 6, y: 3, amount: 50 },
+    { x: 4, y: 7, amount: 50 },
+    { x: 7, y: 6, amount: 50 },
+  ]);
+  const [goldMine, setGoldMine] = useState({ x: 1, y: 7, amount: 100 });
+
+  // Camera state
+  // Camera state
+  // Start centered
+  const [camera, setCamera] = useState({ x: 0, y: 0 });
+  // Camera clamp boundaries (in px)
+  const cameraBounds = {
+    minX: -((gridSize * tileSize) / 2),
+    maxX: ((gridSize * tileSize) / 2),
+    minY: -100,
+    maxY: (gridSize * tileSize) / 2
+  };
+
+  // Resource state
+  const [resources, setResources] = useState({ gold: 0, lumber: 0 });
+
+  // Worker state
+  type WorkerState = {
+    x: number;
+    y: number;
+    selected: boolean;
+    movingTo: null | { x: number; y: number };
+    gathering?: null | { type: 'tree' | 'gold', idx: number };
+    carrying: { gold: number; lumber: number };
+    state: 'idle' | 'moving' | 'gathering' | 'returning';
+  };
+  // Barn location (center of map for now)
+  const barnPos = { x: 6, y: 6 };
+  const [worker, setWorker] = useState<WorkerState>({
+    x: 5,
+    y: 5,
+    selected: false,
+    movingTo: null,
+    gathering: null,
+    carrying: { gold: 0, lumber: 0 },
+    state: 'idle',
+  });
+  const animationRef = useRef<number | null>(null);
   // FPS counter
   const [fps, setFps] = useState(0);
   useEffect(() => {
@@ -17,70 +95,15 @@
     loop();
     return () => { running = false; };
   }, []);
-
-"use client";
-import React, { useState, useEffect, useRef } from 'react';
-
-
-  const gridSize = 9;
-  const tileSize = 64;
-
-  // Tile types: grass, dirt, water, trees, rocks
-  type TileType = 'grass' | 'dirt' | 'water' | 'tree' | 'rock';
-  const [zoom, setZoom] = useState(1);
-  // Simple map: center is grass, some water, dirt, rocks
-  const [tiles] = useState<TileType[][]>([
-    ['grass','grass','water','water','water','grass','grass','grass','grass'],
-    ['grass','grass','water','grass','grass','grass','rock','grass','grass'],
-    ['grass','dirt','grass','grass','grass','grass','rock','grass','grass'],
-    ['grass','dirt','grass','tree','tree','grass','grass','dirt','grass'],
-    ['grass','dirt','grass','tree','grass','grass','grass','dirt','grass'],
-    ['grass','dirt','grass','grass','grass','grass','grass','dirt','grass'],
-    ['grass','dirt','rock','rock','grass','grass','grass','dirt','grass'],
-    ['grass','grass','grass','grass','grass','water','water','grass','grass'],
-    ['grass','grass','grass','grass','grass','water','water','grass','grass'],
-  ]);
-  // Resource nodes: trees and gold mine
-  const [trees, setTrees] = useState([
-    { x: 2, y: 2, amount: 50 },
-    { x: 6, y: 3, amount: 50 },
-    { x: 4, y: 7, amount: 50 },
-    { x: 7, y: 6, amount: 50 },
-  ]);
-  const [goldMine, setGoldMine] = useState({ x: 1, y: 7, amount: 100 });
-
-  // Camera state
-  const [camera, setCamera] = useState({ x: 0, y: 0 });
-
-  // Resource state
-  const [resources, setResources] = useState({ gold: 0, lumber: 0 });
-
-  // Worker state
-  type WorkerState = {
-    x: number;
-    y: number;
-    selected: boolean;
-    movingTo: null | { x: number; y: number };
-    gathering?: null | { type: 'tree' | 'gold', idx: number };
-    carrying: { gold: number; lumber: number };
-    state: 'idle' | 'moving' | 'gathering' | 'returning';
-  };
-  const [worker, setWorker] = useState<WorkerState>({
-    x: 5,
-    y: 5,
-    selected: false,
-    movingTo: null,
-    gathering: null,
-    carrying: { gold: 0, lumber: 0 },
-    state: 'idle',
-  });
-  const animationRef = useRef<number | null>(null);
+  const debugState = JSON.stringify({ worker, resources, trees, goldMine }, null, 2);
+  // ...existing code...
 
   // Handle worker movement animation
   // Worker movement and gather/deposit logic
   // Zoom controls
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
       setZoom(z => Math.max(0.5, Math.min(2, z + (e.deltaY < 0 ? 0.25 : -0.25))));
     };
     window.addEventListener('wheel', handleWheel, { passive: false });
@@ -99,25 +122,84 @@ import React, { useState, useEffect, useRef } from 'react';
           const dist = Math.sqrt(dx * dx + dy * dy);
           if (dist < 0.05) {
             // Arrived at destination
-            // If gathering, start gather
-            if (w.gathering) {
+            if (w.gathering && w.state !== 'returning') {
+              // Arrived at resource node, start gathering
               return { ...w, x: w.movingTo.x, y: w.movingTo.y, movingTo: null, state: 'gathering' };
             }
-            // If returning to barn
             if (w.state === 'returning') {
-              // Deposit resources
+              // Deposit resources at barn
               setResources((r: typeof resources) => ({
                 gold: r.gold + w.carrying.gold,
                 lumber: r.lumber + w.carrying.lumber
               }));
+              // Resume gathering if node still has resources, else find nearest of same type
+              if (w.gathering) {
+                if (w.gathering.type === 'tree') {
+                  // If original node still has resources
+                  if (trees[w.gathering.idx]?.amount > 0) {
+                    return {
+                      ...w,
+                      x: w.movingTo.x,
+                      y: w.movingTo.y,
+                      movingTo: { x: trees[w.gathering.idx].x, y: trees[w.gathering.idx].y },
+                      carrying: { gold: 0, lumber: 0 },
+                      state: 'moving',
+                    };
+                  }
+                  // Find nearest available tree
+                  const available = trees
+                    .map((t, i) => ({ ...t, idx: i }))
+                    .filter(t => t.amount > 0);
+                  if (available.length > 0) {
+                    // Find nearest
+                    const { x: wx, y: wy } = w;
+                    const nearest = available.reduce((a, b) => {
+                      const da = Math.abs(a.x - wx) + Math.abs(a.y - wy);
+                      const db = Math.abs(b.x - wx) + Math.abs(b.y - wy);
+                      return da < db ? a : b;
+                    });
+                    return {
+                      ...w,
+                      x: w.movingTo.x,
+                      y: w.movingTo.y,
+                      movingTo: { x: nearest.x, y: nearest.y },
+                      gathering: { type: 'tree', idx: nearest.idx },
+                      carrying: { gold: 0, lumber: 0 },
+                      state: 'moving',
+                    };
+                  }
+                } else if (w.gathering.type === 'gold') {
+                  if (goldMine.amount > 0) {
+                    return {
+                      ...w,
+                      x: w.movingTo.x,
+                      y: w.movingTo.y,
+                      movingTo: { x: goldMine.x, y: goldMine.y },
+                      carrying: { gold: 0, lumber: 0 },
+                      state: 'moving',
+                    };
+                  }
+                }
+              }
+              // Otherwise, idle (but preserve gathering if possible)
+              let gathering = w.gathering;
+              // If there are still nodes of this type, keep gathering field
+              if (w.gathering) {
+                if (w.gathering.type === 'tree') {
+                  const available = trees.filter(t => t.amount > 0);
+                  if (available.length === 0) gathering = null;
+                } else if (w.gathering.type === 'gold') {
+                  if (goldMine.amount <= 0) gathering = null;
+                }
+              }
               return {
                 ...w,
                 x: w.movingTo.x,
                 y: w.movingTo.y,
                 movingTo: null,
                 carrying: { gold: 0, lumber: 0 },
-                state: 'idle',
-                gathering: null,
+                state: gathering ? 'moving' : 'idle',
+                gathering,
               };
             }
             // Otherwise, just stop
@@ -136,24 +218,29 @@ import React, { useState, useEffect, useRef } from 'react';
           if (!gatherTimeout) {
             gatherTimeout = window.setTimeout(() => {
               setWorker((w2: WorkerState) => {
-                // Only gather if still at node
                 if (w2.state !== 'gathering' || !w2.gathering) return w2;
+                // Carry cap: 10 per trip
                 if (w2.gathering.type === 'tree') {
-                  setTrees((ts: typeof trees) => ts.map((t: typeof trees[0], idx: number) => idx === w2.gathering!.idx ? { ...t, amount: Math.max(0, t.amount - 10) } : t));
-                  return {
-                    ...w2,
-                    carrying: { ...w2.carrying, lumber: w2.carrying.lumber + 10 },
-                    state: 'returning',
-                    movingTo: { x: 4, y: 4 }, // Barn
-                  };
+                  const idx = w2.gathering.idx;
+                  if (trees[idx]?.amount > 0 && w2.carrying.lumber < 10) {
+                    setTrees((ts: typeof trees) => ts.map((t, i) => i === idx ? { ...t, amount: Math.max(0, t.amount - 10) } : t));
+                    return {
+                      ...w2,
+                      carrying: { ...w2.carrying, lumber: w2.carrying.lumber + 10 },
+                      state: 'returning',
+                      movingTo: { ...barnPos },
+                    };
+                  }
                 } else if (w2.gathering.type === 'gold') {
-                  setGoldMine((gm: typeof goldMine) => ({ ...gm, amount: Math.max(0, gm.amount - 10) }));
-                  return {
-                    ...w2,
-                    carrying: { ...w2.carrying, gold: w2.carrying.gold + 10 },
-                    state: 'returning',
-                    movingTo: { x: 4, y: 4 }, // Barn
-                  };
+                  if (goldMine.amount > 0 && w2.carrying.gold < 10) {
+                    setGoldMine((gm: typeof goldMine) => ({ ...gm, amount: Math.max(0, gm.amount - 10) }));
+                    return {
+                      ...w2,
+                      carrying: { ...w2.carrying, gold: w2.carrying.gold + 10 },
+                      state: 'returning',
+                      movingTo: { ...barnPos },
+                    };
+                  }
                 }
                 return w2;
               });
@@ -169,10 +256,15 @@ import React, { useState, useEffect, useRef } from 'react';
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
       if (gatherTimeout) clearTimeout(gatherTimeout);
     };
-  }, [worker.movingTo, worker.state, worker.gathering]);
+  }, [worker.movingTo, worker.state, worker.gathering, trees, goldMine]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const movementKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'W', 'a', 'A', 's', 'S', 'd', 'D'];
+      if (!movementKeys.includes(e.key)) return;
+
+      // Keep the browser viewport fixed while panning the in-game camera.
+      e.preventDefault();
       setCamera((cam: typeof camera) => {
         let { x, y } = cam;
         // Reverse all directions
@@ -180,6 +272,9 @@ import React, { useState, useEffect, useRef } from 'react';
         if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') y -= 32;
         if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') x += 32;
         if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') x -= 32;
+        // Clamp camera
+        x = Math.max(cameraBounds.minX, Math.min(cameraBounds.maxX, x));
+        y = Math.max(cameraBounds.minY, Math.min(cameraBounds.maxY, y));
         return { x, y };
       });
     };
@@ -188,7 +283,12 @@ import React, { useState, useEffect, useRef } from 'react';
   }, []);
 
   return (
-    <div className="absolute inset-0 bg-green-900">
+    <div className="absolute inset-0 bg-black">
+      {/* Debug: show full state for troubleshooting */}
+      <div style={{ position: 'absolute', bottom: 80, left: 24, zIndex: 20, background: 'rgba(0,0,0,0.85)', color: '#bbf7d0', padding: '8px 16px', borderRadius: 8, fontSize: 12, maxWidth: 400, whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
+        <b>DEBUG STATE</b>
+        <pre>{debugState}</pre>
+      </div>
       {/* Resource bar UI (persistent, top) */}
       <div style={{
         position: 'absolute',
@@ -213,7 +313,7 @@ import React, { useState, useEffect, useRef } from 'react';
       <div style={{ position: 'absolute', top: 56, left: 8, zIndex: 10, background: 'rgba(0,0,0,0.7)', color: '#fff', padding: '4px 12px', borderRadius: 6, fontSize: 14 }}>
         Camera: x={camera.x}, y={camera.y}
       </div>
-      {/* Isometric grid */}
+      {/* Isometric grid and game rendering */}
       <div style={{
         position: 'absolute',
         left: 0,
@@ -286,36 +386,28 @@ import React, { useState, useEffect, useRef } from 'react';
             );
           })
         )}
-                            {/* FPS and debug overlay */}
-                            <div style={{ position: 'absolute', bottom: 16, left: 24, zIndex: 10, background: 'rgba(0,0,0,0.7)', color: '#fff', padding: '4px 12px', borderRadius: 6, fontSize: 14 }}>
-                              FPS: {fps}
-                            </div>
-                      {/* Zoom UI */}
-                      <div style={{ position: 'absolute', top: 56, right: 24, zIndex: 10, background: 'rgba(0,0,0,0.7)', color: '#fff', padding: '4px 12px', borderRadius: 6, fontSize: 14 }}>
-                        Zoom: {zoom}x (scroll to zoom)
-                      </div>
-                {/* Worker unit */}
-                {(() => {
-                  const wx = worker.x;
-                  const wy = worker.y;
-                  const isoX = (wx - wy) * tileSize + gridSize * tileSize / 2 + tileSize;
-                  const isoY = (wx + wy) * tileSize / 2 + tileSize / 2;
-                  return (
-                    <g key="worker" onClick={() => setWorker(w => ({ ...w, selected: !w.selected }))} style={{ cursor: 'pointer' }}>
-                      {/* Selection ring */}
-                      {worker.selected && (
-                        <ellipse cx={isoX + tileSize / 2} cy={isoY + 32} rx={22} ry={10} fill="none" stroke="#38bdf8" strokeWidth={4} />
-                      )}
-                      {/* Worker body */}
-                      <circle cx={isoX + tileSize / 2} cy={isoY + 18} r={18} fill={worker.state === 'gathering' ? '#fde68a' : '#fbbf24'} stroke="#78350f" strokeWidth={4} />
-                      <text x={isoX + tileSize / 2} y={isoY + 26} textAnchor="middle" fontSize="18" fill="#78350f" fontWeight="bold">👨‍🌾</text>
-                      {/* Carrying icon */}
-                      {(worker.carrying.gold > 0 || worker.carrying.lumber > 0) && (
-                        <text x={isoX + tileSize / 2} y={isoY + 44} textAnchor="middle" fontSize="16" fill="#fde68a">{worker.carrying.gold > 0 ? `🪙${worker.carrying.gold}` : ''}{worker.carrying.lumber > 0 ? `🌲${worker.carrying.lumber}` : ''}</text>
-                      )}
-                    </g>
-                  );
-                })()}
+        {/* Worker unit */}
+        {(() => {
+          const wx = worker.x;
+          const wy = worker.y;
+          const isoX = (wx - wy) * tileSize + gridSize * tileSize / 2 + tileSize;
+          const isoY = (wx + wy) * tileSize / 2 + tileSize / 2;
+          return (
+            <g key="worker" onClick={() => setWorker(w => ({ ...w, selected: !w.selected }))} style={{ cursor: 'pointer' }}>
+              {/* Selection ring */}
+              {worker.selected && (
+                <ellipse cx={isoX + tileSize / 2} cy={isoY + 32} rx={22} ry={10} fill="none" stroke="#38bdf8" strokeWidth={4} />
+              )}
+              {/* Worker body */}
+              <circle cx={isoX + tileSize / 2} cy={isoY + 18} r={18} fill={worker.state === 'gathering' ? '#fde68a' : '#fbbf24'} stroke="#78350f" strokeWidth={4} />
+              <text x={isoX + tileSize / 2} y={isoY + 26} textAnchor="middle" fontSize="18" fill="#78350f" fontWeight="bold">👨‍🌾</text>
+              {/* Carrying icon */}
+              {(worker.carrying.gold > 0 || worker.carrying.lumber > 0) && (
+                <text x={isoX + tileSize / 2} y={isoY + 44} textAnchor="middle" fontSize="16" fill="#fde68a">{worker.carrying.gold > 0 ? `🪙${worker.carrying.gold}` : ''}{worker.carrying.lumber > 0 ? `🌲${worker.carrying.lumber}` : ''}</text>
+              )}
+            </g>
+          );
+        })()}
         {/* Trees (resource nodes) */}
         {trees.map(({ x, y, amount }, idx) => {
           if (amount <= 0) return null;
@@ -400,6 +492,12 @@ import React, { useState, useEffect, useRef } from 'react';
         </g>
         </svg>
       </div>
+      {/* Zoom UI */}
+      <div style={{ position: 'absolute', top: 56, right: 24, zIndex: 10, background: 'rgba(0,0,0,0.7)', color: '#fff', padding: '4px 12px', borderRadius: 6, fontSize: 14 }}>
+        Zoom: {zoom}x (scroll to zoom)
+      </div>
     </div>
   );
 };
+
+export default RTSMap;
