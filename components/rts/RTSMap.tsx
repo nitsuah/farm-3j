@@ -1,3 +1,22 @@
+  // FPS counter
+  const [fps, setFps] = useState(0);
+  useEffect(() => {
+    let last = performance.now();
+    let frames = 0;
+    let running = true;
+    function loop() {
+      frames++;
+      const now = performance.now();
+      if (now - last > 1000) {
+        setFps(frames);
+        frames = 0;
+        last = now;
+      }
+      if (running) requestAnimationFrame(loop);
+    }
+    loop();
+    return () => { running = false; };
+  }, []);
 
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
@@ -220,6 +239,7 @@ import React, { useState, useEffect, useRef } from 'react';
             transform: `translate(${camera.x}px,${camera.y}px) scale(${zoom})`
           }}
         >
+        {/* Tiles, grid lines, and coordinates */}
         {[...Array(gridSize)].map((_, i) =>
           [...Array(gridSize)].map((_, j) => {
             const isoX = (i - j) * tileSize + gridSize * tileSize / 2;
@@ -231,30 +251,45 @@ import React, { useState, useEffect, useRef } from 'react';
             if (tiles[i][j] === 'rock') fill = '#64748b';
             if (tiles[i][j] === 'tree') fill = '#166534';
             return (
-              <polygon
-                key={`tile-${i}-${j}`}
-                points={
-                  [
+              <g key={`tile-${i}-${j}`}>
+                {/* Tile polygon */}
+                <polygon
+                  points={[
                     [isoX, isoY + tileSize / 2],
                     [isoX + tileSize, isoY],
                     [isoX + tileSize * 2, isoY + tileSize / 2],
                     [isoX + tileSize, isoY + tileSize]
-                  ].map(p => p.join(",")).join(" ")
-                }
-                fill={fill}
-                stroke="#222"
-                strokeWidth={2}
-                onContextMenu={e => {
-                  e.preventDefault();
-                  if (worker.selected) {
-                    setWorker(w => ({ ...w, movingTo: { x: i, y: j }, gathering: null, state: 'moving' }));
-                  }
-                }}
-                style={{ cursor: worker.selected ? 'pointer' : undefined }}
-              />
+                  ].map(p => p.join(",")).join(" ")}
+                  fill={fill}
+                  stroke="#222"
+                  strokeWidth={2}
+                  onContextMenu={e => {
+                    e.preventDefault();
+                    if (worker.selected) {
+                      setWorker(w => ({ ...w, movingTo: { x: i, y: j }, gathering: null, state: 'moving' }));
+                    }
+                  }}
+                  style={{ cursor: worker.selected ? 'pointer' : undefined }}
+                />
+                {/* Grid coordinate label */}
+                <text
+                  x={isoX + tileSize + 2}
+                  y={isoY + tileSize / 2 + 12}
+                  fontSize="12"
+                  fill="#fff"
+                  opacity={0.7}
+                  pointerEvents="none"
+                >
+                  {i},{j}
+                </text>
+              </g>
             );
           })
         )}
+                            {/* FPS and debug overlay */}
+                            <div style={{ position: 'absolute', bottom: 16, left: 24, zIndex: 10, background: 'rgba(0,0,0,0.7)', color: '#fff', padding: '4px 12px', borderRadius: 6, fontSize: 14 }}>
+                              FPS: {fps}
+                            </div>
                       {/* Zoom UI */}
                       <div style={{ position: 'absolute', top: 56, right: 24, zIndex: 10, background: 'rgba(0,0,0,0.7)', color: '#fff', padding: '4px 12px', borderRadius: 6, fontSize: 14 }}>
                         Zoom: {zoom}x (scroll to zoom)
@@ -283,11 +318,12 @@ import React, { useState, useEffect, useRef } from 'react';
                 })()}
         {/* Trees (resource nodes) */}
         {trees.map(({ x, y, amount }, idx) => {
+          if (amount <= 0) return null;
           const isoX = (x - y) * tileSize + gridSize * tileSize / 2 + tileSize;
           const isoY = (x + y) * tileSize / 2 + tileSize / 2;
           return (
             <g key={`tree-${idx}`}
-              style={{ cursor: amount > 0 ? 'pointer' : 'not-allowed', opacity: amount > 0 ? 1 : 0.4 }}
+              style={{ cursor: 'pointer', opacity: amount > 0 ? 1 : 0.2 }}
               onContextMenu={e => {
                 e.preventDefault();
                 if (worker.selected && amount > 0) {
@@ -311,11 +347,12 @@ import React, { useState, useEffect, useRef } from 'react';
         {/* Gold Mine (resource node) */}
         {(() => {
           const { x, y, amount } = goldMine;
+          if (amount <= 0) return null;
           const isoX = (x - y) * tileSize + gridSize * tileSize / 2 + tileSize;
           const isoY = (x + y) * tileSize / 2 + tileSize / 2;
           return (
             <g key="gold-mine"
-              style={{ cursor: amount > 0 ? 'pointer' : 'not-allowed', opacity: amount > 0 ? 1 : 0.4 }}
+              style={{ cursor: 'pointer', opacity: amount > 0 ? 1 : 0.2 }}
               onContextMenu={e => {
                 e.preventDefault();
                 if (worker.selected && amount > 0) {

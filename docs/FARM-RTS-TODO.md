@@ -3,11 +3,11 @@
 _This file is the actionable engineering breakdown for the Farm RTS MVP, directly mapped to the milestones and systems in Farm_RTS_Game_Manual.md._
 
 ## Milestone 1: Core Map & Camera
-- [x] Isometric tile grid renders correctly
-- [x] Smooth WASD camera pan
-- [x] Zoom levels (2 minimum)
-- [x] Tile types: grass, dirt, water, trees, rocks
-- [ ] Debug overlay: show grid, tile coordinates, FPS
+	- [x] Isometric tile grid renders correctly
+	- [x] Smooth WASD camera pan
+	- [x] Zoom levels (2 minimum)
+	- [x] Tile types: grass, dirt, water, trees, rocks
+	- [x] Debug overlay: show grid, tile coordinates, FPS
 
 ## Milestone 2: Main Building & UI
 - [x] Barn renders on map at starting position
@@ -17,10 +17,10 @@ _This file is the actionable engineering breakdown for the Farm RTS MVP, directl
 - [ ] Build menu opens from Barn
 
 ## Milestone 3: Resource Nodes
-- [x] Tree groves (Hay nodes) render
-- [x] Coin well (Gold node) renders
-- [ ] Resource node depletion logic
-- [ ] Visual feedback when node is empty
+	- [x] Tree groves (Hay nodes) render
+	- [x] Coin well (Gold node) renders
+	- [x] Resource node depletion logic
+	- [x] Visual feedback when node is empty
 
 ## Milestone 4: Worker Unit
 - [x] Farmer unit renders and animates

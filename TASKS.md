@@ -6,7 +6,7 @@ Last Updated: 2026-04-13 (Farm RTS MVP focus)
 ## Farm RTS MVP (2026 Q2–Q3)
 
 - [ ] Complete all MVP milestones as defined in docs/Farm_RTS_Game_Manual.md and docs/FARM-RTS-TODO.md
-  - Progress: Zoom levels and tile types implemented (Milestone 1)
+  - Progress: Milestone 1 complete; Milestone 3 (resource node depletion/feedback) complete
   - Priority: P0
   - Acceptance Criteria: All core gameplay systems (map, camera, resource, worker, building, win/lose) are playable and validated in Docker.
 
