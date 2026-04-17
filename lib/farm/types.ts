@@ -46,6 +46,10 @@ export interface FarmState {
     eggs: number;
     meat: number;
     wool: number;
+    hay: number;
+    water: number;
+    tractor: number;
+    irrigation: number;
   };
 }
 

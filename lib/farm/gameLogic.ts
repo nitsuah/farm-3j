@@ -1,3 +1,25 @@
+// Resource gathering logic
+export function gatherResources(resources: Record<string, number>, deltaTime: number): Record<string, number> {
+  // Gather hay, water, tractor, irrigation
+  const newResources = { ...resources };
+  const rates = GAME_CONFIG.RESOURCE_GATHER_RATES;
+  if (rates) {
+    Object.entries(rates).forEach(([key, rate]) => {
+      newResources[key] = (newResources[key] || 0) + rate * deltaTime;
+      // For tractor/irrigation, treat as integer (rare drops)
+      if (key === 'tractor' || key === 'irrigation') {
+        if (newResources[key] >= 1) {
+          newResources[key] = Math.floor(newResources[key]);
+        } else {
+          newResources[key] = 0;
+        }
+      } else {
+        newResources[key] = Math.floor(newResources[key]);
+      }
+    });
+  }
+  return newResources;
+}
 import { Entity } from './types';
 import { GAME_CONFIG } from './constants';
 

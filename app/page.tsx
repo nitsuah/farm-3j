@@ -14,27 +14,9 @@ export default function Home() {
 
           {/* Hero content */}
           <div className="relative top-4 z-10 flex h-full flex-col items-center justify-center gap-4 px-6 py-6 md:px-4 md:py-0">
-            <h1 className="text-4xl font-bold text-green-900 drop-shadow-lg md:text-5xl dark:text-white">
-              Pretty Good Farms
-            </h1>
-            <p className="mx-auto max-w-2xl px-4 text-center text-xl text-green-800 drop-shadow md:px-0 dark:text-green-200">
-              Fresh, locally-grown produce and sustainable farming practices.
-            </p>
-            <div className="mb-6 flex gap-4 md:mb-60">
-              <a
-                href="/farm"
-                className="rounded-lg bg-green-600 px-6 py-3 text-white shadow-lg transition-all hover:bg-green-700 hover:shadow-xl"
-              >
-                🎮 Play Farm Game
-              </a>
-              <a
-                href="/about"
-                data-theme-button="true"
-                className="rounded-lg border-2 border-black bg-white px-6 py-3 text-black shadow-lg transition-all hover:bg-green-50 hover:shadow-xl dark:border-white dark:bg-green-900 dark:text-white dark:hover:bg-green-800"
-              >
-                Learn More
-              </a>
-            </div>
+            <h1 className="text-4xl font-bold mb-8">Farm 3J RTS Prototype</h1>
+            <a href="/rtsfarm" className="px-6 py-3 bg-yellow-700 text-white rounded-lg text-xl hover:bg-yellow-800 transition">Play the new RTS Farm Game</a>
+            <p className="mt-8 text-gray-400">(The old farm game has been removed. All new development is focused on the RTS version.)</p>
           </div>
         </section>
 
