@@ -1,0 +1,18 @@
+version: '3.8'
+services:
+  farm-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: farm-app:latest
+    container_name: farm-app
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - NEXT_TELEMETRY_DISABLED=1
+      - DOCKER=1
+    volumes:
+      - ./:/app
+      - /app/node_modules
+    command: sh -c "npm install -g pnpm && pnpm install && pnpm run dev"
