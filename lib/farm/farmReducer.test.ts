@@ -374,6 +374,10 @@ describe('FarmReducer', () => {
         eggs: 50,
         meat: 10,
         wool: 15,
+        hay: 0,
+        water: 0,
+        tractor: 0,
+        irrigation: 0,
       });
     });
 
