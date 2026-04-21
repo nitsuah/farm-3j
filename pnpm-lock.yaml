@@ -125,13 +125,8 @@ importers:
         specifier: 1.4.2
         version: 1.4.2(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
       lucide-react:
-<<<<<<< HEAD
         specifier: ^1.8.0
-        version: 1.8.0(react@19.2.4)
-=======
-        specifier: ^1.7.0
-        version: 1.7.0(react@19.2.5)
->>>>>>> 5bbc762 (fix: align react and react-dom to 19.2.5 to resolve version mismatch)
+        version: 1.8.0(react@19.2.5)
       next:
         specifier: 16.2.3
         version: 16.2.3(@babel/core@7.29.0)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
@@ -151,13 +146,8 @@ importers:
         specifier: ^7.72.1
         version: 7.72.1(react@19.2.5)
       react-resizable-panels:
-<<<<<<< HEAD
         specifier: ^4.10.0
-        version: 4.10.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-=======
-        specifier: ^4.9.0
-        version: 4.9.0(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
->>>>>>> 5bbc762 (fix: align react and react-dom to 19.2.5 to resolve version mismatch)
+        version: 4.10.0(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
       recharts:
         specifier: 3.8.1
         version: 3.8.1(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react-is@18.3.1)(react@19.2.5)(redux@5.0.1)
@@ -6772,11 +6762,7 @@ snapshots:
     dependencies:
       yallist: 3.1.1
 
-<<<<<<< HEAD
-  lucide-react@1.8.0(react@19.2.4):
-=======
-  lucide-react@1.7.0(react@19.2.5):
->>>>>>> 5bbc762 (fix: align react and react-dom to 19.2.5 to resolve version mismatch)
+  lucide-react@1.8.0(react@19.2.5):
     dependencies:
       react: 19.2.5
 
@@ -7047,11 +7033,7 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.2.14
 
-<<<<<<< HEAD
-  react-resizable-panels@4.10.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4):
-=======
-  react-resizable-panels@4.9.0(react-dom@19.2.5(react@19.2.5))(react@19.2.5):
->>>>>>> 5bbc762 (fix: align react and react-dom to 19.2.5 to resolve version mismatch)
+  react-resizable-panels@4.10.0(react-dom@19.2.5(react@19.2.5))(react@19.2.5):
     dependencies:
       react: 19.2.5
       react-dom: 19.2.5(react@19.2.5)

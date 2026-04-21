@@ -41,7 +41,8 @@ export const TECH_TREE: TechNode[] = [
   {
     id: 'animal-ability',
     name: 'Animal Ability',
-    description: 'Unlock special animal abilities (e.g., cows produce more milk).',
+    description:
+      'Unlock special animal abilities (e.g., cows produce more milk).',
     cost: { money: 800, hay: 60 },
     prerequisites: ['barn-upgrade'],
     unlocked: false,

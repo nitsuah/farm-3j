@@ -14,9 +14,17 @@ export default function Home() {
 
           {/* Hero content */}
           <div className="relative top-4 z-10 flex h-full flex-col items-center justify-center gap-4 px-6 py-6 md:px-4 md:py-0">
-            <h1 className="text-4xl font-bold mb-8">Farm 3J RTS Prototype</h1>
-            <a href="/rtsfarm" className="px-6 py-3 bg-yellow-700 text-white rounded-lg text-xl hover:bg-yellow-800 transition">Play the new RTS Farm Game</a>
-            <p className="mt-8 text-gray-400">(The old farm game has been removed. All new development is focused on the RTS version.)</p>
+            <h1 className="mb-8 text-4xl font-bold">Farm 3J RTS Prototype</h1>
+            <a
+              href="/rtsfarm"
+              className="rounded-lg bg-yellow-700 px-6 py-3 text-xl text-white transition hover:bg-yellow-800"
+            >
+              Play the new RTS Farm Game
+            </a>
+            <p className="mt-8 text-gray-400">
+              (The old farm game has been removed. All new development is
+              focused on the RTS version.)
+            </p>
           </div>
         </section>
 

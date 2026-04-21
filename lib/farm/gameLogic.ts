@@ -1,5 +1,8 @@
 // Resource gathering logic
-export function gatherResources(resources: Record<string, number>, deltaTime: number): Record<string, number> {
+export function gatherResources(
+  resources: Record<string, number>,
+  deltaTime: number
+): Record<string, number> {
   // Gather hay, water, tractor, irrigation
   const newResources = { ...resources };
   const rates = GAME_CONFIG.RESOURCE_GATHER_RATES;

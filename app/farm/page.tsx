@@ -5,4 +5,3 @@ export default function FarmPage() {
   redirect('/');
   return null;
 }
-

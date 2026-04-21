@@ -64,7 +64,16 @@ export const GAME_CONFIG = {
   NIGHT_STAR_COUNT: 50,
 
   // Resource management
-  RESOURCE_TYPES: ['milk', 'eggs', 'meat', 'wool', 'hay', 'water', 'tractor', 'irrigation'],
+  RESOURCE_TYPES: [
+    'milk',
+    'eggs',
+    'meat',
+    'wool',
+    'hay',
+    'water',
+    'tractor',
+    'irrigation',
+  ],
   RESOURCE_GATHER_RATES: {
     hay: 2, // per hour
     water: 3,

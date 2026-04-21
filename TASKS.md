@@ -1,4 +1,3 @@
-
 # TASKS
 
 Last Updated: 2026-04-13 (Farm RTS MVP focus)
@@ -16,7 +15,6 @@ Last Updated: 2026-04-13 (Farm RTS MVP focus)
 - [ ] Refresh README and deployment notes with actual release path.
 - [ ] Build content and discovery surfaces (gallery, blog, SEO, accessibility)
 - [ ] Plan and implement ecommerce phase 1.
-
 
 ## Unfinished Todos (RTS Farm Game)
 

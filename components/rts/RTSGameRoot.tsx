@@ -4,7 +4,7 @@ import { RTSUI } from './RTSUI';
 
 export const RTSGameRoot: React.FC = () => {
   return (
-    <div className="relative w-screen h-screen bg-black overflow-hidden">
+    <div className="relative h-screen w-screen overflow-hidden bg-black">
       <RTSMap />
       <RTSUI />
     </div>

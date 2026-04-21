@@ -28,6 +28,10 @@ export const initialFarmState: FarmState = {
     eggs: 42,
     meat: 8,
     wool: 12,
+    hay: 0,
+    water: 0,
+    tractor: 0,
+    irrigation: 0,
   },
 };
 
@@ -165,6 +169,10 @@ export function farmReducer(state: FarmState, action: FarmAction): FarmState {
           eggs: newEggs,
           meat: newMeat,
           wool: newWool,
+          hay: state.resources.hay,
+          water: state.resources.water,
+          tractor: state.resources.tractor,
+          irrigation: state.resources.irrigation,
         },
       };
     }
