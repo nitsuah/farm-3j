@@ -1,6 +1,24 @@
 import React from 'react';
 
-export const RTSUI: React.FC = () => {
+interface RTSUIProps {
+  selectedType: 'worker' | 'farmhouse' | null;
+  selectedWorker: any;
+  farmhouse: { built: boolean; level: number };
+  farmhouseUpgradeCosts: { gold: number; lumber: number }[];
+  farmhouseStorage: { gold: number; lumber: number }[];
+  resources: { gold: number; lumber: number };
+  onFarmhouseAction: (action: string) => void;
+}
+
+export const RTSUI: React.FC<RTSUIProps> = ({
+  selectedType,
+  selectedWorker,
+  farmhouse,
+  farmhouseUpgradeCosts,
+  farmhouseStorage,
+  resources,
+  onFarmhouseAction,
+}) => {
   return (
     <div className="absolute bottom-0 left-0 z-30 h-36 w-full border-t-4 border-amber-600 bg-slate-950/95 px-4 py-3">
       <div className="grid h-full grid-cols-1 items-stretch gap-3 md:grid-cols-[220px_1fr_220px]">

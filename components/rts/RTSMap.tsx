@@ -1,6 +1,8 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 
+import { RTSUI } from './RTSUI';
+
 const RTSMap: React.FC = () => {
   // Debug: show worker and resource state
   // ...existing code...
@@ -528,10 +530,10 @@ const RTSMap: React.FC = () => {
               const isoY = ((i + j) * tileSize) / 2;
               // Tile color by type
               let fill = '#14532d';
-              if (tiles[i][j] === 'dirt') fill = '#a16207';
-              if (tiles[i][j] === 'water') fill = '#2563eb';
-              if (tiles[i][j] === 'rock') fill = '#64748b';
-              if (tiles[i][j] === 'tree') fill = '#166534';
+              if (tiles[i]?.[j] === 'dirt') fill = '#a16207';
+              if (tiles[i]?.[j] === 'water') fill = '#2563eb';
+              if (tiles[i]?.[j] === 'rock') fill = '#64748b';
+              if (tiles[i]?.[j] === 'tree') fill = '#166534';
               // If any selected worker, allow move
               const anySelected = workers.some(w => w.selected);
               return (
@@ -852,6 +854,7 @@ const RTSMap: React.FC = () => {
             const isMax =
               farmhouse.built && farmhouse.level >= maxFarmhouseLevel;
             const cost = farmhouseUpgradeCosts[level];
+            if (!cost) return;
             const canAfford =
               resources.gold >= cost.gold && resources.lumber >= cost.lumber;
             if (isMax || !canAfford) return;
