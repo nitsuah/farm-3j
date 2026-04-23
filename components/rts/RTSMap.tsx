@@ -318,7 +318,7 @@ const RTSMap: React.FC = () => {
                       if (w2.id !== w.id) return w2;
                       if (w2.state !== 'gathering' || !w2.gathering) return w2;
                       if (
-                        trees[idx]?.amount > 0 &&
+                        (trees[idx]?.amount ?? 0) > 0 &&
                         w2.carrying.lumber < 10 &&
                         w2.carrying.gold === 0
                       ) {
