@@ -1,7 +1,9 @@
+
 import type React from 'react';
 import '@/app/globals.css';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { HeaderCropRow } from '@/components/animations/HeaderCropRow';
+import { FarmProvider } from '@/lib/farm/FarmContext';
 
 export const metadata = {
   title: 'Pretty Good Farms - Fresh Local Produce',
@@ -19,7 +21,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head />
       <body className="flex min-h-screen flex-col bg-green-50 dark:bg-black">
-        {children}
+        <FarmProvider>
+          {children}
+        </FarmProvider>
       </body>
     </html>
   );

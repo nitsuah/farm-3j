@@ -1,7 +1,8 @@
-'use client';
 
-import { redirect } from 'next/navigation';
+
+// This file intentionally left blank to resolve Next.js module error.
 export default function FarmPage() {
-  redirect('/');
-  return null;
+	return null;
 }
+
+
