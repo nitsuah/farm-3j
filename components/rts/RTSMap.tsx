@@ -130,6 +130,18 @@ const RTSMap: React.FC = () => {
     },
   ]);
   const animationRef = useRef<number | null>(null);
+  // Refs to expose latest state inside the stable animation loop
+  const treesRef = useRef(trees);
+  const goldMineRef = useRef(goldMine);
+  const gatherTimeoutsRef = useRef<Record<number, ReturnType<typeof setTimeout>>>(
+    {}
+  );
+  useEffect(() => {
+    treesRef.current = trees;
+  }, [trees]);
+  useEffect(() => {
+    goldMineRef.current = goldMine;
+  }, [goldMine]);
   // FPS counter
   const [fps, setFps] = useState(0);
   useEffect(() => {
@@ -172,11 +184,15 @@ const RTSMap: React.FC = () => {
     return () => window.removeEventListener('wheel', handleWheel);
   }, []);
 
-  // Multi-worker animation loop
+  // Multi-worker animation loop — stable effect with empty deps; reads latest
+  // tree/goldMine state through refs to avoid stale closures and continuous
+  // tear-down/restart caused by listing `workers` as a dependency.
   useEffect(() => {
     const speed = 0.025;
-    let gatherTimeouts: Record<number, number> = {};
     function animate() {
+      const currentTrees = treesRef.current;
+      const currentGoldMine = goldMineRef.current;
+      const gatherTimeouts = gatherTimeoutsRef.current;
       setWorkers(ws =>
         ws.map(w => {
           if (!w) return w;
@@ -210,7 +226,7 @@ const RTSMap: React.FC = () => {
                   // Resume gathering if node still has resources, else find nearest of same type
                   if (w.gathering) {
                     if (w.gathering.type === 'tree') {
-                      const tree = trees[w.gathering.idx];
+                      const tree = currentTrees[w.gathering.idx];
                       if (tree && tree.amount > 0) {
                         return {
                           ...w,
@@ -222,7 +238,7 @@ const RTSMap: React.FC = () => {
                           state: 'moving',
                         };
                       }
-                      const available = trees
+                      const available = currentTrees
                         .map((t, i) => ({ ...t, idx: i }))
                         .filter(t => t.amount > 0);
                       if (available.length > 0) {
@@ -243,12 +259,15 @@ const RTSMap: React.FC = () => {
                         };
                       }
                     } else if (w.gathering.type === 'gold') {
-                      if (goldMine && goldMine.amount > 0) {
+                      if (currentGoldMine && currentGoldMine.amount > 0) {
                         return {
                           ...w,
                           x: w.movingTo.x,
                           y: w.movingTo.y,
-                          movingTo: { x: goldMine.x, y: goldMine.y },
+                          movingTo: {
+                            x: currentGoldMine.x,
+                            y: currentGoldMine.y,
+                          },
                           gathering: { type: 'gold', idx: 0 },
                           carrying: { gold: 0, lumber: 0 },
                           state: 'moving',
@@ -259,10 +278,10 @@ const RTSMap: React.FC = () => {
                   let gathering = w.gathering;
                   if (w.gathering) {
                     if (w.gathering.type === 'tree') {
-                      const available = trees.filter(t => t.amount > 0);
+                      const available = currentTrees.filter(t => t.amount > 0);
                       if (available.length === 0) gathering = null;
                     } else if (w.gathering.type === 'gold') {
-                      if (goldMine.amount <= 0) gathering = null;
+                      if (currentGoldMine.amount <= 0) gathering = null;
                     }
                   }
                   return {
@@ -315,12 +334,13 @@ const RTSMap: React.FC = () => {
               }
               if (!gatherTimeouts[w.id]) {
                 gatherTimeouts[w.id] = window.setTimeout(() => {
+                  delete gatherTimeoutsRef.current[w.id];
                   setWorkers(ws2 =>
                     ws2.map(w2 => {
                       if (w2.id !== w.id) return w2;
                       if (w2.state !== 'gathering' || !w2.gathering) return w2;
                       if (
-                        (trees[idx]?.amount ?? 0) > 0 &&
+                        (treesRef.current[idx]?.amount ?? 0) > 0 &&
                         w2.carrying.lumber < 10 &&
                         w2.carrying.gold === 0
                       ) {
@@ -357,12 +377,13 @@ const RTSMap: React.FC = () => {
               }
               if (!gatherTimeouts[w.id]) {
                 gatherTimeouts[w.id] = window.setTimeout(() => {
+                  delete gatherTimeoutsRef.current[w.id];
                   setWorkers(ws2 =>
                     ws2.map(w2 => {
                       if (w2.id !== w.id) return w2;
                       if (w2.state !== 'gathering' || !w2.gathering) return w2;
                       if (
-                        goldMine.amount > 0 &&
+                        goldMineRef.current.amount > 0 &&
                         w2.carrying.gold < 10 &&
                         w2.carrying.lumber === 0
                       ) {
@@ -392,9 +413,10 @@ const RTSMap: React.FC = () => {
     animationRef.current = requestAnimationFrame(animate);
     return () => {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
-      Object.values(gatherTimeouts).forEach(clearTimeout);
+      Object.values(gatherTimeoutsRef.current).forEach(clearTimeout);
+      gatherTimeoutsRef.current = {};
     };
-  }, [trees, goldMine, workers]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

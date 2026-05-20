@@ -16,7 +16,9 @@ const DEFAULT_PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
     port++;
   }
   if (!found) {
-    console.error('No available port found in range 3000-3019.');
+    console.error(
+      `No available port found in range ${DEFAULT_PORT}-${DEFAULT_PORT + 19}.`
+    );
     process.exit(1);
   }
   process.env.PORT = port;

@@ -1,7 +1,6 @@
 import type React from 'react';
+import Script from 'next/script';
 import '@/app/globals.css';
-import { ThemeToggle } from '@/components/theme-toggle';
-import { HeaderCropRow } from '@/components/animations/HeaderCropRow';
 import { FarmProvider } from '@/lib/farm/FarmContext';
 
 export const metadata = {
@@ -18,7 +17,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head />
+      <head>
+        <Script
+          id="theme-init"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `try{var t=localStorage.getItem('theme');if(t==='dark')document.documentElement.classList.add('dark');}catch(e){}`,
+          }}
+        />
+      </head>
       <body className="flex min-h-screen flex-col bg-green-50 dark:bg-black">
         <FarmProvider>{children}</FarmProvider>
       </body>

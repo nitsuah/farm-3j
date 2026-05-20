@@ -1,6 +1,5 @@
 import React from 'react';
 import RTSMap from './RTSMap';
-import { RTSUI } from './RTSUI';
 
 export const RTSGameRoot: React.FC = () => {
   return (

@@ -1,8 +1,19 @@
 import React from 'react';
 
+interface WorkerState {
+  id: number;
+  x: number;
+  y: number;
+  selected: boolean;
+  movingTo: null | { x: number; y: number };
+  gathering: null | { type: 'tree' | 'gold'; idx: number };
+  carrying: { gold: number; lumber: number };
+  state: 'idle' | 'moving' | 'gathering' | 'returning';
+}
+
 interface RTSUIProps {
   selectedType: 'worker' | 'farmhouse' | null;
-  selectedWorker: any;
+  selectedWorker: WorkerState | null;
   farmhouse: { built: boolean; level: number };
   farmhouseUpgradeCosts: { gold: number; lumber: number }[];
   farmhouseStorage: { gold: number; lumber: number }[];
@@ -11,13 +22,13 @@ interface RTSUIProps {
 }
 
 export const RTSUI: React.FC<RTSUIProps> = ({
-  selectedType,
-  selectedWorker,
-  farmhouse,
-  farmhouseUpgradeCosts,
-  farmhouseStorage,
-  resources,
-  onFarmhouseAction,
+  selectedType: _selectedType,
+  selectedWorker: _selectedWorker,
+  farmhouse: _farmhouse,
+  farmhouseUpgradeCosts: _farmhouseUpgradeCosts,
+  farmhouseStorage: _farmhouseStorage,
+  resources: _resources,
+  onFarmhouseAction: _onFarmhouseAction,
 }) => {
   return (
     <div className="absolute bottom-0 left-0 z-30 h-36 w-full border-t-4 border-amber-600 bg-slate-950/95 px-4 py-3">

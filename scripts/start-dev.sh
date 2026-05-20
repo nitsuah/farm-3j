@@ -1,6 +1,5 @@
 #!/bin/sh
 set -e
-npm install -g pnpm
-pnpm install
-pnpm add detect-port@^1.3.0
+corepack enable
+corepack pnpm install --frozen-lockfile
 node scripts/find-port.js

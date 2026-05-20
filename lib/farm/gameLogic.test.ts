@@ -14,6 +14,7 @@ import {
   findNearestTrough,
   canFeedFromTrough,
   feedAnimal,
+  gatherResources,
 } from './gameLogic';
 import { Entity } from './types';
 
@@ -561,7 +562,6 @@ describe('canFeedFromTrough', () => {
 });
 
 describe('feedAnimal', () => {
-  it('returns null if animal cannot feed from trough', () => {
     const animal = { id: '1', type: 'cow' as const, x: 10, y: 10, hunger: 50 };
     const trough = {
       id: '2',
@@ -656,5 +656,67 @@ describe('feedAnimal', () => {
     const result = feedAnimal(animal, trough);
 
     expect(result!.animal.happiness).toBe(100);
+  });
+});
+
+describe('gatherResources', () => {
+  it('accumulates resources over a single deltaTime step', () => {
+    const resources = { hay: 0, water: 0, tractor: 0, irrigation: 0 };
+    const result = gatherResources(resources, 1);
+    // hay rate is 2/hr, water 3/hr
+    expect(result.hay).toBeCloseTo(2);
+    expect(result.water).toBeCloseTo(3);
+  });
+
+  it('preserves fractional accumulation across multiple small steps', () => {
+    let resources = { hay: 0, water: 0, tractor: 0, irrigation: 0 };
+    // Call 10 times with deltaTime = 0.1 instead of once with deltaTime = 1
+    for (let i = 0; i < 10; i++) {
+      resources = gatherResources(resources, 0.1);
+    }
+    // Should equal one call with deltaTime = 1
+    expect(resources.hay).toBeCloseTo(2, 5);
+    expect(resources.water).toBeCloseTo(3, 5);
+  });
+
+  it('accumulates rare-drop resources (tractor) across many small steps', () => {
+    let resources: Record<string, number> = { tractor: 0 };
+    // tractor rate is 0.1/hr; need 20 steps of deltaTime=0.5 to reach 1
+    for (let i = 0; i < 20; i++) {
+      resources = gatherResources(resources, 0.5);
+    }
+    // After 20 * 0.5 = 10 total hours, tractor should be ~1.0
+    expect(resources.tractor).toBeCloseTo(1.0, 5);
+  });
+
+  it('accumulates rare-drop resources (irrigation) across many small steps', () => {
+    let resources: Record<string, number> = { irrigation: 0 };
+    // irrigation rate is 0.05/hr; 40 steps * 0.5 hr = 20 hr => 1.0
+    for (let i = 0; i < 40; i++) {
+      resources = gatherResources(resources, 0.5);
+    }
+    expect(resources.irrigation).toBeCloseTo(1.0, 5);
+  });
+
+  it('does not lose sub-1 progress for rare drops between frames', () => {
+    // One tiny step that would previously zero out tractor
+    const after = gatherResources({ tractor: 0 }, 0.01);
+    // tractor rate 0.1/hr * 0.01 hr = 0.001 — must be preserved, not zeroed
+    expect(after.tractor).toBeGreaterThan(0);
+  });
+
+  it('adds to existing accumulated values', () => {
+    const start = { hay: 5.7, water: 2.1, tractor: 0.9, irrigation: 0.0 };
+    const result = gatherResources(start, 1);
+    expect(result.hay).toBeCloseTo(5.7 + 2, 5);
+    expect(result.water).toBeCloseTo(2.1 + 3, 5);
+    expect(result.tractor).toBeCloseTo(0.9 + 0.1, 5);
+  });
+
+  it('returns a new object without mutating the input', () => {
+    const original = { hay: 0 };
+    const result = gatherResources(original, 1);
+    expect(result).not.toBe(original);
+    expect(original.hay).toBe(0);
   });
 });
