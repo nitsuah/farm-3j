@@ -130,6 +130,8 @@ const RTSMap: React.FC = () => {
     },
   ]);
   const animationRef = useRef<number | null>(null);
+  // Ref to track previous rAF timestamp for deltaTime calculation
+  const prevTimeRef = useRef<number | null>(null);
   // Refs to expose latest state inside the stable animation loop
   const treesRef = useRef(trees);
   const goldMineRef = useRef(goldMine);
@@ -163,12 +165,12 @@ const RTSMap: React.FC = () => {
       running = false;
     };
   }, []);
-  const debugState = JSON.stringify(
-    { workers, resources, trees, goldMine },
-    null,
-    2
-  );
-  // ...existing code...
+  // Only compute debug state in non-production environments to avoid
+  // expensive JSON.stringify on every frame in production.
+  const debugState =
+    process.env.NODE_ENV !== 'production'
+      ? JSON.stringify({ workers, resources, trees, goldMine }, null, 2)
+      : null;
 
   // Handle worker movement animation
   // Worker movement and gather/deposit logic
@@ -188,8 +190,16 @@ const RTSMap: React.FC = () => {
   // tree/goldMine state through refs to avoid stale closures and continuous
   // tear-down/restart caused by listing `workers` as a dependency.
   useEffect(() => {
-    const speed = 0.025;
-    function animate() {
+    // Speed in tiles/second (equivalent to 0.025 tiles/frame at 60fps)
+    const SPEED = 1.5;
+    function animate(timestamp: number) {
+      const deltaTime =
+        prevTimeRef.current !== null
+          ? (timestamp - prevTimeRef.current) / 1000
+          : 1 / 60;
+      // Cap deltaTime to avoid large jumps after tab blur/focus
+      const dt = Math.min(deltaTime, 0.1);
+      prevTimeRef.current = timestamp;
       const currentTrees = treesRef.current;
       const currentGoldMine = goldMineRef.current;
       const gatherTimeouts = gatherTimeoutsRef.current;
@@ -314,8 +324,8 @@ const RTSMap: React.FC = () => {
             }
             return {
               ...w,
-              x: w.x + dx * speed,
-              y: w.y + dy * speed,
+              x: w.x + dx * SPEED * dt,
+              y: w.y + dy * SPEED * dt,
               state: w.gathering ? 'moving' : w.state,
             };
           }
@@ -457,26 +467,28 @@ const RTSMap: React.FC = () => {
 
   return (
     <div className="absolute inset-0 bg-black">
-      {/* Debug: show full state for troubleshooting */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: 80,
-          left: 24,
-          zIndex: 20,
-          background: 'rgba(0,0,0,0.85)',
-          color: '#bbf7d0',
-          padding: '8px 16px',
-          borderRadius: 8,
-          fontSize: 12,
-          maxWidth: 400,
-          whiteSpace: 'pre-wrap',
-          fontFamily: 'monospace',
-        }}
-      >
-        <b>DEBUG STATE</b>
-        <pre>{debugState}</pre>
-      </div>
+      {/* Debug: show full state for troubleshooting — dev only */}
+      {process.env.NODE_ENV !== 'production' && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 80,
+            left: 24,
+            zIndex: 20,
+            background: 'rgba(0,0,0,0.85)',
+            color: '#bbf7d0',
+            padding: '8px 16px',
+            borderRadius: 8,
+            fontSize: 12,
+            maxWidth: 400,
+            whiteSpace: 'pre-wrap',
+            fontFamily: 'monospace',
+          }}
+        >
+          <b>DEBUG STATE</b>
+          <pre>{debugState}</pre>
+        </div>
+      )}
       {/* Resource bar UI (persistent, top) */}
       <div
         style={{
@@ -501,22 +513,24 @@ const RTSMap: React.FC = () => {
         </span>
         <span style={{ color: '#fde68a' }}>Gold: {resources.gold}</span>
       </div>
-      {/* Debug overlay for camera position */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 56,
-          left: 8,
-          zIndex: 10,
-          background: 'rgba(0,0,0,0.7)',
-          color: '#fff',
-          padding: '4px 12px',
-          borderRadius: 6,
-          fontSize: 14,
-        }}
-      >
-        Camera: x={camera.x}, y={camera.y}
-      </div>
+      {/* Debug overlay for camera position — dev only */}
+      {process.env.NODE_ENV !== 'production' && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 56,
+            left: 8,
+            zIndex: 10,
+            background: 'rgba(0,0,0,0.7)',
+            color: '#fff',
+            padding: '4px 12px',
+            borderRadius: 6,
+            fontSize: 14,
+          }}
+        >
+          Camera: x={camera.x}, y={camera.y}
+        </div>
+      )}
       {/* Isometric grid and game rendering */}
       <div
         style={{
@@ -539,7 +553,10 @@ const RTSMap: React.FC = () => {
           preserveAspectRatio="xMidYMid meet"
           style={{
             display: 'block',
-            border: '2px dashed #fbbf24', // debug border
+            border:
+              process.env.NODE_ENV !== 'production'
+                ? '2px dashed #fbbf24'
+                : 'none', // debug border (dev only)
             background: 'none',
             pointerEvents: 'auto',
             transform: `translate(${camera.x}px,${camera.y}px) scale(${zoom})`,

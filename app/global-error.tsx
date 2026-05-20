@@ -12,7 +12,10 @@ export default function GlobalError({
     <html>
       <body>
         <h1>Something went wrong</h1>
-        <pre>{error.message}</pre>
+        <p>An unexpected error occurred. Please try again.</p>
+        {process.env.NODE_ENV !== 'production' && (
+          <pre>{error.message}</pre>
+        )}
         <button onClick={() => reset()}>Try again</button>
       </body>
     </html>

@@ -1,4 +1,5 @@
-// This file intentionally left blank to resolve Next.js module error.
+import { redirect } from 'next/navigation';
+
 export default function FarmPage() {
-  return null;
+  redirect('/rtsfarm');
 }
