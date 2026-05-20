@@ -1,4 +1,3 @@
-
 import type React from 'react';
 import '@/app/globals.css';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -21,9 +20,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head />
       <body className="flex min-h-screen flex-col bg-green-50 dark:bg-black">
-        <FarmProvider>
-          {children}
-        </FarmProvider>
+        <FarmProvider>{children}</FarmProvider>
       </body>
     </html>
   );
