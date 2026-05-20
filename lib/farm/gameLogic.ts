@@ -1,20 +1,3 @@
-// Resource gathering logic.
-// Returns raw floating-point accumulations so fractional progress is preserved
-// across frames. Round or floor values only when displaying or committing
-// discrete items (e.g. tractor/irrigation drops).
-export function gatherResources(
-  resources: Record<string, number>,
-  deltaTime: number
-): Record<string, number> {
-  const newResources = { ...resources };
-  const rates = GAME_CONFIG.RESOURCE_GATHER_RATES;
-  if (rates) {
-    Object.entries(rates).forEach(([key, rate]) => {
-      newResources[key] = (newResources[key] || 0) + rate * deltaTime;
-    });
-  }
-  return newResources;
-}
 import { Entity } from './types';
 import { GAME_CONFIG } from './constants';
 
@@ -302,4 +285,22 @@ export function feedAnimal(
       foodLevel: Number(newFoodLevel.toFixed(1)),
     },
   };
+}
+
+// Resource gathering logic.
+// Returns raw floating-point accumulations so fractional progress is preserved
+// across frames. Round or floor values only when displaying or committing
+// discrete items (e.g. tractor/irrigation drops).
+export function gatherResources(
+  resources: Record<string, number>,
+  deltaTime: number
+): Record<string, number> {
+  const newResources = { ...resources };
+  const rates = GAME_CONFIG.RESOURCE_GATHER_RATES;
+  if (rates) {
+    Object.entries(rates).forEach(([key, rate]) => {
+      newResources[key] = (newResources[key] || 0) + rate * deltaTime;
+    });
+  }
+  return newResources;
 }

@@ -562,6 +562,7 @@ describe('canFeedFromTrough', () => {
 });
 
 describe('feedAnimal', () => {
+  it('returns null if animal cannot feed from trough', () => {
     const animal = { id: '1', type: 'cow' as const, x: 10, y: 10, hunger: 50 };
     const trough = {
       id: '2',
@@ -669,7 +670,12 @@ describe('gatherResources', () => {
   });
 
   it('preserves fractional accumulation across multiple small steps', () => {
-    let resources = { hay: 0, water: 0, tractor: 0, irrigation: 0 };
+    let resources: Record<string, number> = {
+      hay: 0,
+      water: 0,
+      tractor: 0,
+      irrigation: 0,
+    };
     // Call 10 times with deltaTime = 0.1 instead of once with deltaTime = 1
     for (let i = 0; i < 10; i++) {
       resources = gatherResources(resources, 0.1);

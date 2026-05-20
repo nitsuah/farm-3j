@@ -135,9 +135,7 @@ const RTSMap: React.FC = () => {
   // Refs to expose latest state inside the stable animation loop
   const treesRef = useRef(trees);
   const goldMineRef = useRef(goldMine);
-  const gatherTimeoutsRef = useRef<Record<number, ReturnType<typeof setTimeout>>>(
-    {}
-  );
+  const gatherTimeoutsRef = useRef<Record<number, number>>({});
   useEffect(() => {
     treesRef.current = trees;
   }, [trees]);
