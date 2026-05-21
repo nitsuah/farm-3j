@@ -1,5 +1,4 @@
 import React from 'react';
-import { ThemeToggle } from '@/components/theme-toggle';
 import { HeaderCropRow } from '@/components/animations/HeaderCropRow';
 
 export function SiteLayout({ children }: { children: React.ReactNode }) {

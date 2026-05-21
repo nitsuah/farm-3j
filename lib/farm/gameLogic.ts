@@ -204,7 +204,7 @@ export function updateAnimalNeeds(
   }
 
   // Update hunger (increases over time)
-  let newHunger = Math.min(
+  const newHunger = Math.min(
     100,
     hunger + GAME_CONFIG.HUNGER_INCREASE_PER_HOUR * hoursElapsed
   );
@@ -214,7 +214,7 @@ export function updateAnimalNeeds(
   if (newHunger > GAME_CONFIG.HUNGER_UNHAPPY_THRESHOLD) {
     happinessDecay *= 2; // Unhappy animals lose happiness faster
   }
-  let newHappiness = Math.max(0, happiness - happinessDecay);
+  const newHappiness = Math.max(0, happiness - happinessDecay);
 
   return {
     hunger: Number(newHunger.toFixed(1)),

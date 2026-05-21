@@ -143,7 +143,7 @@ const RTSMap: React.FC = () => {
     goldMineRef.current = goldMine;
   }, [goldMine]);
   // FPS counter
-  const [fps, setFps] = useState(0);
+  const [, setFps] = useState(0);
   useEffect(() => {
     let last = performance.now();
     let frames = 0;
@@ -424,7 +424,7 @@ const RTSMap: React.FC = () => {
       Object.values(gatherTimeoutsRef.current).forEach(clearTimeout);
       gatherTimeoutsRef.current = {};
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -630,7 +630,7 @@ const RTSMap: React.FC = () => {
             return (
               <g
                 key={`worker-${worker.id}`}
-                onClick={e => {
+                onClick={() => {
                   setSelectedType('worker');
                   setSelectedWorkerId(worker.id);
                   setWorkers(ws =>
