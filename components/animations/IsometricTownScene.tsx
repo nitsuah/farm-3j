@@ -6,7 +6,9 @@ interface IsometricTownProps {
   buildings?: number;
 }
 
-export function IsometricTownScene({ buildings: _buildings = 3 }: IsometricTownProps) {
+export function IsometricTownScene({
+  buildings: _buildings = 3,
+}: IsometricTownProps) {
   const [passingCarPosition, setPassingCarPosition] = useState(-20);
   const [peoplePositions, setPeoplePositions] = useState([35, 55]);
   const [isDarkMode, setIsDarkMode] = useState(false);
