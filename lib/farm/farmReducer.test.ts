@@ -25,6 +25,10 @@ describe('FarmReducer', () => {
         eggs: 42,
         meat: 8,
         wool: 12,
+        hay: 0,
+        water: 0,
+        tractor: 0,
+        irrigation: 0,
       });
     });
 
@@ -351,7 +355,16 @@ describe('FarmReducer', () => {
       const action: FarmAction = {
         type: 'UPDATE_STATS',
         payload: {
-          resources: { milk: 20, eggs: 50, meat: 10, wool: 15 },
+          resources: {
+            milk: 20,
+            eggs: 50,
+            meat: 10,
+            wool: 15,
+            hay: 0,
+            water: 0,
+            tractor: 0,
+            irrigation: 0,
+          },
         },
       };
 
@@ -361,6 +374,10 @@ describe('FarmReducer', () => {
         eggs: 50,
         meat: 10,
         wool: 15,
+        hay: 0,
+        water: 0,
+        tractor: 0,
+        irrigation: 0,
       });
     });
 
@@ -530,7 +547,16 @@ describe('FarmReducer', () => {
             inventory: 5,
           },
         ],
-        resources: { milk: 10, eggs: 0, meat: 0, wool: 0 },
+        resources: {
+          milk: 10,
+          eggs: 0,
+          meat: 0,
+          wool: 0,
+          hay: 0,
+          water: 0,
+          tractor: 0,
+          irrigation: 0,
+        },
       };
 
       const newState = farmReducer(testState, { type: 'PRODUCE_RESOURCES' });
@@ -550,7 +576,16 @@ describe('FarmReducer', () => {
             inventory: 3,
           },
         ],
-        resources: { milk: 0, eggs: 5, meat: 0, wool: 0 },
+        resources: {
+          milk: 0,
+          eggs: 5,
+          meat: 0,
+          wool: 0,
+          hay: 0,
+          water: 0,
+          tractor: 0,
+          irrigation: 0,
+        },
       };
 
       const newState = farmReducer(testState, { type: 'PRODUCE_RESOURCES' });
@@ -570,7 +605,16 @@ describe('FarmReducer', () => {
             inventory: 2,
           },
         ],
-        resources: { milk: 0, eggs: 0, meat: 7, wool: 0 },
+        resources: {
+          milk: 0,
+          eggs: 0,
+          meat: 7,
+          wool: 0,
+          hay: 0,
+          water: 0,
+          tractor: 0,
+          irrigation: 0,
+        },
       };
 
       const newState = farmReducer(testState, { type: 'PRODUCE_RESOURCES' });
@@ -590,7 +634,16 @@ describe('FarmReducer', () => {
             inventory: 4,
           },
         ],
-        resources: { milk: 0, eggs: 0, meat: 0, wool: 12 },
+        resources: {
+          milk: 0,
+          eggs: 0,
+          meat: 0,
+          wool: 12,
+          hay: 0,
+          water: 0,
+          tractor: 0,
+          irrigation: 0,
+        },
       };
 
       const newState = farmReducer(testState, { type: 'PRODUCE_RESOURCES' });
@@ -612,7 +665,16 @@ describe('FarmReducer', () => {
           },
           { id: 'pig1', type: 'pig' as const, x: 70, y: 70, inventory: 1 },
         ],
-        resources: { milk: 0, eggs: 0, meat: 0, wool: 0 },
+        resources: {
+          milk: 0,
+          eggs: 0,
+          meat: 0,
+          wool: 0,
+          hay: 0,
+          water: 0,
+          tractor: 0,
+          irrigation: 0,
+        },
       };
 
       const newState = farmReducer(testState, { type: 'PRODUCE_RESOURCES' });
@@ -626,7 +688,16 @@ describe('FarmReducer', () => {
     it('sells milk and increases money', () => {
       const testState = {
         ...initialFarmState,
-        resources: { milk: 10, eggs: 0, meat: 0, wool: 0 },
+        resources: {
+          milk: 10,
+          eggs: 0,
+          meat: 0,
+          wool: 0,
+          hay: 0,
+          water: 0,
+          tractor: 0,
+          irrigation: 0,
+        },
         money: 100,
       };
 
@@ -642,7 +713,16 @@ describe('FarmReducer', () => {
     it('sells eggs and increases money', () => {
       const testState = {
         ...initialFarmState,
-        resources: { milk: 0, eggs: 20, meat: 0, wool: 0 },
+        resources: {
+          milk: 0,
+          eggs: 20,
+          meat: 0,
+          wool: 0,
+          hay: 0,
+          water: 0,
+          tractor: 0,
+          irrigation: 0,
+        },
         money: 50,
       };
 
@@ -658,7 +738,16 @@ describe('FarmReducer', () => {
     it('sells meat and increases money', () => {
       const testState = {
         ...initialFarmState,
-        resources: { milk: 0, eggs: 0, meat: 8, wool: 0 },
+        resources: {
+          milk: 0,
+          eggs: 0,
+          meat: 8,
+          wool: 0,
+          hay: 0,
+          water: 0,
+          tractor: 0,
+          irrigation: 0,
+        },
         money: 0,
       };
 
@@ -674,7 +763,16 @@ describe('FarmReducer', () => {
     it('sells wool and increases money', () => {
       const testState = {
         ...initialFarmState,
-        resources: { milk: 0, eggs: 0, meat: 0, wool: 12 },
+        resources: {
+          milk: 0,
+          eggs: 0,
+          meat: 0,
+          wool: 12,
+          hay: 0,
+          water: 0,
+          tractor: 0,
+          irrigation: 0,
+        },
         money: 75,
       };
 
@@ -690,7 +788,16 @@ describe('FarmReducer', () => {
     it('does not sell if insufficient resources', () => {
       const testState = {
         ...initialFarmState,
-        resources: { milk: 3, eggs: 0, meat: 0, wool: 0 },
+        resources: {
+          milk: 3,
+          eggs: 0,
+          meat: 0,
+          wool: 0,
+          hay: 0,
+          water: 0,
+          tractor: 0,
+          irrigation: 0,
+        },
         money: 100,
       };
 

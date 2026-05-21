@@ -7,16 +7,15 @@ import { Tractor } from './Tractor';
 export function HeaderCropRow() {
   const [showTractor, setShowTractor] = useState(false);
   const [tractorPosition, setTractorPosition] = useState(-10);
-  const [harvestedCrops, setHarvestedCrops] = useState<Set<number>>(new Set());
+  const [_harvestedCrops, setHarvestedCrops] = useState<Set<number>>(new Set());
   const [cycleKey, setCycleKey] = useState(0); // Force re-render on cycle
   const [showRain, setShowRain] = useState(false);
   const [isSecondRain, setIsSecondRain] = useState(false);
   const [showBirds, setShowBirds] = useState(false);
-  const [showClouds, setShowClouds] = useState(true);
+  const [showClouds] = useState(true);
   const [cloudOpacity, setCloudOpacity] = useState(0.8);
   const [cloudPosition, setCloudPosition] = useState(0);
   const [birdPosition, setBirdPosition] = useState(115); // Start from right
-  const [forceUpdate, setForceUpdate] = useState(0); // For theme toggle re-render
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   // Check initial theme on mount

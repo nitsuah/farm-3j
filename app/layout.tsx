@@ -1,7 +1,6 @@
 import type React from 'react';
+import Script from 'next/script';
 import '@/app/globals.css';
-import { ThemeToggle } from '@/components/theme-toggle';
-import { HeaderCropRow } from '@/components/animations/HeaderCropRow';
 
 export const metadata = {
   title: 'Pretty Good Farms - Fresh Local Produce',
@@ -18,16 +17,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script
+        <Script
+          id="theme-init"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
-            __html: `
-              try {
-                const theme = localStorage.getItem('theme');
-                if (theme === 'dark') {
-                  document.documentElement.classList.add('dark');
-                }
-              } catch (e) {}
-            `,
+            __html: `try{var t=localStorage.getItem('theme');if(t==='dark')document.documentElement.classList.add('dark');}catch(e){}`,
           }}
         />
       </head>

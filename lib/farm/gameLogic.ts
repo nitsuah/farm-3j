@@ -204,7 +204,7 @@ export function updateAnimalNeeds(
   }
 
   // Update hunger (increases over time)
-  let newHunger = Math.min(
+  const newHunger = Math.min(
     100,
     hunger + GAME_CONFIG.HUNGER_INCREASE_PER_HOUR * hoursElapsed
   );
@@ -214,7 +214,7 @@ export function updateAnimalNeeds(
   if (newHunger > GAME_CONFIG.HUNGER_UNHAPPY_THRESHOLD) {
     happinessDecay *= 2; // Unhappy animals lose happiness faster
   }
-  let newHappiness = Math.max(0, happiness - happinessDecay);
+  const newHappiness = Math.max(0, happiness - happinessDecay);
 
   return {
     hunger: Number(newHunger.toFixed(1)),
@@ -285,4 +285,23 @@ export function feedAnimal(
       foodLevel: Number(newFoodLevel.toFixed(1)),
     },
   };
+}
+
+// Resource gathering logic.
+// Returns raw floating-point accumulations so fractional progress is preserved
+// across frames. Round or floor values only when displaying or committing
+// discrete items (e.g. tractor/irrigation drops).
+// `hoursElapsed` must be provided in game hours.
+export function gatherResources(
+  resources: Record<string, number>,
+  hoursElapsed: number
+): Record<string, number> {
+  const newResources = { ...resources };
+  const rates = GAME_CONFIG.RESOURCE_GATHER_RATES;
+  if (rates) {
+    Object.entries(rates).forEach(([key, rate]) => {
+      newResources[key] = (newResources[key] || 0) + rate * hoursElapsed;
+    });
+  }
+  return newResources;
 }

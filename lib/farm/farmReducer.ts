@@ -28,6 +28,10 @@ export const initialFarmState: FarmState = {
     eggs: 42,
     meat: 8,
     wool: 12,
+    hay: 0,
+    water: 0,
+    tractor: 0,
+    irrigation: 0,
   },
 };
 
@@ -165,6 +169,10 @@ export function farmReducer(state: FarmState, action: FarmAction): FarmState {
           eggs: newEggs,
           meat: newMeat,
           wool: newWool,
+          hay: state.resources.hay,
+          water: state.resources.water,
+          tractor: state.resources.tractor,
+          irrigation: state.resources.irrigation,
         },
       };
     }
@@ -172,14 +180,15 @@ export function farmReducer(state: FarmState, action: FarmAction): FarmState {
     case 'SELL_RESOURCE': {
       const { resource, amount } = action.payload;
       const prices = { milk: 10, eggs: 5, meat: 20, wool: 15 };
+      // Only allow selling resources that have a price
+      if (!(resource in prices)) {
+        return state;
+      }
       const currentAmount = state.resources[resource];
-
       if (currentAmount < amount) {
         return state;
       }
-
-      const revenue = amount * prices[resource];
-
+      const revenue = amount * prices[resource as keyof typeof prices];
       // Note: Notification is handled in the component to avoid import cycle
       return {
         ...state,
