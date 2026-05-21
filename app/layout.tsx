@@ -1,7 +1,6 @@
 import type React from 'react';
 import Script from 'next/script';
 import '@/app/globals.css';
-import { FarmProvider } from '@/lib/farm/FarmContext';
 
 export const metadata = {
   title: 'Pretty Good Farms - Fresh Local Produce',
@@ -27,7 +26,7 @@ export default function RootLayout({
         />
       </head>
       <body className="flex min-h-screen flex-col bg-green-50 dark:bg-black">
-        <FarmProvider>{children}</FarmProvider>
+        {children}
       </body>
     </html>
   );

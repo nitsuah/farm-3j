@@ -661,7 +661,7 @@ describe('feedAnimal', () => {
 });
 
 describe('gatherResources', () => {
-  it('accumulates resources over a single deltaTime step', () => {
+  it('accumulates resources over a single elapsed-hour step', () => {
     const resources = { hay: 0, water: 0, tractor: 0, irrigation: 0 };
     const result = gatherResources(resources, 1);
     // hay rate is 2/hr, water 3/hr
@@ -676,18 +676,18 @@ describe('gatherResources', () => {
       tractor: 0,
       irrigation: 0,
     };
-    // Call 10 times with deltaTime = 0.1 instead of once with deltaTime = 1
+    // Call 10 times with hoursElapsed = 0.1 instead of once with hoursElapsed = 1
     for (let i = 0; i < 10; i++) {
       resources = gatherResources(resources, 0.1);
     }
-    // Should equal one call with deltaTime = 1
+    // Should equal one call with hoursElapsed = 1
     expect(resources.hay).toBeCloseTo(2, 5);
     expect(resources.water).toBeCloseTo(3, 5);
   });
 
   it('accumulates rare-drop resources (tractor) across many small steps', () => {
     let resources: Record<string, number> = { tractor: 0 };
-    // tractor rate is 0.1/hr; need 20 steps of deltaTime=0.5 to reach 1
+    // tractor rate is 0.1/hr; need 20 steps of hoursElapsed=0.5 to reach 1
     for (let i = 0; i < 20; i++) {
       resources = gatherResources(resources, 0.5);
     }

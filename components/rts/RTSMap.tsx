@@ -322,8 +322,8 @@ const RTSMap: React.FC = () => {
             }
             return {
               ...w,
-              x: w.x + dx * SPEED * dt,
-              y: w.y + dy * SPEED * dt,
+              x: w.x + (dx / dist) * Math.min(SPEED * dt, dist),
+              y: w.y + (dy / dist) * Math.min(SPEED * dt, dist),
               state: w.gathering ? 'moving' : w.state,
             };
           }

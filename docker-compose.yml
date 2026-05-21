@@ -4,13 +4,13 @@ services:
     image: node:22-alpine
     working_dir: /app
     ports:
-      - "0:3000"
+      - '0:3000'
     environment:
       - NODE_ENV=development
     volumes:
       - .:/app
       - node_modules:/app/node_modules
-    entrypoint: ["sh", "/app/start-dev.sh"]
+    entrypoint: ['sh', '/app/scripts/start-dev.sh']
 
 volumes:
   node_modules:

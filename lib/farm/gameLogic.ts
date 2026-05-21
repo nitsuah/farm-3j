@@ -291,15 +291,16 @@ export function feedAnimal(
 // Returns raw floating-point accumulations so fractional progress is preserved
 // across frames. Round or floor values only when displaying or committing
 // discrete items (e.g. tractor/irrigation drops).
+// `hoursElapsed` must be provided in game hours.
 export function gatherResources(
   resources: Record<string, number>,
-  deltaTime: number
+  hoursElapsed: number
 ): Record<string, number> {
   const newResources = { ...resources };
   const rates = GAME_CONFIG.RESOURCE_GATHER_RATES;
   if (rates) {
     Object.entries(rates).forEach(([key, rate]) => {
-      newResources[key] = (newResources[key] || 0) + rate * deltaTime;
+      newResources[key] = (newResources[key] || 0) + rate * hoursElapsed;
     });
   }
   return newResources;

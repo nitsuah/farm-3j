@@ -3,7 +3,7 @@
 ## Where to Pick Up
 
 - See `TASKS.md` under 'Unfinished Todos (RTS Farm Game)' for the current actionable items.
-- All code and UI changes should be validated visually in the browser (http://localhost:32781/rtsfarm) after each Docker redeploy.
+- All code and UI changes should be validated visually in the browser using the mapped Docker port (run `node scripts/print-docker-port.js` or `docker compose port farm-app 3000`, then open `http://localhost:<PORT>/rtsfarm`) after each Docker redeploy.
 
 ## Flow / Order of Operations (Best Practices)
 
