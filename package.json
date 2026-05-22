@@ -100,6 +100,9 @@
     "vitest": "^4.1.2"
   },
   "pnpm": {
+    "overrides": {
+      "postcss": "8.5.15"
+    },
     "patchedDependencies": {
       "brace-expansion@1.1.12": "patches/brace-expansion@1.1.12.patch"
     }
