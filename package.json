@@ -101,7 +101,7 @@
   },
   "pnpm": {
     "overrides": {
-      "postcss": ">=8.5.10"
+      "postcss": "8.5.15"
     },
     "patchedDependencies": {
       "brace-expansion@1.1.12": "patches/brace-expansion@1.1.12.patch"
