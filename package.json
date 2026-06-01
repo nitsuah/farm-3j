@@ -54,9 +54,9 @@
     "clsx": "^2.1.1",
     "cmdk": "1.1.1",
     "date-fns": "4.1.0",
-    "detect-port": "^1.6.1",
+    "detect-port": "^2.1.0",
     "embla-carousel-react": "8.6.0",
-    "geist": "^1.7.0",
+    "geist": "^1.7.1",
     "input-otp": "1.4.2",
     "lucide-react": "^1.16.0",
     "next": "16.2.6",
@@ -64,15 +64,15 @@
     "react": "^19.2.5",
     "react-day-picker": "9.14.0",
     "react-dom": "^19.2.5",
-    "react-hook-form": "^7.76.0",
-    "react-resizable-panels": "^4.10.0",
+    "react-hook-form": "^7.76.1",
+    "react-resizable-panels": "^4.11.2",
     "recharts": "3.8.1",
     "sonner": "^2.0.7",
-    "tailwind-merge": "^3.5.0",
+    "tailwind-merge": "^3.6.0",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^1.1.2",
-    "yaml": "^2.8.3",
-    "zod": "^4.3.6"
+    "yaml": "^2.9.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -80,10 +80,10 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
-    "@types/node": "^25.6.0",
+    "@types/node": "^25.9.1",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.1",
+    "@vitejs/plugin-react": "^6.0.2",
     "@vitest/coverage-v8": "^4.1.2",
     "@vitest/ui": "^4.1.2",
     "eslint": "^10.1.0",
@@ -92,7 +92,7 @@
     "jsdom": "^29.1.1",
     "postcss": "^8.5.14",
     "prettier": "^3.8.3",
-    "prettier-plugin-tailwindcss": "^0.7.2",
+    "prettier-plugin-tailwindcss": "^0.8.0",
     "tailwindcss": "^4.2.4",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.59.4",
@@ -100,6 +100,9 @@
     "vitest": "^4.1.2"
   },
   "pnpm": {
+    "overrides": {
+      "postcss": "8.5.15"
+    },
     "patchedDependencies": {
       "brace-expansion@1.1.12": "patches/brace-expansion@1.1.12.patch"
     }
