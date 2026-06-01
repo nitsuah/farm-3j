@@ -72,3 +72,9 @@ The About page contact modal now submits to `POST /api/contact` with server-side
 2. Deploy your chats from the v0 interface
 3. Changes are automatically pushed to this repository
 4. Vercel deploys the latest version from this repository
+## Community Standards
+
+Shared community policies are centralized in https://github.com/nitsuah/.github:
+- Contributing: https://github.com/nitsuah/.github/blob/main/CONTRIBUTING.md
+- Code of Conduct: https://github.com/nitsuah/.github/blob/main/CODE_OF_CONDUCT.md
+- Security: https://github.com/nitsuah/.github/blob/main/SECURITY.md
