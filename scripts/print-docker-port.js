@@ -2,7 +2,9 @@
 const { execSync } = require('child_process');
 
 try {
-  const containerId = execSync('docker compose ps -q farm-app')
+  const containerId = execSync(
+    'docker compose -f config/docker-compose.yml ps -q farm-app'
+  )
     .toString()
     .trim();
   if (!containerId) {

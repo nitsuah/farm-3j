@@ -20,6 +20,7 @@ repos:
         exclude: '^(pnpm-lock\.yaml|package-lock\.json|\.next/|out/)'
         additional_dependencies:
           - prettier@3.1.0
+        args: ['--config', 'config/.prettierrc', '--ignore-path', 'config/.prettierignore']
 
   # ESLint for linting (runs locally)
   - repo: local
@@ -30,7 +31,7 @@ repos:
         language: system
         types: [javascript, jsx, ts, tsx]
         exclude: '^(\.next/|out/|node_modules/)'
-        args: ['--fix', '--max-warnings=0']
+        args: ['--fix', '--max-warnings=0', '--config', 'config/eslint.config.mjs']
 
       # TypeScript type checking
       - id: tsc
