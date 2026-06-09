@@ -1,12 +1,16 @@
 # ROADMAP
 
-Last Updated: 2026-04-13 (Farm RTS MVP focus)
+Last Updated: 2026-06-08
+
+## 2026 Q1 ✅
+
+> Completed. Core Next.js architecture with linting/CI, Farm Tycoon Phase 1 MVP, and Farm Tycoon Phase 2a–2f isometric grid foundation shipped.
 
 ## 2026 Q2–Q3: Farm RTS MVP
 
 - [ ] Complete all MVP milestones as defined in docs/Farm_RTS_Game_Manual.md and docs/FARM-RTS-TODO.md
-  - Progress: Milestone 1 complete; Milestone 3 (resource node depletion/feedback) complete
-  - Core: map/camera, resource, worker, building, win/lose
+  - Progress: Milestone 1 complete (map/camera); Milestone 3 complete (resource node depletion/feedback)
+  - Core: resource, worker, building, win/lose
   - Stretch: combat, AI, upgrades, polish
 
 ## 2026 Q4: Product and Content Surface
@@ -24,9 +28,3 @@ Last Updated: 2026-04-13 (Farm RTS MVP focus)
 - [ ] Finish fence placement and terrain editing workflows.
 - [ ] Add save/load state and building expansion follow-on work.
 - [ ] Validate the full gameplay loop end-to-end in Docker (start game → build → feed animals → save → reload).
-
-## Done
-
-- [x] Core Next.js architecture, linting, and CI baseline.
-- [x] Farm Tycoon phase 1 MVP.
-- [x] Farm Tycoon phase 2a-2f isometric grid foundation.
