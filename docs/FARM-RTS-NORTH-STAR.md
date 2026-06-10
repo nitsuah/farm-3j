@@ -64,4 +64,5 @@ Build a browser-based, isometric real-time strategy (RTS) game inspired by Warcr
 _This doc is the guiding star for the Farm RTS MVP. All todos and features should reference this plan. Update as needed as the project evolves._
 
 ## Related
+
 - [[repos/farm-3j/docs/Farm_RTS_Game_Manual|Farm RTS Game Manual]] — full game manual and milestone plan
