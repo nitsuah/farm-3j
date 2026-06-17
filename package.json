@@ -96,12 +96,14 @@
     "tailwindcss": "^4.2.4",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.61.1",
+    "esbuild": "0.28.1",
     "vite": "^8.0.16",
     "vitest": "^4.1.2"
   },
   "pnpm": {
     "overrides": {
-      "postcss": "8.5.15"
+      "postcss": "8.5.15",
+      "@babel/core": "7.29.7"
     },
     "patchedDependencies": {
       "brace-expansion@1.1.12": "patches/brace-expansion@1.1.12.patch"
