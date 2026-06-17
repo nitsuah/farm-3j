@@ -20,6 +20,8 @@ Last Updated: 2026-06-08
 - [ ] Ship ecommerce phase 1.
 - [ ] Evaluate subscription or recurring-order follow-ons.
 - [ ] Harden accessibility and SEO for a broader launch.
+- [ ] **Fog of war** — tile visibility driven by unit and building vision radius; unexplored tiles dark, explored-but-unoccupied tiles dimmed; creates strategic exploration tension without adding a full multiplayer requirement.
+- [ ] **Unit formation commands** — move a selected group in a named formation (line, wedge, box); prevents all units pathfinding to the same point and adds visual strategic depth to multi-unit control.
 
 ## Legacy Tycoon Tasks (on hold)
 
