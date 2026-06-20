@@ -11,7 +11,7 @@ export default defineConfig({
     // Use jsdom for React component testing
     environment: 'jsdom',
     // Setup files to run before tests
-    setupFiles: ['./vitest.setup.ts'],
+    setupFiles: ['./config/vitest.setup.ts'],
     // Include test files in app, components, lib, and hooks directories
     include: ['**/*.{test,spec}.{ts,tsx}'],
     // Exclude files from test
@@ -45,7 +45,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './'),
+      '@': path.resolve(__dirname, '../'),
     },
   },
 });
