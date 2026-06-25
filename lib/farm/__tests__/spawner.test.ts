@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { spawnAnimal, spawnStatic } from './spawner';
+import { spawnAnimal, spawnStatic } from '../spawner';
 
 describe('Spawner', () => {
   describe('spawnAnimal', () => {

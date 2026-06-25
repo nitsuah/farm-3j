@@ -15,8 +15,8 @@ import {
   canFeedFromTrough,
   feedAnimal,
   gatherResources,
-} from './gameLogic';
-import { Entity } from './types';
+} from '../gameLogic';
+import { Entity } from '../types';
 
 describe('GameLogic', () => {
   describe('Grid Conversion Functions', () => {
@@ -294,7 +294,7 @@ describe('GameLogic', () => {
 });
 
 // Import additional functions for Phase 2 testing
-import { wander, updateTime, shouldAdvanceDay } from './gameLogic';
+import { wander, updateTime, shouldAdvanceDay } from '../gameLogic';
 
 describe('GameLogic - Advanced Functions', () => {
   describe('Wander Behavior', () => {

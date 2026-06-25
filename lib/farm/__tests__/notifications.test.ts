@@ -4,7 +4,7 @@ import {
   useNotifications,
   clearNotifications,
   type NotificationType,
-} from './notifications';
+} from '../notifications';
 import { renderHook, act } from '@testing-library/react';
 
 describe('Notification System', () => {
