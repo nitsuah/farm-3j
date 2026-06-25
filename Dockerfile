@@ -37,7 +37,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV DOCKER=1
 
 # Build the application
-RUN npm run build
+RUN pnpm run build
 
 # ================================
 # Stage 3: Runner
