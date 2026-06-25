@@ -26,62 +26,20 @@ jobs:
           node-version: '22'
           package-manager-cache: false
 
-      - name: Enable Corepack and pnpm
-        shell: bash
-        run: |
-          corepack enable
-          corepack prepare pnpm@9.0.0 --activate
-          pnpm --version
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v5
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
       - name: Install dependencies
-        shell: bash
-        run: |
-          if ! pnpm install --frozen-lockfile; then
-            echo "::warning::Frozen lockfile install failed – repairing with pnpm install --no-frozen-lockfile"
-            pnpm install --no-frozen-lockfile
-          fi
-
-      - name: Diagnose environment on failure
-        if: failure()
-        shell: bash
-        run: |
-          echo "=== Node / pnpm versions ==="
-          node --version
-          corepack --version || echo "corepack unavailable"
-          pnpm --version || echo "pnpm unavailable"
-          echo "=== GitHub connectivity ==="
-          curl -s --max-time 10 -o /dev/null -w "github.com HTTP %{http_code}\n" https://github.com || echo "github.com unreachable"
-          curl -s --max-time 10 -o /dev/null -w "registry.npmjs.org HTTP %{http_code}\n" https://registry.npmjs.org || echo "npm registry unreachable"
-          echo "=== pnpm store path ==="
-          pnpm store path || true
-          echo "=== Lockfile head ==="
-          head -20 pnpm-lock.yaml
+        run: npm ci
 
       - name: Run type check
-        run: pnpm run type-check
+        run: npm run type-check
 
       - name: Run linter
-        run: pnpm run lint
+        run: npm run lint
 
       - name: Run format check
-        run: pnpm run format:check
+        run: npm run format:check
 
       - name: Run tests
-        run: pnpm run test:coverage
+        run: npm run test:coverage
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v7
@@ -124,7 +82,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
 
@@ -150,7 +108,7 @@ jobs:
           echo "=== pnpm store path ==="
           pnpm store path || true
           echo "=== Lockfile head ==="
-          head -20 pnpm-lock.yaml
+          head -20 package-lock.json
 
       - name: Build application
         run: pnpm run build

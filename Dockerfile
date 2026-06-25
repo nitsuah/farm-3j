@@ -26,9 +26,6 @@ RUN pnpm install --frozen-lockfile
 FROM node:22-alpine AS builder
 WORKDIR /app
 
-# Install pnpm
-RUN npm install -g pnpm@9.0.0
-
 # Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
 
@@ -40,7 +37,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV DOCKER=1
 
 # Build the application
-RUN pnpm run build
+RUN npm run build
 
 # ================================
 # Stage 3: Runner
