@@ -1,6 +1,6 @@
 # TASKS
 
-Last Updated: 2026-04-13 (Farm RTS MVP focus)
+Last Updated: 2026-06-25 (Farm RTS MVP focus)
 
 ## Farm RTS MVP (2026 Q2–Q3)
 
