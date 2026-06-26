@@ -4,7 +4,7 @@ import {
   getTerrainColor,
   isWalkable,
   type TerrainType,
-} from './terrain';
+} from '../terrain';
 
 describe('createDefaultTerrain', () => {
   it('creates terrain grid with correct dimensions', () => {

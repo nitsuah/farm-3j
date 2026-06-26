@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { createFence, createTrough, createFencePerimeter } from './structures';
-import { GAME_CONFIG } from './constants';
+import { createFence, createTrough, createFencePerimeter } from '../structures';
+import { GAME_CONFIG } from '../constants';
 
 describe('createFence', () => {
   it('creates fence with correct type and position', () => {
