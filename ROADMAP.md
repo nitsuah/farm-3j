@@ -9,9 +9,9 @@ Last Updated: 2026-06-25
 ## 2026 Q2–Q3: Farm RTS MVP
 
 - [ ] Complete all MVP milestones as defined in docs/Farm_RTS_Game_Manual.md and docs/FARM-RTS-TODO.md
-  - Progress: Milestone 1 complete (map/camera); Milestone 3 complete (resource node depletion/feedback)
-  - Core: resource, worker, building, win/lose
-  - Stretch: combat, AI, upgrades, polish
+  - Progress: Milestones 1, 3, 4 (partial), 5 (building placement), 7 (enemy+win/lose) complete
+  - Also shipped: fog of war, control groups, stone resource, box selection, population cap, unit HP
+  - Remaining: animal units, grunt-vs-worker combat, combat polish, formation commands
 
 ## 2026 Q4: Product and Content Surface
 
