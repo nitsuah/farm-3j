@@ -13,9 +13,9 @@ export default defineConfig({
     // Setup files to run before tests
     setupFiles: ['./config/vitest.setup.ts'],
     // Include test files in app, components, lib, and hooks directories
-    include: ['**/*.{test,spec}.{ts,tsx}'],
+    include: ['app/**/*.{test,spec}.{ts,tsx}', 'lib/**/*.{test,spec}.{ts,tsx}', 'components/**/*.{test,spec}.{ts,tsx}'],
     // Exclude files from test
-    exclude: ['node_modules', '.next', 'out', 'dist'],
+    exclude: ['node_modules', '.next', 'out', 'dist', '.claude'],
     // Coverage configuration
     coverage: {
       provider: 'v8',

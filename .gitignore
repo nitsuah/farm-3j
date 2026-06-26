@@ -32,3 +32,4 @@ package-lock.json
 
 # runtime cache (generated, non-reproducible)
 /cache/
+coverage/

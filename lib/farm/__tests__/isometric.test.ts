@@ -7,7 +7,7 @@ import {
   GRID_CONFIG,
   gridToPercent,
   snapToGrid,
-} from './isometric';
+} from '../isometric';
 
 describe('Isometric Utilities', () => {
   describe('Grid Configuration', () => {
