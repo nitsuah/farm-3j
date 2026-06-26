@@ -24,6 +24,7 @@ RUN pnpm install --frozen-lockfile
 # Stage 2: Builder
 # ================================
 FROM node:22-alpine AS builder
+RUN npm install -g pnpm@9.0.0
 WORKDIR /app
 
 # Copy dependencies from deps stage

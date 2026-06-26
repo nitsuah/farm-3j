@@ -2,13 +2,13 @@
 
 ## Core Metrics
 
-| Metric        | Value | Notes                                                                                                                                                                                                  |
-| ------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Metric        | Value | Notes                                                                                                                               |
+| ------------- | ----- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | Code Coverage | 97%   | lib/farm/ coverage: 96.71% statements, 90.07% branches, 100% functions, 96.55% lines. Excludes UI components and app/. Target: 80%. |
-| Build Time    | ~4.1s | Test execution with coverage (199 tests)                                                                                                                                                               |
-| Bundle Size   | TBD   | Not measured yet                                                                                                                                                                                       |
-| Test Files    | 8     | utils, gameLogic, farmReducer, spawner, isometric, terrain, structures, notifications                                                                                                                  |
-| Test Cases    | 199   | All tests passing - comprehensive game logic, terrain, state management, and notification system coverage                                                                                              |
+| Build Time    | ~4.1s | Test execution with coverage (199 tests)                                                                                            |
+| Bundle Size   | TBD   | Not measured yet                                                                                                                    |
+| Test Files    | 8     | utils, gameLogic, farmReducer, spawner, isometric, terrain, structures, notifications                                               |
+| Test Cases    | 199   | All tests passing - comprehensive game logic, terrain, state management, and notification system coverage                           |
 
 ## Health
 
