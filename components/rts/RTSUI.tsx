@@ -14,6 +14,7 @@ export interface WorkerState {
   group: number | null;
   hp: number;
   maxHp: number;
+  patrol: { a: { x: number; y: number }; b: { x: number; y: number }; heading: 'a' | 'b' } | null;
 }
 
 export type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower';
@@ -64,6 +65,8 @@ interface RTSUIProps {
   buildingCosts: Record<BuildingType, BuildingCost>;
   onFarmhouseAction: (action: string) => void;
   onWorkerCommand: (cmd: 'stop' | 'gather' | 'attack') => void;
+  patrolMode: boolean;
+  onPatrolCommand: () => void;
   buildMode: BuildingType | null;
   upgrades: Upgrades;
   onResearch: (type: keyof Upgrades) => void;
@@ -88,6 +91,8 @@ export const RTSUI: React.FC<RTSUIProps> = ({
   buildingCosts,
   onFarmhouseAction,
   onWorkerCommand,
+  patrolMode,
+  onPatrolCommand,
   buildMode,
   upgrades,
   onResearch,
@@ -100,13 +105,14 @@ export const RTSUI: React.FC<RTSUIProps> = ({
   const selectedCount = selectedWorkers.length;
   const firstWorker = selectedWorkers[0] ?? null;
 
-  const stateLabel = (s: WorkerState['state']) => {
-    if (s === 'idle') return 'Idle';
-    if (s === 'moving') return 'Moving';
-    if (s === 'gathering') return 'Gathering';
-    if (s === 'returning') return 'Returning';
-    if (s === 'attacking') return '⚔️ Attacking';
-    return s;
+  const stateLabel = (w: WorkerState) => {
+    if (w.patrol) return '🔄 Patrolling';
+    if (w.state === 'idle') return 'Idle';
+    if (w.state === 'moving') return 'Moving';
+    if (w.state === 'gathering') return 'Gathering';
+    if (w.state === 'returning') return 'Returning';
+    if (w.state === 'attacking') return '⚔️ Attacking';
+    return w.state;
   };
 
   const canAfford = (cost: { gold: number; lumber: number; stone: number }) =>
@@ -141,9 +147,9 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                     <span className="text-xs text-slate-300">{firstWorker.hp}/{firstWorker.maxHp}</span>
                   </div>
                   <div className="mt-0.5 text-xs text-slate-300">
-                    {stateLabel(firstWorker.state)}
-                    {firstWorker.gathering ? ` (${firstWorker.gathering.type})` : ''}
-                    {firstWorker.attacking ? ' enemy barn' : ''}
+                    {stateLabel(firstWorker)}
+                    {!firstWorker.patrol && firstWorker.gathering ? ` (${firstWorker.gathering.type})` : ''}
+                    {!firstWorker.patrol && firstWorker.attacking ? ' enemy barn' : ''}
                   </div>
                   <div className="mt-0.5 text-xs text-amber-200">
                     {firstWorker.carrying.gold > 0 && `🪙${firstWorker.carrying.gold} `}
@@ -216,6 +222,13 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                 title="Right-click enemy building to attack"
               >
                 ⚔️ Attack
+              </button>
+              <button
+                className={`col-span-2 rounded border px-2 py-2 text-xs hover:opacity-90 ${patrolMode ? 'border-cyan-400 bg-cyan-500/30 text-cyan-100' : 'border-cyan-500/70 bg-cyan-500/15 text-cyan-100 hover:bg-cyan-500/30'}`}
+                onClick={onPatrolCommand}
+                title="Patrol [P] — right-click two points to set patrol route"
+              >
+                {patrolMode ? '🔄 Set Patrol…' : '🔄 Patrol'}
               </button>
             </div>
           )}

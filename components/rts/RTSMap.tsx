@@ -194,7 +194,7 @@ const RTSMap: React.FC = () => {
 
   const makeWorker = (id: number, x: number, y: number): WorkerState => ({
     id, x, y, selected: false, movingTo: null, path: [], gathering: null, attacking: null,
-    carrying: { gold: 0, lumber: 0, stone: 0 }, state: 'idle', group: null, hp: WORKER_MAX_HP, maxHp: WORKER_MAX_HP,
+    carrying: { gold: 0, lumber: 0, stone: 0 }, state: 'idle', group: null, hp: WORKER_MAX_HP, maxHp: WORKER_MAX_HP, patrol: null,
   });
 
   const [workers, setWorkers] = useState<WorkerState[]>([
@@ -238,6 +238,9 @@ const RTSMap: React.FC = () => {
   const maxFarmhouseLevel = farmhouseUpgradeCosts.length - 1;
   const [selectedType, setSelectedType] = useState<'worker' | 'farmhouse' | null>('worker');
   const [rallyPoint, setRallyPoint] = useState<{ x: number; y: number } | null>(null);
+  const [patrolMode, setPatrolMode] = useState(false);
+  const patrolModeRef = useRef(false);
+  useEffect(() => { patrolModeRef.current = patrolMode; }, [patrolMode]);
   const [upgrades, setUpgrades] = useState<Upgrades>({ sharperTools: 0, swiftHarvest: 0, ironWill: 0 });
   const upgradesRef = useRef(upgrades);
   useEffect(() => { upgradesRef.current = upgrades; }, [upgrades]);
@@ -435,7 +438,12 @@ const RTSMap: React.FC = () => {
   }, [clientToSvg, buildMode, isTileOccupied]);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { setBuildMode(null); setGhostTile(null); } };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { setBuildMode(null); setGhostTile(null); setPatrolMode(false); }
+      if ((e.key === 'p' || e.key === 'P') && !e.ctrlKey && !e.metaKey) {
+        setWorkers(ws => { if (ws.some(w => w.selected)) { setPatrolMode(m => !m); } return ws; });
+      }
+    };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
@@ -652,6 +660,14 @@ const RTSMap: React.FC = () => {
           } else if (repairTimeoutsRef.current[w.id] && w.state !== 'idle') {
             clearTimeout(repairTimeoutsRef.current[w.id]);
             delete repairTimeoutsRef.current[w.id];
+          }
+
+          // Patrol: when idle at endpoint, flip heading and march to other point
+          if (w.patrol && w.state === 'idle' && !w.movingTo) {
+            const nextTarget = w.patrol.heading === 'b' ? w.patrol.a : w.patrol.b;
+            const newHeading = w.patrol.heading === 'b' ? 'a' as const : 'b' as const;
+            const p = aStar(INITIAL_TILES, { x: Math.round(w.x), y: Math.round(w.y) }, nextTarget);
+            return { ...w, patrol: { ...w.patrol, heading: newHeading }, movingTo: p[0] ?? nextTarget, path: p.slice(1), state: 'moving' };
           }
 
           return w;
@@ -948,9 +964,20 @@ const RTSMap: React.FC = () => {
                     if (buildMode) return;
                     if (selectedType === 'farmhouse') { setRallyPoint({ x: i, y: j }); return; }
                     if (!anySelected) return;
+                    if (patrolModeRef.current) {
+                      const dest = { x: i, y: j };
+                      setWorkers(ws => ws.map(w => {
+                        if (!w.selected) return w;
+                        const a = { x: Math.round(w.x), y: Math.round(w.y) };
+                        const p = aStar(INITIAL_TILES, a, dest);
+                        return { ...w, patrol: { a, b: dest, heading: 'b' }, movingTo: p[0] ?? dest, path: p.slice(1), gathering: null, attacking: null, state: 'moving' };
+                      }));
+                      setPatrolMode(false);
+                      return;
+                    }
                     commandMove(i, j);
                   }}
-                  style={{ cursor: buildMode ? 'crosshair' : (anySelected || selectedType === 'farmhouse' ? 'pointer' : undefined) }}
+                  style={{ cursor: buildMode ? 'crosshair' : patrolMode ? 'crosshair' : (anySelected || selectedType === 'farmhouse' ? 'pointer' : undefined) }}
                 />
               );
             })
