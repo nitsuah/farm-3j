@@ -47,6 +47,9 @@ LICENSE
 .github
 .gitlab-ci.yml
 
+# Claude Code
+.claude
+
 # Other
 *.log
 .cache

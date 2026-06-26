@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { farmReducer, initialFarmState } from './farmReducer';
-import { FarmAction, Entity } from './types';
+import { farmReducer, initialFarmState } from '../farmReducer';
+import { FarmAction, Entity } from '../types';
 
 describe('FarmReducer', () => {
   describe('Initial State', () => {
