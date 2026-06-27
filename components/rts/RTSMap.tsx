@@ -14,6 +14,9 @@ const FOOD_CAP_PER_LEVEL = 5;
 const WORKER_VISION = 3.5;
 const BARN_VISION = 5;
 const WATCHTOWER_VISION = 7;
+const WATCHTOWER_ATTACK_RANGE = 5;
+const WATCHTOWER_DAMAGE = 8;
+const WATCHTOWER_ATTACK_MS = 2000;
 const ENEMY_BARN_POS = { x: 10, y: 10 };
 const ENEMY_BARN_MAX_HP = 200;
 const PLAYER_BARN_MAX_HP = 300;
@@ -409,6 +412,7 @@ const RTSMap: React.FC = () => {
   const attackTimeoutsRef = useRef<Record<number, number>>({});
   const repairTimeoutsRef = useRef<Record<number, number>>({});
   const archerTowerTimerRef = useRef<number | null>(null);
+  const watchtowerTimersRef = useRef<Record<number, number>>({});
   const animationRef = useRef<number | null>(null);
   const prevTimeRef = useRef<number | null>(null);
 
@@ -492,6 +496,31 @@ const RTSMap: React.FC = () => {
     archerTowerTimerRef.current = window.setTimeout(fireArrow, ARCHER_TOWER_ATTACK_MS);
     return () => { if (archerTowerTimerRef.current) { clearTimeout(archerTowerTimerRef.current); archerTowerTimerRef.current = null; } };
   }, [gameOver, addFloatingText]);
+
+  // Player watchtowers fire arrows at enemy grunts in range
+  useEffect(() => {
+    const towers = placedBuildings.filter(b => b.type === 'watchtower');
+    if (gameOver || towers.length === 0) return;
+    const scheduleShot = (towerId: number, tx: number, ty: number) => {
+      watchtowerTimersRef.current[towerId] = window.setTimeout(() => {
+        delete watchtowerTimersRef.current[towerId];
+        if (gameOverRef.current) return;
+        const grunts = enemyGruntsRef.current;
+        const target = grunts.reduce<EnemyGrunt | null>((best, g) => {
+          if (tileDist(g.x, g.y, tx, ty) > WATCHTOWER_ATTACK_RANGE) return best;
+          if (!best || tileDist(g.x, g.y, tx, ty) < tileDist(best.x, best.y, tx, ty)) return g;
+          return best;
+        }, null);
+        if (target) {
+          setEnemyGrunts(gs => gs.map(g => g.id === target.id ? { ...g, hp: Math.max(0, g.hp - WATCHTOWER_DAMAGE) } : g));
+          addFloatingText(Math.round(target.x), Math.round(target.y), `🏹-${WATCHTOWER_DAMAGE}`, '#22d3ee');
+        }
+        scheduleShot(towerId, tx, ty);
+      }, WATCHTOWER_ATTACK_MS);
+    };
+    towers.forEach(t => { if (!watchtowerTimersRef.current[t.id]) scheduleShot(t.id, t.x, t.y); });
+    return () => { Object.values(watchtowerTimersRef.current).forEach(clearTimeout); watchtowerTimersRef.current = {}; };
+  }, [placedBuildings, gameOver, addFloatingText]);
 
   // Windmill passive gold income
   useEffect(() => {
