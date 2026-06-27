@@ -30,6 +30,7 @@
 - **Farm RTS: Game Speed Toggle** — ▶ 1× / ▶▶ 2× button in the resource bar multiplies all unit movement and game time by 2×, letting players fast-forward through early game buildup.
 - **Farm RTS: Kill Counter & Score** — Live ☠ kill counter in the HUD; on game end a "Battle Report" overlay shows waves survived, grunts killed, gold mined, lumber cut, workers alive, and time played.
 - **Farm RTS: Enemy Archer Tower** — A defensive archer tower guards the enemy base at a fixed position near the enemy barn; fires 🏹 arrows at the nearest worker within 4 tiles every 2.5 seconds (10 damage); tower disappears when the enemy barn is destroyed.
+- **Farm RTS: Worker Patrol** — Selected workers can be sent on patrol between two waypoints [P key or Patrol button]; workers automatically walk back and forth indefinitely; dashed cyan route line shown when patrol worker is selected; Stop command cancels patrol.
 
 ## Planned
 

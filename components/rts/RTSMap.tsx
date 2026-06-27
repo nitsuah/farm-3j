@@ -374,7 +374,7 @@ const RTSMap: React.FC = () => {
         const startTile = { x: Math.round(w.x), y: Math.round(w.y) };
         const rawPath = aStar(INITIAL_TILES, startTile, dest);
         const first = rawPath[0] ?? dest;
-        return { ...w, movingTo: first, path: rawPath.slice(1), gathering: gathering ?? null, attacking: attacking ?? null, state: 'moving' };
+        return { ...w, movingTo: first, path: rawPath.slice(1), gathering: gathering ?? null, attacking: attacking ?? null, patrol: null, state: 'moving' };
       });
     });
   }, []);
@@ -812,7 +812,8 @@ const RTSMap: React.FC = () => {
       Object.values(attackTimeoutsRef.current).forEach(clearTimeout);
       gatherTimeoutsRef.current = {};
       attackTimeoutsRef.current = {};
-      setWorkers(ws => ws.map(w => w.selected ? { ...w, movingTo: null, path: [], gathering: null, attacking: null, state: 'idle' } : w));
+      setPatrolMode(false);
+      setWorkers(ws => ws.map(w => w.selected ? { ...w, movingTo: null, path: [], gathering: null, attacking: null, patrol: null, state: 'idle' } : w));
     }
   };
 
@@ -917,8 +918,12 @@ const RTSMap: React.FC = () => {
           <span style={{ color: '#fcd34d', background: 'rgba(217,119,6,0.3)', padding: '2px 12px', borderRadius: 6, fontSize: 13 }}>
             Placing {BUILDING_COSTS[buildMode].label} · Click to place · Esc to cancel
           </span>
+        ) : patrolMode ? (
+          <span style={{ color: '#22d3ee', background: 'rgba(6,182,212,0.2)', padding: '2px 12px', borderRadius: 6, fontSize: 13 }}>
+            🔄 Patrol Mode · Right-click destination · Esc to cancel
+          </span>
         ) : (
-          <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 400 }}>WASD pan · scroll zoom · Ctrl+1-9 groups</span>
+          <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 400 }}>WASD pan · scroll zoom · Ctrl+1-9 groups · P patrol</span>
         )}
       </div>
 
@@ -1112,6 +1117,22 @@ const RTSMap: React.FC = () => {
               )}
             </g>; })}
 
+          {/* Patrol route visualizations */}
+          {workers.filter(w => w.patrol && w.selected).map(w => {
+            if (!w.patrol) return null;
+            const a = tileToSvg(w.patrol.a.x, w.patrol.a.y);
+            const b = tileToSvg(w.patrol.b.x, w.patrol.b.y);
+            const ax = a.isoX + TILE_SIZE / 2, ay = a.isoY + 18;
+            const bx = b.isoX + TILE_SIZE / 2, by = b.isoY + 18;
+            return (
+              <g key={`patrol-${w.id}`} pointerEvents="none">
+                <line x1={ax} y1={ay} x2={bx} y2={by} stroke="#22d3ee" strokeWidth={1.5} strokeDasharray="6 4" opacity={0.6} />
+                <circle cx={ax} cy={ay} r={5} fill="none" stroke="#22d3ee" strokeWidth={2} opacity={0.8} />
+                <circle cx={bx} cy={by} r={5} fill="none" stroke="#22d3ee" strokeWidth={2} opacity={0.8} />
+              </g>
+            );
+          })}
+
           {/* Fog of war */}
           {[...Array(GRID_SIZE)].map((_, i) =>
             [...Array(GRID_SIZE)].map((_, j) => {
@@ -1148,6 +1169,8 @@ const RTSMap: React.FC = () => {
         buildingCosts={BUILDING_COSTS}
         onFarmhouseAction={handleFarmhouseAction}
         onWorkerCommand={handleWorkerCommand}
+        patrolMode={patrolMode}
+        onPatrolCommand={() => setPatrolMode(m => !m)}
         buildMode={buildMode}
         upgrades={upgrades}
         onResearch={handleResearch}
