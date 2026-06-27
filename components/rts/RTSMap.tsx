@@ -35,7 +35,7 @@ const ARCHER_TOWER_ATTACK_MS = 2500;
 
 interface FloatingText { id: number; x: number; y: number; text: string; color: string; createdAt: number }
 type TileType = 'grass' | 'dirt' | 'water' | 'tree' | 'rock';
-type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill';
+type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks';
 
 interface ResourceNode { x: number; y: number; amount: number }
 interface Resources { gold: number; lumber: number; stone: number; food: number; foodCap: number }
@@ -60,11 +60,15 @@ const BUILDING_COSTS: Record<BuildingType, { gold: number; lumber: number; stone
   watchtower: { gold: 80, lumber: 0, stone: 60, label: 'Watchtower', foodCapBonus: 0 },
   wall:       { gold: 15, lumber: 25, stone: 0, label: 'Palisade Wall', foodCapBonus: 0 },
   windmill:   { gold: 60, lumber: 40, stone: 0, label: 'Windmill', foodCapBonus: 0 },
+  barracks:   { gold: 80, lumber: 60, stone: 40, label: 'Barracks', foodCapBonus: 0 },
 };
 
 const BUILDING_EMOJI: Record<BuildingType, string> = {
-  farmhouse: '🏠', lumberShed: '🪵', watchtower: '🗼', wall: '🧱', windmill: '💨',
+  farmhouse: '🏠', lumberShed: '🪵', watchtower: '🗼', wall: '🧱', windmill: '💨', barracks: '🏯',
 };
+
+const SWORDSMAN_MAX_HP = 80;
+const SWORDSMAN_DAMAGE_BONUS = 10;
 
 function makeTiles(): TileType[][] {
   return Array.from({ length: GRID_SIZE }, (_, i) =>
@@ -200,7 +204,12 @@ const RTSMap: React.FC = () => {
 
   const makeWorker = (id: number, x: number, y: number): WorkerState => ({
     id, x, y, selected: false, movingTo: null, path: [], gathering: null, attacking: null,
-    carrying: { gold: 0, lumber: 0, stone: 0 }, state: 'idle', group: null, hp: WORKER_MAX_HP, maxHp: WORKER_MAX_HP, patrol: null,
+    carrying: { gold: 0, lumber: 0, stone: 0 }, state: 'idle', group: null, hp: WORKER_MAX_HP, maxHp: WORKER_MAX_HP, patrol: null, unitType: 'farmer',
+  });
+
+  const makeSwordsman = (id: number, x: number, y: number): WorkerState => ({
+    id, x, y, selected: false, movingTo: null, path: [], gathering: null, attacking: null,
+    carrying: { gold: 0, lumber: 0, stone: 0 }, state: 'idle', group: null, hp: SWORDSMAN_MAX_HP, maxHp: SWORDSMAN_MAX_HP, patrol: null, unitType: 'swordsman',
   });
 
   const [workers, setWorkers] = useState<WorkerState[]>([
@@ -387,6 +396,7 @@ const RTSMap: React.FC = () => {
       let idx = 0;
       return ws.map(w => {
         if (!w.selected) return w;
+        if (gathering && w.unitType === 'swordsman') return w;
         const isFormation = !gathering && !attacking;
         const offset = isFormation ? (FORMATION_OFFSETS[idx++] ?? { dx: 0, dy: 0 }) : { dx: 0, dy: 0 };
         const tx = Math.max(0, Math.min(GRID_SIZE - 1, targetX + offset.dx));
@@ -639,9 +649,10 @@ const RTSMap: React.FC = () => {
                 const gruntId = w.attacking.gruntId;
                 const capturedGX = Math.round(target.x), capturedGY = Math.round(target.y);
                 const capturedWX = Math.round(w.x), capturedWY = Math.round(w.y);
+                const isSword = w.unitType === 'swordsman';
                 attackT[w.id] = window.setTimeout(() => {
                   delete attackTimeoutsRef.current[w.id];
-                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5;
+                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + (isSword ? SWORDSMAN_DAMAGE_BONUS : 0);
                   setEnemyGrunts(gs => gs.map(g => g.id === gruntId ? { ...g, hp: Math.max(0, g.hp - dmg) } : g));
                   addFloatingText(capturedGX, capturedGY, `-${dmg}`, '#f97316');
                   addFloatingText(capturedWX, capturedWY, `⚔️`, '#fbbf24');
@@ -650,9 +661,10 @@ const RTSMap: React.FC = () => {
             } else {
               if (!attackT[w.id]) {
                 const capturedWX = Math.round(w.x), capturedWY = Math.round(w.y);
+                const isSword = w.unitType === 'swordsman';
                 attackT[w.id] = window.setTimeout(() => {
                   delete attackTimeoutsRef.current[w.id];
-                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5;
+                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + (isSword ? SWORDSMAN_DAMAGE_BONUS : 0);
                   setWorkers(ws2 => ws2.map(w2 => {
                     if (w2.id !== w.id || w2.state !== 'attacking' || !w2.attacking) return w2;
                     setEnemyBarnHp(hp => { const nHp = Math.max(0, hp - dmg); if (nHp <= 0) setGameOver('victory'); return nHp; });
@@ -820,6 +832,18 @@ const RTSMap: React.FC = () => {
           return [...ws, { ...makeWorker(newId, BARN_POS.x, BARN_POS.y), movingTo: path[0] ?? rp, path: path.slice(1), state: 'moving' as const }];
         }
         return [...ws, makeWorker(newId, BARN_POS.x, BARN_POS.y)];
+      });
+    } else if (action === 'trainSwordsman') {
+      if (resources.gold < 50 || resources.food >= resources.foodCap) return;
+      setResources(r => ({ ...r, gold: r.gold - 50, food: r.food + 1 }));
+      setWorkers(ws => {
+        const newId = Math.max(...ws.map(w => w.id), 0) + 1;
+        const rp = rallyPoint;
+        if (rp) {
+          const path = aStar(INITIAL_TILES, BARN_POS, rp);
+          return [...ws, { ...makeSwordsman(newId, BARN_POS.x, BARN_POS.y), movingTo: path[0] ?? rp, path: path.slice(1), state: 'moving' as const }];
+        }
+        return [...ws, makeSwordsman(newId, BARN_POS.x, BARN_POS.y)];
       });
     } else if (action.startsWith('build:')) {
       const btype = action.split(':')[1] as BuildingType;
@@ -1073,6 +1097,14 @@ const RTSMap: React.FC = () => {
                 <text x={isoX + TILE_SIZE} y={isoY - 34} textAnchor="middle" fontSize="9" fill="#fde68a" fontWeight="bold">+2🪙/5s</text>
               </g>;
             }
+            if (b.type === 'barracks') {
+              return <g key={`building-${b.id}`} pointerEvents="none">
+                <rect x={isoX + TILE_SIZE * 0.2} y={isoY - 4} width={TILE_SIZE * 1.6} height={TILE_SIZE * 0.85} fill="#1c1917" stroke="#dc2626" strokeWidth={3} rx={6} />
+                <rect x={isoX + TILE_SIZE * 0.2} y={isoY - 4} width={TILE_SIZE * 1.6} height={8} fill="#292524" stroke="none" />
+                <text x={isoX + TILE_SIZE} y={isoY + TILE_SIZE * 0.5} textAnchor="middle" fontSize="22">⚔️</text>
+                <text x={isoX + TILE_SIZE} y={isoY - 8} textAnchor="middle" fontSize="9" fill="#fca5a5" fontWeight="bold">BARRACKS</text>
+              </g>;
+            }
             const colors: Record<string, { fill: string; stroke: string }> = { farmhouse: { fill: '#fef3c7', stroke: '#92400e' }, lumberShed: { fill: '#a16207', stroke: '#78350f' }, watchtower: { fill: '#64748b', stroke: '#1e293b' } };
             const c = colors[b.type] ?? { fill: '#374151', stroke: '#1f2937' };
             return <g key={`building-${b.id}`}>
@@ -1141,9 +1173,13 @@ const RTSMap: React.FC = () => {
             return <g key={`worker-${worker.id}`}
               onClick={e => { e.stopPropagation(); if (!isDraggingRef.current && !buildMode) { setSelectedType('worker'); setWorkers(ws => ws.map(w => ({ ...w, selected: w.id === worker.id }))); } }}
               style={{ cursor: 'pointer' }}>
-              {worker.selected && <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 32} rx={22} ry={10} fill="none" stroke="#38bdf8" strokeWidth={3} />}
-              <circle cx={isoX + TILE_SIZE / 2} cy={isoY + 18} r={18} fill={worker.state === 'attacking' ? '#fca5a5' : worker.state === 'gathering' ? '#fde68a' : '#fbbf24'} stroke="#78350f" strokeWidth={3} />
-              <text x={isoX + TILE_SIZE / 2} y={isoY + 26} textAnchor="middle" fontSize="16">👨‍🌾</text>
+              {worker.selected && <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 32} rx={22} ry={10} fill="none" stroke={worker.unitType === 'swordsman' ? '#f87171' : '#38bdf8'} strokeWidth={3} />}
+              <circle cx={isoX + TILE_SIZE / 2} cy={isoY + 18} r={18}
+                fill={worker.unitType === 'swordsman'
+                  ? (worker.state === 'attacking' ? '#dc2626' : '#7f1d1d')
+                  : (worker.state === 'attacking' ? '#fca5a5' : worker.state === 'gathering' ? '#fde68a' : '#fbbf24')}
+                stroke={worker.unitType === 'swordsman' ? '#450a0a' : '#78350f'} strokeWidth={3} />
+              <text x={isoX + TILE_SIZE / 2} y={isoY + 26} textAnchor="middle" fontSize="16">{worker.unitType === 'swordsman' ? '⚔️' : '👨‍🌾'}</text>
               <rect x={isoX + TILE_SIZE / 2 - 16} y={isoY - 4} width={32} height={4} fill="#1e293b" />
               <rect x={isoX + TILE_SIZE / 2 - 16} y={isoY - 4} width={32 * hp} height={4} fill={hp > 0.5 ? '#4ade80' : hp > 0.25 ? '#fbbf24' : '#ef4444'} />
               {worker.group !== null && <>
@@ -1214,6 +1250,7 @@ const RTSMap: React.FC = () => {
         buildMode={buildMode}
         upgrades={upgrades}
         onResearch={handleResearch}
+        hasBarracks={placedBuildings.some(b => b.type === 'barracks')}
         minimapData={minimapData}
         enemyBarnHp={enemyBarnHp}
         enemyBarnMaxHp={ENEMY_BARN_MAX_HP}

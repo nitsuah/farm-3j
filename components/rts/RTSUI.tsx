@@ -15,9 +15,10 @@ export interface WorkerState {
   hp: number;
   maxHp: number;
   patrol: { a: { x: number; y: number }; b: { x: number; y: number }; heading: 'a' | 'b' } | null;
+  unitType: 'farmer' | 'swordsman';
 }
 
-export type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill';
+export type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks';
 
 export interface PlacedBuilding {
   id: number;
@@ -57,6 +58,7 @@ const UPGRADE_META: Record<keyof Upgrades, { label: string; icon: string; desc: 
 interface RTSUIProps {
   selectedType: 'worker' | 'farmhouse' | null;
   selectedWorkers: WorkerState[];
+  hasBarracks: boolean;
   farmhouse: { built: boolean; level: number };
   farmhouseUpgradeCosts: { gold: number; lumber: number }[];
   farmhouseStorage: { gold: number; lumber: number }[];
@@ -101,9 +103,12 @@ export const RTSUI: React.FC<RTSUIProps> = ({
   enemyBarnMaxHp,
   playerBarnHp,
   playerBarnMaxHp,
+  hasBarracks,
 }) => {
   const selectedCount = selectedWorkers.length;
   const firstWorker = selectedWorkers[0] ?? null;
+  const anyFarmers = selectedWorkers.some(w => w.unitType === 'farmer');
+  const allSwordsmen = selectedWorkers.length > 0 && selectedWorkers.every(w => w.unitType === 'swordsman');
 
   const stateLabel = (w: WorkerState) => {
     if (w.patrol) return '🔄 Patrolling';
@@ -132,7 +137,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
           {selectedType === 'worker' && firstWorker ? (
             <>
               <div className="mt-1 text-sm font-semibold">
-                Farmer{selectedCount > 1 ? ` ×${selectedCount}` : ' #' + firstWorker.id}
+                {allSwordsmen ? '⚔️ Swordsman' : firstWorker.unitType === 'swordsman' ? 'Mixed' : 'Farmer'}{selectedCount > 1 ? ` ×${selectedCount}` : ' #' + firstWorker.id}
                 {firstWorker.group !== null && selectedCount === 1 && (
                   <span className="ml-2 rounded bg-amber-900/60 px-1.5 text-xs text-amber-300">G{firstWorker.group}</span>
                 )}
@@ -201,21 +206,25 @@ export const RTSUI: React.FC<RTSUIProps> = ({
           {selectedType === 'worker' && selectedCount > 0 && (
             <div className="grid grid-cols-4 gap-2">
               <button className="rounded border border-amber-500/70 bg-amber-500/15 px-2 py-2 text-xs text-amber-100 hover:bg-amber-500/30" title="Right-click tile to move">Move</button>
-              <button className="rounded border border-green-500/70 bg-green-500/15 px-2 py-2 text-xs text-green-100 hover:bg-green-500/30" title="Right-click resource node">Harvest</button>
+              {!allSwordsmen && (
+                <button className="rounded border border-green-500/70 bg-green-500/15 px-2 py-2 text-xs text-green-100 hover:bg-green-500/30" title="Right-click resource node">Harvest</button>
+              )}
               <button
-                className="rounded border border-red-500/70 bg-red-500/15 px-2 py-2 text-xs text-red-100 hover:bg-red-500/30"
+                className={`rounded border border-red-500/70 bg-red-500/15 px-2 py-2 text-xs text-red-100 hover:bg-red-500/30 ${allSwordsmen ? 'col-span-2' : ''}`}
                 onClick={() => onWorkerCommand('stop')}
               >
                 Stop
               </button>
-              <button
-                className="rounded border border-blue-500/70 bg-blue-500/15 px-2 py-2 text-xs text-blue-100 hover:bg-blue-500/30 disabled:opacity-40"
-                onClick={() => onFarmhouseAction('build:farmhouse')}
-                disabled={!canAfford(buildingCosts.farmhouse)}
-                title={`Farmhouse (${buildingCosts.farmhouse.gold}🪙 ${buildingCosts.farmhouse.lumber}🌲)`}
-              >
-                Build
-              </button>
+              {!allSwordsmen && (
+                <button
+                  className="rounded border border-blue-500/70 bg-blue-500/15 px-2 py-2 text-xs text-blue-100 hover:bg-blue-500/30 disabled:opacity-40"
+                  onClick={() => onFarmhouseAction('build:farmhouse')}
+                  disabled={!canAfford(buildingCosts.farmhouse)}
+                  title={`Farmhouse (${buildingCosts.farmhouse.gold}🪙 ${buildingCosts.farmhouse.lumber}🌲)`}
+                >
+                  Build
+                </button>
+              )}
               <button
                 className="col-span-2 rounded border border-orange-500/70 bg-orange-500/15 px-2 py-2 text-xs text-orange-100 hover:bg-orange-500/30"
                 onClick={() => onWorkerCommand('attack')}
@@ -267,6 +276,17 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                   <button className="rounded border border-yellow-700/70 bg-yellow-900/20 px-2 py-2 text-xs text-yellow-100 hover:bg-yellow-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:lumberShed')} disabled={!canAfford(buildingCosts.lumberShed)} title="Lumber Shed">🪵 Shed</button>
                   <button className="rounded border border-amber-700/70 bg-amber-900/20 px-2 py-2 text-xs text-amber-100 hover:bg-amber-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:wall')} disabled={!canAfford(buildingCosts.wall)} title="Palisade Wall — blocks enemy grunts">🧱 Wall</button>
                   <button className="rounded border border-lime-600/70 bg-lime-900/20 px-2 py-2 text-xs text-lime-100 hover:bg-lime-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:windmill')} disabled={!canAfford(buildingCosts.windmill)} title="Windmill — +2🪙 every 5s">💨 Mill</button>
+                  <button className="rounded border border-red-700/70 bg-red-900/20 px-2 py-2 text-xs text-red-100 hover:bg-red-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:barracks')} disabled={!canAfford(buildingCosts.barracks)} title="Barracks — train Swordsmen">🏯 Barracks</button>
+                  {hasBarracks && (
+                    <button
+                      className="col-span-2 rounded border border-rose-500/70 bg-rose-500/15 px-2 py-2 text-xs text-rose-100 hover:bg-rose-500/30 disabled:opacity-40"
+                      onClick={() => onFarmhouseAction('trainSwordsman')}
+                      disabled={resources.gold < 50 || resources.food >= resources.foodCap}
+                      title="Train Swordsman — 50🪙, 80HP, +10 dmg, cannot harvest"
+                    >
+                      ⚔️ Train Swordsman 50🪙
+                    </button>
+                  )}
                   {(Object.keys(UPGRADE_META) as (keyof Upgrades)[]).map(key => {
                     const level = upgrades[key];
                     const maxed = level >= UPGRADE_MAX;
