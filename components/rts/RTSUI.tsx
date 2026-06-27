@@ -15,10 +15,10 @@ export interface WorkerState {
   hp: number;
   maxHp: number;
   patrol: { a: { x: number; y: number }; b: { x: number; y: number }; heading: 'a' | 'b' } | null;
-  unitType: 'farmer' | 'swordsman' | 'hero';
+  unitType: 'farmer' | 'swordsman' | 'hero' | 'catapult';
 }
 
-export type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks';
+export type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop';
 
 export interface PlacedBuilding {
   id: number;
@@ -67,6 +67,7 @@ interface RTSUIProps {
   heroAbilityCooldown: number;
   onHeroAbility: () => void;
   onRecruitHero: () => void;
+  hasSiegeWorkshop: boolean;
   farmhouse: { built: boolean; level: number };
   farmhouseUpgradeCosts: { gold: number; lumber: number }[];
   farmhouseStorage: { gold: number; lumber: number }[];
@@ -120,6 +121,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
   heroAbilityCooldown,
   onHeroAbility,
   onRecruitHero,
+  hasSiegeWorkshop,
 }) => {
   const isHeroSelected = selectedWorkers.some(w => w.unitType === 'hero');
   const selectedCount = selectedWorkers.length;
@@ -154,7 +156,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
           {selectedType === 'worker' && firstWorker ? (
             <>
               <div className="mt-1 text-sm font-semibold">
-                {firstWorker.unitType === 'hero' ? '🦸 Barnabas' : allSwordsmen ? '⚔️ Swordsman' : firstWorker.unitType === 'swordsman' ? 'Mixed' : 'Farmer'}{selectedCount > 1 && firstWorker.unitType !== 'hero' ? ` ×${selectedCount}` : ''}
+                {firstWorker.unitType === 'hero' ? '🦸 Barnabas' : firstWorker.unitType === 'catapult' ? '🪨 Catapult' : allSwordsmen ? '⚔️ Swordsman' : firstWorker.unitType === 'swordsman' ? 'Mixed' : 'Farmer'}{selectedCount > 1 && firstWorker.unitType !== 'hero' ? ` ×${selectedCount}` : ''}
                 {firstWorker.group !== null && selectedCount === 1 && (
                   <span className="ml-2 rounded bg-amber-900/60 px-1.5 text-xs text-amber-300">G{firstWorker.group}</span>
                 )}
@@ -318,6 +320,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                   <button className="rounded border border-amber-700/70 bg-amber-900/20 px-2 py-2 text-xs text-amber-100 hover:bg-amber-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:wall')} disabled={!canAfford(buildingCosts.wall)} title="Palisade Wall — blocks enemy grunts">🧱 Wall</button>
                   <button className="rounded border border-lime-600/70 bg-lime-900/20 px-2 py-2 text-xs text-lime-100 hover:bg-lime-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:windmill')} disabled={!canAfford(buildingCosts.windmill)} title="Windmill — +2🪙 every 5s">💨 Mill</button>
                   <button className="rounded border border-red-700/70 bg-red-900/20 px-2 py-2 text-xs text-red-100 hover:bg-red-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:barracks')} disabled={!canAfford(buildingCosts.barracks)} title="Barracks — train Swordsmen">🏯 Barracks</button>
+                  <button className="rounded border border-orange-600/70 bg-orange-900/20 px-2 py-2 text-xs text-orange-100 hover:bg-orange-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:siegeWorkshop')} disabled={!canAfford(buildingCosts.siegeWorkshop)} title="Siege Workshop — train Catapults (100🪙 80🌲 60🪨)">⚙️ Siege</button>
                   {hasBarracks && (
                     <button
                       className="col-span-2 rounded border border-rose-500/70 bg-rose-500/15 px-2 py-2 text-xs text-rose-100 hover:bg-rose-500/30 disabled:opacity-40"
@@ -336,6 +339,16 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                       title={heroRecruited ? 'Barnabas already recruited (one hero per game)' : 'Recruit Barnabas — 150🪙, 150HP, +20 dmg, ⚡ Rallying Cry ability'}
                     >
                       {heroRecruited ? '🦸 Hero Recruited' : '🦸 Recruit Hero 150🪙'}
+                    </button>
+                  )}
+                  {hasSiegeWorkshop && (
+                    <button
+                      className="col-span-2 rounded border border-orange-500/70 bg-orange-500/15 px-2 py-2 text-xs text-orange-100 hover:bg-orange-500/30 disabled:opacity-40"
+                      onClick={() => onFarmhouseAction('trainCatapult')}
+                      disabled={resources.gold < 150 || resources.lumber < 80 || resources.food >= resources.foodCap}
+                      title="Train Catapult — 150🪙 80🌲, 60HP, AoE splash damage, slow"
+                    >
+                      🪨 Train Catapult 150🪙
                     </button>
                   )}
                   {(Object.keys(UPGRADE_META) as (keyof Upgrades)[]).map(key => {
