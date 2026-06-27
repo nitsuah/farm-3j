@@ -54,7 +54,7 @@ const ARCHER_TOWER_ATTACK_MS = 2500;
 
 interface FloatingText { id: number; x: number; y: number; text: string; color: string; createdAt: number }
 type TileType = 'grass' | 'dirt' | 'water' | 'tree' | 'rock';
-type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop';
+type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market';
 
 interface ResourceNode { x: number; y: number; amount: number }
 interface Resources { gold: number; lumber: number; stone: number; food: number; foodCap: number }
@@ -81,10 +81,11 @@ const BUILDING_COSTS: Record<BuildingType, { gold: number; lumber: number; stone
   windmill:   { gold: 60, lumber: 40, stone: 0, label: 'Windmill', foodCapBonus: 0 },
   barracks:      { gold: 80, lumber: 60, stone: 40, label: 'Barracks', foodCapBonus: 0 },
   siegeWorkshop: { gold: 100, lumber: 80, stone: 60, label: 'Siege Workshop', foodCapBonus: 0 },
+  market:        { gold: 80,  lumber: 60, stone: 20, label: 'Market',         foodCapBonus: 0 },
 };
 
 const BUILDING_EMOJI: Record<BuildingType, string> = {
-  farmhouse: '🏠', lumberShed: '🪵', watchtower: '🗼', wall: '🧱', windmill: '💨', barracks: '🏯', siegeWorkshop: '⚙️',
+  farmhouse: '🏠', lumberShed: '🪵', watchtower: '🗼', wall: '🧱', windmill: '💨', barracks: '🏯', siegeWorkshop: '⚙️', market: '🏪',
 };
 
 const SWORDSMAN_MAX_HP = 80;
@@ -968,8 +969,13 @@ const RTSMap: React.FC = () => {
       const currentWorkers = workersRef.current;
       setEnemyGrunts(gs => {
         const survived = gs.filter(g => g.hp > 0);
-        const kills = gs.length - survived.length;
-        if (kills > 0) setKillCount(k => k + kills);
+        const killed = gs.filter(g => g.hp <= 0);
+        if (killed.length > 0) {
+          setKillCount(k => k + killed.length);
+          const goldDrop = killed.length * 5;
+          setResources(r => ({ ...r, gold: r.gold + goldDrop }));
+          killed.forEach(g => addFloatingText(Math.round(g.x), Math.round(g.y), `+${5}🪙`, '#fbbf24'));
+        }
         return survived;
       });
       const gruntSpeedMult = isNightRef.current ? NIGHT_SPEED_MULT : 1;
@@ -1131,6 +1137,14 @@ const RTSMap: React.FC = () => {
         }
         return [...ws, makeUnit(newId, BARN_POS.x, BARN_POS.y, 'catapult')];
       });
+    } else if (action === 'trade:lumberToGold') {
+      if (resources.lumber < 50) return;
+      setResources(r => ({ ...r, lumber: r.lumber - 50, gold: r.gold + 30 }));
+      addFloatingText(BARN_POS.x, BARN_POS.y, '+30🪙', '#fbbf24');
+    } else if (action === 'trade:stoneToGold') {
+      if (resources.stone < 30) return;
+      setResources(r => ({ ...r, stone: r.stone - 30, gold: r.gold + 20 }));
+      addFloatingText(BARN_POS.x, BARN_POS.y, '+20🪙', '#fbbf24');
     } else if (action.startsWith('build:')) {
       const btype = action.split(':')[1] as BuildingType;
       if (BUILDING_COSTS[btype]) setBuildMode(btype);
@@ -1401,6 +1415,15 @@ const RTSMap: React.FC = () => {
                 <text x={isoX + TILE_SIZE} y={isoY - 34} textAnchor="middle" fontSize="9" fill="#fde68a" fontWeight="bold">+2🪙/5s</text>
               </g>;
             }
+            if (b.type === 'market') {
+              return <g key={`building-${b.id}`} pointerEvents="none">
+                <rect x={isoX + TILE_SIZE * 0.1} y={isoY - 2} width={TILE_SIZE * 1.8} height={TILE_SIZE * 0.82} fill="#fef3c7" stroke="#d97706" strokeWidth={3} rx={5} />
+                {/* Awning */}
+                <rect x={isoX + TILE_SIZE * 0.1} y={isoY - 2} width={TILE_SIZE * 1.8} height={12} fill="#d97706" stroke="none" rx={3} />
+                <text x={isoX + TILE_SIZE} y={isoY + TILE_SIZE * 0.5} textAnchor="middle" fontSize="20">🏪</text>
+                <text x={isoX + TILE_SIZE} y={isoY - 6} textAnchor="middle" fontSize="9" fill="#78350f" fontWeight="bold">MARKET</text>
+              </g>;
+            }
             if (b.type === 'siegeWorkshop') {
               return <g key={`building-${b.id}`} pointerEvents="none">
                 <rect x={isoX + TILE_SIZE * 0.15} y={isoY} width={TILE_SIZE * 1.7} height={TILE_SIZE * 0.8} fill="#292524" stroke="#ea580c" strokeWidth={3} rx={5} />
@@ -1613,6 +1636,7 @@ const RTSMap: React.FC = () => {
         onHeroAbility={handleHeroAbility}
         onRecruitHero={() => handleFarmhouseAction('recruitHero')}
         hasSiegeWorkshop={placedBuildings.some(b => b.type === 'siegeWorkshop')}
+        hasMarket={placedBuildings.some(b => b.type === 'market')}
         minimapData={minimapData}
         enemyBarnHp={enemyBarnHp}
         enemyBarnMaxHp={ENEMY_BARN_MAX_HP}

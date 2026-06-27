@@ -18,7 +18,7 @@ export interface WorkerState {
   unitType: 'farmer' | 'swordsman' | 'hero' | 'catapult';
 }
 
-export type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop';
+export type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market';
 
 export interface PlacedBuilding {
   id: number;
@@ -68,6 +68,7 @@ interface RTSUIProps {
   onHeroAbility: () => void;
   onRecruitHero: () => void;
   hasSiegeWorkshop: boolean;
+  hasMarket: boolean;
   farmhouse: { built: boolean; level: number };
   farmhouseUpgradeCosts: { gold: number; lumber: number }[];
   farmhouseStorage: { gold: number; lumber: number }[];
@@ -122,6 +123,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
   onHeroAbility,
   onRecruitHero,
   hasSiegeWorkshop,
+  hasMarket,
 }) => {
   const isHeroSelected = selectedWorkers.some(w => w.unitType === 'hero');
   const selectedCount = selectedWorkers.length;
@@ -321,6 +323,27 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                   <button className="rounded border border-lime-600/70 bg-lime-900/20 px-2 py-2 text-xs text-lime-100 hover:bg-lime-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:windmill')} disabled={!canAfford(buildingCosts.windmill)} title="Windmill — +2🪙 every 5s">💨 Mill</button>
                   <button className="rounded border border-red-700/70 bg-red-900/20 px-2 py-2 text-xs text-red-100 hover:bg-red-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:barracks')} disabled={!canAfford(buildingCosts.barracks)} title="Barracks — train Swordsmen">🏯 Barracks</button>
                   <button className="rounded border border-orange-600/70 bg-orange-900/20 px-2 py-2 text-xs text-orange-100 hover:bg-orange-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:siegeWorkshop')} disabled={!canAfford(buildingCosts.siegeWorkshop)} title="Siege Workshop — train Catapults (100🪙 80🌲 60🪨)">⚙️ Siege</button>
+                  <button className="rounded border border-emerald-600/70 bg-emerald-900/20 px-2 py-2 text-xs text-emerald-100 hover:bg-emerald-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:market')} disabled={!canAfford(buildingCosts.market)} title="Market — trade lumber for gold (80🪙 60🌲 20🪨)">🏪 Market</button>
+                  {hasMarket && (
+                    <>
+                      <button
+                        className="col-span-2 rounded border border-yellow-500/70 bg-yellow-900/20 px-2 py-2 text-xs text-yellow-100 hover:bg-yellow-900/40 disabled:opacity-40"
+                        onClick={() => onFarmhouseAction('trade:lumberToGold')}
+                        disabled={resources.lumber < 50}
+                        title="Sell 50🌲 for 30🪙 at the Market"
+                      >
+                        🏪 Sell 50🌲 → 30🪙
+                      </button>
+                      <button
+                        className="col-span-2 rounded border border-yellow-500/70 bg-yellow-900/20 px-2 py-2 text-xs text-yellow-100 hover:bg-yellow-900/40 disabled:opacity-40"
+                        onClick={() => onFarmhouseAction('trade:stoneToGold')}
+                        disabled={resources.stone < 30}
+                        title="Sell 30🪨 for 20🪙 at the Market"
+                      >
+                        🏪 Sell 30🪨 → 20🪙
+                      </button>
+                    </>
+                  )}
                   {hasBarracks && (
                     <button
                       className="col-span-2 rounded border border-rose-500/70 bg-rose-500/15 px-2 py-2 text-xs text-rose-100 hover:bg-rose-500/30 disabled:opacity-40"
