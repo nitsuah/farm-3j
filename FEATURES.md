@@ -34,6 +34,7 @@
 - **Farm RTS: Palisade Wall** — Buildable wall structures (15🪙 25🌲) that block enemy grunt pathfinding; workers and player units pass through freely; grunts must route around walls enabling tactical chokepoints near the player barn.
 - **Farm RTS: Windmill** — Passive income building (60🪙 40🌲) that generates +2 gold every 5 seconds; floating gold text shown at each mill tick; stack multiple windmills for escalating passive economy similar to AoE's market/tribute mechanics.
 - **Farm RTS: Barracks + Swordsman** — Barracks building (80🪙 60🌲 40🪨) unlocks training of dedicated ⚔️ Swordsman fighters (50🪙 per unit); Swordsmen have 80 HP and +10 attack damage bonus over farmers but cannot harvest resources; rendered in dark red to distinguish from farmer units; damage bonus stacks with the Sharper Tools research upgrade.
+- **Farm RTS: Save / Load** — Complete game state persisted to localStorage (workers, resources, buildings, fog, wave, barn HP, upgrades, rally point); auto-saves every 30 seconds and on browser tab close; 💾 Save button with confirmation flash and 🗑 New Game button to clear and restart; Play Again on end-screen also clears save.
 
 ## Planned
 

@@ -159,6 +159,55 @@ function computeVisible(sources: { x: number; y: number; r: number }[]): boolean
 
 const INITIAL_TILES = makeTiles();
 
+// ---------- Save / Load ----------
+const SAVE_KEY = 'farm3j_rts_v1';
+
+interface SaveWorker { id: number; x: number; y: number; hp: number; maxHp: number; unitType: 'farmer' | 'swordsman'; group: number | null }
+interface SaveData {
+  version: 1;
+  resources: Resources;
+  workers: SaveWorker[];
+  trees: ResourceNode[];
+  goldMine: ResourceNode;
+  stoneNodes: ResourceNode[];
+  placedBuildings: PlacedBuilding[];
+  buildingNextId: number;
+  farmhouse: { built: boolean; level: number };
+  upgrades: Upgrades;
+  wave: number;
+  killCount: number;
+  totalGold: number;
+  totalLumber: number;
+  playerBarnHp: number;
+  enemyBarnHp: number;
+  rallyPoint: { x: number; y: number } | null;
+  fogExplored: boolean[][];
+}
+
+const INITIAL_SAVE: SaveData | null = (() => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return null;
+    const d = JSON.parse(raw) as SaveData;
+    return d?.version === 1 ? d : null;
+  } catch { return null; }
+})();
+
+function writeSave(data: SaveData): void {
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch {}
+}
+
+function clearSave(): void {
+  try { localStorage.removeItem(SAVE_KEY); } catch {}
+}
+
+function makeUnit(id: number, x: number, y: number, unitType: 'farmer' | 'swordsman'): WorkerState {
+  const maxHp = unitType === 'swordsman' ? SWORDSMAN_MAX_HP : WORKER_MAX_HP;
+  return { id, x, y, selected: false, movingTo: null, path: [], gathering: null, attacking: null, carrying: { gold: 0, lumber: 0, stone: 0 }, state: 'idle', group: null, hp: maxHp, maxHp, patrol: null, unitType };
+}
+// ---------------------------------
+
 const Stat: React.FC<{ label: string; value: string | number; color: string }> = ({ label, value, color }) => (
   <div>
     <div style={{ color: '#64748b', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 }}>{label}</div>
@@ -172,26 +221,27 @@ const RTSMap: React.FC = () => {
   const [camera, setCamera] = useState({ x: 0, y: 0 });
   const svgRef = useRef<SVGSVGElement>(null);
 
-  const [fogExplored, setFogExplored] = useState<boolean[][]>(() => computeVisible([{ x: BARN_POS.x, y: BARN_POS.y, r: BARN_VISION }]));
+  const [fogExplored, setFogExplored] = useState<boolean[][]>(() => INITIAL_SAVE?.fogExplored ?? computeVisible([{ x: BARN_POS.x, y: BARN_POS.y, r: BARN_VISION }]));
   const [dragBox, setDragBox] = useState<{ start: { x: number; y: number }; end: { x: number; y: number } } | null>(null);
   const isDraggingRef = useRef(false);
   const [buildMode, setBuildMode] = useState<BuildingType | null>(null);
   const [ghostTile, setGhostTile] = useState<{ x: number; y: number } | null>(null);
-  const [placedBuildings, setPlacedBuildings] = useState<PlacedBuilding[]>([]);
-  const buildingIdRef = useRef(1);
+  const [placedBuildings, setPlacedBuildings] = useState<PlacedBuilding[]>(() => INITIAL_SAVE?.placedBuildings ?? []);
+  const buildingIdRef = useRef(INITIAL_SAVE?.buildingNextId ?? 1);
   const placedBuildingsRef = useRef(placedBuildings);
   useEffect(() => { placedBuildingsRef.current = placedBuildings; }, [placedBuildings]);
   const [controlGroups, setControlGroups] = useState<Record<number, number[]>>({});
-  const [resources, setResources] = useState<Resources>({ gold: 0, lumber: 0, stone: 0, food: 2, foodCap: FOOD_CAP_BASE });
+  const [resources, setResources] = useState<Resources>(() => INITIAL_SAVE?.resources ?? { gold: 0, lumber: 0, stone: 0, food: 2, foodCap: FOOD_CAP_BASE });
 
-  const [trees, setTrees] = useState<ResourceNode[]>([
+  const DEFAULT_TREES: ResourceNode[] = [
     { x: 2, y: 2, amount: 50 }, { x: 6, y: 3, amount: 50 }, { x: 4, y: 7, amount: 50 },
     { x: 7, y: 6, amount: 50 }, { x: 3, y: 9, amount: 50 }, { x: 9, y: 3, amount: 50 },
     { x: 10, y: 10, amount: 50 }, { x: 1, y: 10, amount: 50 }, { x: 11, y: 2, amount: 50 },
     { x: 8, y: 9, amount: 50 },
-  ]);
-  const [goldMine, setGoldMine] = useState<ResourceNode>({ x: 1, y: 7, amount: 100 });
-  const [stoneNodes, setStoneNodes] = useState<ResourceNode[]>([
+  ];
+  const [trees, setTrees] = useState<ResourceNode[]>(() => INITIAL_SAVE?.trees ?? DEFAULT_TREES);
+  const [goldMine, setGoldMine] = useState<ResourceNode>(() => INITIAL_SAVE?.goldMine ?? { x: 1, y: 7, amount: 100 });
+  const [stoneNodes, setStoneNodes] = useState<ResourceNode[]>(() => INITIAL_SAVE?.stoneNodes ?? [
     { x: 9, y: 1, amount: 100 }, { x: 11, y: 5, amount: 100 }, { x: 0, y: 5, amount: 100 },
     { x: 5, y: 11, amount: 100 }, { x: 10, y: 7, amount: 100 },
   ]);
@@ -202,20 +252,14 @@ const RTSMap: React.FC = () => {
   useEffect(() => { goldMineRef.current = goldMine; }, [goldMine]);
   useEffect(() => { stoneNodesRef.current = stoneNodes; }, [stoneNodes]);
 
-  const makeWorker = (id: number, x: number, y: number): WorkerState => ({
-    id, x, y, selected: false, movingTo: null, path: [], gathering: null, attacking: null,
-    carrying: { gold: 0, lumber: 0, stone: 0 }, state: 'idle', group: null, hp: WORKER_MAX_HP, maxHp: WORKER_MAX_HP, patrol: null, unitType: 'farmer',
-  });
+  const makeWorker = (id: number, x: number, y: number) => makeUnit(id, x, y, 'farmer');
+  const makeSwordsman = (id: number, x: number, y: number) => makeUnit(id, x, y, 'swordsman');
 
-  const makeSwordsman = (id: number, x: number, y: number): WorkerState => ({
-    id, x, y, selected: false, movingTo: null, path: [], gathering: null, attacking: null,
-    carrying: { gold: 0, lumber: 0, stone: 0 }, state: 'idle', group: null, hp: SWORDSMAN_MAX_HP, maxHp: SWORDSMAN_MAX_HP, patrol: null, unitType: 'swordsman',
-  });
-
-  const [workers, setWorkers] = useState<WorkerState[]>([
-    { ...makeWorker(1, 5, 5), selected: true },
-    makeWorker(2, 7, 7),
-  ]);
+  const [workers, setWorkers] = useState<WorkerState[]>(() =>
+    INITIAL_SAVE?.workers?.length
+      ? INITIAL_SAVE.workers.map(w => ({ ...makeUnit(w.id, w.x, w.y, w.unitType), hp: w.hp, maxHp: w.maxHp, group: w.group }))
+      : [{ ...makeUnit(1, 5, 5, 'farmer'), selected: true }, makeUnit(2, 7, 7, 'farmer')]
+  );
   const workersRef = useRef(workers);
   useEffect(() => { workersRef.current = workers; }, [workers]);
 
@@ -225,8 +269,8 @@ const RTSMap: React.FC = () => {
   const gruntIdRef = useRef(1);
   const gruntAttackTimeoutsRef = useRef<Record<number, number>>({});
 
-  const [wave, setWave] = useState(0);
-  const waveRef = useRef(0);
+  const [wave, setWave] = useState(() => INITIAL_SAVE?.wave ?? 0);
+  const waveRef = useRef(INITIAL_SAVE?.wave ?? 0);
   const [waveAnnouncement, setWaveAnnouncement] = useState<string | null>(null);
   const gameOverRef = useRef<'victory' | 'defeat' | null>(null);
   const spawnTimerRef = useRef<number | null>(null);
@@ -234,31 +278,72 @@ const RTSMap: React.FC = () => {
   const gameSpeedRef = useRef(1);
   useEffect(() => { gameSpeedRef.current = gameSpeed; }, [gameSpeed]);
 
-  const [enemyBarnHp, setEnemyBarnHp] = useState(ENEMY_BARN_MAX_HP);
-  const [playerBarnHp, setPlayerBarnHp] = useState(PLAYER_BARN_MAX_HP);
-  const playerBarnHpRef = useRef(PLAYER_BARN_MAX_HP);
+  const [enemyBarnHp, setEnemyBarnHp] = useState(() => INITIAL_SAVE?.enemyBarnHp ?? ENEMY_BARN_MAX_HP);
+  const [playerBarnHp, setPlayerBarnHp] = useState(() => INITIAL_SAVE?.playerBarnHp ?? PLAYER_BARN_MAX_HP);
+  const playerBarnHpRef = useRef(INITIAL_SAVE?.playerBarnHp ?? PLAYER_BARN_MAX_HP);
   useEffect(() => { playerBarnHpRef.current = playerBarnHp; }, [playerBarnHp]);
   const [gameOver, setGameOver] = useState<'victory' | 'defeat' | null>(null);
   useEffect(() => { gameOverRef.current = gameOver; }, [gameOver]);
-  const [killCount, setKillCount] = useState(0);
-  const [totalGold, setTotalGold] = useState(0);
-  const [totalLumber, setTotalLumber] = useState(0);
+  const [killCount, setKillCount] = useState(() => INITIAL_SAVE?.killCount ?? 0);
+  const [totalGold, setTotalGold] = useState(() => INITIAL_SAVE?.totalGold ?? 0);
+  const [totalLumber, setTotalLumber] = useState(() => INITIAL_SAVE?.totalLumber ?? 0);
   const startTimeRef = useRef(Date.now());
   const [gameEndTime, setGameEndTime] = useState<number | null>(null);
   useEffect(() => { if (gameOver && !gameEndTime) setGameEndTime(Date.now()); }, [gameOver, gameEndTime]);
 
-  const [farmhouse, setFarmhouse] = useState<{ built: boolean; level: number }>({ built: false, level: 0 });
+  const [farmhouse, setFarmhouse] = useState<{ built: boolean; level: number }>(() => INITIAL_SAVE?.farmhouse ?? { built: false, level: 0 });
   const farmhouseUpgradeCosts = [{ gold: 50, lumber: 50 }, { gold: 100, lumber: 100 }, { gold: 200, lumber: 200 }];
   const farmhouseStorage = [{ gold: 100, lumber: 100 }, { gold: 200, lumber: 200 }, { gold: 400, lumber: 400 }];
   const maxFarmhouseLevel = farmhouseUpgradeCosts.length - 1;
   const [selectedType, setSelectedType] = useState<'worker' | 'farmhouse' | null>('worker');
-  const [rallyPoint, setRallyPoint] = useState<{ x: number; y: number } | null>(null);
+  const [rallyPoint, setRallyPoint] = useState<{ x: number; y: number } | null>(() => INITIAL_SAVE?.rallyPoint ?? null);
   const [patrolMode, setPatrolMode] = useState(false);
   const patrolModeRef = useRef(false);
   useEffect(() => { patrolModeRef.current = patrolMode; }, [patrolMode]);
-  const [upgrades, setUpgrades] = useState<Upgrades>({ sharperTools: 0, swiftHarvest: 0, ironWill: 0 });
+  const [upgrades, setUpgrades] = useState<Upgrades>(() => INITIAL_SAVE?.upgrades ?? { sharperTools: 0, swiftHarvest: 0, ironWill: 0 });
   const upgradesRef = useRef(upgrades);
   useEffect(() => { upgradesRef.current = upgrades; }, [upgrades]);
+
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle');
+
+  const doSave = useCallback(() => {
+    writeSave({
+      version: 1,
+      resources,
+      workers: workersRef.current.map(w => ({ id: w.id, x: Math.round(w.x), y: Math.round(w.y), hp: w.hp, maxHp: w.maxHp, unitType: w.unitType, group: w.group })),
+      trees: treesRef.current,
+      goldMine: goldMineRef.current,
+      stoneNodes: stoneNodesRef.current,
+      placedBuildings: placedBuildingsRef.current,
+      buildingNextId: buildingIdRef.current,
+      farmhouse,
+      upgrades: upgradesRef.current,
+      wave: waveRef.current,
+      killCount,
+      totalGold,
+      totalLumber,
+      playerBarnHp: playerBarnHpRef.current,
+      enemyBarnHp,
+      rallyPoint,
+      fogExplored,
+    });
+    setSaveStatus('saved');
+    setTimeout(() => setSaveStatus('idle'), 2000);
+  }, [resources, farmhouse, killCount, totalGold, totalLumber, enemyBarnHp, rallyPoint, fogExplored]);
+
+  // Auto-save every 30 seconds
+  useEffect(() => {
+    if (gameOver) return;
+    const id = setInterval(doSave, 30000);
+    return () => clearInterval(id);
+  }, [gameOver, doSave]);
+
+  // Save on tab close
+  useEffect(() => {
+    const handler = () => { if (!gameOverRef.current) doSave(); };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [doSave]);
 
   const gatherTimeoutsRef = useRef<Record<number, number>>({});
   const attackTimeoutsRef = useRef<Record<number, number>>({});
@@ -933,7 +1018,7 @@ const RTSMap: React.FC = () => {
                 <Stat label="Time" value={timeStr} color="#94a3b8" />
               </div>
             </div>
-            <button className="rounded-lg border-2 border-amber-500 bg-amber-500/20 px-8 py-3 text-lg text-amber-200 hover:bg-amber-500/40" onClick={() => window.location.reload()}>
+            <button className="rounded-lg border-2 border-amber-500 bg-amber-500/20 px-8 py-3 text-lg text-amber-200 hover:bg-amber-500/40" onClick={() => { clearSave(); window.location.reload(); }}>
               Play Again
             </button>
           </div>
@@ -970,6 +1055,12 @@ const RTSMap: React.FC = () => {
         ) : (
           <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 400 }}>WASD pan · scroll zoom · Ctrl+1-9 groups · P patrol</span>
         )}
+        <button onClick={doSave} style={{ background: saveStatus === 'saved' ? 'rgba(74,222,128,0.2)' : 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', color: saveStatus === 'saved' ? '#4ade80' : '#94a3b8', padding: '2px 10px', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>
+          {saveStatus === 'saved' ? '✓ Saved' : '💾 Save'}
+        </button>
+        <button onClick={() => { clearSave(); window.location.reload(); }} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#fca5a5', padding: '2px 10px', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>
+          🗑 New Game
+        </button>
       </div>
 
       {/* Control group chips */}
