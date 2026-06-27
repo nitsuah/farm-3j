@@ -59,6 +59,10 @@ interface RTSUIProps {
   selectedType: 'worker' | 'farmhouse' | null;
   selectedWorkers: WorkerState[];
   hasBarracks: boolean;
+  garrisonedCount: number;
+  garrisonCap: number;
+  onGarrison: () => void;
+  onUngarrison: () => void;
   farmhouse: { built: boolean; level: number };
   farmhouseUpgradeCosts: { gold: number; lumber: number }[];
   farmhouseStorage: { gold: number; lumber: number }[];
@@ -104,6 +108,10 @@ export const RTSUI: React.FC<RTSUIProps> = ({
   playerBarnHp,
   playerBarnMaxHp,
   hasBarracks,
+  garrisonedCount,
+  garrisonCap,
+  onGarrison,
+  onUngarrison,
 }) => {
   const selectedCount = selectedWorkers.length;
   const firstWorker = selectedWorkers[0] ?? null;
@@ -185,6 +193,12 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                   Storage: {farmhouseStorage[farmhouse.level - 1]?.gold ?? '?'}🪙 Pop: {resources.food}/{resources.foodCap}
                 </div>
               )}
+              {garrisonedCount > 0 && (
+                <div className="mt-0.5 flex items-center gap-2">
+                  <span className="text-xs text-sky-300">🏰 {garrisonedCount} garrisoned · healing</span>
+                  <button className="rounded border border-sky-500/60 bg-sky-900/30 px-1.5 py-0.5 text-xs text-sky-200 hover:bg-sky-500/30" onClick={onUngarrison}>🚪 Deploy</button>
+                </div>
+              )}
             </>
           ) : buildMode ? (
             <>
@@ -238,6 +252,14 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                 title="Patrol [P] — right-click two points to set patrol route"
               >
                 {patrolMode ? '🔄 Set Patrol…' : '🔄 Patrol'}
+              </button>
+              <button
+                className="col-span-2 rounded border border-sky-500/70 bg-sky-500/15 px-2 py-2 text-xs text-sky-100 hover:bg-sky-500/30 disabled:opacity-40"
+                onClick={onGarrison}
+                disabled={garrisonedCount >= garrisonCap}
+                title={`Garrison in barn [right-click barn] — ${garrisonedCount}/${garrisonCap} slots · +5 HP/s heal · barn gains armor`}
+              >
+                🏰 Garrison ({garrisonedCount}/{garrisonCap})
               </button>
             </div>
           )}

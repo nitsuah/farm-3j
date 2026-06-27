@@ -28,6 +28,10 @@ const GRUNT_SPAWN_MS = 25000;
 const REPAIR_INTERVAL_MS = 2000;
 const REPAIR_AMOUNT = 2;
 const REPAIR_RADIUS = 3;
+const GARRISON_CAP = 5;
+const GARRISON_HEAL_MS = 1000;
+const GARRISON_HEAL_AMOUNT = 5;
+const GARRISON_ARMOR_PER_UNIT = 2;
 const ARCHER_TOWER_POS = { x: 8, y: 9 };
 const ARCHER_TOWER_RANGE = 4;
 const ARCHER_TOWER_DAMAGE = 10;
@@ -284,6 +288,10 @@ const RTSMap: React.FC = () => {
   useEffect(() => { playerBarnHpRef.current = playerBarnHp; }, [playerBarnHp]);
   const [gameOver, setGameOver] = useState<'victory' | 'defeat' | null>(null);
   useEffect(() => { gameOverRef.current = gameOver; }, [gameOver]);
+
+  const [garrisoned, setGarrisoned] = useState<WorkerState[]>([]);
+  const garrisonedRef = useRef(garrisoned);
+  useEffect(() => { garrisonedRef.current = garrisoned; }, [garrisoned]);
   const [killCount, setKillCount] = useState(() => INITIAL_SAVE?.killCount ?? 0);
   const [totalGold, setTotalGold] = useState(() => INITIAL_SAVE?.totalGold ?? 0);
   const [totalLumber, setTotalLumber] = useState(() => INITIAL_SAVE?.totalLumber ?? 0);
@@ -477,6 +485,45 @@ const RTSMap: React.FC = () => {
     }, 5000);
     return () => clearInterval(id);
   }, [placedBuildings, gameOver, addFloatingText]);
+
+  // Garrison heal
+  useEffect(() => {
+    if (gameOver) return;
+    const id = setInterval(() => {
+      if (gameOverRef.current) return;
+      setGarrisoned(gs => {
+        const healed = gs.map(u => u.hp < u.maxHp ? { ...u, hp: Math.min(u.maxHp, u.hp + GARRISON_HEAL_AMOUNT) } : u);
+        return healed;
+      });
+    }, GARRISON_HEAL_MS);
+    return () => clearInterval(id);
+  }, [gameOver]);
+
+  const handleGarrison = useCallback(() => {
+    setWorkers(ws => {
+      const slots = GARRISON_CAP - garrisonedRef.current.length;
+      if (slots <= 0) return ws;
+      const toGarrison = ws.filter(w => w.selected).slice(0, slots);
+      if (toGarrison.length === 0) return ws;
+      const ids = new Set(toGarrison.map(w => w.id));
+      setGarrisoned(g => [...g, ...toGarrison.map(w => ({ ...w, selected: false, state: 'idle' as const, movingTo: null, path: [], gathering: null, attacking: null, patrol: null }))]);
+      setResources(r => ({ ...r, food: r.food - toGarrison.length }));
+      return ws.filter(w => !ids.has(w.id));
+    });
+  }, []);
+
+  const handleUngarrison = useCallback(() => {
+    const units = garrisonedRef.current;
+    if (units.length === 0) return;
+    setGarrisoned([]);
+    setWorkers(ws => {
+      const newId = Math.max(...ws.map(w => w.id), ...units.map(u => u.id), 0);
+      void newId;
+      const deployed = units.map((u, i) => ({ ...u, x: BARN_POS.x + (i % 3) - 1, y: BARN_POS.y + Math.floor(i / 3) + 1 }));
+      setResources(r => ({ ...r, food: r.food + units.length }));
+      return [...ws, ...deployed];
+    });
+  }, []);
 
   const isTileOccupied = useCallback((x: number, y: number): boolean => {
     if (x < 0 || y < 0 || x >= GRID_SIZE || y >= GRID_SIZE) return true;
@@ -874,7 +921,9 @@ const RTSMap: React.FC = () => {
           if (!gruntAttackTimeoutsRef.current[g.id]) {
             gruntAttackTimeoutsRef.current[g.id] = window.setTimeout(() => {
               delete gruntAttackTimeoutsRef.current[g.id];
-              setPlayerBarnHp(hp => { const nHp = Math.max(0, hp - GRUNT_DAMAGE); if (nHp <= 0) setGameOver('defeat'); return nHp; });
+              const barnArmor = Math.min(8, garrisonedRef.current.length * GARRISON_ARMOR_PER_UNIT);
+              const barnDmg = Math.max(1, GRUNT_DAMAGE - barnArmor);
+              setPlayerBarnHp(hp => { const nHp = Math.max(0, hp - barnDmg); if (nHp <= 0) setGameOver('defeat'); return nHp; });
               addFloatingText(BARN_POS.x, BARN_POS.y, `-${GRUNT_DAMAGE}`, '#ef4444');
             }, GRUNT_ATTACK_MS);
           }
@@ -1284,14 +1333,23 @@ const RTSMap: React.FC = () => {
 
           {/* Player barn */}
           {(() => { const { isoX, isoY } = tileToSvg(BARN_POS.x, BARN_POS.y); const hpPct = playerBarnHp / PLAYER_BARN_MAX_HP;
+            const hasGarrison = garrisoned.length > 0;
             return <g style={{ cursor: 'pointer' }}
               onClick={() => { if (!buildMode) { setSelectedType('farmhouse'); setWorkers(ws => ws.map(w => ({ ...w, selected: false }))); } }}
-              onContextMenu={e => { e.preventDefault(); if (selectedType === 'farmhouse') { const coords = clientToSvg(e.clientX, e.clientY); if (coords) { const { tx, ty } = svgToTile(coords.x, coords.y); setRallyPoint({ x: tx, y: ty }); } } }}>
-              <rect x={isoX} y={isoY} width={TILE_SIZE} height={TILE_SIZE} fill="#fde68a" stroke="#b45309" strokeWidth={6} rx={12} />
+              onContextMenu={e => {
+                e.preventDefault();
+                if (anySelected && selectedType === 'worker') { handleGarrison(); return; }
+                if (selectedType === 'farmhouse') { const coords = clientToSvg(e.clientX, e.clientY); if (coords) { const { tx, ty } = svgToTile(coords.x, coords.y); setRallyPoint({ x: tx, y: ty }); } }
+              }}>
+              <rect x={isoX} y={isoY} width={TILE_SIZE} height={TILE_SIZE} fill="#fde68a" stroke={hasGarrison ? '#22d3ee' : '#b45309'} strokeWidth={hasGarrison ? 5 : 6} rx={12} />
               <polygon points={[[isoX, isoY], [isoX + TILE_SIZE / 2, isoY - 32], [isoX + TILE_SIZE, isoY]].map(p => p.join(',')).join(' ')} fill="#b91c1c" stroke="#7f1d1d" strokeWidth={4} />
               <text x={isoX + TILE_SIZE / 2} y={isoY + 44} textAnchor="middle" fontSize="22">🏚️</text>
               <rect x={isoX - 8} y={isoY - 14} width={TILE_SIZE + 16} height={8} fill="#1e293b" rx={4} />
               <rect x={isoX - 8} y={isoY - 14} width={(TILE_SIZE + 16) * hpPct} height={8} fill={hpPct > 0.5 ? '#4ade80' : hpPct > 0.25 ? '#fbbf24' : '#ef4444'} rx={4} />
+              {hasGarrison && <>
+                <circle cx={isoX + TILE_SIZE - 6} cy={isoY + 10} r={10} fill="#0c4a6e" stroke="#22d3ee" strokeWidth={2} />
+                <text x={isoX + TILE_SIZE - 6} y={isoY + 14} textAnchor="middle" fontSize="10" fill="#7dd3fc" fontWeight="bold">{garrisoned.length}</text>
+              </>}
             </g>; })()}
 
           {/* Enemy grunts */}
@@ -1391,6 +1449,10 @@ const RTSMap: React.FC = () => {
         upgrades={upgrades}
         onResearch={handleResearch}
         hasBarracks={placedBuildings.some(b => b.type === 'barracks')}
+        garrisonedCount={garrisoned.length}
+        garrisonCap={GARRISON_CAP}
+        onGarrison={handleGarrison}
+        onUngarrison={handleUngarrison}
         minimapData={minimapData}
         enemyBarnHp={enemyBarnHp}
         enemyBarnMaxHp={ENEMY_BARN_MAX_HP}
