@@ -31,6 +31,8 @@
 - **Farm RTS: Kill Counter & Score** — Live ☠ kill counter in the HUD; on game end a "Battle Report" overlay shows waves survived, grunts killed, gold mined, lumber cut, workers alive, and time played.
 - **Farm RTS: Enemy Archer Tower** — A defensive archer tower guards the enemy base at a fixed position near the enemy barn; fires 🏹 arrows at the nearest worker within 4 tiles every 2.5 seconds (10 damage); tower disappears when the enemy barn is destroyed.
 - **Farm RTS: Worker Patrol** — Selected workers can be sent on patrol between two waypoints [P key or Patrol button]; workers automatically walk back and forth indefinitely; dashed cyan route line shown when patrol worker is selected; Stop command cancels patrol.
+- **Farm RTS: Palisade Wall** — Buildable wall structures (15🪙 25🌲) that block enemy grunt pathfinding; workers and player units pass through freely; grunts must route around walls enabling tactical chokepoints near the player barn.
+- **Farm RTS: Windmill** — Passive income building (60🪙 40🌲) that generates +2 gold every 5 seconds; floating gold text shown at each mill tick; stack multiple windmills for escalating passive economy similar to AoE's market/tribute mechanics.
 
 ## Planned
 

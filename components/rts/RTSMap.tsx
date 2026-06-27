@@ -35,7 +35,7 @@ const ARCHER_TOWER_ATTACK_MS = 2500;
 
 interface FloatingText { id: number; x: number; y: number; text: string; color: string; createdAt: number }
 type TileType = 'grass' | 'dirt' | 'water' | 'tree' | 'rock';
-type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower';
+type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill';
 
 interface ResourceNode { x: number; y: number; amount: number }
 interface Resources { gold: number; lumber: number; stone: number; food: number; foodCap: number }
@@ -58,10 +58,12 @@ const BUILDING_COSTS: Record<BuildingType, { gold: number; lumber: number; stone
   farmhouse: { gold: 60, lumber: 30, stone: 0, label: 'Farmhouse', foodCapBonus: 5 },
   lumberShed: { gold: 40, lumber: 60, stone: 0, label: 'Lumber Shed', foodCapBonus: 0 },
   watchtower: { gold: 80, lumber: 0, stone: 60, label: 'Watchtower', foodCapBonus: 0 },
+  wall:       { gold: 15, lumber: 25, stone: 0, label: 'Palisade Wall', foodCapBonus: 0 },
+  windmill:   { gold: 60, lumber: 40, stone: 0, label: 'Windmill', foodCapBonus: 0 },
 };
 
 const BUILDING_EMOJI: Record<BuildingType, string> = {
-  farmhouse: '🏠', lumberShed: '🪵', watchtower: '🗼',
+  farmhouse: '🏠', lumberShed: '🪵', watchtower: '🗼', wall: '🧱', windmill: '💨',
 };
 
 function makeTiles(): TileType[][] {
@@ -97,11 +99,13 @@ function aStar(
   tiles: TileType[][],
   start: { x: number; y: number },
   goal: { x: number; y: number },
-  allowPassThroughGoal = true
+  allowPassThroughGoal = true,
+  extraBlocked?: Set<string>
 ): { x: number; y: number }[] {
   const isPassable = (x: number, y: number): boolean => {
     if (x < 0 || y < 0 || x >= GRID_SIZE || y >= GRID_SIZE) return false;
     if (x === goal.x && y === goal.y && allowPassThroughGoal) return true;
+    if (extraBlocked?.has(`${x},${y}`)) return false;
     return tiles[x]?.[y] !== 'water';
   };
 
@@ -171,6 +175,8 @@ const RTSMap: React.FC = () => {
   const [ghostTile, setGhostTile] = useState<{ x: number; y: number } | null>(null);
   const [placedBuildings, setPlacedBuildings] = useState<PlacedBuilding[]>([]);
   const buildingIdRef = useRef(1);
+  const placedBuildingsRef = useRef(placedBuildings);
+  useEffect(() => { placedBuildingsRef.current = placedBuildings; }, [placedBuildings]);
   const [controlGroups, setControlGroups] = useState<Record<number, number[]>>({});
   const [resources, setResources] = useState<Resources>({ gold: 0, lumber: 0, stone: 0, food: 2, foodCap: FOOD_CAP_BASE });
 
@@ -297,7 +303,8 @@ const RTSMap: React.FC = () => {
       const ox = i === 0 ? 1 : -1;
       const cx = Math.max(0, Math.min(GRID_SIZE - 1, ENEMY_BARN_POS.x + ox));
       const cy = Math.max(0, Math.min(GRID_SIZE - 1, ENEMY_BARN_POS.y + (Math.random() > 0.5 ? 1 : -1)));
-      const path = aStar(INITIAL_TILES, { x: cx, y: cy }, BARN_POS);
+      const wallSet = new Set(placedBuildingsRef.current.filter(b => b.type === 'wall').map(b => `${b.x},${b.y}`));
+      const path = aStar(INITIAL_TILES, { x: cx, y: cy }, BARN_POS, true, wallSet);
       const grunt: EnemyGrunt = { id: gruntIdRef.current++, x: cx, y: cy, hp: gruntHp, maxHp: gruntHp, movingTo: path[0] ?? BARN_POS, path: path.slice(1), state: 'moving' };
       setEnemyGrunts(gs => [...gs, grunt]);
     }
@@ -331,6 +338,20 @@ const RTSMap: React.FC = () => {
     archerTowerTimerRef.current = window.setTimeout(fireArrow, ARCHER_TOWER_ATTACK_MS);
     return () => { if (archerTowerTimerRef.current) { clearTimeout(archerTowerTimerRef.current); archerTowerTimerRef.current = null; } };
   }, [gameOver, addFloatingText]);
+
+  // Windmill passive gold income
+  useEffect(() => {
+    if (gameOver) return;
+    const mills = placedBuildings.filter(b => b.type === 'windmill');
+    if (mills.length === 0) return;
+    const id = setInterval(() => {
+      if (gameOverRef.current) return;
+      const income = mills.length * 2;
+      setResources(r => ({ ...r, gold: r.gold + income }));
+      mills.forEach(m => addFloatingText(m.x, m.y, `+${income / mills.length}🪙`, '#fde68a'));
+    }, 5000);
+    return () => clearInterval(id);
+  }, [placedBuildings, gameOver, addFloatingText]);
 
   const isTileOccupied = useCallback((x: number, y: number): boolean => {
     if (x < 0 || y < 0 || x >= GRID_SIZE || y >= GRID_SIZE) return true;
@@ -701,7 +722,7 @@ const RTSMap: React.FC = () => {
             return { ...g, movingTo: null, path: [], state: 'attacking' };
           }
           // Move toward worker
-          const p = aStar(INITIAL_TILES, { x: Math.round(g.x), y: Math.round(g.y) }, { x: Math.round(nearWorker.x), y: Math.round(nearWorker.y) });
+          const p = aStar(INITIAL_TILES, { x: Math.round(g.x), y: Math.round(g.y) }, { x: Math.round(nearWorker.x), y: Math.round(nearWorker.y) }, true, new Set(placedBuildingsRef.current.filter(b => b.type === 'wall').map(b => `${b.x},${b.y}`)));
           const dx = nearWorker.x - g.x, dy = nearWorker.y - g.y;
           const d = Math.sqrt(dx * dx + dy * dy);
           return { ...g, movingTo: p[0] ?? { x: nearWorker.x, y: nearWorker.y }, path: p.slice(1), state: 'moving', x: g.x + (dx / d) * Math.min(GRUNT_SPEED * dt, d), y: g.y + (dy / d) * Math.min(GRUNT_SPEED * dt, d) };
@@ -1033,8 +1054,27 @@ const RTSMap: React.FC = () => {
 
           {/* Placed buildings */}
           {placedBuildings.map(b => { const { isoX, isoY } = tileToSvg(b.x, b.y);
-            const colors = { farmhouse: { fill: '#fef3c7', stroke: '#92400e' }, lumberShed: { fill: '#a16207', stroke: '#78350f' }, watchtower: { fill: '#64748b', stroke: '#1e293b' } };
-            const c = colors[b.type];
+            if (b.type === 'wall') {
+              return <g key={`building-${b.id}`} pointerEvents="none">
+                {[0.15, 0.5, 0.85].map(f => (
+                  <rect key={f} x={isoX + TILE_SIZE * 2 * f - 5} y={isoY + TILE_SIZE * 0.05} width={10} height={TILE_SIZE * 0.55} fill="#78350f" stroke="#451a03" strokeWidth={2} rx={2} />
+                ))}
+                <rect x={isoX + TILE_SIZE / 6} y={isoY + TILE_SIZE * 0.18} width={TILE_SIZE * 1.7} height={10} fill="#a16207" stroke="#451a03" strokeWidth={2} rx={3} />
+                <rect x={isoX + TILE_SIZE / 6} y={isoY + TILE_SIZE * 0.33} width={TILE_SIZE * 1.7} height={10} fill="#92400e" stroke="#451a03" strokeWidth={2} rx={3} />
+              </g>;
+            }
+            if (b.type === 'windmill') {
+              return <g key={`building-${b.id}`} pointerEvents="none">
+                <rect x={isoX + TILE_SIZE * 0.3} y={isoY} width={TILE_SIZE * 1.4} height={TILE_SIZE * 0.75} fill="#fef9c3" stroke="#b45309" strokeWidth={3} rx={8} />
+                <line x1={isoX + TILE_SIZE} y1={isoY - 6} x2={isoX + TILE_SIZE} y2={isoY - 30} stroke="#6b7280" strokeWidth={4} />
+                <line x1={isoX + TILE_SIZE - 14} y1={isoY - 18} x2={isoX + TILE_SIZE + 14} y2={isoY - 18} stroke="#6b7280" strokeWidth={4} />
+                <circle cx={isoX + TILE_SIZE} cy={isoY - 18} r={5} fill="#374151" />
+                <text x={isoX + TILE_SIZE} y={isoY + TILE_SIZE * 0.52} textAnchor="middle" fontSize="20">💨</text>
+                <text x={isoX + TILE_SIZE} y={isoY - 34} textAnchor="middle" fontSize="9" fill="#fde68a" fontWeight="bold">+2🪙/5s</text>
+              </g>;
+            }
+            const colors: Record<string, { fill: string; stroke: string }> = { farmhouse: { fill: '#fef3c7', stroke: '#92400e' }, lumberShed: { fill: '#a16207', stroke: '#78350f' }, watchtower: { fill: '#64748b', stroke: '#1e293b' } };
+            const c = colors[b.type] ?? { fill: '#374151', stroke: '#1f2937' };
             return <g key={`building-${b.id}`}>
               <rect x={isoX + TILE_SIZE / 4} y={isoY} width={TILE_SIZE * 1.5} height={TILE_SIZE * 0.8} fill={c.fill} stroke={c.stroke} strokeWidth={3} rx={8} />
               <text x={isoX + TILE_SIZE} y={isoY + TILE_SIZE / 2} textAnchor="middle" fontSize="22">{BUILDING_EMOJI[b.type]}</text>
