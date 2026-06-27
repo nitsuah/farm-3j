@@ -15,7 +15,7 @@ export interface WorkerState {
   hp: number;
   maxHp: number;
   patrol: { a: { x: number; y: number }; b: { x: number; y: number }; heading: 'a' | 'b' } | null;
-  unitType: 'farmer' | 'swordsman';
+  unitType: 'farmer' | 'swordsman' | 'hero';
 }
 
 export type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks';
@@ -63,6 +63,10 @@ interface RTSUIProps {
   garrisonCap: number;
   onGarrison: () => void;
   onUngarrison: () => void;
+  heroRecruited: boolean;
+  heroAbilityCooldown: number;
+  onHeroAbility: () => void;
+  onRecruitHero: () => void;
   farmhouse: { built: boolean; level: number };
   farmhouseUpgradeCosts: { gold: number; lumber: number }[];
   farmhouseStorage: { gold: number; lumber: number }[];
@@ -112,7 +116,12 @@ export const RTSUI: React.FC<RTSUIProps> = ({
   garrisonCap,
   onGarrison,
   onUngarrison,
+  heroRecruited,
+  heroAbilityCooldown,
+  onHeroAbility,
+  onRecruitHero,
 }) => {
+  const isHeroSelected = selectedWorkers.some(w => w.unitType === 'hero');
   const selectedCount = selectedWorkers.length;
   const firstWorker = selectedWorkers[0] ?? null;
   const anyFarmers = selectedWorkers.some(w => w.unitType === 'farmer');
@@ -145,7 +154,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
           {selectedType === 'worker' && firstWorker ? (
             <>
               <div className="mt-1 text-sm font-semibold">
-                {allSwordsmen ? '⚔️ Swordsman' : firstWorker.unitType === 'swordsman' ? 'Mixed' : 'Farmer'}{selectedCount > 1 ? ` ×${selectedCount}` : ' #' + firstWorker.id}
+                {firstWorker.unitType === 'hero' ? '🦸 Barnabas' : allSwordsmen ? '⚔️ Swordsman' : firstWorker.unitType === 'swordsman' ? 'Mixed' : 'Farmer'}{selectedCount > 1 && firstWorker.unitType !== 'hero' ? ` ×${selectedCount}` : ''}
                 {firstWorker.group !== null && selectedCount === 1 && (
                   <span className="ml-2 rounded bg-amber-900/60 px-1.5 text-xs text-amber-300">G{firstWorker.group}</span>
                 )}
@@ -261,6 +270,16 @@ export const RTSUI: React.FC<RTSUIProps> = ({
               >
                 🏰 Garrison ({garrisonedCount}/{garrisonCap})
               </button>
+              {isHeroSelected && (
+                <button
+                  className={`col-span-4 rounded border px-2 py-2 text-xs font-semibold disabled:opacity-40 ${heroAbilityCooldown > 0 ? 'border-yellow-700/50 bg-yellow-900/20 text-yellow-600' : 'border-yellow-400 bg-yellow-500/20 text-yellow-200 hover:bg-yellow-500/30'}`}
+                  onClick={onHeroAbility}
+                  disabled={heroAbilityCooldown > 0}
+                  title="Rallying Cry — AoE damage to all grunts within 3.5 tiles"
+                >
+                  {heroAbilityCooldown > 0 ? `⚡ Rallying Cry (${heroAbilityCooldown}s)` : '⚡ Rallying Cry — AoE 30 dmg'}
+                </button>
+              )}
             </div>
           )}
 
@@ -307,6 +326,16 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                       title="Train Swordsman — 50🪙, 80HP, +10 dmg, cannot harvest"
                     >
                       ⚔️ Train Swordsman 50🪙
+                    </button>
+                  )}
+                  {hasBarracks && (
+                    <button
+                      className="col-span-2 rounded border border-yellow-400/70 bg-yellow-500/15 px-2 py-2 text-xs text-yellow-100 hover:bg-yellow-500/30 disabled:opacity-40"
+                      onClick={onRecruitHero}
+                      disabled={heroRecruited || resources.gold < 150 || resources.food >= resources.foodCap}
+                      title={heroRecruited ? 'Barnabas already recruited (one hero per game)' : 'Recruit Barnabas — 150🪙, 150HP, +20 dmg, ⚡ Rallying Cry ability'}
+                    >
+                      {heroRecruited ? '🦸 Hero Recruited' : '🦸 Recruit Hero 150🪙'}
                     </button>
                   )}
                   {(Object.keys(UPGRADE_META) as (keyof Upgrades)[]).map(key => {
