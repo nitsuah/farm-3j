@@ -304,6 +304,37 @@ const RTSMap: React.FC = () => {
   const upgradesRef = useRef(upgrades);
   useEffect(() => { upgradesRef.current = upgrades; }, [upgrades]);
 
+  // Day/Night cycle
+  const DAY_DURATION_MS = 60000;
+  const NIGHT_DURATION_MS = 45000;
+  const NIGHT_SPEED_MULT = 1.3;
+  const [dayPhase, setDayPhase] = useState<'day' | 'night'>('day');
+  const [dayProgress, setDayProgress] = useState(0); // 0-1 through current phase
+  const [phaseAnnouncement, setPhaseAnnouncement] = useState<string | null>(null);
+  const isNightRef = useRef(false);
+  useEffect(() => { isNightRef.current = dayPhase === 'night'; }, [dayPhase]);
+
+  useEffect(() => {
+    if (gameOver) return;
+    let phaseStart = Date.now();
+    let currentPhase: 'day' | 'night' = 'day';
+    const tick = setInterval(() => {
+      if (gameOverRef.current) return;
+      const elapsed = Date.now() - phaseStart;
+      const duration = currentPhase === 'day' ? DAY_DURATION_MS : NIGHT_DURATION_MS;
+      setDayProgress(Math.min(1, elapsed / duration));
+      if (elapsed >= duration) {
+        currentPhase = currentPhase === 'day' ? 'night' : 'day';
+        setDayPhase(currentPhase);
+        phaseStart = Date.now();
+        const msg = currentPhase === 'night' ? '🌙 Night Falls! Grunts grow stronger…' : '☀️ Dawn Breaks!';
+        setPhaseAnnouncement(msg);
+        setTimeout(() => setPhaseAnnouncement(null), 2500);
+      }
+    }, 250);
+    return () => clearInterval(tick);
+  }, [gameOver]);
+
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle');
 
   const doSave = useCallback(() => {
@@ -800,6 +831,7 @@ const RTSMap: React.FC = () => {
         if (kills > 0) setKillCount(k => k + kills);
         return survived;
       });
+      const gruntSpeedMult = isNightRef.current ? NIGHT_SPEED_MULT : 1;
       setEnemyGrunts(gs => gs.map(g => {
         // Proximity aggro: switch to attack nearest worker within 2 tiles
         const nearWorker = currentWorkers.find(w => w.hp > 0 && tileDist(g.x, g.y, w.x, w.y) <= 2);
@@ -822,7 +854,7 @@ const RTSMap: React.FC = () => {
           const p = aStar(INITIAL_TILES, { x: Math.round(g.x), y: Math.round(g.y) }, { x: Math.round(nearWorker.x), y: Math.round(nearWorker.y) }, true, new Set(placedBuildingsRef.current.filter(b => b.type === 'wall').map(b => `${b.x},${b.y}`)));
           const dx = nearWorker.x - g.x, dy = nearWorker.y - g.y;
           const d = Math.sqrt(dx * dx + dy * dy);
-          return { ...g, movingTo: p[0] ?? { x: nearWorker.x, y: nearWorker.y }, path: p.slice(1), state: 'moving', x: g.x + (dx / d) * Math.min(GRUNT_SPEED * dt, d), y: g.y + (dy / d) * Math.min(GRUNT_SPEED * dt, d) };
+          return { ...g, movingTo: p[0] ?? { x: nearWorker.x, y: nearWorker.y }, path: p.slice(1), state: 'moving', x: g.x + (dx / d) * Math.min(GRUNT_SPEED * gruntSpeedMult * dt, d), y: g.y + (dy / d) * Math.min(GRUNT_SPEED * gruntSpeedMult * dt, d) };
         }
 
         if (g.movingTo) {
@@ -836,7 +868,7 @@ const RTSMap: React.FC = () => {
             }
             return { ...g, x: g.movingTo.x, y: g.movingTo.y, movingTo: null, path: [], state: 'attacking' };
           }
-          return { ...g, x: g.x + (dx / d) * Math.min(GRUNT_SPEED * dt, d), y: g.y + (dy / d) * Math.min(GRUNT_SPEED * dt, d) };
+          return { ...g, x: g.x + (dx / d) * Math.min(GRUNT_SPEED * gruntSpeedMult * dt, d), y: g.y + (dy / d) * Math.min(GRUNT_SPEED * gruntSpeedMult * dt, d) };
         }
         if (g.state === 'attacking') {
           if (!gruntAttackTimeoutsRef.current[g.id]) {
@@ -1032,8 +1064,20 @@ const RTSMap: React.FC = () => {
         </div>
       )}
 
+      {phaseAnnouncement && (
+        <div style={{ position: 'absolute', top: '30%', left: '50%', transform: 'translateX(-50%)', background: dayPhase === 'night' ? 'rgba(15,10,40,0.95)' : 'rgba(120,80,0,0.92)', color: dayPhase === 'night' ? '#a5b4fc' : '#fde68a', fontSize: 24, fontWeight: 800, padding: '10px 28px', borderRadius: 12, zIndex: 24, pointerEvents: 'none', border: `2px solid ${dayPhase === 'night' ? '#6366f1' : '#fbbf24'}`, letterSpacing: 1 }}>
+          {phaseAnnouncement}
+        </div>
+      )}
+
       {/* Resource bar */}
-      <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: 48, background: 'rgba(15,23,42,0.97)', color: '#fff', display: 'flex', alignItems: 'center', padding: '0 24px', fontSize: 17, zIndex: 20, borderBottom: '3px solid #d97706', fontWeight: 700, gap: 24 }}>
+      <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: 48, background: dayPhase === 'night' ? 'rgba(10,8,30,0.97)' : 'rgba(15,23,42,0.97)', color: '#fff', display: 'flex', alignItems: 'center', padding: '0 24px', fontSize: 17, zIndex: 20, borderBottom: `3px solid ${dayPhase === 'night' ? '#6366f1' : '#d97706'}`, fontWeight: 700, gap: 24 }}>
+        <span style={{ color: dayPhase === 'night' ? '#a5b4fc' : '#fde68a', background: dayPhase === 'night' ? 'rgba(30,20,80,0.7)' : 'transparent', padding: '1px 8px', borderRadius: 6, fontSize: 14 }}>
+          {dayPhase === 'night' ? '🌙' : '☀️'}
+          <span style={{ display: 'inline-block', width: 36, height: 4, background: '#1e293b', borderRadius: 2, verticalAlign: 'middle', marginLeft: 4 }}>
+            <span style={{ display: 'block', width: `${(1 - dayProgress) * 100}%`, height: '100%', background: dayPhase === 'night' ? '#6366f1' : '#fbbf24', borderRadius: 2 }} />
+          </span>
+        </span>
         <span style={{ color: '#fde68a' }}>🪙 {resources.gold}</span>
         <span style={{ color: '#bbf7d0' }}>🌲 {resources.lumber}</span>
         <span style={{ color: '#cbd5e1' }}>🪨 {resources.stone}</span>
@@ -1308,6 +1352,11 @@ const RTSMap: React.FC = () => {
               const pts = [[isoX, isoY + TILE_SIZE / 2], [isoX + TILE_SIZE, isoY], [isoX + TILE_SIZE * 2, isoY + TILE_SIZE / 2], [isoX + TILE_SIZE, isoY + TILE_SIZE]].map(p => p.join(',')).join(' ');
               return <polygon key={`fog-${i}-${j}`} points={pts} fill={fogExplored[i]?.[j] ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.88)'} pointerEvents="none" />;
             })
+          )}
+
+          {/* Night overlay */}
+          {dayPhase === 'night' && (
+            <rect x={0} y={0} width={viewBoxW} height={viewBoxH} fill="rgba(15,10,40,0.35)" pointerEvents="none" />
           )}
 
           {/* Floating damage / heal texts */}
