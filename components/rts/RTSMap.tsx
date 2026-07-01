@@ -1760,12 +1760,12 @@ const RTSMap: React.FC = () => {
             <span style={{ display: 'block', width: `${(1 - dayProgress) * 100}%`, height: '100%', background: dayPhase === 'night' ? '#6366f1' : '#fbbf24', borderRadius: 2 }} />
           </span>
         </span>
-        <span style={{ color: '#fde68a' }}>🪙 {resources.gold}</span>
-        <span style={{ color: '#bbf7d0' }}>🌲 {resources.lumber}</span>
-        <span style={{ color: '#cbd5e1' }}>🪨 {resources.stone}</span>
+        <span style={{ color: resources.gold < 30 ? '#ef4444' : '#fde68a', fontWeight: resources.gold < 30 ? 700 : 400, animation: resources.gold < 30 ? 'pulse 1s infinite' : 'none' }}>🪙 {resources.gold}</span>
+        <span style={{ color: resources.lumber < 20 ? '#ef4444' : '#bbf7d0', fontWeight: resources.lumber < 20 ? 700 : 400, animation: resources.lumber < 20 ? 'pulse 1s infinite' : 'none' }}>🌲 {resources.lumber}</span>
+        <span style={{ color: resources.stone < 10 ? '#ef4444' : '#cbd5e1', fontWeight: resources.stone < 10 ? 700 : 400, animation: resources.stone < 10 ? 'pulse 1s infinite' : 'none' }}>🪨 {resources.stone}</span>
         {wave > 0 && <span style={{ color: '#f97316', background: 'rgba(249,115,22,0.15)', padding: '1px 10px', borderRadius: 6, fontSize: 14 }}>Wave {wave}</span>}
         {killCount > 0 && <span style={{ color: '#4ade80', fontSize: 14 }}>☠ {killCount}</span>}
-        <span style={{ color: '#fca5a5', marginLeft: 'auto' }}>👥 {resources.food}/{resources.foodCap}</span>
+        <span style={{ color: resources.food >= resources.foodCap ? '#ef4444' : '#fca5a5', fontWeight: resources.food >= resources.foodCap ? 700 : 400, marginLeft: 'auto', animation: resources.food >= resources.foodCap ? 'pulse 1s infinite' : 'none' }}>👥 {resources.food}/{resources.foodCap}{resources.food >= resources.foodCap ? ' ⚠' : ''}</span>
         {enemyGrunts.length > 0 && <span style={{ color: '#f97316', fontSize: 13 }}>⚠ {enemyGrunts.length} grunt{enemyGrunts.length > 1 ? 's' : ''}</span>}
         <button onClick={() => setGameSpeed(s => s === 1 ? 2 : 1)} style={{ background: gameSpeed === 2 ? 'rgba(251,191,36,0.3)' : 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', color: '#fde68a', padding: '2px 12px', borderRadius: 6, fontSize: 13, cursor: 'pointer', fontWeight: 700 }}>
           {gameSpeed === 1 ? '▶ 1×' : '▶▶ 2×'}
