@@ -1037,6 +1037,28 @@ const RTSMap: React.FC = () => {
                       }
                     }
                   }
+                  // Auto-gather: find nearest non-empty node of same type
+                  if (w.unitType === 'farmer' && w.gathering) {
+                    const gType2 = w.gathering.type;
+                    const wx2 = Math.round(w.movingTo.x), wy2 = Math.round(w.movingTo.y);
+                    if (gType2 === 'tree') {
+                      const alt = curTrees.reduce<{ node: typeof curTrees[0]; idx: number; d: number } | null>((best, t, i) => {
+                        if (t.amount <= 0) return best;
+                        const d = tileDist(wx2, wy2, t.x, t.y);
+                        return !best || d < best.d ? { node: t, idx: i, d } : best;
+                      }, null);
+                      if (alt) { const p = aStar(INITIAL_TILES, { x: wx2, y: wy2 }, { x: alt.node.x, y: alt.node.y }); return { ...w, x: w.movingTo.x, y: w.movingTo.y, movingTo: p[0] ?? alt.node, path: p.slice(1), carrying: { gold: 0, lumber: 0, stone: 0 }, state: 'moving', gathering: { type: 'tree', idx: alt.idx } }; }
+                    } else if (gType2 === 'gold') {
+                      // gold is a single node; if depleted, go idle
+                    } else if (gType2 === 'stone') {
+                      const alt = curStone.reduce<{ node: typeof curStone[0]; idx: number; d: number } | null>((best, n, i) => {
+                        if (n.amount <= 0) return best;
+                        const d = tileDist(wx2, wy2, n.x, n.y);
+                        return !best || d < best.d ? { node: n, idx: i, d } : best;
+                      }, null);
+                      if (alt) { const p = aStar(INITIAL_TILES, { x: wx2, y: wy2 }, { x: alt.node.x, y: alt.node.y }); return { ...w, x: w.movingTo.x, y: w.movingTo.y, movingTo: p[0] ?? alt.node, path: p.slice(1), carrying: { gold: 0, lumber: 0, stone: 0 }, state: 'moving', gathering: { type: 'stone', idx: alt.idx } }; }
+                    }
+                  }
                   return { ...w, x: w.movingTo.x, y: w.movingTo.y, movingTo: null, path: [], carrying: { gold: 0, lumber: 0, stone: 0 }, state: 'idle', gathering: null };
                 }
               }
