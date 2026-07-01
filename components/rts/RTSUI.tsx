@@ -8,7 +8,7 @@ export interface WorkerState {
   movingTo: null | { x: number; y: number };
   path: { x: number; y: number }[];
   gathering: null | { type: 'tree' | 'gold' | 'stone'; idx: number };
-  attacking: null | { targetType: 'enemyBarn' } | { targetType: 'grunt'; gruntId: number } | { targetType: 'creep'; creepId: number } | { targetType: 'enemyTower'; towerId: number };
+  attacking: null | { targetType: 'enemyBarn' } | { targetType: 'grunt'; gruntId: number } | { targetType: 'creep'; creepId: number } | { targetType: 'enemyTower'; towerId: number } | { targetType: 'siege'; siegeId: number };
   repairing: null | { buildingId: number };
   chargeCooldown: number;
   sprintCooldown: number;
@@ -125,6 +125,7 @@ interface RTSUIProps {
     stoneNodes: { x: number; y: number }[];
     treeNodes: { x: number; y: number }[];
     enemyTowers: { x: number; y: number }[];
+    warRams: { x: number; y: number }[];
   };
 }
 
@@ -642,6 +643,10 @@ export const RTSUI: React.FC<RTSUIProps> = ({
             {/* Grunts */}
             {minimapData.grunts.map((g, i) => (
               <circle key={i} cx={g.x} cy={g.y} r={0.55} fill="#f97316" />
+            ))}
+            {/* War Rams */}
+            {minimapData.warRams.map((r, i) => (
+              <rect key={`ram${i}`} x={r.x - 0.7} y={r.y - 0.5} width={1.4} height={1} fill="#7c2d12" stroke="#dc2626" strokeWidth={0.2} rx={0.15} />
             ))}
           </svg>
           <div className="mt-0.5 flex flex-wrap gap-x-2 text-[10px] text-slate-500">

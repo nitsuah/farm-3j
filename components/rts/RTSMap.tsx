@@ -66,6 +66,13 @@ const ENEMY_TOWER_DAMAGE = 9;
 const ENEMY_TOWER_RANGE = 4.5;
 const ENEMY_TOWER_ATTACK_MS = 2500;
 const ARCHER_TOWER_ATTACK_MS = 2500;
+const WAR_RAM_MAX_HP = 200;
+const WAR_RAM_SPEED = 0.3;
+const WAR_RAM_DAMAGE = 40;
+const WAR_RAM_ATTACK_MS = 3000;
+const WAR_RAM_GOLD_REWARD = 25;
+const WAR_RAM_XP_REWARD = 50;
+const WAR_RAM_FIRST_WAVE = 6;
 
 interface FloatingText { id: number; x: number; y: number; text: string; color: string; createdAt: number }
 type TileType = 'grass' | 'dirt' | 'water' | 'tree' | 'rock';
@@ -93,6 +100,18 @@ interface EnemyTower {
   y: number;
   hp: number;
   maxHp: number;
+}
+
+interface EnemySiege {
+  id: number;
+  x: number;
+  y: number;
+  hp: number;
+  maxHp: number;
+  movingTo: { x: number; y: number } | null;
+  path: { x: number; y: number }[];
+  state: 'moving' | 'attacking';
+  targetBuildingId: number | null;
 }
 
 interface NeutralCreep {
@@ -382,6 +401,10 @@ const RTSMap: React.FC = () => {
   const enemyTowersRef = useRef<EnemyTower[]>([]);
   useEffect(() => { enemyTowersRef.current = enemyTowers; }, [enemyTowers]);
   const enemyTowerTimersRef = useRef<Record<number, number>>({});
+  const [enemySiege, setEnemySiege] = useState<EnemySiege[]>([]);
+  const enemySiegeRef = useRef<EnemySiege[]>([]);
+  useEffect(() => { enemySiegeRef.current = enemySiege; }, [enemySiege]);
+  const siegeIdRef = useRef(1000);
   const [waveAnnouncement, setWaveAnnouncement] = useState<string | null>(null);
   const gameOverRef = useRef<'victory' | 'defeat' | null>(null);
   const spawnTimerRef = useRef<number | null>(null);
@@ -553,6 +576,7 @@ const RTSMap: React.FC = () => {
   const watchtowerTimersRef = useRef<Record<number, number>>({});
   const trapTriggeredRef = useRef<Record<number, number>>({});
   const buildingAttackTimeoutsRef = useRef<Record<number, number>>({});
+  const siegeAttackTimeoutsRef = useRef<Record<number, number>>({});
   const buildingRepairTimeoutsRef = useRef<Record<number, number>>({});
   const animationRef = useRef<number | null>(null);
   const prevTimeRef = useRef<number | null>(null);
@@ -628,6 +652,19 @@ const RTSMap: React.FC = () => {
       const path = aStar(INITIAL_TILES, { x: cx, y: cy }, BARN_POS, true, wallSet);
       const grunt: EnemyGrunt = { id: gruntIdRef.current++, x: cx, y: cy, hp: gruntHp, maxHp: gruntHp, movingTo: path[0] ?? BARN_POS, path: path.slice(1), state: 'moving' };
       setEnemyGrunts(gs => [...gs, grunt]);
+    }
+
+    // War Ram spawn: wave 6+ every 3 waves
+    if (newWave >= WAR_RAM_FIRST_WAVE && newWave % 3 === 0) {
+      const rx = Math.max(0, ENEMY_BARN_POS.x - 2);
+      const ry = ENEMY_BARN_POS.y;
+      const nearestBuilding = placedBuildingsRef.current.filter(b => b.hp > 0).reduce<PlacedBuilding | null>((best, b) => !best || tileDist(rx, ry, b.x, b.y) < tileDist(rx, ry, best.x, best.y) ? b : best, null);
+      const ramDest = nearestBuilding ?? BARN_POS;
+      const ramPath = aStar(INITIAL_TILES, { x: rx, y: ry }, { x: ramDest.x, y: ramDest.y }, true, wallSet);
+      const ram: EnemySiege = { id: siegeIdRef.current++, x: rx, y: ry, hp: WAR_RAM_MAX_HP, maxHp: WAR_RAM_MAX_HP, movingTo: ramPath[0] ?? { x: ramDest.x, y: ramDest.y }, path: ramPath.slice(1), state: 'moving', targetBuildingId: nearestBuilding?.id ?? -1 };
+      setEnemySiege(prev => [...prev, ram]);
+      setWaveAnnouncement(`🪵 Wave ${newWave} — WAR RAM INCOMING!`);
+      window.setTimeout(() => setWaveAnnouncement(null), 3000);
     }
 
     const nextDelay = Math.max(10000, GRUNT_SPAWN_MS - (newWave - 1) * 1500);
@@ -1155,6 +1192,8 @@ const RTSMap: React.FC = () => {
             if (nearGrunt) return { ...w, attacking: { targetType: 'grunt' as const, gruntId: nearGrunt.id }, state: 'attacking' as const, movingTo: null, path: [] };
             const nearCreep = neutralCreepsRef.current.find(c => c.hp > 0 && tileDist(w.x, w.y, c.x, c.y) <= AM_SCAN);
             if (nearCreep) return { ...w, attacking: { targetType: 'creep' as const, creepId: nearCreep.id }, state: 'attacking' as const, movingTo: null, path: [] };
+            const nearRam = enemySiegeRef.current.find(r => r.hp > 0 && tileDist(w.x, w.y, r.x, r.y) <= AM_SCAN);
+            if (nearRam) return { ...w, attacking: { targetType: 'siege' as const, siegeId: nearRam.id }, state: 'attacking' as const, movingTo: null, path: [] };
           }
           // When attack-move unit finishes its target, resume march to original destination
           if (w.attackMove && w.state === 'idle' && w.attackMoveTarget) {
@@ -1442,6 +1481,45 @@ const RTSMap: React.FC = () => {
                   addFloatingText(capturedTX, capturedTY, `-${dmg}`, '#ef4444');
                 }, moraleMs3);
               }
+            } else if (w.attacking.targetType === 'siege') {
+              const siegeId = (w.attacking as { targetType: 'siege'; siegeId: number }).siegeId;
+              const siegeTarget = enemySiegeRef.current.find(r => r.id === siegeId && r.hp > 0);
+              if (!siegeTarget) return { ...w, attacking: null, state: 'idle' };
+              const distToSiege = tileDist(w.x, w.y, siegeTarget.x, siegeTarget.y);
+              if (distToSiege > 1.8) {
+                const p = aStar(INITIAL_TILES, { x: Math.round(w.x), y: Math.round(w.y) }, { x: Math.round(siegeTarget.x), y: Math.round(siegeTarget.y) });
+                return { ...w, movingTo: p[0] ?? { x: siegeTarget.x, y: siegeTarget.y }, path: p.slice(1), state: 'moving' };
+              }
+              if (!attackT[w.id]) {
+                const capturedSX = Math.round(siegeTarget.x), capturedSY = Math.round(siegeTarget.y);
+                const capturedSiegeId = siegeId;
+                const unitBonusS = w.unitType === 'hero' ? HERO_DAMAGE_BONUS : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
+                const capturedVetS = w.level;
+                const moraleMs5 = getMoraleMs(w.x, w.y);
+                attackT[w.id] = window.setTimeout(() => {
+                  delete attackTimeoutsRef.current[w.id];
+                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + unitBonusS + capturedVetS * VETERAN_ATK_BONUS;
+                  setEnemySiege(rs => rs.map(r => r.id === capturedSiegeId ? { ...r, hp: Math.max(0, r.hp - dmg) } : r));
+                  addFloatingText(capturedSX, capturedSY, `-${dmg}`, '#ef4444');
+                  // XP for killing a ram
+                  const ramCurrent = enemySiegeRef.current.find(r => r.id === capturedSiegeId);
+                  if (ramCurrent && ramCurrent.hp - dmg <= 0) {
+                    setWorkers(ws2 => ws2.map(u => {
+                      const isAttacker = u.id === w.id;
+                      const isNearby = !isAttacker && u.hp > 0 && tileDist(u.x, u.y, capturedSX, capturedSY) <= 3;
+                      const xpGain = isAttacker ? WAR_RAM_XP_REWARD : isNearby ? Math.round(WAR_RAM_XP_REWARD * 0.25) : 0;
+                      if (xpGain === 0) return u;
+                      const newXp = u.xp + xpGain;
+                      const newLevel = newXp >= XP_TO_LEVEL_2 ? 2 : newXp >= XP_TO_LEVEL_1 ? 1 : 0;
+                      if (newLevel > u.level) {
+                        addFloatingText(Math.round(u.x), Math.round(u.y), `⭐ Level ${newLevel}!`, '#fbbf24');
+                        return { ...u, xp: newXp, level: newLevel, maxHp: u.maxHp + VETERAN_HP_BONUS, hp: Math.min(u.hp + VETERAN_HP_BONUS, u.maxHp + VETERAN_HP_BONUS) };
+                      }
+                      return { ...u, xp: newXp };
+                    }));
+                  }
+                }, moraleMs5);
+              }
             } else {
               if (!attackT[w.id]) {
                 const capturedWX = Math.round(w.x), capturedWY = Math.round(w.y);
@@ -1643,6 +1721,60 @@ const RTSMap: React.FC = () => {
         }
         return g;
       }));
+
+      // Update War Rams (enemy siege units)
+      setEnemySiege(rams => {
+        const survived = rams.filter(r => r.hp > 0);
+        const killed = rams.filter(r => r.hp <= 0);
+        if (killed.length > 0) {
+          killed.forEach(r => {
+            setResources(res => ({ ...res, gold: res.gold + WAR_RAM_GOLD_REWARD }));
+            addFloatingText(Math.round(r.x), Math.round(r.y), `+${WAR_RAM_GOLD_REWARD}🪙`, '#fbbf24');
+          });
+        }
+        return survived.map(r => {
+          // Move toward target building/barn
+          if (r.movingTo) {
+            const dx = r.movingTo.x - r.x, dy = r.movingTo.y - r.y;
+            const d = Math.sqrt(dx * dx + dy * dy);
+            if (d < 0.1) {
+              const next = r.path[0] ?? null;
+              return { ...r, x: r.movingTo.x, y: r.movingTo.y, movingTo: next, path: r.path.slice(1), state: next ? 'moving' as const : 'attacking' as const };
+            }
+            return { ...r, x: r.x + (dx / d) * Math.min(WAR_RAM_SPEED * dt, d), y: r.y + (dy / d) * Math.min(WAR_RAM_SPEED * dt, d) };
+          }
+          // Attack nearest building within range
+          const nearBuilding = placedBuildingsRef.current.filter(b => b.hp > 0).sort((a, b2) => tileDist(r.x, r.y, a.x, a.y) - tileDist(r.x, r.y, b2.x, b2.y))[0];
+          const barnDist = tileDist(r.x, r.y, BARN_POS.x, BARN_POS.y);
+          const buildingDist = nearBuilding ? tileDist(r.x, r.y, nearBuilding.x, nearBuilding.y) : Infinity;
+          if (buildingDist <= 1.2 && nearBuilding) {
+            if (!siegeAttackTimeoutsRef.current[r.id]) {
+              const bid = nearBuilding.id; const bx = nearBuilding.x; const by = nearBuilding.y;
+              siegeAttackTimeoutsRef.current[r.id] = window.setTimeout(() => {
+                delete siegeAttackTimeoutsRef.current[r.id];
+                setPlacedBuildings(bs => bs.map(b => b.id === bid ? { ...b, hp: Math.max(0, b.hp - WAR_RAM_DAMAGE) } : b));
+                addFloatingText(bx, by, `🪵-${WAR_RAM_DAMAGE}`, '#dc2626');
+              }, WAR_RAM_ATTACK_MS);
+            }
+            return { ...r, state: 'attacking' as const };
+          }
+          if (barnDist <= 1.2) {
+            if (!siegeAttackTimeoutsRef.current[r.id]) {
+              siegeAttackTimeoutsRef.current[r.id] = window.setTimeout(() => {
+                delete siegeAttackTimeoutsRef.current[r.id];
+                setPlayerBarnHp(hp => { const nHp = Math.max(0, hp - WAR_RAM_DAMAGE); if (nHp <= 0) setGameOver('defeat'); return nHp; });
+                addFloatingText(BARN_POS.x, BARN_POS.y, `🪵-${WAR_RAM_DAMAGE}`, '#dc2626');
+              }, WAR_RAM_ATTACK_MS);
+            }
+            return { ...r, state: 'attacking' as const };
+          }
+          // Re-path to nearest building or barn
+          const wallSetR = new Set(placedBuildingsRef.current.filter(b => b.type === 'wall').map(b => `${b.x},${b.y}`));
+          const dest = (nearBuilding && buildingDist < barnDist) ? { x: nearBuilding.x, y: nearBuilding.y } : BARN_POS;
+          const p = aStar(INITIAL_TILES, { x: Math.round(r.x), y: Math.round(r.y) }, dest, true, wallSetR);
+          return { ...r, movingTo: p[0] ?? dest, path: p.slice(1), state: 'moving' as const };
+        });
+      });
 
       // Update neutral creeps
       setNeutralCreeps(creeps => {
@@ -1919,6 +2051,21 @@ const RTSMap: React.FC = () => {
     }));
   }, [anySelected]);
 
+  const handleAttackSiege = useCallback((siegeId: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!anySelected) return;
+    const ram = enemySiegeRef.current.find(r => r.id === siegeId);
+    if (!ram) return;
+    const tx = Math.round(ram.x), ty = Math.round(ram.y);
+    setWorkers(ws => ws.map(w => {
+      if (!w.selected) return w;
+      const path = aStar(INITIAL_TILES, { x: Math.round(w.x), y: Math.round(w.y) }, { x: tx, y: ty });
+      const first = path[0] ?? { x: tx, y: ty };
+      return { ...w, movingTo: first, path: path.slice(1), gathering: null, attacking: { targetType: 'siege' as const, siegeId }, state: 'moving' };
+    }));
+  }, [anySelected]);
+
   const handleAttackCreep = useCallback((creepId: number, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -1945,7 +2092,8 @@ const RTSMap: React.FC = () => {
     goldNodes: goldMine.amount > 0 ? [{ x: goldMine.x, y: goldMine.y }] : [],
     stoneNodes: stoneNodes.filter(n => n.amount > 0).map(n => ({ x: n.x, y: n.y })),
     treeNodes: trees.filter(t => t.amount > 0).map(t => ({ x: t.x, y: t.y })),
-  }), [workers, enemyGrunts, enemyBarnHp, placedBuildings, clearedCamps, goldMine, stoneNodes, trees, enemyTowers]);
+    warRams: enemySiege.filter(r => r.hp > 0).map(r => ({ x: r.x, y: r.y })),
+  }), [workers, enemyGrunts, enemyBarnHp, placedBuildings, clearedCamps, goldMine, stoneNodes, trees, enemyTowers, enemySiege]);
 
   return (
     <div className="absolute inset-0 bg-black" onContextMenu={e => { if (buildMode) { e.preventDefault(); setBuildMode(null); setGhostTile(null); } }}>
@@ -2407,6 +2555,28 @@ const RTSMap: React.FC = () => {
                 <rect x={isoX + TILE_SIZE / 2 - 14} y={isoY - 4} width={28 * hp} height={4} fill="#ef4444" />
               </>)}
             </g>; })}
+
+          {/* War Rams (enemy siege units) */}
+          {enemySiege.filter(r => r.hp > 0).map(r => {
+            const { isoX, isoY } = tileToSvg(r.x, r.y);
+            const hp = r.hp / r.maxHp;
+            return <g key={`ram-${r.id}`} style={{ cursor: anySelected ? 'crosshair' : 'default' }} onContextMenu={e => handleAttackSiege(r.id, e)}>
+              {/* Ram body — thick wooden log frame */}
+              <rect x={isoX + TILE_SIZE / 2 - 26} y={isoY + 4} width={52} height={22} fill={r.state === 'attacking' ? '#7c2d12' : '#92400e'} stroke="#451a03" strokeWidth={3} rx={4} />
+              {/* Battering ram log */}
+              <rect x={isoX + TILE_SIZE / 2 - 20} y={isoY + 10} width={40} height={10} fill="#1c1917" stroke="#44403c" strokeWidth={2} rx={5} />
+              {/* Ram head metal tip */}
+              <polygon points={`${isoX + TILE_SIZE / 2 + 20},${isoY + 12} ${isoX + TILE_SIZE / 2 + 30},${isoY + 15} ${isoX + TILE_SIZE / 2 + 20},${isoY + 18}`} fill="#6b7280" stroke="#374151" strokeWidth={1.5} />
+              {/* Wheels */}
+              <circle cx={isoX + TILE_SIZE / 2 - 16} cy={isoY + 30} r={6} fill="#292524" stroke="#78716c" strokeWidth={2} />
+              <circle cx={isoX + TILE_SIZE / 2 + 16} cy={isoY + 30} r={6} fill="#292524" stroke="#78716c" strokeWidth={2} />
+              {/* Label */}
+              <text x={isoX + TILE_SIZE / 2} y={isoY - 4} textAnchor="middle" fontSize="8" fill="#fca5a5" fontWeight="bold">WAR RAM</text>
+              {/* HP bar */}
+              <rect x={isoX + TILE_SIZE / 2 - 20} y={isoY - 10} width={40} height={4} fill="#1e293b" rx={2} />
+              <rect x={isoX + TILE_SIZE / 2 - 20} y={isoY - 10} width={40 * hp} height={4} fill="#dc2626" rx={2} />
+            </g>;
+          })}
 
           {/* Workers */}
           {workers.map(worker => { const { isoX, isoY } = tileToSvg(worker.x, worker.y); const hp = worker.hp / worker.maxHp;
