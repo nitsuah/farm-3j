@@ -13,6 +13,7 @@ export interface WorkerState {
   chargeCooldown: number;
   sprintCooldown: number;
   sprinting: boolean;
+  waypoints: { x: number; y: number }[];
   attackMove: boolean;
   attackMoveTarget: { x: number; y: number } | null;
   carrying: { gold: number; lumber: number; stone: number };

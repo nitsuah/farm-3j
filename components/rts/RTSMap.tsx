@@ -296,7 +296,7 @@ function clearSave(): void {
 
 function makeUnit(id: number, x: number, y: number, unitType: 'farmer' | 'swordsman' | 'hero' | 'catapult' | 'cavalry'): WorkerState {
   const maxHp = unitType === 'hero' ? HERO_MAX_HP : unitType === 'swordsman' ? SWORDSMAN_MAX_HP : unitType === 'catapult' ? CATAPULT_MAX_HP : unitType === 'cavalry' ? CAVALRY_MAX_HP : WORKER_MAX_HP;
-  return { id, x, y, selected: false, movingTo: null, path: [], gathering: null, attacking: null, repairing: null, chargeCooldown: 0, sprintCooldown: 0, sprinting: false, attackMove: false, attackMoveTarget: null, carrying: { gold: 0, lumber: 0, stone: 0 }, state: 'idle', group: null, hp: maxHp, maxHp, patrol: null, unitType, xp: 0, level: 0 };
+  return { id, x, y, selected: false, movingTo: null, path: [], gathering: null, attacking: null, repairing: null, chargeCooldown: 0, sprintCooldown: 0, sprinting: false, waypoints: [], attackMove: false, attackMoveTarget: null, carrying: { gold: 0, lumber: 0, stone: 0 }, state: 'idle', group: null, hp: maxHp, maxHp, patrol: null, unitType, xp: 0, level: 0 };
 }
 // ---------------------------------
 
@@ -966,7 +966,29 @@ const RTSMap: React.FC = () => {
         const startTile = { x: Math.round(w.x), y: Math.round(w.y) };
         const rawPath = aStar(INITIAL_TILES, startTile, dest);
         const first = rawPath[0] ?? dest;
-        return { ...w, movingTo: first, path: rawPath.slice(1), gathering: gathering ?? null, attacking: attacking ?? null, repairing: null, attackMove: false, attackMoveTarget: null, patrol: null, state: 'moving' };
+        return { ...w, movingTo: first, path: rawPath.slice(1), gathering: gathering ?? null, attacking: attacking ?? null, repairing: null, attackMove: false, attackMoveTarget: null, patrol: null, waypoints: [], state: 'moving' };
+      });
+    });
+  }, []);
+
+  // Shift+right-click: append waypoint to queue
+  const commandQueueMove = useCallback((targetX: number, targetY: number) => {
+    setWorkers(ws => {
+      const selected = ws.filter(w => w.selected);
+      let idx = 0;
+      return ws.map(w => {
+        if (!w.selected) return w;
+        const offset = FORMATION_OFFSETS[idx++] ?? { dx: 0, dy: 0 };
+        const tx = Math.max(0, Math.min(GRID_SIZE - 1, targetX + offset.dx));
+        const ty = Math.max(0, Math.min(GRID_SIZE - 1, targetY + offset.dy));
+        const dest = INITIAL_TILES[tx]?.[ty] === 'water' ? { x: targetX, y: targetY } : { x: tx, y: ty };
+        // If unit is idle or has no movingTo, start moving immediately; otherwise append waypoint
+        if (!w.movingTo && w.state !== 'moving') {
+          const startTile = { x: Math.round(w.x), y: Math.round(w.y) };
+          const rawPath = aStar(INITIAL_TILES, startTile, dest);
+          return { ...w, movingTo: rawPath[0] ?? dest, path: rawPath.slice(1), gathering: null, attacking: null, repairing: null, patrol: null, waypoints: [], state: 'moving' as const };
+        }
+        return { ...w, waypoints: [...(w.waypoints ?? []), dest] };
       });
     });
   }, []);
@@ -1066,7 +1088,7 @@ const RTSMap: React.FC = () => {
       if (e.key === 'r' || e.key === 'R') { e.preventDefault(); handleFarmhouseAction('trainCavalry'); }
       if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault();
-        setWorkers(ws => ws.map(w => w.selected ? { ...w, movingTo: null, path: [], gathering: null, attacking: null, repairing: null, attackMove: false, attackMoveTarget: null, patrol: null, state: 'idle' as const } : w));
+        setWorkers(ws => ws.map(w => w.selected ? { ...w, movingTo: null, path: [], gathering: null, attacking: null, repairing: null, attackMove: false, attackMoveTarget: null, patrol: null, waypoints: [], state: 'idle' as const } : w));
       }
       if (e.key === 'g' || e.key === 'G') { e.preventDefault(); handleGarrison(); }
       if (e.key === 'c' || e.key === 'C') { e.preventDefault(); handleSwordsmanCharge(); }
@@ -1208,6 +1230,14 @@ const RTSMap: React.FC = () => {
                     }
                   }
                   return { ...w, x: w.movingTo.x, y: w.movingTo.y, movingTo: null, path: [], carrying: { gold: 0, lumber: 0, stone: 0 }, state: 'idle', gathering: null };
+                }
+              }
+              // Consume next queued waypoint instead of going idle
+              if (w.waypoints && w.waypoints.length > 0) {
+                const [nextWP, ...restWPs] = w.waypoints;
+                if (nextWP) {
+                  const p = aStar(INITIAL_TILES, { x: w.movingTo.x, y: w.movingTo.y }, nextWP);
+                  return { ...w, x: w.movingTo.x, y: w.movingTo.y, movingTo: p[0] ?? nextWP, path: p.slice(1), waypoints: restWPs, state: 'moving' as const };
                 }
               }
               return { ...w, x: w.movingTo.x, y: w.movingTo.y, movingTo: null, path: [], state: 'idle' };
@@ -1829,7 +1859,7 @@ const RTSMap: React.FC = () => {
       gatherTimeoutsRef.current = {};
       attackTimeoutsRef.current = {};
       setPatrolMode(false);
-      setWorkers(ws => ws.map(w => w.selected ? { ...w, movingTo: null, path: [], gathering: null, attacking: null, repairing: null, attackMove: false, attackMoveTarget: null, patrol: null, state: 'idle' } : w));
+      setWorkers(ws => ws.map(w => w.selected ? { ...w, movingTo: null, path: [], gathering: null, attacking: null, repairing: null, attackMove: false, attackMoveTarget: null, patrol: null, waypoints: [], state: 'idle' } : w));
     }
   };
 
@@ -2072,6 +2102,7 @@ const RTSMap: React.FC = () => {
                       setAttackMoveMode(false);
                       return;
                     }
+                    if (e.shiftKey && anySelected) { commandQueueMove(i, j); return; }
                     commandMove(i, j);
                   }}
                   style={{ cursor: buildMode ? 'crosshair' : patrolMode ? 'crosshair' : attackMoveMode ? 'crosshair' : (anySelected || selectedType === 'farmhouse' ? 'pointer' : undefined) }}

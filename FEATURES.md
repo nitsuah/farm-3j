@@ -85,6 +85,7 @@
 - **Win/Lose Conditions** — Objective-based victory and defeat triggers
 - **Box Selection** — Drag-select multiple units simultaneously
 - **Control Groups** — Numbered group assignments for unit management
+- **Shift+Right-Click Waypoint Queuing** — Shift+right-click queues movement destinations; units A*-path through each in order; Stop clears queue; AoE2/WC3-style multi-point command chaining
 
 ### Product & Commerce Surface
 
