@@ -119,6 +119,8 @@ interface RTSUIProps {
   buildMode: BuildingType | null;
   upgrades: Upgrades;
   onResearch: (type: keyof Upgrades) => void;
+  stance: 'aggressive' | 'passive';
+  onToggleStance: () => void;
   enemyBarnHp: number;
   enemyBarnMaxHp: number;
   playerBarnHp: number;
@@ -190,6 +192,8 @@ export const RTSUI: React.FC<RTSUIProps> = ({
   onSwordsmanCharge,
   onCavalrySprint,
   onMinimapClick,
+  stance,
+  onToggleStance,
 }) => {
   const isHeroSelected = selectedWorkers.some(w => w.unitType === 'hero');
   const selectedCount = selectedWorkers.length;
@@ -363,6 +367,14 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                 title="Hold Position [H] — stand still, auto-attack enemies in range without chasing"
               >
                 🛡️ Hold [H]
+              </button>
+              <button
+                type="button"
+                className={`col-span-2 rounded border px-2 py-2 text-xs hover:opacity-90 ${stance === 'aggressive' ? 'border-red-400/70 bg-red-500/20 text-red-100' : 'border-slate-500/70 bg-slate-700/30 text-slate-300'}`}
+                onClick={onToggleStance}
+                title={stance === 'aggressive' ? 'Aggressive stance — units auto-engage nearby enemies. Click for Passive.' : 'Passive stance — units only retaliate when attacked. Click for Aggressive.'}
+              >
+                {stance === 'aggressive' ? '⚔️ Aggressive' : '🛡 Passive'}
               </button>
               <button
                 type="button"

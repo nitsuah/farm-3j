@@ -31,7 +31,7 @@ const BOSS_HP_MULTIPLIER = 3;
 const BOSS_DAMAGE = 25;
 const BOSS_GOLD_REWARD = 20;
 const BOSS_XP_REWARD = 80;
-const GRUNT_SPAWN_MS = 25000;
+const GRUNT_SPAWN_MS = 40000;
 const REPAIR_INTERVAL_MS = 2000;
 const REPAIR_AMOUNT = 2;
 const REPAIR_RADIUS = 3;
@@ -403,7 +403,7 @@ interface SaveData {
   fogExplored: boolean[][];
 }
 
-const INITIAL_SAVE: SaveData | null = (() => {
+function loadSave(): SaveData | null {
   if (typeof window === 'undefined') return null;
   try {
     const raw = localStorage.getItem(SAVE_KEY);
@@ -411,7 +411,7 @@ const INITIAL_SAVE: SaveData | null = (() => {
     const d = JSON.parse(raw) as SaveData;
     return d?.version === 1 ? d : null;
   } catch { return null; }
-})();
+}
 
 function writeSave(data: SaveData): void {
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch {}
@@ -434,7 +434,12 @@ const Stat: React.FC<{ label: string; value: string | number; color: string }> =
   </div>
 );
 
-const RTSMap: React.FC = () => {
+const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
+  // Load save once per mount (module-level caching caused stale data after New Game)
+  const saveRef = useRef<SaveData | null | undefined>(undefined);
+  if (saveRef.current === undefined) saveRef.current = loadSave();
+  const INITIAL_SAVE = saveRef.current;
+
   const [zoom, setZoom] = useState(1);
   const tiles = useMemo(() => INITIAL_TILES, []);
   const [camera, setCamera] = useState({ x: 0, y: 0 });
@@ -450,10 +455,12 @@ const RTSMap: React.FC = () => {
   const placedBuildingsRef = useRef(placedBuildings);
   useEffect(() => { placedBuildingsRef.current = placedBuildings; }, [placedBuildings]);
   const [controlGroups, setControlGroups] = useState<Record<number, number[]>>({});
-  const [resources, setResources] = useState<Resources>(() => INITIAL_SAVE?.resources ?? { gold: 150, lumber: 80, stone: 30, food: 2, foodCap: FOOD_CAP_BASE });
+  const [resources, setResources] = useState<Resources>(() => INITIAL_SAVE?.resources ?? { gold: 150, lumber: 80, stone: 30, food: 6, foodCap: FOOD_CAP_BASE });
 
   const DEFAULT_TREES: ResourceNode[] = [
-    // Player-side cluster
+    // Starting cluster — close to barn (2,2) for immediate economy
+    { x: 4, y: 2, amount: 60 }, { x: 5, y: 2, amount: 60 }, { x: 4, y: 3, amount: 60 },
+    // Player-side mid cluster
     { x: 2, y: 8, amount: 60 }, { x: 3, y: 8, amount: 60 }, { x: 2, y: 9, amount: 60 },
     // Mid-west cluster
     { x: 7, y: 4, amount: 60 }, { x: 8, y: 4, amount: 60 }, { x: 7, y: 5, amount: 60 },
@@ -466,7 +473,8 @@ const RTSMap: React.FC = () => {
     { x: 12, y: 2, amount: 60 }, { x: 13, y: 2, amount: 60 },
   ];
   const DEFAULT_GOLD_MINES: ResourceNode[] = [
-    { x: 1, y: 8, amount: 250 },   // near player base
+    { x: 4, y: 5, amount: 200 },   // starting mine — close to barn for early economy
+    { x: 1, y: 8, amount: 250 },   // secondary player-side mine
     { x: 8, y: 8, amount: 300 },   // contested center — high value, risky
     { x: 15, y: 8, amount: 250 },  // deep enemy side
   ];
@@ -493,7 +501,14 @@ const RTSMap: React.FC = () => {
   const [workers, setWorkers] = useState<WorkerState[]>(() =>
     INITIAL_SAVE?.workers?.length
       ? INITIAL_SAVE.workers.map(w => ({ ...makeUnit(w.id, w.x, w.y, w.unitType), hp: w.hp, maxHp: w.maxHp, group: w.group, xp: w.xp ?? 0, level: w.level ?? 0 }))
-      : [{ ...makeUnit(1, 3, 3, 'farmer'), selected: true }, makeUnit(2, 4, 3, 'farmer')]
+      : [
+          { ...makeUnit(1, 3, 3, 'farmer'), selected: true },
+          makeUnit(2, 4, 3, 'farmer'),
+          makeUnit(3, 3, 4, 'farmer'),
+          makeUnit(4, 4, 4, 'farmer'),
+          makeUnit(5, 5, 3, 'farmer'),
+          makeUnit(6, 3, 5, 'swordsman'),
+        ]
   );
   const workersRef = useRef(workers);
   useEffect(() => { workersRef.current = workers; }, [workers]);
@@ -622,6 +637,9 @@ const RTSMap: React.FC = () => {
   const [attackMoveMode, setAttackMoveMode] = useState(false);
   const attackMoveModeRef = useRef(false);
   useEffect(() => { attackMoveModeRef.current = attackMoveMode; }, [attackMoveMode]);
+  const [stance, setStance] = useState<'aggressive' | 'passive'>('aggressive');
+  const stanceRef = useRef<'aggressive' | 'passive'>('aggressive');
+  useEffect(() => { stanceRef.current = stance; }, [stance]);
   const [upgrades, setUpgrades] = useState<Upgrades>(() => INITIAL_SAVE?.upgrades ?? { sharperTools: 0, swiftHarvest: 0, ironWill: 0 });
   const upgradesRef = useRef(upgrades);
   useEffect(() => { upgradesRef.current = upgrades; }, [upgrades]);
@@ -847,7 +865,7 @@ const RTSMap: React.FC = () => {
       window.setTimeout(() => setWaveAnnouncement(null), 4000);
     }
 
-    const nextDelay = Math.max(10000, GRUNT_SPAWN_MS - (newWave - 1) * 1500);
+    const nextDelay = Math.max(20000, GRUNT_SPAWN_MS - (newWave - 1) * 800);
     setNextWaveAt(Date.now() + nextDelay);
     spawnTimerRef.current = window.setTimeout(doSpawnWave, nextDelay);
   }, []);
@@ -974,23 +992,26 @@ const RTSMap: React.FC = () => {
     return () => { Object.values(frostTowerTimersRef.current).forEach(clearTimeout); frostTowerTimersRef.current = {}; };
   }, [placedBuildings, gameOver, addFloatingText]);
 
-  // Player barn defense fire — barn auto-shoots nearest grunt in 4-tile range every 3s (Town Center mechanic)
+  // Player barn defense fire — scales with wave and garrison count
   const barnArrowTimerRef = useRef<number | null>(null);
   useEffect(() => {
     if (gameOver) return;
-    const BARN_DEFENSE_RANGE = 4;
-    const BARN_DEFENSE_DAMAGE = 6;
-    const BARN_DEFENSE_MS = 3000;
+    const BARN_DEFENSE_RANGE = 5;
+    const BARN_DEFENSE_MS = 2500;
     const fireBarnArrow = () => {
       if (gameOverRef.current) return;
+      // Damage: 10 base + 1 per 3 waves + 3 per garrisoned unit
+      const waveDmgBonus = Math.floor(waveRef.current / 3);
+      const garrisonDmgBonus = garrisonedRef.current.length * 3;
+      const dmg = 10 + waveDmgBonus + garrisonDmgBonus;
       const target = enemyGruntsRef.current.reduce<EnemyGrunt | null>((best, g) => {
         if (tileDist(g.x, g.y, BARN_POS.x, BARN_POS.y) > BARN_DEFENSE_RANGE) return best;
         if (!best || tileDist(g.x, g.y, BARN_POS.x, BARN_POS.y) < tileDist(best.x, best.y, BARN_POS.x, BARN_POS.y)) return g;
         return best;
       }, null);
       if (target) {
-        setEnemyGrunts(gs => gs.map(g => g.id === target.id ? { ...g, hp: Math.max(0, g.hp - BARN_DEFENSE_DAMAGE) } : g));
-        addFloatingText(Math.round(target.x), Math.round(target.y), `🏰-${BARN_DEFENSE_DAMAGE}`, '#fbbf24');
+        setEnemyGrunts(gs => gs.map(g => g.id === target.id ? { ...g, hp: Math.max(0, g.hp - dmg) } : g));
+        addFloatingText(Math.round(target.x), Math.round(target.y), `🏰-${dmg}`, '#fbbf24');
       }
       barnArrowTimerRef.current = window.setTimeout(fireBarnArrow, BARN_DEFENSE_MS);
     };
@@ -1456,6 +1477,17 @@ const RTSMap: React.FC = () => {
             // Block movement while holding position
             if (w.state === 'moving') return { ...w, movingTo: null, path: [], state: 'idle' };
             return w;
+          }
+          // Aggressive stance: idle combat units auto-engage nearby enemies within 3 tiles
+          if (stanceRef.current === 'aggressive' && w.state === 'idle' && !w.attacking && !w.holdPosition && !w.patrol
+            && w.unitType !== 'farmer' && w.unitType !== 'catapult' && w.unitType !== 'trebuchet') {
+            const AGG_RANGE = 3;
+            const nearGruntA = enemyGruntsRef.current.find(g => g.hp > 0 && tileDist(w.x, w.y, g.x, g.y) <= AGG_RANGE);
+            if (nearGruntA) return { ...w, attacking: { targetType: 'grunt' as const, gruntId: nearGruntA.id }, state: 'attacking' as const };
+            const nearRamA = enemySiegeRef.current.find(r => r.hp > 0 && tileDist(w.x, w.y, r.x, r.y) <= AGG_RANGE);
+            if (nearRamA) return { ...w, attacking: { targetType: 'siege' as const, siegeId: nearRamA.id }, state: 'attacking' as const };
+            const nearSapperA = enemySappersRef.current.find(s => s.hp > 0 && !s.exploded && tileDist(w.x, w.y, s.x, s.y) <= AGG_RANGE);
+            if (nearSapperA) return { ...w, attacking: { targetType: 'sapper' as const, sapperId: nearSapperA.id }, state: 'attacking' as const };
           }
           // When attack-move unit finishes its target, resume march to original destination
           if (w.attackMove && w.state === 'idle' && w.attackMoveTarget) {
@@ -2081,11 +2113,21 @@ const RTSMap: React.FC = () => {
             // Attack worker
             if (!gruntAttackTimeoutsRef.current[g.id]) {
               const wid = nearWorker.id;
+              const capturedGruntId = g.id;
               const capturedWX = Math.round(nearWorker.x), capturedWY = Math.round(nearWorker.y);
               gruntAttackTimeoutsRef.current[g.id] = window.setTimeout(() => {
                 delete gruntAttackTimeoutsRef.current[g.id];
                 const gruntDmg = Math.max(1, GRUNT_DAMAGE - blacksmithUpgradesRef.current.ironHide * 2);
-                setWorkers(ws2 => ws2.map(w2 => w2.id === wid ? { ...w2, hp: Math.max(0, w2.hp - gruntDmg) } : w2));
+                setWorkers(ws2 => ws2.map(w2 => {
+                  if (w2.id !== wid) return w2;
+                  const newHp = Math.max(0, w2.hp - gruntDmg);
+                  // Auto-retaliate: if idle and capable of fighting, attack the grunt back
+                  if (w2.state === 'idle' && !w2.attacking && w2.unitType !== 'catapult' && w2.unitType !== 'trebuchet') {
+                    const attacker = enemyGruntsRef.current.find(gg => gg.id === capturedGruntId && gg.hp > 0);
+                    if (attacker) return { ...w2, hp: newHp, attacking: { targetType: 'grunt' as const, gruntId: capturedGruntId }, state: 'attacking' as const };
+                  }
+                  return { ...w2, hp: newHp };
+                }));
                 addFloatingText(capturedWX, capturedWY, `-${gruntDmg}`, '#ef4444');
               }, GRUNT_ATTACK_MS);
             }
@@ -2803,7 +2845,7 @@ const RTSMap: React.FC = () => {
                 <Stat label="Time" value={timeStr} color="#94a3b8" />
               </div>
             </div>
-            <button className="rounded-lg border-2 border-amber-500 bg-amber-500/20 px-8 py-3 text-lg text-amber-200 hover:bg-amber-500/40" onClick={() => { clearSave(); window.location.reload(); }}>
+            <button className="rounded-lg border-2 border-amber-500 bg-amber-500/20 px-8 py-3 text-lg text-amber-200 hover:bg-amber-500/40" onClick={() => { clearSave(); if (onNewGame) onNewGame(); else window.location.reload(); }}>
               Play Again
             </button>
           </div>
@@ -2860,7 +2902,7 @@ const RTSMap: React.FC = () => {
         <button onClick={doSave} style={{ background: saveStatus === 'saved' ? 'rgba(74,222,128,0.2)' : 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', color: saveStatus === 'saved' ? '#4ade80' : '#94a3b8', padding: '2px 10px', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>
           {saveStatus === 'saved' ? '✓ Saved' : '💾 Save'}
         </button>
-        <button onClick={() => { clearSave(); window.location.reload(); }} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#fca5a5', padding: '2px 10px', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>
+        <button onClick={() => { clearSave(); if (onNewGame) onNewGame(); else window.location.reload(); }} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#fca5a5', padding: '2px 10px', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>
           🗑 New Game
         </button>
       </div>
@@ -3536,6 +3578,8 @@ const RTSMap: React.FC = () => {
         buildMode={buildMode}
         upgrades={upgrades}
         onResearch={handleResearch}
+        stance={stance}
+        onToggleStance={() => setStance(s => s === 'aggressive' ? 'passive' : 'aggressive')}
         hasBarracks={placedBuildings.some(b => b.type === 'barracks')}
         garrisonedCount={garrisoned.length}
         garrisonCap={GARRISON_CAP}
