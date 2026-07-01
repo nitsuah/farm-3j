@@ -2037,7 +2037,7 @@ const RTSMap: React.FC = () => {
           })()}
 
           {/* Enemy fortress towers (wave 5/10/15) */}
-          {enemyTowers.filter(t => t.hp > 0).map(t => {
+          {enemyTowers.filter(t => t.hp > 0 && fogVisible[t.x]?.[t.y]).map(t => {
             const { isoX, isoY } = tileToSvg(t.x, t.y);
             const hpPct = t.hp / t.maxHp;
             return (
@@ -2104,7 +2104,7 @@ const RTSMap: React.FC = () => {
             </g>; })}
 
           {/* Enemy grunts */}
-          {enemyGrunts.map(g => { const { isoX, isoY } = tileToSvg(g.x, g.y); const hp = g.hp / g.maxHp;
+          {enemyGrunts.map(g => { if (!fogVisible[Math.round(g.x)]?.[Math.round(g.y)]) return null; const { isoX, isoY } = tileToSvg(g.x, g.y); const hp = g.hp / g.maxHp;
             return <g key={`grunt-${g.id}`} style={{ cursor: anySelected ? 'crosshair' : 'default' }} onContextMenu={e => handleAttackGrunt(g.id, e)}>
               {g.isBoss ? (<>
                 {/* Boss War Bull — larger, darker, horns */}
