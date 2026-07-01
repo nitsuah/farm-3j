@@ -78,6 +78,9 @@ interface RTSUIProps {
   blacksmithUpgrades: { steelEdge: number; ironHide: number };
   onBlacksmithUpgrade: (type: 'steelEdge' | 'ironHide') => void;
   hasStable: boolean;
+  hasWatchtower: boolean;
+  guardTowerResearched: boolean;
+  onGuardTower: () => void;
   farmhouse: { built: boolean; level: number };
   farmhouseUpgradeCosts: { gold: number; lumber: number }[];
   farmhouseStorage: { gold: number; lumber: number }[];
@@ -146,6 +149,9 @@ export const RTSUI: React.FC<RTSUIProps> = ({
   blacksmithUpgrades,
   onBlacksmithUpgrade,
   hasStable,
+  hasWatchtower,
+  guardTowerResearched,
+  onGuardTower,
 }) => {
   const isHeroSelected = selectedWorkers.some(w => w.unitType === 'hero');
   const selectedCount = selectedWorkers.length;
@@ -453,6 +459,16 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                       title="Train Catapult — 150🪙 80🌲, 60HP, AoE splash damage, slow"
                     >
                       🪨 Train Catapult 150🪙
+                    </button>
+                  )}
+                  {hasWatchtower && (
+                    <button
+                      className={`col-span-4 rounded border px-2 py-2 text-xs disabled:opacity-40 ${guardTowerResearched ? 'border-cyan-500/50 bg-cyan-900/20 text-cyan-400' : 'border-cyan-500/70 bg-cyan-500/15 text-cyan-100 hover:bg-cyan-500/30'}`}
+                      onClick={onGuardTower}
+                      disabled={guardTowerResearched || resources.gold < 120 || resources.stone < 80}
+                      title="Guard Tower — upgrades all watchtowers: +7 dmg, +1 range (5→6)"
+                    >
+                      {guardTowerResearched ? '🏰 Guard Tower ✓ (active)' : '🏰 Guard Tower 120🪙 80🪨 — upgrade all towers'}
                     </button>
                   )}
                   {(Object.keys(UPGRADE_META) as (keyof Upgrades)[]).map(key => {

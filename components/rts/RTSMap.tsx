@@ -418,6 +418,9 @@ const RTSMap: React.FC = () => {
   const [blacksmithUpgrades, setBlacksmithUpgrades] = useState({ steelEdge: 0, ironHide: 0 });
   const blacksmithUpgradesRef = useRef(blacksmithUpgrades);
   useEffect(() => { blacksmithUpgradesRef.current = blacksmithUpgrades; }, [blacksmithUpgrades]);
+  const [guardTowerResearched, setGuardTowerResearched] = useState(false);
+  const guardTowerRef = useRef(false);
+  useEffect(() => { guardTowerRef.current = guardTowerResearched; }, [guardTowerResearched]);
 
   // Day/Night cycle
   const DAY_DURATION_MS = 60000;
@@ -619,14 +622,14 @@ const RTSMap: React.FC = () => {
         delete watchtowerTimersRef.current[towerId];
         if (gameOverRef.current) return;
         const grunts = enemyGruntsRef.current;
-        const target = grunts.reduce<EnemyGrunt | null>((best, g) => {
-          if (tileDist(g.x, g.y, tx, ty) > WATCHTOWER_ATTACK_RANGE) return best;
-          if (!best || tileDist(g.x, g.y, tx, ty) < tileDist(best.x, best.y, tx, ty)) return g;
-          return best;
-        }, null);
-        if (target) {
-          setEnemyGrunts(gs => gs.map(g => g.id === target.id ? { ...g, hp: Math.max(0, g.hp - WATCHTOWER_DAMAGE) } : g));
-          addFloatingText(Math.round(target.x), Math.round(target.y), `🏹-${WATCHTOWER_DAMAGE}`, '#22d3ee');
+        const isGuard = guardTowerRef.current;
+        const dmgT = isGuard ? WATCHTOWER_DAMAGE + 7 : WATCHTOWER_DAMAGE;
+        const rangeT = isGuard ? WATCHTOWER_ATTACK_RANGE + 1 : WATCHTOWER_ATTACK_RANGE;
+        const inRangeT = grunts.filter(g => tileDist(g.x, g.y, tx, ty) <= rangeT);
+        const targetT = inRangeT.reduce<EnemyGrunt | null>((best, g) => (!best || tileDist(g.x, g.y, tx, ty) < tileDist(best.x, best.y, tx, ty) ? g : best), null);
+        if (targetT) {
+          setEnemyGrunts(gs => gs.map(g => g.id === targetT.id ? { ...g, hp: Math.max(0, g.hp - dmgT) } : g));
+          addFloatingText(Math.round(targetT.x), Math.round(targetT.y), `${isGuard ? '🏰' : '🏹'}-${dmgT}`, '#22d3ee');
         }
         scheduleShot(towerId, tx, ty);
       }, WATCHTOWER_ATTACK_MS);
@@ -1486,6 +1489,11 @@ const RTSMap: React.FC = () => {
       setResources(r => ({ ...r, gold: r.gold - cost.gold, lumber: r.lumber - cost.lumber }));
       setBlacksmithUpgrades(u => ({ ...u, ironHide: u.ironHide + 1 }));
       addFloatingText(BARN_POS.x, BARN_POS.y, `🛡️ Iron Hide ${level + 1}!`, '#38bdf8');
+    } else if (action === 'guardTower') {
+      if (guardTowerResearched || resources.gold < 120 || resources.stone < 80) return;
+      setResources(r => ({ ...r, gold: r.gold - 120, stone: r.stone - 80 }));
+      setGuardTowerResearched(true);
+      addFloatingText(BARN_POS.x, BARN_POS.y, '🏰 Guard Tower!', '#22d3ee');
     } else if (action.startsWith('build:')) {
       const btype = action.split(':')[1] as BuildingType;
       if (BUILDING_COSTS[btype]) setBuildMode(btype);
@@ -2106,6 +2114,9 @@ const RTSMap: React.FC = () => {
         blacksmithUpgrades={blacksmithUpgrades}
         onBlacksmithUpgrade={(type) => handleFarmhouseAction(`blacksmith:${type}`)}
         hasStable={placedBuildings.some(b => b.type === 'stable')}
+        hasWatchtower={placedBuildings.some(b => b.type === 'watchtower')}
+        guardTowerResearched={guardTowerResearched}
+        onGuardTower={() => handleFarmhouseAction('guardTower')}
         minimapData={minimapData}
         enemyBarnHp={enemyBarnHp}
         enemyBarnMaxHp={ENEMY_BARN_MAX_HP}
