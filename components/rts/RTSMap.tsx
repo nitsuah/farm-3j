@@ -363,6 +363,8 @@ const RTSMap: React.FC = () => {
 
   const [wave, setWave] = useState(() => INITIAL_SAVE?.wave ?? 0);
   const waveRef = useRef(INITIAL_SAVE?.wave ?? 0);
+  const [, setTick] = useState(0);
+  useEffect(() => { const id = window.setInterval(() => setTick(t => t + 1), 1000); return () => clearInterval(id); }, []);
   const [enemyTowers, setEnemyTowers] = useState<EnemyTower[]>([]);
   const enemyTowersRef = useRef<EnemyTower[]>([]);
   useEffect(() => { enemyTowersRef.current = enemyTowers; }, [enemyTowers]);
@@ -370,6 +372,7 @@ const RTSMap: React.FC = () => {
   const [waveAnnouncement, setWaveAnnouncement] = useState<string | null>(null);
   const gameOverRef = useRef<'victory' | 'defeat' | null>(null);
   const spawnTimerRef = useRef<number | null>(null);
+  const [nextWaveAt, setNextWaveAt] = useState<number | null>(null);
   const [gameSpeed, setGameSpeed] = useState(1);
   const gameSpeedRef = useRef(1);
   useEffect(() => { gameSpeedRef.current = gameSpeed; }, [gameSpeed]);
@@ -593,11 +596,13 @@ const RTSMap: React.FC = () => {
     }
 
     const nextDelay = Math.max(10000, GRUNT_SPAWN_MS - (newWave - 1) * 1500);
+    setNextWaveAt(Date.now() + nextDelay);
     spawnTimerRef.current = window.setTimeout(doSpawnWave, nextDelay);
   }, []);
 
   useEffect(() => {
     if (gameOver) { if (spawnTimerRef.current) { clearTimeout(spawnTimerRef.current); spawnTimerRef.current = null; } return; }
+    setNextWaveAt(Date.now() + GRUNT_SPAWN_MS);
     spawnTimerRef.current = window.setTimeout(doSpawnWave, GRUNT_SPAWN_MS);
     return () => { if (spawnTimerRef.current) clearTimeout(spawnTimerRef.current); };
   }, [gameOver, doSpawnWave]);
@@ -1764,6 +1769,7 @@ const RTSMap: React.FC = () => {
         <span style={{ color: resources.lumber < 20 ? '#ef4444' : '#bbf7d0', fontWeight: resources.lumber < 20 ? 700 : 400, animation: resources.lumber < 20 ? 'pulse 1s infinite' : 'none' }}>🌲 {resources.lumber}</span>
         <span style={{ color: resources.stone < 10 ? '#ef4444' : '#cbd5e1', fontWeight: resources.stone < 10 ? 700 : 400, animation: resources.stone < 10 ? 'pulse 1s infinite' : 'none' }}>🪨 {resources.stone}</span>
         {wave > 0 && <span style={{ color: '#f97316', background: 'rgba(249,115,22,0.15)', padding: '1px 10px', borderRadius: 6, fontSize: 14 }}>Wave {wave}</span>}
+        {!gameOver && nextWaveAt && (() => { const secsLeft = Math.max(0, Math.ceil((nextWaveAt - Date.now()) / 1000)); const urgent = secsLeft <= 5; return <span style={{ color: urgent ? '#ef4444' : '#94a3b8', fontSize: 13, fontWeight: urgent ? 700 : 400, animation: urgent ? 'pulse 0.6s infinite' : 'none' }}>⏱ {secsLeft}s</span>; })()}
         {killCount > 0 && <span style={{ color: '#4ade80', fontSize: 14 }}>☠ {killCount}</span>}
         <span style={{ color: resources.food >= resources.foodCap ? '#ef4444' : '#fca5a5', fontWeight: resources.food >= resources.foodCap ? 700 : 400, marginLeft: 'auto', animation: resources.food >= resources.foodCap ? 'pulse 1s infinite' : 'none' }}>👥 {resources.food}/{resources.foodCap}{resources.food >= resources.foodCap ? ' ⚠' : ''}</span>
         {enemyGrunts.length > 0 && <span style={{ color: '#f97316', fontSize: 13 }}>⚠ {enemyGrunts.length} grunt{enemyGrunts.length > 1 ? 's' : ''}</span>}
