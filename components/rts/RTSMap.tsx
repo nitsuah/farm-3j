@@ -1078,7 +1078,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
     return () => { Object.values(ballistaTimersRef.current).forEach(clearTimeout); ballistaTimersRef.current = {}; };
   }, [placedBuildings, gameOver, addFloatingText]);
 
-  // Player barn defense fire — scales with wave and garrison count
+  // Player barn defense fire — scales with wave and garrison count; Last Stand at <25% HP
   const barnArrowTimerRef = useRef<number | null>(null);
   useEffect(() => {
     if (gameOver) return;
@@ -1089,7 +1089,8 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
       // Damage: 10 base + 1 per 3 waves + 3 per garrisoned unit
       const waveDmgBonus = Math.floor(waveRef.current / 3);
       const garrisonDmgBonus = garrisonedRef.current.length * 3;
-      const dmg = 10 + waveDmgBonus + garrisonDmgBonus;
+      const lastStand = playerBarnHpRef.current / PLAYER_BARN_MAX_HP < 0.25;
+      const dmg = (10 + waveDmgBonus + garrisonDmgBonus) * (lastStand ? 2 : 1);
       const target = enemyGruntsRef.current.reduce<EnemyGrunt | null>((best, g) => {
         if (tileDist(g.x, g.y, BARN_POS.x, BARN_POS.y) > BARN_DEFENSE_RANGE) return best;
         if (!best || tileDist(g.x, g.y, BARN_POS.x, BARN_POS.y) < tileDist(best.x, best.y, BARN_POS.x, BARN_POS.y)) return g;
@@ -1099,7 +1100,8 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
         setEnemyGrunts(gs => gs.map(g => g.id === target.id ? { ...g, hp: Math.max(0, g.hp - dmg) } : g));
         addFloatingText(Math.round(target.x), Math.round(target.y), `🏰-${dmg}`, '#fbbf24');
       }
-      barnArrowTimerRef.current = window.setTimeout(fireBarnArrow, BARN_DEFENSE_MS);
+      const fireDelay = playerBarnHpRef.current / PLAYER_BARN_MAX_HP < 0.25 ? BARN_DEFENSE_MS / 2 : BARN_DEFENSE_MS;
+      barnArrowTimerRef.current = window.setTimeout(fireBarnArrow, fireDelay);
     };
     barnArrowTimerRef.current = window.setTimeout(fireBarnArrow, BARN_DEFENSE_MS);
     return () => { if (barnArrowTimerRef.current) clearTimeout(barnArrowTimerRef.current); };
@@ -2154,6 +2156,16 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
           } else if (repairTimeoutsRef.current[w.id] && w.state !== 'idle') {
             clearTimeout(repairTimeoutsRef.current[w.id]);
             delete repairTimeoutsRef.current[w.id];
+          }
+
+          // Auto-repair burning buildings: idle farmers near a burning building automatically start repairing it
+          if (w.state === 'idle' && w.unitType === 'farmer' && !w.gathering && !w.attacking) {
+            const burningBuilding = placedBuildingsRef.current.find(b => b.hp > 0 && b.hp / b.maxHp < 0.25 && tileDist(w.x, w.y, b.x, b.y) <= 3);
+            if (burningBuilding) {
+              const dest = { x: burningBuilding.x, y: burningBuilding.y };
+              const p = aStar(INITIAL_TILES, { x: Math.round(w.x), y: Math.round(w.y) }, dest);
+              return { ...w, repairing: { buildingId: burningBuilding.id }, state: 'moving' as const, movingTo: p[0] ?? dest, path: p.slice(1) };
+            }
           }
 
           // Patrol: when idle at endpoint, flip heading and march to other point
@@ -3390,6 +3402,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
           {(() => { const { isoX, isoY } = tileToSvg(BARN_POS.x, BARN_POS.y); const hpPct = playerBarnHp / PLAYER_BARN_MAX_HP;
             const hasGarrison = garrisoned.length > 0;
             const barnUnderFire = enemyGrunts.some(g => tileDist(g.x, g.y, BARN_POS.x, BARN_POS.y) <= 4);
+            const lastStand = hpPct < 0.25;
             return <g style={{ cursor: 'pointer' }}
               onClick={() => { if (!buildMode) { setSelectedType('farmhouse'); setWorkers(ws => ws.map(w => ({ ...w, selected: false }))); } }}
               onContextMenu={e => {
@@ -3397,10 +3410,12 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                 if (anySelected && selectedType === 'worker') { handleGarrison(); return; }
                 if (selectedType === 'farmhouse') { const coords = clientToSvg(e.clientX, e.clientY); if (coords) { const { tx, ty } = svgToTile(coords.x, coords.y); setRallyPoint({ x: tx, y: ty }); } }
               }}>
+              {lastStand && <circle cx={isoX + TILE_SIZE / 2} cy={isoY + TILE_SIZE / 2} r={TILE_SIZE * 0.9} fill="none" stroke="#ef4444" strokeWidth={3} strokeDasharray="6 3" opacity={0.7} />}
               {barnUnderFire && <circle cx={isoX + TILE_SIZE / 2} cy={isoY + TILE_SIZE / 2} r={TILE_SIZE * 0.7} fill="none" stroke="#fbbf24" strokeWidth={2} strokeDasharray="4 3" opacity={0.5} />}
-              <rect x={isoX} y={isoY} width={TILE_SIZE} height={TILE_SIZE} fill="#fde68a" stroke={hasGarrison ? '#22d3ee' : '#b45309'} strokeWidth={hasGarrison ? 5 : 6} rx={12} />
+              <rect x={isoX} y={isoY} width={TILE_SIZE} height={TILE_SIZE} fill="#fde68a" stroke={lastStand ? '#ef4444' : hasGarrison ? '#22d3ee' : '#b45309'} strokeWidth={lastStand ? 7 : hasGarrison ? 5 : 6} rx={12} />
               <polygon points={[[isoX, isoY], [isoX + TILE_SIZE / 2, isoY - 32], [isoX + TILE_SIZE, isoY]].map(p => p.join(',')).join(' ')} fill="#b91c1c" stroke="#7f1d1d" strokeWidth={4} />
               <text x={isoX + TILE_SIZE / 2} y={isoY + 44} textAnchor="middle" fontSize="22">🏚️</text>
+              {lastStand && <text x={isoX + TILE_SIZE / 2} y={isoY - 20} textAnchor="middle" fontSize="11" fill="#ef4444" fontWeight="bold">⚔ LAST STAND!</text>}
               <rect x={isoX - 8} y={isoY - 14} width={TILE_SIZE + 16} height={8} fill="#1e293b" rx={4} />
               <rect x={isoX - 8} y={isoY - 14} width={(TILE_SIZE + 16) * hpPct} height={8} fill={hpPct > 0.5 ? '#4ade80' : hpPct > 0.25 ? '#fbbf24' : '#ef4444'} rx={4} />
               {hasGarrison && <>
