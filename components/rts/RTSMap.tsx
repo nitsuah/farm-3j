@@ -59,7 +59,7 @@ const ARCHER_TOWER_ATTACK_MS = 2500;
 
 interface FloatingText { id: number; x: number; y: number; text: string; color: string; createdAt: number }
 type TileType = 'grass' | 'dirt' | 'water' | 'tree' | 'rock';
-type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market' | 'blacksmith' | 'granary';
+type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market' | 'blacksmith' | 'granary' | 'stable';
 
 interface ResourceNode { x: number; y: number; amount: number }
 interface Resources { gold: number; lumber: number; stone: number; food: number; foodCap: number }
@@ -116,14 +116,18 @@ const BUILDING_COSTS: Record<BuildingType, { gold: number; lumber: number; stone
   market:        { gold: 80,  lumber: 60, stone: 20, label: 'Market',         foodCapBonus: 0 },
   blacksmith:    { gold: 100, lumber: 60, stone: 80, label: 'Blacksmith',     foodCapBonus: 0 },
   granary:       { gold: 50,  lumber: 80, stone: 20, label: 'Granary',        foodCapBonus: 8 },
+  stable:        { gold: 80,  lumber: 60, stone: 30, label: 'Stable',         foodCapBonus: 0 },
 };
 
 const BUILDING_EMOJI: Record<BuildingType, string> = {
-  farmhouse: '🏠', lumberShed: '🪵', watchtower: '🗼', wall: '🧱', windmill: '💨', barracks: '🏯', siegeWorkshop: '⚙️', market: '🏪', blacksmith: '🔨', granary: '🌾',
+  farmhouse: '🏠', lumberShed: '🪵', watchtower: '🗼', wall: '🧱', windmill: '💨', barracks: '🏯', siegeWorkshop: '⚙️', market: '🏪', blacksmith: '🔨', granary: '🌾', stable: '🐴',
 };
 
 const SWORDSMAN_MAX_HP = 80;
 const SWORDSMAN_DAMAGE_BONUS = 10;
+const CAVALRY_MAX_HP = 65;
+const CAVALRY_SPEED = 3.0;
+const CAVALRY_DAMAGE_BONUS = 8;
 
 function makeTiles(): TileType[][] {
   return Array.from({ length: GRID_SIZE }, (_, i) =>
@@ -217,7 +221,7 @@ const INITIAL_TILES = makeTiles();
 // ---------- Save / Load ----------
 const SAVE_KEY = 'farm3j_rts_v1';
 
-interface SaveWorker { id: number; x: number; y: number; hp: number; maxHp: number; unitType: 'farmer' | 'swordsman' | 'hero' | 'catapult'; group: number | null; xp?: number; level?: number }
+interface SaveWorker { id: number; x: number; y: number; hp: number; maxHp: number; unitType: 'farmer' | 'swordsman' | 'hero' | 'catapult' | 'cavalry'; group: number | null; xp?: number; level?: number }
 interface SaveData {
   version: 1;
   resources: Resources;
@@ -257,8 +261,8 @@ function clearSave(): void {
   try { localStorage.removeItem(SAVE_KEY); } catch {}
 }
 
-function makeUnit(id: number, x: number, y: number, unitType: 'farmer' | 'swordsman' | 'hero' | 'catapult'): WorkerState {
-  const maxHp = unitType === 'hero' ? HERO_MAX_HP : unitType === 'swordsman' ? SWORDSMAN_MAX_HP : unitType === 'catapult' ? CATAPULT_MAX_HP : WORKER_MAX_HP;
+function makeUnit(id: number, x: number, y: number, unitType: 'farmer' | 'swordsman' | 'hero' | 'catapult' | 'cavalry'): WorkerState {
+  const maxHp = unitType === 'hero' ? HERO_MAX_HP : unitType === 'swordsman' ? SWORDSMAN_MAX_HP : unitType === 'catapult' ? CATAPULT_MAX_HP : unitType === 'cavalry' ? CAVALRY_MAX_HP : WORKER_MAX_HP;
   return { id, x, y, selected: false, movingTo: null, path: [], gathering: null, attacking: null, carrying: { gold: 0, lumber: 0, stone: 0 }, state: 'idle', group: null, hp: maxHp, maxHp, patrol: null, unitType, xp: 0, level: 0 };
 }
 // ---------------------------------
@@ -677,7 +681,7 @@ const RTSMap: React.FC = () => {
       let idx = 0;
       return ws.map(w => {
         if (!w.selected) return w;
-        if (gathering && (w.unitType === 'swordsman' || w.unitType === 'catapult' || w.unitType === 'hero')) return w;
+        if (gathering && (w.unitType === 'swordsman' || w.unitType === 'catapult' || w.unitType === 'hero' || w.unitType === 'cavalry')) return w;
         const isFormation = !gathering && !attacking;
         const offset = isFormation ? (FORMATION_OFFSETS[idx++] ?? { dx: 0, dy: 0 }) : { dx: 0, dy: 0 };
         const tx = Math.max(0, Math.min(GRID_SIZE - 1, targetX + offset.dx));
@@ -847,7 +851,7 @@ const RTSMap: React.FC = () => {
               }
               return { ...w, x: w.movingTo.x, y: w.movingTo.y, movingTo: null, path: [], state: 'idle' };
             }
-            const moveSpeed = w.unitType === 'catapult' ? CATAPULT_SPEED : WORKER_SPEED;
+            const moveSpeed = w.unitType === 'catapult' ? CATAPULT_SPEED : w.unitType === 'cavalry' ? CAVALRY_SPEED : WORKER_SPEED;
             return { ...w, x: w.x + (dx / d) * Math.min(moveSpeed * dt, d), y: w.y + (dy / d) * Math.min(moveSpeed * dt, d) };
           }
 
@@ -931,7 +935,7 @@ const RTSMap: React.FC = () => {
               if (!attackT[w.id]) {
                 const capturedCX = Math.round(creepTarget.x), capturedCY = Math.round(creepTarget.y);
                 const capturedWX3 = Math.round(w.x), capturedWY3 = Math.round(w.y);
-                const unitBonusC = w.unitType === 'hero' ? HERO_DAMAGE_BONUS : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : 0;
+                const unitBonusC = w.unitType === 'hero' ? HERO_DAMAGE_BONUS : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
                 const capturedVetC = w.level;
                 attackT[w.id] = window.setTimeout(() => {
                   delete attackTimeoutsRef.current[w.id];
@@ -971,7 +975,7 @@ const RTSMap: React.FC = () => {
                 const capturedGX = Math.round(target.x), capturedGY = Math.round(target.y);
                 const capturedWX = Math.round(w.x), capturedWY = Math.round(w.y);
                 const capturedWorkerId = w.id;
-                const unitBonus = w.unitType === 'hero' ? HERO_DAMAGE_BONUS : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : 0;
+                const unitBonus = w.unitType === 'hero' ? HERO_DAMAGE_BONUS : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
                 attackT[w.id] = window.setTimeout(() => {
                   delete attackTimeoutsRef.current[capturedWorkerId];
                   setWorkers(ws2 => {
@@ -1010,7 +1014,7 @@ const RTSMap: React.FC = () => {
             } else {
               if (!attackT[w.id]) {
                 const capturedWX = Math.round(w.x), capturedWY = Math.round(w.y);
-                const unitBonus2 = w.unitType === 'hero' ? HERO_DAMAGE_BONUS : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : 0;
+                const unitBonus2 = w.unitType === 'hero' ? HERO_DAMAGE_BONUS : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
                 const capturedVetLevel = w.level;
                 attackT[w.id] = window.setTimeout(() => {
                   delete attackTimeoutsRef.current[w.id];
@@ -1314,6 +1318,18 @@ const RTSMap: React.FC = () => {
           return [...ws, { ...makeSwordsman(newId, BARN_POS.x, BARN_POS.y), movingTo: path[0] ?? rp, path: path.slice(1), state: 'moving' as const }];
         }
         return [...ws, makeSwordsman(newId, BARN_POS.x, BARN_POS.y)];
+      });
+    } else if (action === 'trainCavalry') {
+      if (resources.gold < 60 || resources.food >= resources.foodCap) return;
+      setResources(r => ({ ...r, gold: r.gold - 60, food: r.food + 1 }));
+      setWorkers(ws => {
+        const newId = Math.max(...ws.map(w => w.id), 0) + 1;
+        const rp = rallyPoint;
+        if (rp) {
+          const path = aStar(INITIAL_TILES, BARN_POS, rp);
+          return [...ws, { ...makeUnit(newId, BARN_POS.x, BARN_POS.y, 'cavalry'), movingTo: path[0] ?? rp, path: path.slice(1), state: 'moving' as const }];
+        }
+        return [...ws, makeUnit(newId, BARN_POS.x, BARN_POS.y, 'cavalry')];
       });
     } else if (action === 'trainCatapult') {
       if (resources.gold < 150 || resources.lumber < 80 || resources.food >= resources.foodCap) return;
@@ -1665,6 +1681,18 @@ const RTSMap: React.FC = () => {
                 <text x={isoX + TILE_SIZE} y={isoY - 8} textAnchor="middle" fontSize="9" fill="#fca5a5" fontWeight="bold">BARRACKS</text>
               </g>;
             }
+            if (b.type === 'stable') {
+              return <g key={`building-${b.id}`} pointerEvents="none">
+                {/* Stable body - brown barn with dark roof */}
+                <rect x={isoX + TILE_SIZE * 0.1} y={isoY} width={TILE_SIZE * 1.8} height={TILE_SIZE * 0.8} fill="#92400e" stroke="#78350f" strokeWidth={3} rx={4} />
+                {/* Roof ridge */}
+                <rect x={isoX + TILE_SIZE * 0.1} y={isoY} width={TILE_SIZE * 1.8} height={10} fill="#451a03" stroke="none" rx={3} />
+                {/* Door */}
+                <rect x={isoX + TILE_SIZE * 0.8} y={isoY + TILE_SIZE * 0.35} width={18} height={28} fill="#1c1917" stroke="#78350f" strokeWidth={1.5} rx={2} />
+                <text x={isoX + TILE_SIZE} y={isoY + TILE_SIZE * 0.52} textAnchor="middle" fontSize="20">🐴</text>
+                <text x={isoX + TILE_SIZE} y={isoY - 4} textAnchor="middle" fontSize="9" fill="#fde68a" fontWeight="bold">STABLE</text>
+              </g>;
+            }
             if (b.type === 'granary') {
               return <g key={`building-${b.id}`} pointerEvents="none">
                 {/* Round silo body */}
@@ -1787,7 +1815,20 @@ const RTSMap: React.FC = () => {
               onClick={e => { e.stopPropagation(); if (!isDraggingRef.current && !buildMode) { setSelectedType('worker'); setWorkers(ws => ws.map(w => ({ ...w, selected: w.id === worker.id }))); } }}
               style={{ cursor: 'pointer' }}>
               {worker.selected && <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 32} rx={worker.unitType === 'hero' ? 26 : worker.unitType === 'catapult' ? 28 : 22} ry={10} fill="none" stroke={worker.unitType === 'hero' ? '#fbbf24' : worker.unitType === 'catapult' ? '#ea580c' : worker.unitType === 'swordsman' ? '#f87171' : '#38bdf8'} strokeWidth={3} />}
-              {worker.unitType === 'catapult' ? (
+              {worker.unitType === 'cavalry' ? (
+                <g>
+                  {/* Horse body */}
+                  <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 22} rx={22} ry={14} fill={worker.state === 'attacking' ? '#b45309' : '#d97706'} stroke="#78350f" strokeWidth={2.5} />
+                  {/* Horse head */}
+                  <ellipse cx={isoX + TILE_SIZE / 2 + 18} cy={isoY + 12} rx={10} ry={8} fill={worker.state === 'attacking' ? '#b45309' : '#d97706'} stroke="#78350f" strokeWidth={2} />
+                  {/* Legs */}
+                  <line x1={isoX + TILE_SIZE / 2 - 12} y1={isoY + 30} x2={isoX + TILE_SIZE / 2 - 12} y2={isoY + 44} stroke="#92400e" strokeWidth={4} strokeLinecap="round" />
+                  <line x1={isoX + TILE_SIZE / 2 + 4} y1={isoY + 30} x2={isoX + TILE_SIZE / 2 + 4} y2={isoY + 44} stroke="#92400e" strokeWidth={4} strokeLinecap="round" />
+                  {/* Rider */}
+                  <circle cx={isoX + TILE_SIZE / 2 + 4} cy={isoY + 8} r={8} fill="#fbbf24" stroke="#78350f" strokeWidth={2} />
+                  <text x={isoX + TILE_SIZE / 2 + 4} y={isoY + 12} textAnchor="middle" fontSize="10">⚔️</text>
+                </g>
+              ) : worker.unitType === 'catapult' ? (
                 <g>
                   {/* Catapult frame */}
                   <rect x={isoX + TILE_SIZE / 2 - 20} y={isoY + 6} width={40} height={18} fill="#78350f" stroke="#92400e" strokeWidth={2} rx={3} />
@@ -1909,6 +1950,7 @@ const RTSMap: React.FC = () => {
         hasBlacksmith={placedBuildings.some(b => b.type === 'blacksmith')}
         blacksmithUpgrades={blacksmithUpgrades}
         onBlacksmithUpgrade={(type) => handleFarmhouseAction(`blacksmith:${type}`)}
+        hasStable={placedBuildings.some(b => b.type === 'stable')}
         minimapData={minimapData}
         enemyBarnHp={enemyBarnHp}
         enemyBarnMaxHp={ENEMY_BARN_MAX_HP}

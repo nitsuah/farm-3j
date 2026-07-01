@@ -15,12 +15,12 @@ export interface WorkerState {
   hp: number;
   maxHp: number;
   patrol: { a: { x: number; y: number }; b: { x: number; y: number }; heading: 'a' | 'b' } | null;
-  unitType: 'farmer' | 'swordsman' | 'hero' | 'catapult';
+  unitType: 'farmer' | 'swordsman' | 'hero' | 'catapult' | 'cavalry';
   xp: number;
   level: number;
 }
 
-export type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market' | 'blacksmith' | 'granary';
+export type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market' | 'blacksmith' | 'granary' | 'stable';
 
 export interface PlacedBuilding {
   id: number;
@@ -74,6 +74,7 @@ interface RTSUIProps {
   hasBlacksmith: boolean;
   blacksmithUpgrades: { steelEdge: number; ironHide: number };
   onBlacksmithUpgrade: (type: 'steelEdge' | 'ironHide') => void;
+  hasStable: boolean;
   farmhouse: { built: boolean; level: number };
   farmhouseUpgradeCosts: { gold: number; lumber: number }[];
   farmhouseStorage: { gold: number; lumber: number }[];
@@ -132,6 +133,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
   hasBlacksmith,
   blacksmithUpgrades,
   onBlacksmithUpgrade,
+  hasStable,
 }) => {
   const isHeroSelected = selectedWorkers.some(w => w.unitType === 'hero');
   const selectedCount = selectedWorkers.length;
@@ -166,7 +168,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
           {selectedType === 'worker' && firstWorker ? (
             <>
               <div className="mt-1 text-sm font-semibold">
-                {firstWorker.unitType === 'hero' ? '🦸 Barnabas' : firstWorker.unitType === 'catapult' ? '🪨 Catapult' : allSwordsmen ? '⚔️ Swordsman' : firstWorker.unitType === 'swordsman' ? 'Mixed' : 'Farmer'}{selectedCount > 1 && firstWorker.unitType !== 'hero' ? ` ×${selectedCount}` : ''}
+                {firstWorker.unitType === 'hero' ? '🦸 Barnabas' : firstWorker.unitType === 'catapult' ? '🪨 Catapult' : firstWorker.unitType === 'cavalry' ? '🐴 Cavalry' : allSwordsmen ? '⚔️ Swordsman' : firstWorker.unitType === 'swordsman' ? 'Mixed' : 'Farmer'}{selectedCount > 1 && firstWorker.unitType !== 'hero' ? ` ×${selectedCount}` : ''}
                 {firstWorker.group !== null && selectedCount === 1 && (
                   <span className="ml-2 rounded bg-amber-900/60 px-1.5 text-xs text-amber-300">G{firstWorker.group}</span>
                 )}
@@ -351,6 +353,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                   <button className="rounded border border-emerald-600/70 bg-emerald-900/20 px-2 py-2 text-xs text-emerald-100 hover:bg-emerald-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:market')} disabled={!canAfford(buildingCosts.market)} title="Market — trade lumber for gold (80🪙 60🌲 20🪨)">🏪 Market</button>
                   <button className="rounded border border-red-800/70 bg-red-950/30 px-2 py-2 text-xs text-red-100 hover:bg-red-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:blacksmith')} disabled={!canAfford(buildingCosts.blacksmith)} title="Blacksmith — upgrade unit attack and armor (100🪙 60🌲 80🪨)">🔨 Smith</button>
                   <button className="rounded border border-yellow-600/70 bg-yellow-900/20 px-2 py-2 text-xs text-yellow-100 hover:bg-yellow-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:granary')} disabled={!canAfford(buildingCosts.granary)} title="Granary — +8 population cap (50🪙 80🌲 20🪨)">🌾 Granary</button>
+                  <button className="rounded border border-amber-500/70 bg-amber-900/20 px-2 py-2 text-xs text-amber-100 hover:bg-amber-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:stable')} disabled={!canAfford(buildingCosts.stable)} title="Stable — train fast Cavalry units (80🪙 60🌲 30🪨)">🐴 Stable</button>
                   {hasMarket && (
                     <>
                       <button
@@ -409,6 +412,16 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                       title={heroRecruited ? 'Barnabas already recruited (one hero per game)' : 'Recruit Barnabas — 150🪙, 150HP, +20 dmg, ⚡ Rallying Cry ability'}
                     >
                       {heroRecruited ? '🦸 Hero Recruited' : '🦸 Recruit Hero 150🪙'}
+                    </button>
+                  )}
+                  {hasStable && (
+                    <button
+                      className="col-span-2 rounded border border-amber-500/70 bg-amber-500/15 px-2 py-2 text-xs text-amber-100 hover:bg-amber-500/30 disabled:opacity-40"
+                      onClick={() => onFarmhouseAction('trainCavalry')}
+                      disabled={resources.gold < 60 || resources.food >= resources.foodCap}
+                      title="Train Cavalry — 60🪙, 65HP, 2.5× speed, +8 dmg, cannot harvest"
+                    >
+                      🐴 Train Cavalry 60🪙
                     </button>
                   )}
                   {hasSiegeWorkshop && (
