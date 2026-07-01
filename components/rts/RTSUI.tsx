@@ -22,6 +22,7 @@ export interface WorkerState {
   hp: number;
   maxHp: number;
   patrol: { a: { x: number; y: number }; b: { x: number; y: number }; heading: 'a' | 'b' } | null;
+  holdPosition: boolean;
   unitType: 'farmer' | 'swordsman' | 'hero' | 'catapult' | 'cavalry';
   xp: number;
   level: number;
@@ -108,6 +109,7 @@ interface RTSUIProps {
   onWorkerCommand: (cmd: 'stop' | 'gather' | 'attack') => void;
   patrolMode: boolean;
   onPatrolCommand: () => void;
+  onHoldPosition: () => void;
   buildMode: BuildingType | null;
   upgrades: Upgrades;
   onResearch: (type: keyof Upgrades) => void;
@@ -141,6 +143,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
   onWorkerCommand,
   patrolMode,
   onPatrolCommand,
+  onHoldPosition,
   buildMode,
   upgrades,
   onResearch,
@@ -338,6 +341,13 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                 title="Patrol [P] — right-click two points to set patrol route"
               >
                 {patrolMode ? '🔄 Set Patrol…' : '🔄 Patrol'}
+              </button>
+              <button
+                className="col-span-2 rounded border border-yellow-500/70 bg-yellow-500/15 px-2 py-2 text-xs text-yellow-100 hover:bg-yellow-500/30"
+                onClick={onHoldPosition}
+                title="Hold Position [H] — stand still, auto-attack enemies in range without chasing"
+              >
+                🛡️ Hold [H]
               </button>
               <button
                 className="col-span-2 rounded border border-sky-500/70 bg-sky-500/15 px-2 py-2 text-xs text-sky-100 hover:bg-sky-500/30 disabled:opacity-40"

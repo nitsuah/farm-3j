@@ -315,7 +315,7 @@ function clearSave(): void {
 
 function makeUnit(id: number, x: number, y: number, unitType: 'farmer' | 'swordsman' | 'hero' | 'catapult' | 'cavalry'): WorkerState {
   const maxHp = unitType === 'hero' ? HERO_MAX_HP : unitType === 'swordsman' ? SWORDSMAN_MAX_HP : unitType === 'catapult' ? CATAPULT_MAX_HP : unitType === 'cavalry' ? CAVALRY_MAX_HP : WORKER_MAX_HP;
-  return { id, x, y, selected: false, movingTo: null, path: [], gathering: null, attacking: null, repairing: null, chargeCooldown: 0, sprintCooldown: 0, sprinting: false, waypoints: [], attackMove: false, attackMoveTarget: null, carrying: { gold: 0, lumber: 0, stone: 0 }, state: 'idle', group: null, hp: maxHp, maxHp, patrol: null, unitType, xp: 0, level: 0 };
+  return { id, x, y, selected: false, movingTo: null, path: [], gathering: null, attacking: null, repairing: null, chargeCooldown: 0, sprintCooldown: 0, sprinting: false, waypoints: [], attackMove: false, attackMoveTarget: null, carrying: { gold: 0, lumber: 0, stone: 0 }, state: 'idle', group: null, hp: maxHp, maxHp, patrol: null, holdPosition: false, unitType, xp: 0, level: 0 };
 }
 // ---------------------------------
 
@@ -1003,7 +1003,7 @@ const RTSMap: React.FC = () => {
         const startTile = { x: Math.round(w.x), y: Math.round(w.y) };
         const rawPath = aStar(INITIAL_TILES, startTile, dest);
         const first = rawPath[0] ?? dest;
-        return { ...w, movingTo: first, path: rawPath.slice(1), gathering: gathering ?? null, attacking: attacking ?? null, repairing: null, attackMove: false, attackMoveTarget: null, patrol: null, waypoints: [], state: 'moving' };
+        return { ...w, movingTo: first, path: rawPath.slice(1), gathering: gathering ?? null, attacking: attacking ?? null, repairing: null, attackMove: false, attackMoveTarget: null, patrol: null, holdPosition: false, waypoints: [], state: 'moving' };
       });
     });
   }, []);
@@ -1125,11 +1125,15 @@ const RTSMap: React.FC = () => {
       if (e.key === 'r' || e.key === 'R') { e.preventDefault(); handleFarmhouseAction('trainCavalry'); }
       if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault();
-        setWorkers(ws => ws.map(w => w.selected ? { ...w, movingTo: null, path: [], gathering: null, attacking: null, repairing: null, attackMove: false, attackMoveTarget: null, patrol: null, waypoints: [], state: 'idle' as const } : w));
+        setWorkers(ws => ws.map(w => w.selected ? { ...w, movingTo: null, path: [], gathering: null, attacking: null, repairing: null, attackMove: false, attackMoveTarget: null, patrol: null, holdPosition: false, waypoints: [], state: 'idle' as const } : w));
       }
       if (e.key === 'g' || e.key === 'G') { e.preventDefault(); handleGarrison(); }
       if (e.key === 'c' || e.key === 'C') { e.preventDefault(); handleSwordsmanCharge(); }
       if (e.key === 's' || e.key === 'S') { e.preventDefault(); handleCavalrySprint(); }
+      if (e.key === 'h' || e.key === 'H') {
+        e.preventDefault();
+        setWorkers(ws => ws.map(w => w.selected ? { ...w, holdPosition: true, movingTo: null, path: [], patrol: null, attackMove: false, attackMoveTarget: null, waypoints: [], state: 'idle' as const } : w));
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -1194,6 +1198,25 @@ const RTSMap: React.FC = () => {
             if (nearCreep) return { ...w, attacking: { targetType: 'creep' as const, creepId: nearCreep.id }, state: 'attacking' as const, movingTo: null, path: [] };
             const nearRam = enemySiegeRef.current.find(r => r.hp > 0 && tileDist(w.x, w.y, r.x, r.y) <= AM_SCAN);
             if (nearRam) return { ...w, attacking: { targetType: 'siege' as const, siegeId: nearRam.id }, state: 'attacking' as const, movingTo: null, path: [] };
+          }
+          // Hold position: stay put, auto-attack nearby enemies without chasing
+          if (w.holdPosition) {
+            if (w.state === 'idle' && !w.attacking && w.unitType !== 'farmer' && w.unitType !== 'catapult') {
+              const HP_RANGE = 1.8;
+              const nearGruntH = enemyGruntsRef.current.find(g => g.hp > 0 && tileDist(w.x, w.y, g.x, g.y) <= HP_RANGE);
+              if (nearGruntH) return { ...w, attacking: { targetType: 'grunt' as const, gruntId: nearGruntH.id }, state: 'attacking' as const };
+              const nearRamH = enemySiegeRef.current.find(r => r.hp > 0 && tileDist(w.x, w.y, r.x, r.y) <= HP_RANGE);
+              if (nearRamH) return { ...w, attacking: { targetType: 'siege' as const, siegeId: nearRamH.id }, state: 'attacking' as const };
+            }
+            // After killing target, go back to idle (don't chase)
+            if (w.state === 'attacking' && w.attacking) {
+              const isGruntDead = w.attacking.targetType === 'grunt' && !enemyGruntsRef.current.find(g => g.id === (w.attacking as { targetType: 'grunt'; gruntId: number }).gruntId && g.hp > 0);
+              const isRamDead = w.attacking.targetType === 'siege' && !enemySiegeRef.current.find(r => r.id === (w.attacking as { targetType: 'siege'; siegeId: number }).siegeId && r.hp > 0);
+              if (isGruntDead || isRamDead) return { ...w, attacking: null, state: 'idle' };
+            }
+            // Block movement while holding position
+            if (w.state === 'moving') return { ...w, movingTo: null, path: [], state: 'idle' };
+            return w;
           }
           // When attack-move unit finishes its target, resume march to original destination
           if (w.attackMove && w.state === 'idle' && w.attackMoveTarget) {
@@ -1991,7 +2014,7 @@ const RTSMap: React.FC = () => {
       gatherTimeoutsRef.current = {};
       attackTimeoutsRef.current = {};
       setPatrolMode(false);
-      setWorkers(ws => ws.map(w => w.selected ? { ...w, movingTo: null, path: [], gathering: null, attacking: null, repairing: null, attackMove: false, attackMoveTarget: null, patrol: null, waypoints: [], state: 'idle' } : w));
+      setWorkers(ws => ws.map(w => w.selected ? { ...w, movingTo: null, path: [], gathering: null, attacking: null, repairing: null, attackMove: false, attackMoveTarget: null, patrol: null, holdPosition: false, waypoints: [], state: 'idle' } : w));
     }
   };
 
@@ -2176,7 +2199,7 @@ const RTSMap: React.FC = () => {
             ⚔️ Attack-Move · Right-click destination · Esc to cancel
           </span>
         ) : (
-          <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 400 }}>WASD pan · scroll zoom · Ctrl+A all · Ctrl+1-9 groups · P patrol · A atk-move · C charge · S sprint · F farmer · Q sword · R cavalry · Del stop · G garrison</span>
+          <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 400 }}>WASD pan · scroll zoom · Ctrl+A all · Ctrl+1-9 groups · P patrol · A atk-move · H hold · C charge · S sprint · F farmer · Q sword · R cavalry · Del stop · G garrison</span>
         )}
         <button onClick={doSave} style={{ background: saveStatus === 'saved' ? 'rgba(74,222,128,0.2)' : 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', color: saveStatus === 'saved' ? '#4ade80' : '#94a3b8', padding: '2px 10px', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>
           {saveStatus === 'saved' ? '✓ Saved' : '💾 Save'}
@@ -2587,6 +2610,7 @@ const RTSMap: React.FC = () => {
               style={{ cursor: 'pointer' }}>
               {hasMoraleAura && <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 32} rx={26} ry={12} fill="none" stroke="#fbbf24" strokeWidth={1.5} strokeDasharray="3 2" opacity={0.6} />}
               {worker.selected && <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 32} rx={worker.unitType === 'hero' ? 26 : worker.unitType === 'catapult' ? 28 : 22} ry={10} fill="none" stroke={worker.unitType === 'hero' ? '#fbbf24' : worker.unitType === 'catapult' ? '#ea580c' : worker.unitType === 'swordsman' ? '#f87171' : '#38bdf8'} strokeWidth={3} />}
+              {worker.holdPosition && <text x={isoX + TILE_SIZE / 2 + 14} y={isoY - 2} textAnchor="middle" fontSize="12">🛡️</text>}
               {worker.unitType === 'cavalry' ? (
                 <g>
                   {worker.sprinting && <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 22} rx={28} ry={17} fill="none" stroke="#f59e0b" strokeWidth={2} strokeDasharray="4 2" opacity={0.8} />}
@@ -2719,6 +2743,7 @@ const RTSMap: React.FC = () => {
         onWorkerCommand={handleWorkerCommand}
         patrolMode={patrolMode}
         onPatrolCommand={() => setPatrolMode(m => !m)}
+        onHoldPosition={() => setWorkers(ws => ws.map(w => w.selected ? { ...w, holdPosition: true, movingTo: null, path: [], patrol: null, attackMove: false, attackMoveTarget: null, waypoints: [], state: 'idle' } : w))}
         buildMode={buildMode}
         upgrades={upgrades}
         onResearch={handleResearch}
