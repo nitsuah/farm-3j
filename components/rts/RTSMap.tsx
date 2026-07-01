@@ -150,7 +150,7 @@ type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmi
 
 interface ResourceNode { x: number; y: number; amount: number }
 interface Resources { gold: number; lumber: number; stone: number; food: number; foodCap: number }
-interface PlacedBuilding { id: number; type: BuildingType; x: number; y: number; hp: number; maxHp: number }
+interface PlacedBuilding { id: number; type: BuildingType; x: number; y: number; hp: number; maxHp: number; upgraded?: boolean }
 
 interface EnemyGrunt {
   id: number;
@@ -2940,6 +2940,13 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
       setResources(r => ({ ...r, gold: r.gold - 120, stone: r.stone - 80 }));
       setGuardTowerResearched(true);
       addFloatingText(BARN_POS.x, BARN_POS.y, '🏰 Guard Tower!', '#22d3ee');
+    } else if (action.startsWith('upgradeWall:')) {
+      const bid = parseInt(action.split(':')[1]);
+      const wall = placedBuildings.find(b => b.id === bid && b.type === 'wall' && !b.upgraded);
+      if (!wall || resources.gold < 50 || resources.stone < 20) return;
+      setResources(r => ({ ...r, gold: r.gold - 50, stone: r.stone - 20 }));
+      setPlacedBuildings(bs => bs.map(b => b.id === bid ? { ...b, upgraded: true, maxHp: 350, hp: Math.min(b.hp + 230, 350) } : b));
+      addFloatingText(wall.x, wall.y, '🪨 Stone Wall!', '#94a3b8');
     } else if (action.startsWith('build:')) {
       const btype = action.split(':')[1] as BuildingType;
       if (BUILDING_COSTS[btype]) setBuildMode(btype);
@@ -3467,16 +3474,29 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
             const c = colors[b.type] ?? { fill: '#374151', stroke: '#1f2937' };
             const isDamaged = b.hp < b.maxHp;
             const isTower = b.type === 'watchtower';
+            const isWall = b.type === 'wall';
+            const canUpgradeWall = isWall && !b.upgraded && resources.gold >= 50 && resources.stone >= 20;
             const tgCount = isTower ? (towerGarrison[b.id] ?? []).length : 0;
             const canGarrisonTower = isTower && anySelected && tgCount < 3;
             const onCtxMenu = isDamaged && anySelected ? (e: React.MouseEvent) => handleRepairBuilding(b.id, b.x, b.y, e)
+              : canUpgradeWall ? (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); handleFarmhouseAction(`upgradeWall:${b.id}`); }
               : canGarrisonTower ? (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); handleTowerGarrison(b.id, b.x, b.y); }
               : undefined;
-            return <g key={`building-${b.id}`} style={{ cursor: (isDamaged || canGarrisonTower) && anySelected ? 'pointer' : 'default' }}
+            const wallFill = b.upgraded ? '#64748b' : c.fill;
+            const wallStroke = b.upgraded ? '#1e293b' : isDamaged ? '#f97316' : tgCount > 0 ? '#22d3ee' : c.stroke;
+            return <g key={`building-${b.id}`} style={{ cursor: ((isDamaged || canGarrisonTower || canUpgradeWall) && anySelected) ? 'pointer' : 'default' }}
               onContextMenu={onCtxMenu}>
-              <rect x={isoX + TILE_SIZE / 4} y={isoY} width={TILE_SIZE * 1.5} height={TILE_SIZE * 0.8} fill={c.fill} stroke={isDamaged ? '#f97316' : tgCount > 0 ? '#22d3ee' : c.stroke} strokeWidth={isDamaged ? 4 : tgCount > 0 ? 3 : 3} rx={8} />
-              <text x={isoX + TILE_SIZE} y={isoY + TILE_SIZE / 2} textAnchor="middle" fontSize="22">{BUILDING_EMOJI[b.type]}</text>
+              <rect x={isoX + TILE_SIZE / 4} y={isoY} width={TILE_SIZE * 1.5} height={TILE_SIZE * 0.8} fill={wallFill} stroke={wallStroke} strokeWidth={isDamaged ? 4 : tgCount > 0 ? 3 : 3} rx={isWall && b.upgraded ? 2 : 8} />
+              {isWall && b.upgraded && <>
+                {/* Stone brick pattern */}
+                <line x1={isoX + TILE_SIZE / 4} y1={isoY + TILE_SIZE * 0.27} x2={isoX + TILE_SIZE * 1.75} y2={isoY + TILE_SIZE * 0.27} stroke="#374151" strokeWidth={1} />
+                <line x1={isoX + TILE_SIZE * 0.75} y1={isoY} x2={isoX + TILE_SIZE * 0.75} y2={isoY + TILE_SIZE * 0.27} stroke="#374151" strokeWidth={1} />
+                <line x1={isoX + TILE_SIZE * 1.25} y1={isoY + TILE_SIZE * 0.27} x2={isoX + TILE_SIZE * 1.25} y2={isoY + TILE_SIZE * 0.8} stroke="#374151" strokeWidth={1} />
+                <text x={isoX + TILE_SIZE} y={isoY - 4} textAnchor="middle" fontSize="7" fill="#94a3b8" fontWeight="bold">STONE</text>
+              </>}
+              {(!isWall || !b.upgraded) && <text x={isoX + TILE_SIZE} y={isoY + TILE_SIZE / 2} textAnchor="middle" fontSize="22">{BUILDING_EMOJI[b.type]}</text>}
               {isDamaged && <text x={isoX + TILE_SIZE} y={isoY - 18} textAnchor="middle" fontSize="9" fill="#f97316" fontWeight="bold">🔧 REPAIR</text>}
+              {!isDamaged && canUpgradeWall && <text x={isoX + TILE_SIZE} y={isoY - 18} textAnchor="middle" fontSize="8" fill="#94a3b8">🪨 Upgrade 50🪙20🪨</text>}
               {isTower && tgCount > 0 && <text x={isoX + TILE_SIZE} y={isoY - 18} textAnchor="middle" fontSize="9" fill="#22d3ee" fontWeight="bold">👥×{tgCount}</text>}
             </g>; })}
 
