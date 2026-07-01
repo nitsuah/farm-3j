@@ -368,6 +368,15 @@ const RTSMap: React.FC = () => {
     const id = setInterval(() => setHeroAbilityCooldown(c => Math.max(0, c - 1)), 1000);
     return () => clearInterval(id);
   }, [heroAbilityCooldown > 0]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [harvestBoonCooldown, setHarvestBoonCooldown] = useState(0);
+  const [harvestBoonActive, setHarvestBoonActive] = useState(false);
+  const harvestBoonRef = useRef(false);
+  useEffect(() => { harvestBoonRef.current = harvestBoonActive; }, [harvestBoonActive]);
+  useEffect(() => {
+    if (harvestBoonCooldown <= 0) return;
+    const id = setInterval(() => setHarvestBoonCooldown(c => Math.max(0, c - 1)), 1000);
+    return () => clearInterval(id);
+  }, [harvestBoonCooldown > 0]); // eslint-disable-line react-hooks/exhaustive-deps
   const [killCount, setKillCount] = useState(() => INITIAL_SAVE?.killCount ?? 0);
   const [totalGold, setTotalGold] = useState(() => INITIAL_SAVE?.totalGold ?? 0);
   const [totalLumber, setTotalLumber] = useState(() => INITIAL_SAVE?.totalLumber ?? 0);
@@ -671,6 +680,21 @@ const RTSMap: React.FC = () => {
     setHeroAbilityCooldown(HERO_ABILITY_COOLDOWN_S);
   }, [heroAbilityCooldown, addFloatingText]);
 
+  const handleHarvestBoon = useCallback(() => {
+    if (harvestBoonCooldown > 0 || harvestBoonActive) return;
+    const hero = workersRef.current.find(w => w.unitType === 'hero');
+    if (!hero) return;
+    setHarvestBoonActive(true);
+    harvestBoonRef.current = true;
+    addFloatingText(Math.round(hero.x), Math.round(hero.y), '🌾 Harvest Boon!', '#86efac');
+    workers.forEach(w => { if (w.unitType === 'farmer') addFloatingText(Math.round(w.x), Math.round(w.y), '⚡', '#86efac'); });
+    setHarvestBoonCooldown(40);
+    window.setTimeout(() => {
+      setHarvestBoonActive(false);
+      harvestBoonRef.current = false;
+    }, 10000);
+  }, [harvestBoonCooldown, harvestBoonActive, addFloatingText, workers]);
+
   const isTileOccupied = useCallback((x: number, y: number): boolean => {
     if (x < 0 || y < 0 || x >= GRID_SIZE || y >= GRID_SIZE) return true;
     if (tiles[x]?.[y] === 'water') return true;
@@ -888,7 +912,8 @@ const RTSMap: React.FC = () => {
               }
               if (!gatherT[w.id]) {
                 const lumberShedCount = placedBuildingsRef.current.filter(b => b.type === 'lumberShed').length;
-                const gatherMs = Math.max(400, GATHER_INTERVAL_MS - upgradesRef.current.swiftHarvest * 200 - lumberShedCount * 200);
+                const boonDiv = harvestBoonRef.current ? 2 : 1;
+                const gatherMs = Math.max(400, (GATHER_INTERVAL_MS - upgradesRef.current.swiftHarvest * 200 - lumberShedCount * 200) / boonDiv);
                 gatherT[w.id] = window.setTimeout(() => {
                   delete gatherTimeoutsRef.current[w.id];
                   const idx = w.gathering!.idx;
@@ -909,7 +934,7 @@ const RTSMap: React.FC = () => {
                 return { ...w, state: 'returning', movingTo: p[0] ?? BARN_POS, path: p.slice(1) };
               }
               if (!gatherT[w.id]) {
-                const gatherMs = Math.max(400, GATHER_INTERVAL_MS - upgradesRef.current.swiftHarvest * 200);
+                const gatherMs = Math.max(400, (GATHER_INTERVAL_MS - upgradesRef.current.swiftHarvest * 200) / (harvestBoonRef.current ? 2 : 1));
                 gatherT[w.id] = window.setTimeout(() => {
                   delete gatherTimeoutsRef.current[w.id];
                   setWorkers(ws2 => ws2.map(w2 => {
@@ -930,7 +955,7 @@ const RTSMap: React.FC = () => {
               }
               if (!gatherT[w.id]) {
                 const idx = w.gathering.idx;
-                const gatherMs = Math.max(400, GATHER_INTERVAL_MS - upgradesRef.current.swiftHarvest * 200);
+                const gatherMs = Math.max(400, (GATHER_INTERVAL_MS - upgradesRef.current.swiftHarvest * 200) / (harvestBoonRef.current ? 2 : 1));
                 gatherT[w.id] = window.setTimeout(() => {
                   delete gatherTimeoutsRef.current[w.id];
                   setWorkers(ws2 => ws2.map(w2 => {
@@ -1976,6 +2001,9 @@ const RTSMap: React.FC = () => {
         heroRecruited={heroRecruited}
         heroAbilityCooldown={heroAbilityCooldown}
         onHeroAbility={handleHeroAbility}
+        harvestBoonCooldown={harvestBoonCooldown}
+        harvestBoonActive={harvestBoonActive}
+        onHarvestBoon={handleHarvestBoon}
         onRecruitHero={() => handleFarmhouseAction('recruitHero')}
         hasSiegeWorkshop={placedBuildings.some(b => b.type === 'siegeWorkshop')}
         hasMarket={placedBuildings.some(b => b.type === 'market')}

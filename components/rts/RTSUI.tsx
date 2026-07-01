@@ -68,6 +68,9 @@ interface RTSUIProps {
   heroRecruited: boolean;
   heroAbilityCooldown: number;
   onHeroAbility: () => void;
+  harvestBoonCooldown: number;
+  harvestBoonActive: boolean;
+  onHarvestBoon: () => void;
   onRecruitHero: () => void;
   hasSiegeWorkshop: boolean;
   hasMarket: boolean;
@@ -132,6 +135,9 @@ export const RTSUI: React.FC<RTSUIProps> = ({
   heroRecruited,
   heroAbilityCooldown,
   onHeroAbility,
+  harvestBoonCooldown,
+  harvestBoonActive,
+  onHarvestBoon,
   onRecruitHero,
   hasSiegeWorkshop,
   hasMarket,
@@ -307,16 +313,24 @@ export const RTSUI: React.FC<RTSUIProps> = ({
               >
                 🏰 Garrison ({garrisonedCount}/{garrisonCap})
               </button>
-              {isHeroSelected && (
+              {isHeroSelected && (<>
                 <button
-                  className={`col-span-4 rounded border px-2 py-2 text-xs font-semibold disabled:opacity-40 ${heroAbilityCooldown > 0 ? 'border-yellow-700/50 bg-yellow-900/20 text-yellow-600' : 'border-yellow-400 bg-yellow-500/20 text-yellow-200 hover:bg-yellow-500/30'}`}
+                  className={`col-span-2 rounded border px-2 py-2 text-xs font-semibold disabled:opacity-40 ${heroAbilityCooldown > 0 ? 'border-yellow-700/50 bg-yellow-900/20 text-yellow-600' : 'border-yellow-400 bg-yellow-500/20 text-yellow-200 hover:bg-yellow-500/30'}`}
                   onClick={onHeroAbility}
                   disabled={heroAbilityCooldown > 0}
                   title="Rallying Cry — AoE damage to all grunts within 3.5 tiles"
                 >
-                  {heroAbilityCooldown > 0 ? `⚡ Rallying Cry (${heroAbilityCooldown}s)` : '⚡ Rallying Cry — AoE 30 dmg'}
+                  {heroAbilityCooldown > 0 ? `⚡ Cry (${heroAbilityCooldown}s)` : '⚡ Rallying Cry'}
                 </button>
-              )}
+                <button
+                  className={`col-span-2 rounded border px-2 py-2 text-xs font-semibold disabled:opacity-40 ${harvestBoonActive ? 'border-green-400 bg-green-500/30 text-green-200' : harvestBoonCooldown > 0 ? 'border-green-700/50 bg-green-900/20 text-green-600' : 'border-green-400 bg-green-500/20 text-green-200 hover:bg-green-500/30'}`}
+                  onClick={onHarvestBoon}
+                  disabled={harvestBoonCooldown > 0 || harvestBoonActive}
+                  title="Harvest Boon — all farmers gather 2× faster for 10 seconds"
+                >
+                  {harvestBoonActive ? '🌾 Boon! (active)' : harvestBoonCooldown > 0 ? `🌾 Boon (${harvestBoonCooldown}s)` : '🌾 Harvest Boon'}
+                </button>
+              </>)}
             </div>
           )}
 
