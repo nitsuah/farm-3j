@@ -900,6 +900,13 @@ const RTSMap: React.FC = () => {
       const gatherT = gatherTimeoutsRef.current;
       const attackT = attackTimeoutsRef.current;
 
+      // Morale aura: hero within 3 tiles speeds up attack interval by 30%
+      const heroUnit = workersRef.current.find(w => w.unitType === 'hero' && w.hp > 0);
+      const getMoraleMs = (wx: number, wy: number) => {
+        if (!heroUnit) return ATTACK_INTERVAL_MS;
+        return tileDist(wx, wy, heroUnit.x, heroUnit.y) <= 3 ? Math.round(ATTACK_INTERVAL_MS * 0.7) : ATTACK_INTERVAL_MS;
+      };
+
       // Update workers
       setWorkers(ws => {
         const alive = ws.filter(w => w.hp > 0);
@@ -1038,6 +1045,7 @@ const RTSMap: React.FC = () => {
                 const capturedWX3 = Math.round(w.x), capturedWY3 = Math.round(w.y);
                 const unitBonusC = w.unitType === 'hero' ? HERO_DAMAGE_BONUS : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
                 const capturedVetC = w.level;
+                const moraleMs1 = getMoraleMs(w.x, w.y);
                 attackT[w.id] = window.setTimeout(() => {
                   delete attackTimeoutsRef.current[w.id];
                   const dmgC = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + unitBonusC + capturedVetC * VETERAN_ATK_BONUS;
@@ -1061,7 +1069,7 @@ const RTSMap: React.FC = () => {
                     }
                     return { ...c, hp: newHp };
                   }));
-                }, ATTACK_INTERVAL_MS);
+                }, moraleMs1);
               }
             } else if (w.attacking.targetType === 'grunt') {
               const target = enemyGruntsRef.current.find(g => g.id === (w.attacking as { targetType: 'grunt'; gruntId: number }).gruntId);
@@ -1077,6 +1085,7 @@ const RTSMap: React.FC = () => {
                 const capturedWX = Math.round(w.x), capturedWY = Math.round(w.y);
                 const capturedWorkerId = w.id;
                 const unitBonus = w.unitType === 'hero' ? HERO_DAMAGE_BONUS : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
+                const moraleMs2 = getMoraleMs(w.x, w.y);
                 attackT[w.id] = window.setTimeout(() => {
                   delete attackTimeoutsRef.current[capturedWorkerId];
                   setWorkers(ws2 => {
@@ -1110,7 +1119,7 @@ const RTSMap: React.FC = () => {
                       return { ...u, xp: newXp };
                     });
                   });
-                }, ATTACK_INTERVAL_MS);
+                }, moraleMs2);
               }
             } else if (w.attacking.targetType === 'enemyTower') {
               const towerId = (w.attacking as { targetType: 'enemyTower'; towerId: number }).towerId;
@@ -1126,18 +1135,20 @@ const RTSMap: React.FC = () => {
                 const capturedTId = towerId;
                 const unitBonusT = w.unitType === 'hero' ? HERO_DAMAGE_BONUS : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
                 const capturedVetT = w.level;
+                const moraleMs3 = getMoraleMs(w.x, w.y);
                 attackT[w.id] = window.setTimeout(() => {
                   delete attackTimeoutsRef.current[w.id];
                   const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + unitBonusT + capturedVetT * VETERAN_ATK_BONUS;
                   setEnemyTowers(ts => ts.map(t => t.id === capturedTId ? { ...t, hp: Math.max(0, t.hp - dmg) } : t));
                   addFloatingText(capturedTX, capturedTY, `-${dmg}`, '#ef4444');
-                }, ATTACK_INTERVAL_MS);
+                }, moraleMs3);
               }
             } else {
               if (!attackT[w.id]) {
                 const capturedWX = Math.round(w.x), capturedWY = Math.round(w.y);
                 const unitBonus2 = w.unitType === 'hero' ? HERO_DAMAGE_BONUS : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
                 const capturedVetLevel = w.level;
+                const moraleMs4 = getMoraleMs(w.x, w.y);
                 attackT[w.id] = window.setTimeout(() => {
                   delete attackTimeoutsRef.current[w.id];
                   const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + unitBonus2 + capturedVetLevel * VETERAN_ATK_BONUS;
@@ -1149,7 +1160,7 @@ const RTSMap: React.FC = () => {
                     addFloatingText(capturedWX, capturedWY, `-${counterDmg}`, '#fca5a5');
                     return { ...w2, hp: Math.max(0, w2.hp - counterDmg) };
                   }));
-                }, ATTACK_INTERVAL_MS);
+                }, moraleMs4);
               }
             }
           }
@@ -1971,9 +1982,12 @@ const RTSMap: React.FC = () => {
 
           {/* Workers */}
           {workers.map(worker => { const { isoX, isoY } = tileToSvg(worker.x, worker.y); const hp = worker.hp / worker.maxHp;
+            const heroAlive = workers.find(w => w.unitType === 'hero' && w.hp > 0);
+            const hasMoraleAura = heroAlive && worker.unitType !== 'hero' && tileDist(worker.x, worker.y, heroAlive.x, heroAlive.y) <= 3;
             return <g key={`worker-${worker.id}`}
               onClick={e => { e.stopPropagation(); if (!isDraggingRef.current && !buildMode) { setSelectedType('worker'); setWorkers(ws => ws.map(w => ({ ...w, selected: w.id === worker.id }))); } }}
               style={{ cursor: 'pointer' }}>
+              {hasMoraleAura && <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 32} rx={26} ry={12} fill="none" stroke="#fbbf24" strokeWidth={1.5} strokeDasharray="3 2" opacity={0.6} />}
               {worker.selected && <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 32} rx={worker.unitType === 'hero' ? 26 : worker.unitType === 'catapult' ? 28 : 22} ry={10} fill="none" stroke={worker.unitType === 'hero' ? '#fbbf24' : worker.unitType === 'catapult' ? '#ea580c' : worker.unitType === 'swordsman' ? '#f87171' : '#38bdf8'} strokeWidth={3} />}
               {worker.unitType === 'cavalry' ? (
                 <g>
@@ -2022,6 +2036,18 @@ const RTSMap: React.FC = () => {
               <rect x={isoX + TILE_SIZE / 2 - 16} y={isoY - 4} width={32 * hp} height={4} fill={hp > 0.5 ? '#4ade80' : hp > 0.25 ? '#fbbf24' : '#ef4444'} />
               {worker.level > 0 && (
                 <text x={isoX + TILE_SIZE / 2 - 18} y={isoY - 6} textAnchor="middle" fontSize="10" fill="#fbbf24">{'⭐'.repeat(worker.level)}</text>
+              )}
+              {worker.state === 'idle' && worker.unitType === 'farmer' && (
+                <g>
+                  <circle cx={isoX + TILE_SIZE / 2 + 18} cy={isoY - 8} r={8} fill="#fbbf24" opacity={0.9} />
+                  <text x={isoX + TILE_SIZE / 2 + 18} y={isoY - 4} textAnchor="middle" fontSize="11" fill="#1e293b" fontWeight="bold">!</text>
+                </g>
+              )}
+              {worker.unitType !== 'farmer' && worker.state === 'idle' && (
+                <g>
+                  <circle cx={isoX + TILE_SIZE / 2 + 18} cy={isoY - 8} r={8} fill="#fb923c" opacity={0.85} />
+                  <text x={isoX + TILE_SIZE / 2 + 18} y={isoY - 4} textAnchor="middle" fontSize="11" fill="#1e293b" fontWeight="bold">!</text>
+                </g>
               )}
               {worker.group !== null && <>
                 <circle cx={isoX + TILE_SIZE / 2 + 14} cy={isoY + 6} r={9} fill="#1e293b" stroke="#fbbf24" strokeWidth={1.5} />
