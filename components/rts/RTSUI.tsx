@@ -96,6 +96,11 @@ interface RTSUIProps {
     workers: { x: number; y: number; selected: boolean }[];
     grunts: { x: number; y: number }[];
     enemyBarnAlive: boolean;
+    buildings: { x: number; y: number; type: BuildingType }[];
+    creepCamps: { x: number; y: number; cleared: boolean }[];
+    goldNodes: { x: number; y: number }[];
+    stoneNodes: { x: number; y: number }[];
+    treeNodes: { x: number; y: number }[];
   };
 }
 
@@ -345,7 +350,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                   )}
                   <button className="rounded border border-green-500/70 bg-green-500/15 px-2 py-2 text-xs text-green-100 hover:bg-green-500/30 disabled:opacity-40" onClick={() => onFarmhouseAction('build:farmhouse')} disabled={!canAfford(buildingCosts.farmhouse)} title="+5 food cap">🏠 Farm</button>
                   <button className="rounded border border-slate-500/70 bg-slate-500/15 px-2 py-2 text-xs text-slate-100 hover:bg-slate-500/30 disabled:opacity-40" onClick={() => onFarmhouseAction('build:watchtower')} disabled={!canAfford(buildingCosts.watchtower)} title="Expands vision">🗼 Tower</button>
-                  <button className="rounded border border-yellow-700/70 bg-yellow-900/20 px-2 py-2 text-xs text-yellow-100 hover:bg-yellow-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:lumberShed')} disabled={!canAfford(buildingCosts.lumberShed)} title="Lumber Shed">🪵 Shed</button>
+                  <button className="rounded border border-yellow-700/70 bg-yellow-900/20 px-2 py-2 text-xs text-yellow-100 hover:bg-yellow-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:lumberShed')} disabled={!canAfford(buildingCosts.lumberShed)} title="Lumber Shed — -200ms lumber gather per shed">🪵 Shed</button>
                   <button className="rounded border border-amber-700/70 bg-amber-900/20 px-2 py-2 text-xs text-amber-100 hover:bg-amber-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:wall')} disabled={!canAfford(buildingCosts.wall)} title="Palisade Wall — blocks enemy grunts">🧱 Wall</button>
                   <button className="rounded border border-lime-600/70 bg-lime-900/20 px-2 py-2 text-xs text-lime-100 hover:bg-lime-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:windmill')} disabled={!canAfford(buildingCosts.windmill)} title="Windmill — +2🪙 every 5s">💨 Mill</button>
                   <button className="rounded border border-red-700/70 bg-red-900/20 px-2 py-2 text-xs text-red-100 hover:bg-red-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:barracks')} disabled={!canAfford(buildingCosts.barracks)} title="Barracks — train Swordsmen">🏯 Barracks</button>
@@ -478,20 +483,48 @@ export const RTSUI: React.FC<RTSUIProps> = ({
             </div>
             <span className="text-xs text-red-300">{enemyBarnHp}/{enemyBarnMaxHp}</span>
           </div>
-          <svg className="mt-1.5 h-10 w-full rounded border border-slate-700 bg-slate-800/80" viewBox={`0 0 ${13} ${13}`} preserveAspectRatio="xMidYMid meet">
+          <svg className="mt-1.5 h-16 w-full rounded border border-slate-700 bg-slate-800/80" viewBox={`0 0 ${13} ${13}`} preserveAspectRatio="xMidYMid meet">
+            {/* Resource nodes */}
+            {minimapData.treeNodes.map((n, i) => (
+              <rect key={`t${i}`} x={n.x - 0.35} y={n.y - 0.35} width={0.7} height={0.7} fill="#15803d" opacity={0.7} />
+            ))}
+            {minimapData.goldNodes.map((n, i) => (
+              <rect key={`g${i}`} x={n.x - 0.35} y={n.y - 0.35} width={0.7} height={0.7} fill="#ca8a04" opacity={0.7} />
+            ))}
+            {minimapData.stoneNodes.map((n, i) => (
+              <rect key={`s${i}`} x={n.x - 0.35} y={n.y - 0.35} width={0.7} height={0.7} fill="#6b7280" opacity={0.7} />
+            ))}
+            {/* Creep camps (not cleared) */}
+            {minimapData.creepCamps.filter(c => !c.cleared).map((c, i) => (
+              <g key={`cc${i}`}>
+                <line x1={c.x - 0.5} y1={c.y - 0.5} x2={c.x + 0.5} y2={c.y + 0.5} stroke="#a855f7" strokeWidth={0.4} />
+                <line x1={c.x + 0.5} y1={c.y - 0.5} x2={c.x - 0.5} y2={c.y + 0.5} stroke="#a855f7" strokeWidth={0.4} />
+              </g>
+            ))}
+            {/* Player buildings */}
+            {minimapData.buildings.map((b, i) => (
+              <rect key={`b${i}`} x={b.x - 0.45} y={b.y - 0.45} width={0.9} height={0.9} fill="#f59e0b" opacity={0.85} rx={0.15} />
+            ))}
             {/* Player barn */}
-            <rect x={4 - 0.6} y={4 - 0.6} width={1.2} height={1.2} fill="#fbbf24" />
+            <rect x={4 - 0.7} y={4 - 0.7} width={1.4} height={1.4} fill="#fbbf24" rx={0.2} />
             {/* Enemy barn */}
-            {minimapData.enemyBarnAlive && <rect x={10 - 0.6} y={10 - 0.6} width={1.2} height={1.2} fill="#ef4444" />}
+            {minimapData.enemyBarnAlive && <rect x={10 - 0.7} y={10 - 0.7} width={1.4} height={1.4} fill="#ef4444" rx={0.2} />}
             {/* Workers */}
             {minimapData.workers.map((w, i) => (
-              <circle key={i} cx={w.x} cy={w.y} r={0.5} fill={w.selected ? '#38bdf8' : '#4ade80'} />
+              <circle key={i} cx={w.x} cy={w.y} r={0.55} fill={w.selected ? '#38bdf8' : '#4ade80'} />
             ))}
             {/* Grunts */}
             {minimapData.grunts.map((g, i) => (
-              <circle key={i} cx={g.x} cy={g.y} r={0.5} fill="#f97316" />
+              <circle key={i} cx={g.x} cy={g.y} r={0.55} fill="#f97316" />
             ))}
           </svg>
+          <div className="mt-0.5 flex flex-wrap gap-x-2 text-[10px] text-slate-500">
+            <span><span className="inline-block h-1.5 w-1.5 rounded-full bg-green-600 align-middle" /> trees</span>
+            <span><span className="inline-block h-1.5 w-1.5 rounded-full bg-yellow-600 align-middle" /> gold</span>
+            <span><span className="inline-block h-1.5 w-1.5 rounded-full bg-gray-500 align-middle" /> stone</span>
+            <span><span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-400 align-middle" /> buildings</span>
+            <span className="text-purple-400">✕ creeps</span>
+          </div>
           <div className="mt-1 flex justify-between text-xs text-slate-400">
             <span>Pop {resources.food}/{resources.foodCap}</span>
             {resources.food >= resources.foodCap && <span className="text-amber-400">⚠ Cap!</span>}

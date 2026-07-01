@@ -863,7 +863,8 @@ const RTSMap: React.FC = () => {
                 return { ...w, state: 'returning', movingTo: p[0] ?? BARN_POS, path: p.slice(1) };
               }
               if (!gatherT[w.id]) {
-                const gatherMs = Math.max(400, GATHER_INTERVAL_MS - upgradesRef.current.swiftHarvest * 200);
+                const lumberShedCount = placedBuildingsRef.current.filter(b => b.type === 'lumberShed').length;
+                const gatherMs = Math.max(400, GATHER_INTERVAL_MS - upgradesRef.current.swiftHarvest * 200 - lumberShedCount * 200);
                 gatherT[w.id] = window.setTimeout(() => {
                   delete gatherTimeoutsRef.current[w.id];
                   const idx = w.gathering!.idx;
@@ -1440,7 +1441,12 @@ const RTSMap: React.FC = () => {
     workers: workers.map(w => ({ x: w.x, y: w.y, selected: w.selected })),
     grunts: enemyGrunts.map(g => ({ x: g.x, y: g.y })),
     enemyBarnAlive: enemyBarnHp > 0,
-  }), [workers, enemyGrunts, enemyBarnHp]);
+    buildings: placedBuildings.map(b => ({ x: b.x, y: b.y, type: b.type })),
+    creepCamps: CREEP_CAMPS.map(c => ({ x: c.x, y: c.y, cleared: clearedCamps.has(c.id) })),
+    goldNodes: goldMine.amount > 0 ? [{ x: goldMine.x, y: goldMine.y }] : [],
+    stoneNodes: stoneNodes.filter(n => n.amount > 0).map(n => ({ x: n.x, y: n.y })),
+    treeNodes: trees.filter(t => t.amount > 0).map(t => ({ x: t.x, y: t.y })),
+  }), [workers, enemyGrunts, enemyBarnHp, placedBuildings, clearedCamps, goldMine, stoneNodes, trees]);
 
   return (
     <div className="absolute inset-0 bg-black" onContextMenu={e => { if (buildMode) { e.preventDefault(); setBuildMode(null); setGhostTile(null); } }}>
