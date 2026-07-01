@@ -156,6 +156,11 @@ const SWORDSMAN_CHARGE_DAMAGE_MULT = 2;
 const CAVALRY_MAX_HP = 65;
 const CAVALRY_SPEED = 3.0;
 const CAVALRY_DAMAGE_BONUS = 8;
+const CAVALRY_TRAMPLE_RADIUS = 0.8;
+const CAVALRY_TRAMPLE_DAMAGE = 6;
+const CAVALRY_SPRINT_COOLDOWN_S = 20;
+const CAVALRY_SPRINT_DURATION_MS = 5000;
+const CAVALRY_SPRINT_SPEED_MULT = 2;
 
 function makeTiles(): TileType[][] {
   return Array.from({ length: GRID_SIZE }, (_, i) =>
@@ -291,7 +296,7 @@ function clearSave(): void {
 
 function makeUnit(id: number, x: number, y: number, unitType: 'farmer' | 'swordsman' | 'hero' | 'catapult' | 'cavalry'): WorkerState {
   const maxHp = unitType === 'hero' ? HERO_MAX_HP : unitType === 'swordsman' ? SWORDSMAN_MAX_HP : unitType === 'catapult' ? CATAPULT_MAX_HP : unitType === 'cavalry' ? CAVALRY_MAX_HP : WORKER_MAX_HP;
-  return { id, x, y, selected: false, movingTo: null, path: [], gathering: null, attacking: null, repairing: null, chargeCooldown: 0, attackMove: false, attackMoveTarget: null, carrying: { gold: 0, lumber: 0, stone: 0 }, state: 'idle', group: null, hp: maxHp, maxHp, patrol: null, unitType, xp: 0, level: 0 };
+  return { id, x, y, selected: false, movingTo: null, path: [], gathering: null, attacking: null, repairing: null, chargeCooldown: 0, sprintCooldown: 0, sprinting: false, attackMove: false, attackMoveTarget: null, carrying: { gold: 0, lumber: 0, stone: 0 }, state: 'idle', group: null, hp: maxHp, maxHp, patrol: null, unitType, xp: 0, level: 0 };
 }
 // ---------------------------------
 
@@ -408,13 +413,13 @@ const RTSMap: React.FC = () => {
     const id = setInterval(() => setHeroAbilityCooldown(c => Math.max(0, c - 1)), 1000);
     return () => clearInterval(id);
   }, [heroAbilityCooldown > 0]); // eslint-disable-line react-hooks/exhaustive-deps
-  // Tick down swordsman charge cooldowns every second
+  // Tick down per-unit cooldowns every second
   useEffect(() => {
     const id = setInterval(() => {
       setWorkers(ws => {
-        const hasCooldown = ws.some(w => w.chargeCooldown > 0);
+        const hasCooldown = ws.some(w => w.chargeCooldown > 0 || w.sprintCooldown > 0);
         if (!hasCooldown) return ws;
-        return ws.map(w => w.chargeCooldown > 0 ? { ...w, chargeCooldown: Math.max(0, w.chargeCooldown - 1) } : w);
+        return ws.map(w => (w.chargeCooldown > 0 || w.sprintCooldown > 0) ? { ...w, chargeCooldown: Math.max(0, w.chargeCooldown - 1), sprintCooldown: Math.max(0, w.sprintCooldown - 1) } : w);
       });
     }, 1000);
     return () => clearInterval(id);
@@ -907,6 +912,17 @@ const RTSMap: React.FC = () => {
     setWorkers(ws => ws.map(w => swords.some(s => s.id === w.id) ? { ...w, chargeCooldown: SWORDSMAN_CHARGE_COOLDOWN_S } : w));
   }, [addFloatingText]);
 
+  const handleCavalrySprint = useCallback(() => {
+    const cav = workersRef.current.filter(w => w.selected && w.unitType === 'cavalry' && w.sprintCooldown <= 0);
+    if (cav.length === 0) return;
+    const ids = new Set(cav.map(w => w.id));
+    setWorkers(ws => ws.map(w => ids.has(w.id) ? { ...w, sprinting: true, sprintCooldown: CAVALRY_SPRINT_COOLDOWN_S } : w));
+    cav.forEach(c => addFloatingText(Math.round(c.x), Math.round(c.y), '🐴 Sprint!', '#f59e0b'));
+    window.setTimeout(() => {
+      setWorkers(ws => ws.map(w => ids.has(w.id) ? { ...w, sprinting: false } : w));
+    }, CAVALRY_SPRINT_DURATION_MS);
+  }, [addFloatingText]);
+
   const isTileOccupied = useCallback((x: number, y: number): boolean => {
     if (x < 0 || y < 0 || x >= GRID_SIZE || y >= GRID_SIZE) return true;
     if (tiles[x]?.[y] === 'water') return true;
@@ -1054,6 +1070,7 @@ const RTSMap: React.FC = () => {
       }
       if (e.key === 'g' || e.key === 'G') { e.preventDefault(); handleGarrison(); }
       if (e.key === 'c' || e.key === 'C') { e.preventDefault(); handleSwordsmanCharge(); }
+      if (e.key === 's' || e.key === 'S') { e.preventDefault(); handleCavalrySprint(); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -1195,7 +1212,16 @@ const RTSMap: React.FC = () => {
               }
               return { ...w, x: w.movingTo.x, y: w.movingTo.y, movingTo: null, path: [], state: 'idle' };
             }
-            const moveSpeed = w.unitType === 'catapult' ? CATAPULT_SPEED : w.unitType === 'cavalry' ? CAVALRY_SPEED : WORKER_SPEED;
+            // Cavalry trample: deal passive damage to grunts within radius while moving
+            if (w.unitType === 'cavalry') {
+              enemyGruntsRef.current.forEach(g => {
+                if (g.hp > 0 && tileDist(w.x, w.y, g.x, g.y) <= CAVALRY_TRAMPLE_RADIUS) {
+                  setEnemyGrunts(gs => gs.map(eg => eg.id === g.id ? { ...eg, hp: Math.max(0, eg.hp - CAVALRY_TRAMPLE_DAMAGE * dt) } : eg));
+                }
+              });
+            }
+            const sprintMult = w.sprinting ? CAVALRY_SPRINT_SPEED_MULT : 1;
+            const moveSpeed = (w.unitType === 'catapult' ? CATAPULT_SPEED : w.unitType === 'cavalry' ? CAVALRY_SPEED : WORKER_SPEED) * sprintMult;
             return { ...w, x: w.x + (dx / d) * Math.min(moveSpeed * dt, d), y: w.y + (dy / d) * Math.min(moveSpeed * dt, d) };
           }
 
@@ -1972,7 +1998,7 @@ const RTSMap: React.FC = () => {
             ⚔️ Attack-Move · Right-click destination · Esc to cancel
           </span>
         ) : (
-          <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 400 }}>WASD pan · scroll zoom · Ctrl+A all · Ctrl+1-9 groups · P patrol · A attack-move · C charge · F farmer · Q sword · R cavalry · Del stop · G garrison</span>
+          <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 400 }}>WASD pan · scroll zoom · Ctrl+A all · Ctrl+1-9 groups · P patrol · A atk-move · C charge · S sprint · F farmer · Q sword · R cavalry · Del stop · G garrison</span>
         )}
         <button onClick={doSave} style={{ background: saveStatus === 'saved' ? 'rgba(74,222,128,0.2)' : 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', color: saveStatus === 'saved' ? '#4ade80' : '#94a3b8', padding: '2px 10px', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>
           {saveStatus === 'saved' ? '✓ Saved' : '💾 Save'}
@@ -2362,16 +2388,18 @@ const RTSMap: React.FC = () => {
               {worker.selected && <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 32} rx={worker.unitType === 'hero' ? 26 : worker.unitType === 'catapult' ? 28 : 22} ry={10} fill="none" stroke={worker.unitType === 'hero' ? '#fbbf24' : worker.unitType === 'catapult' ? '#ea580c' : worker.unitType === 'swordsman' ? '#f87171' : '#38bdf8'} strokeWidth={3} />}
               {worker.unitType === 'cavalry' ? (
                 <g>
+                  {worker.sprinting && <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 22} rx={28} ry={17} fill="none" stroke="#f59e0b" strokeWidth={2} strokeDasharray="4 2" opacity={0.8} />}
                   {/* Horse body */}
-                  <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 22} rx={22} ry={14} fill={worker.state === 'attacking' ? '#b45309' : '#d97706'} stroke="#78350f" strokeWidth={2.5} />
+                  <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 22} rx={22} ry={14} fill={worker.state === 'attacking' ? '#b45309' : worker.sprinting ? '#f59e0b' : '#d97706'} stroke="#78350f" strokeWidth={2.5} />
                   {/* Horse head */}
-                  <ellipse cx={isoX + TILE_SIZE / 2 + 18} cy={isoY + 12} rx={10} ry={8} fill={worker.state === 'attacking' ? '#b45309' : '#d97706'} stroke="#78350f" strokeWidth={2} />
+                  <ellipse cx={isoX + TILE_SIZE / 2 + 18} cy={isoY + 12} rx={10} ry={8} fill={worker.state === 'attacking' ? '#b45309' : worker.sprinting ? '#f59e0b' : '#d97706'} stroke="#78350f" strokeWidth={2} />
                   {/* Legs */}
                   <line x1={isoX + TILE_SIZE / 2 - 12} y1={isoY + 30} x2={isoX + TILE_SIZE / 2 - 12} y2={isoY + 44} stroke="#92400e" strokeWidth={4} strokeLinecap="round" />
                   <line x1={isoX + TILE_SIZE / 2 + 4} y1={isoY + 30} x2={isoX + TILE_SIZE / 2 + 4} y2={isoY + 44} stroke="#92400e" strokeWidth={4} strokeLinecap="round" />
                   {/* Rider */}
                   <circle cx={isoX + TILE_SIZE / 2 + 4} cy={isoY + 8} r={8} fill="#fbbf24" stroke="#78350f" strokeWidth={2} />
                   <text x={isoX + TILE_SIZE / 2 + 4} y={isoY + 12} textAnchor="middle" fontSize="10">⚔️</text>
+                  {worker.sprinting && <text x={isoX + TILE_SIZE / 2 - 18} y={isoY + 8} textAnchor="middle" fontSize="14">⚡</text>}
                 </g>
               ) : worker.unitType === 'catapult' ? (
                 <g>
@@ -2520,6 +2548,7 @@ const RTSMap: React.FC = () => {
         onTowerDeploy={handleTowerDeploy}
         placedBuildingsList={placedBuildings}
         onSwordsmanCharge={handleSwordsmanCharge}
+        onCavalrySprint={handleCavalrySprint}
         onMinimapClick={(tx, ty) => {
           const { isoX, isoY } = tileToSvg(tx, ty);
           const bounds = { minX: -((GRID_SIZE * TILE_SIZE) / 2), maxX: (GRID_SIZE * TILE_SIZE) / 2, minY: -100, maxY: (GRID_SIZE * TILE_SIZE) / 2 };

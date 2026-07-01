@@ -11,6 +11,8 @@ export interface WorkerState {
   attacking: null | { targetType: 'enemyBarn' } | { targetType: 'grunt'; gruntId: number } | { targetType: 'creep'; creepId: number } | { targetType: 'enemyTower'; towerId: number };
   repairing: null | { buildingId: number };
   chargeCooldown: number;
+  sprintCooldown: number;
+  sprinting: boolean;
   attackMove: boolean;
   attackMoveTarget: { x: number; y: number } | null;
   carrying: { gold: number; lumber: number; stone: number };
@@ -93,6 +95,7 @@ interface RTSUIProps {
   onTowerDeploy: (towerId: number, tx: number, ty: number) => void;
   placedBuildingsList: PlacedBuilding[];
   onSwordsmanCharge: () => void;
+  onCavalrySprint: () => void;
   onMinimapClick: (tileX: number, tileY: number) => void;
   farmhouse: { built: boolean; level: number };
   farmhouseUpgradeCosts: { gold: number; lumber: number }[];
@@ -171,6 +174,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
   onTowerDeploy,
   placedBuildingsList,
   onSwordsmanCharge,
+  onCavalrySprint,
   onMinimapClick,
 }) => {
   const isHeroSelected = selectedWorkers.some(w => w.unitType === 'hero');
@@ -341,6 +345,19 @@ export const RTSUI: React.FC<RTSUIProps> = ({
               >
                 🏰 Garrison ({garrisonedCount}/{garrisonCap})
               </button>
+              {selectedWorkers.some(w => w.unitType === 'cavalry') && (() => {
+                const sprintReady = selectedWorkers.some(w => w.unitType === 'cavalry' && w.sprintCooldown <= 0);
+                const maxCd = Math.max(...selectedWorkers.filter(w => w.unitType === 'cavalry').map(w => w.sprintCooldown));
+                const anySprinting = selectedWorkers.some(w => w.unitType === 'cavalry' && w.sprinting);
+                return <button
+                  className={`col-span-4 rounded border px-2 py-2 text-xs font-semibold disabled:opacity-40 ${anySprinting ? 'border-amber-400 bg-amber-500/30 text-amber-100' : sprintReady ? 'border-amber-500/70 bg-amber-500/20 text-amber-100 hover:bg-amber-500/30' : 'border-amber-800/50 bg-amber-900/20 text-amber-600'}`}
+                  onClick={onCavalrySprint}
+                  disabled={!sprintReady || anySprinting}
+                  title="Sprint [S] — 2× speed for 5s; 20s cooldown; passive trample dmg while moving"
+                >
+                  {anySprinting ? '🐴 Sprinting! (trample active)' : sprintReady ? '🐴 Sprint [S] — 2× speed 5s' : `🐴 Sprint [S] — ${maxCd}s`}
+                </button>;
+              })()}
               {selectedWorkers.some(w => w.unitType === 'swordsman') && (() => {
                 const chargeReady = selectedWorkers.some(w => w.unitType === 'swordsman' && w.chargeCooldown <= 0);
                 const maxCd = Math.max(...selectedWorkers.filter(w => w.unitType === 'swordsman').map(w => w.chargeCooldown));
