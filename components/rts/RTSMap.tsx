@@ -1310,16 +1310,21 @@ const RTSMap: React.FC = () => {
                       }
                       return { ...g, hp: newHp };
                     }));
-                    // Award XP to attacker if grunt will die
+                    // Award XP to attacker + 25% shared XP to nearby allies within 3 tiles
                     return ws2.map(u => {
-                      if (u.id !== capturedWorkerId) return u;
                       const gruntCurrent = enemyGruntsRef.current.find(g => g.id === gruntId);
                       const veteranDmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + unitBonus + u.level * VETERAN_ATK_BONUS;
-                      if (!gruntCurrent || gruntCurrent.hp - veteranDmg > 0) return u;
-                      const newXp = u.xp + (gruntCurrent.isBoss ? BOSS_XP_REWARD : XP_PER_KILL);
+                      const gruntDies = gruntCurrent && gruntCurrent.hp - veteranDmg <= 0;
+                      if (!gruntDies) return u;
+                      const isAttacker = u.id === capturedWorkerId;
+                      const isNearby = !isAttacker && u.hp > 0 && tileDist(u.x, u.y, capturedWX, capturedWY) <= 3;
+                      const baseXp = gruntCurrent.isBoss ? BOSS_XP_REWARD : XP_PER_KILL;
+                      const xpGain = isAttacker ? baseXp : isNearby ? Math.round(baseXp * 0.25) : 0;
+                      if (xpGain === 0) return u;
+                      const newXp = u.xp + xpGain;
                       const newLevel = newXp >= XP_TO_LEVEL_2 ? 2 : newXp >= XP_TO_LEVEL_1 ? 1 : 0;
                       if (newLevel > u.level) {
-                        addFloatingText(capturedWX, capturedWY, `⭐ Level ${newLevel}!`, '#fbbf24');
+                        addFloatingText(Math.round(u.x), Math.round(u.y), `⭐ Level ${newLevel}!`, '#fbbf24');
                         const hpGain = VETERAN_HP_BONUS;
                         return { ...u, xp: newXp, level: newLevel, maxHp: u.maxHp + hpGain, hp: Math.min(u.hp + hpGain, u.maxHp + hpGain) };
                       }
@@ -1498,8 +1503,10 @@ const RTSMap: React.FC = () => {
           return { ...g, movingTo: p[0] ?? { x: nearWorker.x, y: nearWorker.y }, path: p.slice(1), state: 'moving', x: g.x + (dx / d) * Math.min(GRUNT_SPEED * gruntSpeedMult * dt, d), y: g.y + (dy / d) * Math.min(GRUNT_SPEED * gruntSpeedMult * dt, d) };
         }
 
-        // Building aggro: attack nearest building within 1.2 tiles (not walls — they block, not targets)
-        const nearBuilding = placedBuildingsRef.current.find(b => b.type !== 'wall' && b.hp > 0 && tileDist(g.x, g.y, b.x, b.y) <= 1.2);
+        // Building aggro: prioritize military buildings over economic ones (AoE-style target AI)
+        const BUILDING_PRIORITY: Partial<Record<BuildingType, number>> = { barracks: 5, siegeWorkshop: 4, stable: 4, watchtower: 3, blacksmith: 2, farmhouse: 1 };
+        const nearBuildingCandidates = placedBuildingsRef.current.filter(b => b.type !== 'wall' && b.hp > 0 && tileDist(g.x, g.y, b.x, b.y) <= 1.2);
+        const nearBuilding = nearBuildingCandidates.sort((a, b2) => (BUILDING_PRIORITY[b2.type] ?? 0) - (BUILDING_PRIORITY[a.type] ?? 0))[0] ?? null;
         if (nearBuilding) {
           if (!buildingAttackTimeoutsRef.current[g.id]) {
             const bid = nearBuilding.id; const bx = nearBuilding.x; const by = nearBuilding.y;
@@ -1536,6 +1543,16 @@ const RTSMap: React.FC = () => {
               addFloatingText(BARN_POS.x, BARN_POS.y, `-${barnDmg}`, g.isBoss ? '#dc2626' : '#ef4444');
             }, GRUNT_ATTACK_MS);
           }
+        }
+        // If grunt has no path and isn't attacking anything, re-path to highest-priority building in range or barn
+        if (!g.movingTo && g.state !== 'attacking') {
+          const PRIORITY: Partial<Record<BuildingType, number>> = { barracks: 5, siegeWorkshop: 4, stable: 4, watchtower: 3, blacksmith: 2, farmhouse: 1 };
+          const buildings = placedBuildingsRef.current.filter(b => b.type !== 'wall' && b.hp > 0);
+          const target = buildings.sort((a, b2) => (PRIORITY[b2.type] ?? 0) - (PRIORITY[a.type] ?? 0))[0];
+          const dest = target ? { x: target.x, y: target.y } : BARN_POS;
+          const wallSet2 = new Set(placedBuildingsRef.current.filter(b => b.type === 'wall').map(b => `${b.x},${b.y}`));
+          const p2 = aStar(INITIAL_TILES, { x: Math.round(g.x), y: Math.round(g.y) }, dest, true, wallSet2);
+          return { ...g, movingTo: p2[0] ?? dest, path: p2.slice(1), state: 'moving' };
         }
         return g;
       }));
