@@ -948,6 +948,24 @@ const RTSMap: React.FC = () => {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
+  // Command hotkeys: F=train farmer, Q=train swordsman, R=cavalry, Delete=stop, G=garrison
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') return;
+      if (e.key === 'f' || e.key === 'F') { e.preventDefault(); handleFarmhouseAction('train'); }
+      if (e.key === 'q' || e.key === 'Q') { e.preventDefault(); handleFarmhouseAction('trainSwordsman'); }
+      if (e.key === 'r' || e.key === 'R') { e.preventDefault(); handleFarmhouseAction('trainCavalry'); }
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        setWorkers(ws => ws.map(w => w.selected ? { ...w, movingTo: null, path: [], gathering: null, attacking: null, patrol: null, state: 'idle' as const } : w));
+      }
+      if (e.key === 'g' || e.key === 'G') { e.preventDefault(); handleGarrison(); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const num = parseInt(e.key);
@@ -1761,7 +1779,7 @@ const RTSMap: React.FC = () => {
             🔄 Patrol Mode · Right-click destination · Esc to cancel
           </span>
         ) : (
-          <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 400 }}>WASD pan · scroll zoom · Ctrl+1-9 groups · P patrol</span>
+          <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 400 }}>WASD pan · scroll zoom · Ctrl+1-9 groups · P patrol · F farmer · Q sword · R cavalry · Del stop · G garrison</span>
         )}
         <button onClick={doSave} style={{ background: saveStatus === 'saved' ? 'rgba(74,222,128,0.2)' : 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', color: saveStatus === 'saved' ? '#4ade80' : '#94a3b8', padding: '2px 10px', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>
           {saveStatus === 'saved' ? '✓ Saved' : '💾 Save'}

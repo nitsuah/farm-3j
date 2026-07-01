@@ -363,7 +363,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                     disabled={resources.gold < 30 || resources.food >= resources.foodCap}
                     title={resources.food >= resources.foodCap ? 'Food cap! Build Farmhouse' : 'Train Farmer (30🪙)'}
                   >
-                    Train 30🪙
+                    Train 30🪙 <span className="opacity-50">[F]</span>
                   </button>
                   {farmhouse.level < 2 && (
                     <button
@@ -432,7 +432,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                       disabled={resources.gold < 50 || resources.food >= resources.foodCap || trainingQueue.length >= 5}
                       title="Train Swordsman — 50🪙, 80HP, +10 dmg, cannot harvest; queued (max 5)"
                     >
-                      ⚔️ Train Swordsman 50🪙
+                      ⚔️ Train Swordsman 50🪙 <span className="opacity-50">[Q]</span>
                     </button>
                   )}
                   {hasBarracks && (
@@ -452,7 +452,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                       disabled={resources.gold < 60 || resources.food >= resources.foodCap || trainingQueue.length >= 5}
                       title="Train Cavalry — 60🪙, 65HP, 2.5× speed, +8 dmg, cannot harvest; queued (max 5)"
                     >
-                      🐴 Train Cavalry 60🪙
+                      🐴 Train Cavalry 60🪙 <span className="opacity-50">[R]</span>
                     </button>
                   )}
                   {(hasBarracks || hasStable) && trainingQueue.length > 0 && (
