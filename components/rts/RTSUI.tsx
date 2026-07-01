@@ -81,6 +81,8 @@ interface RTSUIProps {
   hasWatchtower: boolean;
   guardTowerResearched: boolean;
   onGuardTower: () => void;
+  trainingQueue: {type: 'swordsman' | 'cavalry'}[];
+  trainingProgress: number;
   farmhouse: { built: boolean; level: number };
   farmhouseUpgradeCosts: { gold: number; lumber: number }[];
   farmhouseStorage: { gold: number; lumber: number }[];
@@ -152,6 +154,8 @@ export const RTSUI: React.FC<RTSUIProps> = ({
   hasWatchtower,
   guardTowerResearched,
   onGuardTower,
+  trainingQueue,
+  trainingProgress,
 }) => {
   const isHeroSelected = selectedWorkers.some(w => w.unitType === 'hero');
   const selectedCount = selectedWorkers.length;
@@ -425,8 +429,8 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                     <button
                       className="col-span-2 rounded border border-rose-500/70 bg-rose-500/15 px-2 py-2 text-xs text-rose-100 hover:bg-rose-500/30 disabled:opacity-40"
                       onClick={() => onFarmhouseAction('trainSwordsman')}
-                      disabled={resources.gold < 50 || resources.food >= resources.foodCap}
-                      title="Train Swordsman — 50🪙, 80HP, +10 dmg, cannot harvest"
+                      disabled={resources.gold < 50 || resources.food >= resources.foodCap || trainingQueue.length >= 5}
+                      title="Train Swordsman — 50🪙, 80HP, +10 dmg, cannot harvest; queued (max 5)"
                     >
                       ⚔️ Train Swordsman 50🪙
                     </button>
@@ -445,11 +449,30 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                     <button
                       className="col-span-2 rounded border border-amber-500/70 bg-amber-500/15 px-2 py-2 text-xs text-amber-100 hover:bg-amber-500/30 disabled:opacity-40"
                       onClick={() => onFarmhouseAction('trainCavalry')}
-                      disabled={resources.gold < 60 || resources.food >= resources.foodCap}
-                      title="Train Cavalry — 60🪙, 65HP, 2.5× speed, +8 dmg, cannot harvest"
+                      disabled={resources.gold < 60 || resources.food >= resources.foodCap || trainingQueue.length >= 5}
+                      title="Train Cavalry — 60🪙, 65HP, 2.5× speed, +8 dmg, cannot harvest; queued (max 5)"
                     >
                       🐴 Train Cavalry 60🪙
                     </button>
+                  )}
+                  {(hasBarracks || hasStable) && trainingQueue.length > 0 && (
+                    <div className="col-span-4 rounded border border-slate-600/60 bg-slate-800/40 px-2 py-1.5">
+                      <div className="mb-1 flex items-center gap-1 text-xs text-slate-300">
+                        <span className="font-semibold">Training Queue</span>
+                        <span className="text-slate-500">({trainingQueue.length}/5)</span>
+                      </div>
+                      {/* Progress bar for first unit */}
+                      <div className="mb-1.5 h-1.5 w-full rounded-full bg-slate-700">
+                        <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${trainingProgress * 100}%` }} />
+                      </div>
+                      <div className="flex gap-1">
+                        {trainingQueue.map((u, i) => (
+                          <span key={i} title={u.type} className={`rounded px-1 py-0.5 text-sm ${i === 0 ? 'bg-emerald-700/40 text-emerald-200' : 'bg-slate-700/60 text-slate-400'}`}>
+                            {u.type === 'swordsman' ? '⚔️' : '🐴'}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
                   )}
                   {hasSiegeWorkshop && (
                     <button

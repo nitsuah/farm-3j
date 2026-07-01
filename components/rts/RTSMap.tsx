@@ -414,6 +414,8 @@ const RTSMap: React.FC = () => {
   const maxFarmhouseLevel = farmhouseUpgradeCosts.length - 1;
   const [selectedType, setSelectedType] = useState<'worker' | 'farmhouse' | null>('worker');
   const [rallyPoint, setRallyPoint] = useState<{ x: number; y: number } | null>(() => INITIAL_SAVE?.rallyPoint ?? null);
+  const rallyPointRef = useRef(rallyPoint);
+  useEffect(() => { rallyPointRef.current = rallyPoint; }, [rallyPoint]);
   const [patrolMode, setPatrolMode] = useState(false);
   const patrolModeRef = useRef(false);
   useEffect(() => { patrolModeRef.current = patrolMode; }, [patrolMode]);
@@ -427,6 +429,14 @@ const RTSMap: React.FC = () => {
   const [guardTowerResearched, setGuardTowerResearched] = useState(false);
   const guardTowerRef = useRef(false);
   useEffect(() => { guardTowerRef.current = guardTowerResearched; }, [guardTowerResearched]);
+
+  // Unit training queue (barracks + stable)
+  const TRAIN_TIME_MS = 8000;
+  const [trainingQueue, setTrainingQueue] = useState<{type: 'swordsman' | 'cavalry'}[]>([]);
+  const [trainingProgress, setTrainingProgress] = useState(0); // 0-1 for first item
+  const trainingQueueRef = useRef<{type: 'swordsman' | 'cavalry'}[]>([]);
+  const trainingElapsedRef = useRef(0);
+  useEffect(() => { trainingQueueRef.current = trainingQueue; }, [trainingQueue]);
 
   // Day/Night cycle
   const DAY_DURATION_MS = 60000;
@@ -681,6 +691,35 @@ const RTSMap: React.FC = () => {
     };
     barnArrowTimerRef.current = window.setTimeout(fireBarnArrow, BARN_DEFENSE_MS);
     return () => { if (barnArrowTimerRef.current) clearTimeout(barnArrowTimerRef.current); };
+  }, [gameOver, addFloatingText]);
+
+  // Training queue drain — tick every 100ms; spawn unit when elapsed >= TRAIN_TIME_MS
+  useEffect(() => {
+    if (gameOver) return;
+    const tick = () => {
+      if (gameOverRef.current) return;
+      const queue = trainingQueueRef.current;
+      if (queue.length === 0) { trainingElapsedRef.current = 0; setTrainingProgress(0); return; }
+      trainingElapsedRef.current += 100;
+      const pct = Math.min(1, trainingElapsedRef.current / TRAIN_TIME_MS);
+      setTrainingProgress(pct);
+      if (trainingElapsedRef.current < TRAIN_TIME_MS) return;
+      trainingElapsedRef.current = 0;
+      const first = queue[0];
+      if (!first) return;
+      const type = first.type;
+      setTrainingQueue(q => q.slice(1));
+      setWorkers(ws => {
+        const newId = Math.max(...ws.map(w => w.id), 0) + 1;
+        const rp = rallyPointRef.current;
+        const unit = makeUnit(newId, BARN_POS.x, BARN_POS.y, type);
+        if (rp) { const path = aStar(INITIAL_TILES, BARN_POS, rp); return [...ws, { ...unit, movingTo: path[0] ?? rp, path: path.slice(1), state: 'moving' as const }]; }
+        return [...ws, unit];
+      });
+      addFloatingText(BARN_POS.x, BARN_POS.y, type === 'swordsman' ? '⚔️ Ready!' : '🐴 Ready!', '#4ade80');
+    };
+    const id = window.setInterval(tick, 100);
+    return () => clearInterval(id);
   }, [gameOver, addFloatingText]);
 
   // Spike Trap — deal 20 dmg to any grunt that steps within 0.5 tiles; 30s cooldown per trap
@@ -1488,29 +1527,13 @@ const RTSMap: React.FC = () => {
         return [...ws, hero];
       });
     } else if (action === 'trainSwordsman') {
-      if (resources.gold < 50 || resources.food >= resources.foodCap) return;
+      if (resources.gold < 50 || resources.food >= resources.foodCap || trainingQueue.length >= 5) return;
       setResources(r => ({ ...r, gold: r.gold - 50, food: r.food + 1 }));
-      setWorkers(ws => {
-        const newId = Math.max(...ws.map(w => w.id), 0) + 1;
-        const rp = rallyPoint;
-        if (rp) {
-          const path = aStar(INITIAL_TILES, BARN_POS, rp);
-          return [...ws, { ...makeSwordsman(newId, BARN_POS.x, BARN_POS.y), movingTo: path[0] ?? rp, path: path.slice(1), state: 'moving' as const }];
-        }
-        return [...ws, makeSwordsman(newId, BARN_POS.x, BARN_POS.y)];
-      });
+      setTrainingQueue(q => [...q, { type: 'swordsman' }]);
     } else if (action === 'trainCavalry') {
-      if (resources.gold < 60 || resources.food >= resources.foodCap) return;
+      if (resources.gold < 60 || resources.food >= resources.foodCap || trainingQueue.length >= 5) return;
       setResources(r => ({ ...r, gold: r.gold - 60, food: r.food + 1 }));
-      setWorkers(ws => {
-        const newId = Math.max(...ws.map(w => w.id), 0) + 1;
-        const rp = rallyPoint;
-        if (rp) {
-          const path = aStar(INITIAL_TILES, BARN_POS, rp);
-          return [...ws, { ...makeUnit(newId, BARN_POS.x, BARN_POS.y, 'cavalry'), movingTo: path[0] ?? rp, path: path.slice(1), state: 'moving' as const }];
-        }
-        return [...ws, makeUnit(newId, BARN_POS.x, BARN_POS.y, 'cavalry')];
-      });
+      setTrainingQueue(q => [...q, { type: 'cavalry' }]);
     } else if (action === 'trainCatapult') {
       if (resources.gold < 150 || resources.lumber < 80 || resources.food >= resources.foodCap) return;
       setResources(r => ({ ...r, gold: r.gold - 150, lumber: r.lumber - 80, food: r.food + 1 }));
@@ -2227,6 +2250,8 @@ const RTSMap: React.FC = () => {
         hasWatchtower={placedBuildings.some(b => b.type === 'watchtower')}
         guardTowerResearched={guardTowerResearched}
         onGuardTower={() => handleFarmhouseAction('guardTower')}
+        trainingQueue={trainingQueue}
+        trainingProgress={trainingProgress}
         minimapData={minimapData}
         enemyBarnHp={enemyBarnHp}
         enemyBarnMaxHp={ENEMY_BARN_MAX_HP}

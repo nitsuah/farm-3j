@@ -57,6 +57,7 @@
 - **Farm RTS: Save / Load** — Complete game state persisted to localStorage (workers, resources, buildings, fog, wave, barn HP, upgrades, rally point); auto-saves every 30 seconds and on browser tab close; 💾 Save button with confirmation flash and 🗑 New Game button to clear and restart; Play Again on end-screen also clears save.
 
 - **Farm RTS: Spike Trap Building** — Buildable 🪤 Spike Trap (30🪙 20🌲 10🪨) that deals 20 damage to any enemy grunt stepping within proximity; each trap has a 30-second rearm cooldown after triggering; visually shows armed state (yellow spikes) vs recharging state (gray spikes + "REARM" label); built from the farmhouse command card; stackable in narrow chokepoints or around the barn perimeter to punish enemy approach routes — WC3/AoE-style terrain hazard that rewards map control and defensive placement strategy.
+- **Farm RTS: Unit Training Queue** — Swordsman (⚔️) and Cavalry (🐴) training now queues up to 5 units, each taking 8 seconds to train instead of spawning instantly; the command card shows a queue of unit icons with a green progress bar for the unit currently training; a "Ready!" floating text announces each spawn; training buttons are disabled when the queue is full; costs (gold + food) deducted immediately on queuing — the classic AoE/WC3 training queue that adds strategic depth and forward-planning to army building.
 
 ## Planned
 
