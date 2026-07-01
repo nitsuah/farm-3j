@@ -27,6 +27,10 @@ const WORKER_MAX_HP = 50;
 const GRUNT_MAX_HP = 60;
 const GRUNT_DAMAGE = 12;
 const GRUNT_ATTACK_MS = 1500;
+const BOSS_HP_MULTIPLIER = 3;
+const BOSS_DAMAGE = 25;
+const BOSS_GOLD_REWARD = 20;
+const BOSS_XP_REWARD = 80;
 const GRUNT_SPAWN_MS = 25000;
 const REPAIR_INTERVAL_MS = 2000;
 const REPAIR_AMOUNT = 2;
@@ -80,6 +84,7 @@ interface EnemyGrunt {
   movingTo: { x: number; y: number } | null;
   path: { x: number; y: number }[];
   state: 'moving' | 'attacking';
+  isBoss?: boolean;
 }
 
 interface EnemyTower {
@@ -539,23 +544,37 @@ const RTSMap: React.FC = () => {
     waveRef.current = newWave;
     setWave(newWave);
     const towerIdx = ENEMY_TOWER_SPAWN_WAVES.indexOf(newWave as typeof ENEMY_TOWER_SPAWN_WAVES[number]);
-    if (towerIdx >= 0) {
+    const isBossWave = newWave % 10 === 0;
+    if (towerIdx >= 0 && !isBossWave) {
       const pos = ENEMY_TOWER_POSITIONS[towerIdx];
       if (!pos) return;
       setEnemyTowers(ts => [...ts, { id: newWave, x: pos.x, y: pos.y, hp: ENEMY_TOWER_MAX_HP, maxHp: ENEMY_TOWER_MAX_HP }]);
       setWaveAnnouncement(`⚔️ Wave ${newWave} — ENEMY TOWER BUILT!`);
+    } else if (isBossWave) {
+      setWaveAnnouncement(`💀 Wave ${newWave} — WAR BULL INCOMING!`);
     } else {
       setWaveAnnouncement(`⚔️ Wave ${newWave}${newWave % 3 === 0 ? ' — DOUBLE ASSAULT!' : '!'}`);
     }
-    window.setTimeout(() => setWaveAnnouncement(null), 2500);
+    window.setTimeout(() => setWaveAnnouncement(null), 3000);
 
     const gruntHp = GRUNT_MAX_HP + (newWave - 1) * 10;
+    const wallSet = new Set(placedBuildingsRef.current.filter(b => b.type === 'wall').map(b => `${b.x},${b.y}`));
+
+    // Boss spawn on multiples of 10
+    if (isBossWave) {
+      const bossHp = gruntHp * BOSS_HP_MULTIPLIER;
+      const cx = Math.max(0, ENEMY_BARN_POS.x - 1);
+      const cy = ENEMY_BARN_POS.y;
+      const bossPath = aStar(INITIAL_TILES, { x: cx, y: cy }, BARN_POS, true, wallSet);
+      const boss: EnemyGrunt = { id: gruntIdRef.current++, x: cx, y: cy, hp: bossHp, maxHp: bossHp, movingTo: bossPath[0] ?? BARN_POS, path: bossPath.slice(1), state: 'moving', isBoss: true };
+      setEnemyGrunts(gs => [...gs, boss]);
+    }
+
     const count = newWave % 3 === 0 ? 2 : 1;
     for (let i = 0; i < count; i++) {
       const ox = i === 0 ? 1 : -1;
       const cx = Math.max(0, Math.min(GRID_SIZE - 1, ENEMY_BARN_POS.x + ox));
       const cy = Math.max(0, Math.min(GRID_SIZE - 1, ENEMY_BARN_POS.y + (Math.random() > 0.5 ? 1 : -1)));
-      const wallSet = new Set(placedBuildingsRef.current.filter(b => b.type === 'wall').map(b => `${b.x},${b.y}`));
       const path = aStar(INITIAL_TILES, { x: cx, y: cy }, BARN_POS, true, wallSet);
       const grunt: EnemyGrunt = { id: gruntIdRef.current++, x: cx, y: cy, hp: gruntHp, maxHp: gruntHp, movingTo: path[0] ?? BARN_POS, path: path.slice(1), state: 'moving' };
       setEnemyGrunts(gs => [...gs, grunt]);
@@ -1109,7 +1128,7 @@ const RTSMap: React.FC = () => {
                       const gruntCurrent = enemyGruntsRef.current.find(g => g.id === gruntId);
                       const veteranDmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + unitBonus + u.level * VETERAN_ATK_BONUS;
                       if (!gruntCurrent || gruntCurrent.hp - veteranDmg > 0) return u;
-                      const newXp = u.xp + XP_PER_KILL;
+                      const newXp = u.xp + (gruntCurrent.isBoss ? BOSS_XP_REWARD : XP_PER_KILL);
                       const newLevel = newXp >= XP_TO_LEVEL_2 ? 2 : newXp >= XP_TO_LEVEL_1 ? 1 : 0;
                       if (newLevel > u.level) {
                         addFloatingText(capturedWX, capturedWY, `⭐ Level ${newLevel}!`, '#fbbf24');
@@ -1229,9 +1248,9 @@ const RTSMap: React.FC = () => {
         const killed = gs.filter(g => g.hp <= 0);
         if (killed.length > 0) {
           setKillCount(k => k + killed.length);
-          const goldDrop = killed.length * 5;
+          const goldDrop = killed.reduce((sum, g) => sum + (g.isBoss ? BOSS_GOLD_REWARD : 5), 0);
           setResources(r => ({ ...r, gold: r.gold + goldDrop }));
-          killed.forEach(g => addFloatingText(Math.round(g.x), Math.round(g.y), `+${5}🪙`, '#fbbf24'));
+          killed.forEach(g => addFloatingText(Math.round(g.x), Math.round(g.y), g.isBoss ? `💀+${BOSS_GOLD_REWARD}🪙` : `+5🪙`, '#fbbf24'));
         }
         return survived;
       });
@@ -1280,9 +1299,10 @@ const RTSMap: React.FC = () => {
             gruntAttackTimeoutsRef.current[g.id] = window.setTimeout(() => {
               delete gruntAttackTimeoutsRef.current[g.id];
               const barnArmor = Math.min(8, garrisonedRef.current.length * GARRISON_ARMOR_PER_UNIT);
-              const barnDmg = Math.max(1, GRUNT_DAMAGE - barnArmor);
+              const rawBarnDmg = g.isBoss ? BOSS_DAMAGE : GRUNT_DAMAGE;
+              const barnDmg = Math.max(1, rawBarnDmg - barnArmor);
               setPlayerBarnHp(hp => { const nHp = Math.max(0, hp - barnDmg); if (nHp <= 0) setGameOver('defeat'); return nHp; });
-              addFloatingText(BARN_POS.x, BARN_POS.y, `-${GRUNT_DAMAGE}`, '#ef4444');
+              addFloatingText(BARN_POS.x, BARN_POS.y, `-${barnDmg}`, g.isBoss ? '#dc2626' : '#ef4444');
             }, GRUNT_ATTACK_MS);
           }
         }
@@ -1974,10 +1994,25 @@ const RTSMap: React.FC = () => {
           {/* Enemy grunts */}
           {enemyGrunts.map(g => { const { isoX, isoY } = tileToSvg(g.x, g.y); const hp = g.hp / g.maxHp;
             return <g key={`grunt-${g.id}`} style={{ cursor: anySelected ? 'crosshair' : 'default' }} onContextMenu={e => handleAttackGrunt(g.id, e)}>
-              <circle cx={isoX + TILE_SIZE / 2} cy={isoY + 18} r={16} fill={g.state === 'attacking' ? '#dc2626' : '#f97316'} stroke="#7f1d1d" strokeWidth={3} />
-              <text x={isoX + TILE_SIZE / 2} y={isoY + 26} textAnchor="middle" fontSize="14">👹</text>
-              <rect x={isoX + TILE_SIZE / 2 - 14} y={isoY - 4} width={28} height={4} fill="#1e293b" />
-              <rect x={isoX + TILE_SIZE / 2 - 14} y={isoY - 4} width={28 * hp} height={4} fill="#ef4444" />
+              {g.isBoss ? (<>
+                {/* Boss War Bull — larger, darker, horns */}
+                <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 22} rx={26} ry={18} fill={g.state === 'attacking' ? '#7f1d1d' : '#991b1b'} stroke="#450a0a" strokeWidth={4} />
+                {/* Horns */}
+                <path d={`M${isoX + TILE_SIZE / 2 - 18},${isoY + 8} Q${isoX + TILE_SIZE / 2 - 28},${isoY - 10} ${isoX + TILE_SIZE / 2 - 14},${isoY + 2}`} fill="none" stroke="#1c1917" strokeWidth={5} strokeLinecap="round" />
+                <path d={`M${isoX + TILE_SIZE / 2 + 18},${isoY + 8} Q${isoX + TILE_SIZE / 2 + 28},${isoY - 10} ${isoX + TILE_SIZE / 2 + 14},${isoY + 2}`} fill="none" stroke="#1c1917" strokeWidth={5} strokeLinecap="round" />
+                {/* Eyes */}
+                <circle cx={isoX + TILE_SIZE / 2 - 8} cy={isoY + 16} r={4} fill="#dc2626" />
+                <circle cx={isoX + TILE_SIZE / 2 + 8} cy={isoY + 16} r={4} fill="#dc2626" />
+                <text x={isoX + TILE_SIZE / 2} y={isoY + 32} textAnchor="middle" fontSize="16">🐂</text>
+                <text x={isoX + TILE_SIZE / 2} y={isoY - 10} textAnchor="middle" fontSize="9" fill="#fca5a5" fontWeight="bold">WAR BULL</text>
+                <rect x={isoX + TILE_SIZE / 2 - 20} y={isoY - 5} width={40} height={5} fill="#1e293b" rx={2} />
+                <rect x={isoX + TILE_SIZE / 2 - 20} y={isoY - 5} width={40 * hp} height={5} fill="#dc2626" rx={2} />
+              </>) : (<>
+                <circle cx={isoX + TILE_SIZE / 2} cy={isoY + 18} r={16} fill={g.state === 'attacking' ? '#dc2626' : '#f97316'} stroke="#7f1d1d" strokeWidth={3} />
+                <text x={isoX + TILE_SIZE / 2} y={isoY + 26} textAnchor="middle" fontSize="14">👹</text>
+                <rect x={isoX + TILE_SIZE / 2 - 14} y={isoY - 4} width={28} height={4} fill="#1e293b" />
+                <rect x={isoX + TILE_SIZE / 2 - 14} y={isoY - 4} width={28 * hp} height={4} fill="#ef4444" />
+              </>)}
             </g>; })}
 
           {/* Workers */}
