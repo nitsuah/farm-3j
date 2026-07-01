@@ -88,6 +88,9 @@ interface RTSUIProps {
   onGuardTower: () => void;
   trainingQueue: {type: 'swordsman' | 'cavalry'}[];
   trainingProgress: number;
+  towerGarrison: Record<number, WorkerState[]>;
+  onTowerDeploy: (towerId: number, tx: number, ty: number) => void;
+  placedBuildingsList: PlacedBuilding[];
   onMinimapClick: (tileX: number, tileY: number) => void;
   farmhouse: { built: boolean; level: number };
   farmhouseUpgradeCosts: { gold: number; lumber: number }[];
@@ -162,6 +165,9 @@ export const RTSUI: React.FC<RTSUIProps> = ({
   onGuardTower,
   trainingQueue,
   trainingProgress,
+  towerGarrison,
+  onTowerDeploy,
+  placedBuildingsList,
   onMinimapClick,
 }) => {
   const isHeroSelected = selectedWorkers.some(w => w.unitType === 'hero');
@@ -502,6 +508,18 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                       {guardTowerResearched ? '🏰 Guard Tower ✓ (active)' : '🏰 Guard Tower 120🪙 80🪨 — upgrade all towers'}
                     </button>
                   )}
+                  {hasWatchtower && (() => {
+                    const towers = placedBuildingsList.filter(b => b.type === 'watchtower');
+                    const totalGarrisoned = towers.reduce((sum, t) => sum + (towerGarrison[t.id] ?? []).length, 0);
+                    return towers.map(t => {
+                      const tg = towerGarrison[t.id] ?? [];
+                      if (tg.length === 0) return null;
+                      return <div key={t.id} className="col-span-4 flex items-center justify-between rounded border border-cyan-700/50 bg-cyan-900/20 px-2 py-1 text-xs text-cyan-200">
+                        <span>🗼 Tower ({t.x},{t.y}): {tg.length}/3 garrisoned +{tg.length*4}dmg +{(tg.length*0.5).toFixed(1)}rng</span>
+                        <button className="ml-2 rounded bg-cyan-800/40 px-2 py-0.5 text-cyan-100 hover:bg-cyan-700/50" onClick={() => onTowerDeploy(t.id, t.x, t.y)}>🚪 Deploy</button>
+                      </div>;
+                    });
+                  })()}
                   <button
                     className="col-span-2 rounded border border-yellow-700/70 bg-yellow-900/20 px-2 py-2 text-xs text-yellow-200 hover:bg-yellow-800/30 disabled:opacity-40"
                     onClick={() => onFarmhouseAction('build:spikeTrap')}

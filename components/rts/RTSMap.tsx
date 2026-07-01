@@ -394,6 +394,11 @@ const RTSMap: React.FC = () => {
   const garrisonedRef = useRef(garrisoned);
   useEffect(() => { garrisonedRef.current = garrisoned; }, [garrisoned]);
 
+  // Tower garrison: maps tower building id → garrisoned units (max 3)
+  const [towerGarrison, setTowerGarrison] = useState<Record<number, WorkerState[]>>({});
+  const towerGarrisonRef = useRef(towerGarrison);
+  useEffect(() => { towerGarrisonRef.current = towerGarrison; }, [towerGarrison]);
+
   const [heroRecruited, setHeroRecruited] = useState(false);
   const [heroAbilityCooldown, setHeroAbilityCooldown] = useState(0);
   useEffect(() => {
@@ -670,8 +675,9 @@ const RTSMap: React.FC = () => {
         if (gameOverRef.current) return;
         const grunts = enemyGruntsRef.current;
         const isGuard = guardTowerRef.current;
-        const dmgT = isGuard ? WATCHTOWER_DAMAGE + 7 : WATCHTOWER_DAMAGE;
-        const rangeT = isGuard ? WATCHTOWER_ATTACK_RANGE + 1 : WATCHTOWER_ATTACK_RANGE;
+        const garrisonCount = (towerGarrisonRef.current[towerId] ?? []).length;
+        const dmgT = (isGuard ? WATCHTOWER_DAMAGE + 7 : WATCHTOWER_DAMAGE) + garrisonCount * 4;
+        const rangeT = (isGuard ? WATCHTOWER_ATTACK_RANGE + 1 : WATCHTOWER_ATTACK_RANGE) + garrisonCount * 0.5;
         const inRangeT = grunts.filter(g => tileDist(g.x, g.y, tx, ty) <= rangeT);
         const targetT = inRangeT.reduce<EnemyGrunt | null>((best, g) => (!best || tileDist(g.x, g.y, tx, ty) < tileDist(best.x, best.y, tx, ty) ? g : best), null);
         if (targetT) {
@@ -789,6 +795,30 @@ const RTSMap: React.FC = () => {
     }, GARRISON_HEAL_MS);
     return () => clearInterval(id);
   }, [gameOver]);
+
+  const handleTowerGarrison = useCallback((towerId: number, tx: number, ty: number) => {
+    const TOWER_CAP = 3;
+    setWorkers(ws => {
+      const current = towerGarrisonRef.current[towerId] ?? [];
+      const slots = TOWER_CAP - current.length;
+      if (slots <= 0) return ws;
+      const selected = ws.filter(w => w.selected && w.unitType !== 'catapult').slice(0, slots);
+      if (selected.length === 0) return ws;
+      const ids = new Set(selected.map(w => w.id));
+      setTowerGarrison(tg => ({ ...tg, [towerId]: [...(tg[towerId] ?? []), ...selected.map(w => ({ ...w, selected: false, state: 'idle' as const, movingTo: null, path: [], gathering: null, attacking: null, repairing: null, patrol: null, attackMove: false, attackMoveTarget: null }))] }));
+      setResources(r => ({ ...r, food: r.food - selected.length }));
+      addFloatingText(tx, ty, `+${selected.length} 🏰`, '#22d3ee');
+      return ws.filter(w => !ids.has(w.id));
+    });
+  }, [addFloatingText]);
+
+  const handleTowerDeploy = useCallback((towerId: number, tx: number, ty: number) => {
+    const units = towerGarrisonRef.current[towerId] ?? [];
+    if (units.length === 0) return;
+    setTowerGarrison(tg => { const next = { ...tg }; delete next[towerId]; return next; });
+    setWorkers(ws => [...ws, ...units.map((u, i) => ({ ...u, x: tx + (i % 2 === 0 ? -1 : 1), y: ty + Math.floor(i / 2), selected: false }))]);
+    setResources(r => ({ ...r, food: r.food + units.length }));
+  }, []);
 
   const handleGarrison = useCallback(() => {
     setWorkers(ws => {
@@ -2132,11 +2162,18 @@ const RTSMap: React.FC = () => {
             const colors: Record<string, { fill: string; stroke: string }> = { farmhouse: { fill: '#fef3c7', stroke: '#92400e' }, lumberShed: { fill: '#a16207', stroke: '#78350f' }, watchtower: { fill: '#64748b', stroke: '#1e293b' } };
             const c = colors[b.type] ?? { fill: '#374151', stroke: '#1f2937' };
             const isDamaged = b.hp < b.maxHp;
-            return <g key={`building-${b.id}`} style={{ cursor: isDamaged && anySelected ? 'pointer' : 'default' }}
-              onContextMenu={isDamaged && anySelected ? e => handleRepairBuilding(b.id, b.x, b.y, e) : undefined}>
-              <rect x={isoX + TILE_SIZE / 4} y={isoY} width={TILE_SIZE * 1.5} height={TILE_SIZE * 0.8} fill={c.fill} stroke={isDamaged ? '#f97316' : c.stroke} strokeWidth={isDamaged ? 4 : 3} rx={8} />
+            const isTower = b.type === 'watchtower';
+            const tgCount = isTower ? (towerGarrison[b.id] ?? []).length : 0;
+            const canGarrisonTower = isTower && anySelected && tgCount < 3;
+            const onCtxMenu = isDamaged && anySelected ? (e: React.MouseEvent) => handleRepairBuilding(b.id, b.x, b.y, e)
+              : canGarrisonTower ? (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); handleTowerGarrison(b.id, b.x, b.y); }
+              : undefined;
+            return <g key={`building-${b.id}`} style={{ cursor: (isDamaged || canGarrisonTower) && anySelected ? 'pointer' : 'default' }}
+              onContextMenu={onCtxMenu}>
+              <rect x={isoX + TILE_SIZE / 4} y={isoY} width={TILE_SIZE * 1.5} height={TILE_SIZE * 0.8} fill={c.fill} stroke={isDamaged ? '#f97316' : tgCount > 0 ? '#22d3ee' : c.stroke} strokeWidth={isDamaged ? 4 : tgCount > 0 ? 3 : 3} rx={8} />
               <text x={isoX + TILE_SIZE} y={isoY + TILE_SIZE / 2} textAnchor="middle" fontSize="22">{BUILDING_EMOJI[b.type]}</text>
               {isDamaged && <text x={isoX + TILE_SIZE} y={isoY - 18} textAnchor="middle" fontSize="9" fill="#f97316" fontWeight="bold">🔧 REPAIR</text>}
+              {isTower && tgCount > 0 && <text x={isoX + TILE_SIZE} y={isoY - 18} textAnchor="middle" fontSize="9" fill="#22d3ee" fontWeight="bold">👥×{tgCount}</text>}
             </g>; })}
 
           {/* Building HP bars — only shown when damaged */}
@@ -2431,6 +2468,9 @@ const RTSMap: React.FC = () => {
         onGuardTower={() => handleFarmhouseAction('guardTower')}
         trainingQueue={trainingQueue}
         trainingProgress={trainingProgress}
+        towerGarrison={towerGarrison}
+        onTowerDeploy={handleTowerDeploy}
+        placedBuildingsList={placedBuildings}
         onMinimapClick={(tx, ty) => {
           const { isoX, isoY } = tileToSvg(tx, ty);
           const bounds = { minX: -((GRID_SIZE * TILE_SIZE) / 2), maxX: (GRID_SIZE * TILE_SIZE) / 2, minY: -100, maxY: (GRID_SIZE * TILE_SIZE) / 2 };
