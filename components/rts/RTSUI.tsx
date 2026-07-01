@@ -16,6 +16,8 @@ export interface WorkerState {
   maxHp: number;
   patrol: { a: { x: number; y: number }; b: { x: number; y: number }; heading: 'a' | 'b' } | null;
   unitType: 'farmer' | 'swordsman' | 'hero' | 'catapult';
+  xp: number;
+  level: number;
 }
 
 export type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market' | 'blacksmith';
@@ -189,6 +191,23 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                     {firstWorker.carrying.stone > 0 && `🪨${firstWorker.carrying.stone}`}
                     {!firstWorker.carrying.gold && !firstWorker.carrying.lumber && !firstWorker.carrying.stone && 'Empty'}
                   </div>
+                  {firstWorker.level > 0 || firstWorker.xp > 0 ? (
+                    <div className="mt-0.5 flex items-center gap-1.5">
+                      <span className="text-xs text-yellow-300">{'⭐'.repeat(firstWorker.level)}{firstWorker.level === 0 ? '☆☆' : firstWorker.level === 1 ? '☆' : ''}</span>
+                      <div className="h-1.5 flex-1 rounded bg-slate-700">
+                        <div className="h-1.5 rounded bg-yellow-400 transition-all" style={{ width: `${Math.min(100, (firstWorker.xp / (firstWorker.level >= 2 ? 120 : firstWorker.level === 1 ? 120 : 40)) * 100)}%` }} />
+                      </div>
+                      <span className="text-xs text-yellow-400/70">{firstWorker.xp}xp</span>
+                    </div>
+                  ) : (
+                    <div className="mt-0.5 flex items-center gap-1.5">
+                      <span className="text-xs text-slate-500">☆☆ Lv0</span>
+                      <div className="h-1.5 flex-1 rounded bg-slate-700">
+                        <div className="h-1.5 rounded bg-yellow-400/50 transition-all" style={{ width: `${(firstWorker.xp / 40) * 100}%` }} />
+                      </div>
+                      <span className="text-xs text-slate-500">{firstWorker.xp}/40</span>
+                    </div>
+                  )}
                 </>
               )}
               {selectedCount > 1 && (

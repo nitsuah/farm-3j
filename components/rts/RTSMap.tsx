@@ -47,6 +47,11 @@ const CATAPULT_DAMAGE = 22;
 const CATAPULT_SPLASH_RANGE = 1.5;
 const CATAPULT_SPLASH_DAMAGE = 11;
 const CATAPULT_FIRE_MS = 3500;
+const XP_PER_KILL = 40;
+const XP_TO_LEVEL_1 = 40;
+const XP_TO_LEVEL_2 = 120;
+const VETERAN_HP_BONUS = 10;
+const VETERAN_ATK_BONUS = 5;
 const ARCHER_TOWER_POS = { x: 8, y: 9 };
 const ARCHER_TOWER_RANGE = 4;
 const ARCHER_TOWER_DAMAGE = 10;
@@ -184,7 +189,7 @@ const INITIAL_TILES = makeTiles();
 // ---------- Save / Load ----------
 const SAVE_KEY = 'farm3j_rts_v1';
 
-interface SaveWorker { id: number; x: number; y: number; hp: number; maxHp: number; unitType: 'farmer' | 'swordsman' | 'hero' | 'catapult'; group: number | null }
+interface SaveWorker { id: number; x: number; y: number; hp: number; maxHp: number; unitType: 'farmer' | 'swordsman' | 'hero' | 'catapult'; group: number | null; xp?: number; level?: number }
 interface SaveData {
   version: 1;
   resources: Resources;
@@ -226,7 +231,7 @@ function clearSave(): void {
 
 function makeUnit(id: number, x: number, y: number, unitType: 'farmer' | 'swordsman' | 'hero' | 'catapult'): WorkerState {
   const maxHp = unitType === 'hero' ? HERO_MAX_HP : unitType === 'swordsman' ? SWORDSMAN_MAX_HP : unitType === 'catapult' ? CATAPULT_MAX_HP : WORKER_MAX_HP;
-  return { id, x, y, selected: false, movingTo: null, path: [], gathering: null, attacking: null, carrying: { gold: 0, lumber: 0, stone: 0 }, state: 'idle', group: null, hp: maxHp, maxHp, patrol: null, unitType };
+  return { id, x, y, selected: false, movingTo: null, path: [], gathering: null, attacking: null, carrying: { gold: 0, lumber: 0, stone: 0 }, state: 'idle', group: null, hp: maxHp, maxHp, patrol: null, unitType, xp: 0, level: 0 };
 }
 // ---------------------------------
 
@@ -279,7 +284,7 @@ const RTSMap: React.FC = () => {
 
   const [workers, setWorkers] = useState<WorkerState[]>(() =>
     INITIAL_SAVE?.workers?.length
-      ? INITIAL_SAVE.workers.map(w => ({ ...makeUnit(w.id, w.x, w.y, w.unitType), hp: w.hp, maxHp: w.maxHp, group: w.group }))
+      ? INITIAL_SAVE.workers.map(w => ({ ...makeUnit(w.id, w.x, w.y, w.unitType), hp: w.hp, maxHp: w.maxHp, group: w.group, xp: w.xp ?? 0, level: w.level ?? 0 }))
       : [{ ...makeUnit(1, 5, 5, 'farmer'), selected: true }, makeUnit(2, 7, 7, 'farmer')]
   );
   const workersRef = useRef(workers);
@@ -379,7 +384,7 @@ const RTSMap: React.FC = () => {
     writeSave({
       version: 1,
       resources,
-      workers: workersRef.current.map(w => ({ id: w.id, x: Math.round(w.x), y: Math.round(w.y), hp: w.hp, maxHp: w.maxHp, unitType: w.unitType, group: w.group })),
+      workers: workersRef.current.map(w => ({ id: w.id, x: Math.round(w.x), y: Math.round(w.y), hp: w.hp, maxHp: w.maxHp, unitType: w.unitType, group: w.group, xp: w.xp, level: w.level })),
       trees: treesRef.current,
       goldMine: goldMineRef.current,
       stoneNodes: stoneNodesRef.current,
@@ -885,22 +890,51 @@ const RTSMap: React.FC = () => {
                 const gruntId = w.attacking.gruntId;
                 const capturedGX = Math.round(target.x), capturedGY = Math.round(target.y);
                 const capturedWX = Math.round(w.x), capturedWY = Math.round(w.y);
+                const capturedWorkerId = w.id;
                 const unitBonus = w.unitType === 'hero' ? HERO_DAMAGE_BONUS : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : 0;
                 attackT[w.id] = window.setTimeout(() => {
-                  delete attackTimeoutsRef.current[w.id];
-                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + unitBonus;
-                  setEnemyGrunts(gs => gs.map(g => g.id === gruntId ? { ...g, hp: Math.max(0, g.hp - dmg) } : g));
-                  addFloatingText(capturedGX, capturedGY, `-${dmg}`, '#f97316');
-                  addFloatingText(capturedWX, capturedWY, `⚔️`, '#fbbf24');
+                  delete attackTimeoutsRef.current[capturedWorkerId];
+                  setWorkers(ws2 => {
+                    const attacker = ws2.find(u => u.id === capturedWorkerId);
+                    const veteranBonus = attacker ? attacker.level * VETERAN_ATK_BONUS : 0;
+                    const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + unitBonus + veteranBonus;
+                    addFloatingText(capturedGX, capturedGY, `-${dmg}`, '#f97316');
+                    addFloatingText(capturedWX, capturedWY, `⚔️`, '#fbbf24');
+                    setEnemyGrunts(gs => gs.map(g => {
+                      if (g.id !== gruntId) return g;
+                      const newHp = Math.max(0, g.hp - dmg);
+                      if (newHp <= 0 && g.hp > 0) {
+                        // Award XP to attacker
+                        return { ...g, hp: 0 };
+                      }
+                      return { ...g, hp: newHp };
+                    }));
+                    // Award XP to attacker if grunt will die
+                    return ws2.map(u => {
+                      if (u.id !== capturedWorkerId) return u;
+                      const gruntCurrent = enemyGruntsRef.current.find(g => g.id === gruntId);
+                      const veteranDmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + unitBonus + u.level * VETERAN_ATK_BONUS;
+                      if (!gruntCurrent || gruntCurrent.hp - veteranDmg > 0) return u;
+                      const newXp = u.xp + XP_PER_KILL;
+                      const newLevel = newXp >= XP_TO_LEVEL_2 ? 2 : newXp >= XP_TO_LEVEL_1 ? 1 : 0;
+                      if (newLevel > u.level) {
+                        addFloatingText(capturedWX, capturedWY, `⭐ Level ${newLevel}!`, '#fbbf24');
+                        const hpGain = VETERAN_HP_BONUS;
+                        return { ...u, xp: newXp, level: newLevel, maxHp: u.maxHp + hpGain, hp: Math.min(u.hp + hpGain, u.maxHp + hpGain) };
+                      }
+                      return { ...u, xp: newXp };
+                    });
+                  });
                 }, ATTACK_INTERVAL_MS);
               }
             } else {
               if (!attackT[w.id]) {
                 const capturedWX = Math.round(w.x), capturedWY = Math.round(w.y);
                 const unitBonus2 = w.unitType === 'hero' ? HERO_DAMAGE_BONUS : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : 0;
+                const capturedVetLevel = w.level;
                 attackT[w.id] = window.setTimeout(() => {
                   delete attackTimeoutsRef.current[w.id];
-                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + unitBonus2;
+                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + unitBonus2 + capturedVetLevel * VETERAN_ATK_BONUS;
                   setWorkers(ws2 => ws2.map(w2 => {
                     if (w2.id !== w.id || w2.state !== 'attacking' || !w2.attacking) return w2;
                     setEnemyBarnHp(hp => { const nHp = Math.max(0, hp - dmg); if (nHp <= 0) setGameOver('victory'); return nHp; });
@@ -1589,6 +1623,9 @@ const RTSMap: React.FC = () => {
               )}
               <rect x={isoX + TILE_SIZE / 2 - 16} y={isoY - 4} width={32} height={4} fill="#1e293b" />
               <rect x={isoX + TILE_SIZE / 2 - 16} y={isoY - 4} width={32 * hp} height={4} fill={hp > 0.5 ? '#4ade80' : hp > 0.25 ? '#fbbf24' : '#ef4444'} />
+              {worker.level > 0 && (
+                <text x={isoX + TILE_SIZE / 2 - 18} y={isoY - 6} textAnchor="middle" fontSize="10" fill="#fbbf24">{'⭐'.repeat(worker.level)}</text>
+              )}
               {worker.group !== null && <>
                 <circle cx={isoX + TILE_SIZE / 2 + 14} cy={isoY + 6} r={9} fill="#1e293b" stroke="#fbbf24" strokeWidth={1.5} />
                 <text x={isoX + TILE_SIZE / 2 + 14} y={isoY + 10} textAnchor="middle" fontSize="10" fill="#fde68a" fontWeight="bold">{worker.group}</text>
