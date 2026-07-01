@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 
 import { RTSUI, WorkerState, Upgrades, UPGRADE_COSTS, UPGRADE_MAX } from './RTSUI';
 
-const GRID_SIZE = 13;
+const GRID_SIZE = 17;
 const TILE_SIZE = 64;
 const WORKER_SPEED = 1.5;
 const GRUNT_SPEED = 0.8;
@@ -17,7 +17,7 @@ const WATCHTOWER_VISION = 7;
 const WATCHTOWER_ATTACK_RANGE = 5;
 const WATCHTOWER_DAMAGE = 8;
 const WATCHTOWER_ATTACK_MS = 2000;
-const ENEMY_BARN_POS = { x: 10, y: 10 };
+const ENEMY_BARN_POS = { x: 14, y: 14 };
 const ENEMY_BARN_MAX_HP = 200;
 const PLAYER_BARN_MAX_HP = 300;
 const ATTACK_DAMAGE = 15;
@@ -56,11 +56,11 @@ const XP_TO_LEVEL_1 = 40;
 const XP_TO_LEVEL_2 = 120;
 const VETERAN_HP_BONUS = 10;
 const VETERAN_ATK_BONUS = 5;
-const ARCHER_TOWER_POS = { x: 8, y: 9 };
+const ARCHER_TOWER_POS = { x: 12, y: 13 };
 const ARCHER_TOWER_RANGE = 4;
 const ARCHER_TOWER_DAMAGE = 10;
 const ENEMY_TOWER_SPAWN_WAVES = [5, 10, 15] as const;
-const ENEMY_TOWER_POSITIONS = [{ x: 9, y: 7 }, { x: 7, y: 11 }, { x: 11, y: 8 }];
+const ENEMY_TOWER_POSITIONS = [{ x: 13, y: 11 }, { x: 11, y: 13 }, { x: 15, y: 13 }];
 const ENEMY_TOWER_MAX_HP = 60;
 const ENEMY_TOWER_DAMAGE = 9;
 const ENEMY_TOWER_RANGE = 4.5;
@@ -99,14 +99,25 @@ const SAPPER_EXPLODE_DAMAGE = 80;
 const SAPPER_FIRST_WAVE = 12;
 const SAPPER_GOLD_REWARD = 20;
 const SAPPER_XP_REWARD = 45;
+const LUMBER_SHED_BONUS_MS = 200;
+
+const FROST_TOWER_RANGE = 4.5;
+const FROST_TOWER_DAMAGE = 5;
+const FROST_TOWER_ATTACK_MS = 2500;
+const FROST_TOWER_SLOW_DURATION = 3000;
+const FROST_TOWER_SLOW_FACTOR = 0.5;
+const FROST_TOWER_HP = 160;
+const FROST_TOWER_GOLD_COST = 80;
+const FROST_TOWER_LUMBER_COST = 40;
+const FROST_TOWER_STONE_COST = 60;
 
 const LOOT_CRATE_POSITIONS = [
-  { x: 2, y: 6 }, { x: 6, y: 2 }, { x: 3, y: 10 }, { x: 8, y: 4 }, { x: 1, y: 1 }, { x: 5, y: 7 },
+  { x: 3, y: 10 }, { x: 10, y: 3 }, { x: 5, y: 15 }, { x: 15, y: 5 }, { x: 1, y: 1 }, { x: 7, y: 8 }, { x: 8, y: 7 }, { x: 13, y: 13 },
 ];
 
 interface FloatingText { id: number; x: number; y: number; text: string; color: string; createdAt: number }
 type TileType = 'grass' | 'dirt' | 'water' | 'tree' | 'rock';
-type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market' | 'blacksmith' | 'granary' | 'stable' | 'spikeTrap';
+type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market' | 'blacksmith' | 'granary' | 'stable' | 'spikeTrap' | 'frostTower';
 
 interface ResourceNode { x: number; y: number; amount: number }
 interface Resources { gold: number; lumber: number; stone: number; food: number; foodCap: number }
@@ -122,6 +133,7 @@ interface EnemyGrunt {
   path: { x: number; y: number }[];
   state: 'moving' | 'attacking';
   isBoss?: boolean;
+  frozenUntil?: number;
 }
 
 interface EnemyTower {
@@ -212,12 +224,13 @@ const CREEP_LEASH_RANGE = 5;
 const CAMP_GOLD_REWARD = 60;
 
 const CREEP_CAMPS: { id: number; x: number; y: number; goldReward: number }[] = [
-  { id: 1, x: 0,  y: 9,  goldReward: CAMP_GOLD_REWARD },
-  { id: 2, x: 6,  y: 0,  goldReward: CAMP_GOLD_REWARD },
-  { id: 3, x: 11, y: 6,  goldReward: CAMP_GOLD_REWARD },
+  { id: 1, x: 2,  y: 12, goldReward: CAMP_GOLD_REWARD },
+  { id: 2, x: 9,  y: 2,  goldReward: CAMP_GOLD_REWARD },
+  { id: 3, x: 13, y: 8,  goldReward: CAMP_GOLD_REWARD },
+  { id: 4, x: 6,  y: 6,  goldReward: CAMP_GOLD_REWARD },
 ];
 
-const BARN_POS = { x: 4, y: 4 };
+const BARN_POS = { x: 2, y: 2 };
 
 const BUILDING_COSTS: Record<BuildingType, { gold: number; lumber: number; stone: number; label: string; foodCapBonus: number }> = {
   farmhouse: { gold: 60, lumber: 30, stone: 0, label: 'Farmhouse', foodCapBonus: 5 },
@@ -232,15 +245,16 @@ const BUILDING_COSTS: Record<BuildingType, { gold: number; lumber: number; stone
   granary:       { gold: 50,  lumber: 80, stone: 20, label: 'Granary',        foodCapBonus: 8 },
   stable:        { gold: 80,  lumber: 60, stone: 30, label: 'Stable',         foodCapBonus: 0 },
   spikeTrap:     { gold: 30,  lumber: 20, stone: 10, label: 'Spike Trap',     foodCapBonus: 0 },
+  frostTower:    { gold: FROST_TOWER_GOLD_COST, lumber: FROST_TOWER_LUMBER_COST, stone: FROST_TOWER_STONE_COST, label: 'Frost Tower', foodCapBonus: 0 },
 };
 
 const BUILDING_EMOJI: Record<BuildingType, string> = {
-  farmhouse: '🏠', lumberShed: '🪵', watchtower: '🗼', wall: '🧱', windmill: '💨', barracks: '🏯', siegeWorkshop: '⚙️', market: '🏪', blacksmith: '🔨', granary: '🌾', stable: '🐴', spikeTrap: '🪤',
+  farmhouse: '🏠', lumberShed: '🪵', watchtower: '🗼', wall: '🧱', windmill: '💨', barracks: '🏯', siegeWorkshop: '⚙️', market: '🏪', blacksmith: '🔨', granary: '🌾', stable: '🐴', spikeTrap: '🪤', frostTower: '❄️',
 };
 
 const BUILDING_MAX_HP: Record<BuildingType, number> = {
   farmhouse: 200, lumberShed: 150, watchtower: 180, wall: 120, windmill: 100,
-  barracks: 250, siegeWorkshop: 220, market: 160, blacksmith: 200, granary: 140, stable: 200, spikeTrap: 60,
+  barracks: 250, siegeWorkshop: 220, market: 160, blacksmith: 200, granary: 140, stable: 200, spikeTrap: 60, frostTower: FROST_TOWER_HP,
 };
 const BUILDING_GRUNT_DAMAGE = 8; // damage per hit from grunt to building
 
@@ -260,10 +274,21 @@ const CAVALRY_SPRINT_SPEED_MULT = 2;
 function makeTiles(): TileType[][] {
   return Array.from({ length: GRID_SIZE }, (_, i) =>
     Array.from({ length: GRID_SIZE }, (_, j) => {
-      if ((i >= 1 && i <= 3 && j >= 1 && j <= 2) || (i >= 8 && i <= 10 && j >= 8 && j <= 9)) return 'water';
-      if ((i === 3 || i === 4) && (j === 6 || j === 7)) return 'tree';
-      if ((i === 6 || i === 7) && (j === 2 || j === 3)) return 'rock';
-      if (j === 4 || i === 5) return 'dirt';
+      // Water: player-side lake and enemy-side lake
+      if (i >= 0 && i <= 2 && j >= 5 && j <= 7) return 'water';
+      if (i >= 5 && i <= 7 && j >= 0 && j <= 2) return 'water';
+      if (i >= 14 && i <= 16 && j >= 9 && j <= 11) return 'water';
+      if (i >= 9 && i <= 11 && j >= 14 && j <= 16) return 'water';
+      // Tree clusters (decorative backdrop)
+      if ((i === 5 || i === 6) && (j === 9 || j === 10)) return 'tree';
+      if ((i === 10 || i === 11) && (j === 6 || j === 7)) return 'tree';
+      if ((i === 3 || i === 4) && (j === 13 || j === 14)) return 'tree';
+      if ((i === 13 || i === 14) && (j === 3 || j === 4)) return 'tree';
+      // Rock clusters (decorative)
+      if ((i === 7 || i === 8) && (j === 4 || j === 5)) return 'rock';
+      if ((i === 8 || i === 9) && (j === 11 || j === 12)) return 'rock';
+      // Dirt paths crossing the map
+      if (j === 6 || i === 8) return 'dirt';
       return 'grass';
     })
   );
@@ -418,19 +443,28 @@ const RTSMap: React.FC = () => {
   const placedBuildingsRef = useRef(placedBuildings);
   useEffect(() => { placedBuildingsRef.current = placedBuildings; }, [placedBuildings]);
   const [controlGroups, setControlGroups] = useState<Record<number, number[]>>({});
-  const [resources, setResources] = useState<Resources>(() => INITIAL_SAVE?.resources ?? { gold: 0, lumber: 0, stone: 0, food: 2, foodCap: FOOD_CAP_BASE });
+  const [resources, setResources] = useState<Resources>(() => INITIAL_SAVE?.resources ?? { gold: 150, lumber: 80, stone: 30, food: 2, foodCap: FOOD_CAP_BASE });
 
   const DEFAULT_TREES: ResourceNode[] = [
-    { x: 2, y: 2, amount: 50 }, { x: 6, y: 3, amount: 50 }, { x: 4, y: 7, amount: 50 },
-    { x: 7, y: 6, amount: 50 }, { x: 3, y: 9, amount: 50 }, { x: 9, y: 3, amount: 50 },
-    { x: 10, y: 10, amount: 50 }, { x: 1, y: 10, amount: 50 }, { x: 11, y: 2, amount: 50 },
-    { x: 8, y: 9, amount: 50 },
+    // Player-side cluster
+    { x: 2, y: 8, amount: 60 }, { x: 3, y: 8, amount: 60 }, { x: 2, y: 9, amount: 60 },
+    // Mid-west cluster
+    { x: 7, y: 4, amount: 60 }, { x: 8, y: 4, amount: 60 }, { x: 7, y: 5, amount: 60 },
+    // Center cluster
+    { x: 5, y: 11, amount: 60 }, { x: 6, y: 11, amount: 60 },
+    // Mid-east cluster
+    { x: 10, y: 8, amount: 60 }, { x: 11, y: 8, amount: 60 },
+    // Enemy-side cluster
+    { x: 13, y: 8, amount: 60 }, { x: 14, y: 8, amount: 60 },
+    { x: 12, y: 2, amount: 60 }, { x: 13, y: 2, amount: 60 },
   ];
   const [trees, setTrees] = useState<ResourceNode[]>(() => INITIAL_SAVE?.trees ?? DEFAULT_TREES);
-  const [goldMine, setGoldMine] = useState<ResourceNode>(() => INITIAL_SAVE?.goldMine ?? { x: 1, y: 7, amount: 100 });
+  const [goldMine, setGoldMine] = useState<ResourceNode>(() => INITIAL_SAVE?.goldMine ?? { x: 1, y: 8, amount: 200 });
   const [stoneNodes, setStoneNodes] = useState<ResourceNode[]>(() => INITIAL_SAVE?.stoneNodes ?? [
-    { x: 9, y: 1, amount: 100 }, { x: 11, y: 5, amount: 100 }, { x: 0, y: 5, amount: 100 },
-    { x: 5, y: 11, amount: 100 }, { x: 10, y: 7, amount: 100 },
+    { x: 4, y: 1, amount: 150 }, { x: 1, y: 4, amount: 150 },   // player corner
+    { x: 9, y: 9, amount: 150 },                                  // center
+    { x: 6, y: 13, amount: 150 }, { x: 13, y: 5, amount: 150 }, // mid flanks
+    { x: 15, y: 12, amount: 150 }, { x: 12, y: 15, amount: 150 }, // enemy corner
   ]);
   const treesRef = useRef(trees);
   const goldMineRef = useRef(goldMine);
@@ -445,7 +479,7 @@ const RTSMap: React.FC = () => {
   const [workers, setWorkers] = useState<WorkerState[]>(() =>
     INITIAL_SAVE?.workers?.length
       ? INITIAL_SAVE.workers.map(w => ({ ...makeUnit(w.id, w.x, w.y, w.unitType), hp: w.hp, maxHp: w.maxHp, group: w.group, xp: w.xp ?? 0, level: w.level ?? 0 }))
-      : [{ ...makeUnit(1, 5, 5, 'farmer'), selected: true }, makeUnit(2, 7, 7, 'farmer')]
+      : [{ ...makeUnit(1, 3, 3, 'farmer'), selected: true }, makeUnit(2, 4, 3, 'farmer')]
   );
   const workersRef = useRef(workers);
   useEffect(() => { workersRef.current = workers; }, [workers]);
@@ -899,6 +933,29 @@ const RTSMap: React.FC = () => {
     };
     towers.forEach(t => { if (!watchtowerTimersRef.current[t.id]) scheduleShot(t.id, t.x, t.y); });
     return () => { Object.values(watchtowerTimersRef.current).forEach(clearTimeout); watchtowerTimersRef.current = {}; };
+  }, [placedBuildings, gameOver, addFloatingText]);
+
+  // Frost Tower auto-fire — slows + chips grunts in range
+  const frostTowerTimersRef = useRef<Record<number, number>>({});
+  useEffect(() => {
+    if (gameOver) return;
+    const frostTowers = placedBuildings.filter(b => b.type === 'frostTower' && b.hp > 0);
+    const scheduleFrost = (towerId: number, tx: number, ty: number) => {
+      frostTowerTimersRef.current[towerId] = window.setTimeout(() => {
+        delete frostTowerTimersRef.current[towerId];
+        if (gameOverRef.current) return;
+        const grunts = enemyGruntsRef.current.filter(g => g.hp > 0);
+        const target = grunts.reduce<EnemyGrunt | null>((best, g) => (!best || tileDist(g.x, g.y, tx, ty) < tileDist(best.x, best.y, tx, ty) ? g : best), null);
+        if (target && tileDist(target.x, target.y, tx, ty) <= FROST_TOWER_RANGE) {
+          const freezeUntil = Date.now() + FROST_TOWER_SLOW_DURATION;
+          setEnemyGrunts(gs => gs.map(g => g.id === target.id ? { ...g, hp: Math.max(0, g.hp - FROST_TOWER_DAMAGE), frozenUntil: freezeUntil } : g));
+          addFloatingText(Math.round(target.x), Math.round(target.y), `❄️-${FROST_TOWER_DAMAGE}`, '#93c5fd');
+        }
+        scheduleFrost(towerId, tx, ty);
+      }, FROST_TOWER_ATTACK_MS);
+    };
+    frostTowers.forEach(t => { if (!frostTowerTimersRef.current[t.id]) scheduleFrost(t.id, t.x, t.y); });
+    return () => { Object.values(frostTowerTimersRef.current).forEach(clearTimeout); frostTowerTimersRef.current = {}; };
   }, [placedBuildings, gameOver, addFloatingText]);
 
   // Player barn defense fire — barn auto-shoots nearest grunt in 4-tile range every 3s (Town Center mechanic)
@@ -1502,7 +1559,7 @@ const RTSMap: React.FC = () => {
               if (!gatherT[w.id]) {
                 const lumberShedCount = placedBuildingsRef.current.filter(b => b.type === 'lumberShed').length;
                 const boonDiv = harvestBoonRef.current ? 2 : 1;
-                const gatherMs = Math.max(400, (GATHER_INTERVAL_MS - upgradesRef.current.swiftHarvest * 200 - lumberShedCount * 200) / boonDiv);
+                const gatherMs = Math.max(400, (GATHER_INTERVAL_MS - upgradesRef.current.swiftHarvest * 200 - lumberShedCount * LUMBER_SHED_BONUS_MS) / boonDiv);
                 gatherT[w.id] = window.setTimeout(() => {
                   delete gatherTimeoutsRef.current[w.id];
                   const idx = w.gathering!.idx;
@@ -1949,6 +2006,7 @@ const RTSMap: React.FC = () => {
 
       const gruntSpeedMult = isNightRef.current ? NIGHT_SPEED_MULT : 1;
       setEnemyGrunts(gs => gs.map(g => {
+        const frostMult = g.frozenUntil && Date.now() < g.frozenUntil ? FROST_TOWER_SLOW_FACTOR : 1;
         // Proximity aggro: switch to attack nearest worker within 2 tiles
         const nearWorker = currentWorkers.find(w => w.hp > 0 && tileDist(g.x, g.y, w.x, w.y) <= 2);
         if (nearWorker) {
@@ -1971,7 +2029,7 @@ const RTSMap: React.FC = () => {
           const p = aStar(INITIAL_TILES, { x: Math.round(g.x), y: Math.round(g.y) }, { x: Math.round(nearWorker.x), y: Math.round(nearWorker.y) }, true, new Set(placedBuildingsRef.current.filter(b => b.type === 'wall').map(b => `${b.x},${b.y}`)));
           const dx = nearWorker.x - g.x, dy = nearWorker.y - g.y;
           const d = Math.sqrt(dx * dx + dy * dy);
-          return { ...g, movingTo: p[0] ?? { x: nearWorker.x, y: nearWorker.y }, path: p.slice(1), state: 'moving', x: g.x + (dx / d) * Math.min(GRUNT_SPEED * gruntSpeedMult * dt, d), y: g.y + (dy / d) * Math.min(GRUNT_SPEED * gruntSpeedMult * dt, d) };
+          return { ...g, movingTo: p[0] ?? { x: nearWorker.x, y: nearWorker.y }, path: p.slice(1), state: 'moving', x: g.x + (dx / d) * Math.min(GRUNT_SPEED * gruntSpeedMult * frostMult * dt, d), y: g.y + (dy / d) * Math.min(GRUNT_SPEED * gruntSpeedMult * frostMult * dt, d) };
         }
 
         // Building aggro: prioritize military buildings over economic ones (AoE-style target AI)
@@ -2001,7 +2059,7 @@ const RTSMap: React.FC = () => {
             }
             return { ...g, x: g.movingTo.x, y: g.movingTo.y, movingTo: null, path: [], state: 'attacking' };
           }
-          return { ...g, x: g.x + (dx / d) * Math.min(GRUNT_SPEED * gruntSpeedMult * dt, d), y: g.y + (dy / d) * Math.min(GRUNT_SPEED * gruntSpeedMult * dt, d) };
+          return { ...g, x: g.x + (dx / d) * Math.min(GRUNT_SPEED * gruntSpeedMult * frostMult * dt, d), y: g.y + (dy / d) * Math.min(GRUNT_SPEED * gruntSpeedMult * frostMult * dt, d) };
         }
         if (g.state === 'attacking') {
           if (!gruntAttackTimeoutsRef.current[g.id]) {

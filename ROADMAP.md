@@ -10,8 +10,8 @@ Last Updated: 2026-06-25
 
 - [ ] Complete all MVP milestones as defined in docs/Farm_RTS_Game_Manual.md and docs/FARM-RTS-TODO.md and refer to docs/FARM-RTS-NORTH-STAR.md for guidance on the overall vision.
   - Progress: Milestones 1, 3, 4 (partial), 5 (building placement), 7 (enemy+win/lose) complete (reverify progress and remaining tasks in docs/FARM-RTS-TODO.md docs/TASKS.md)
-  - Also shipped: fog of war, control groups, stone resource, box selection, population cap, unit HP
-  - Remaining: animal units, grunt-vs-worker combat, combat polish, formation commands
+  - Also shipped: fog of war, control groups, stone resource, box selection, population cap, unit HP, grunt-vs-worker combat, formation/patrol commands
+  - Remaining: animal units, advanced combat polish
 
 ## 2026 Q4: Product and Content Surface
 
