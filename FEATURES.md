@@ -85,6 +85,7 @@
 - **Win/Lose Conditions** — Objective-based victory and defeat triggers
 - **Box Selection** — Drag-select multiple units simultaneously
 - **Control Groups** — Numbered group assignments for unit management
+- **Loot Crates** — resource caches spawn at random map positions every 45s; right-click to send farmers to collect; golden chest SVG; AoE2/SC2 relic-style active resource that rewards map control
 - **Hold Position [H]** — units stand still and auto-attack enemies in range without chasing; 🛡️ indicator above unit; WC3/AoE/SC2 chokepoint-holding mechanic
 - **Enemy War Ram Siege Unit** — slow battering ram spawns wave 6+ (every 3rd wave); 200 HP, 40 dmg/3s to nearest building; right-clickable target; wooden ram SVG with wheels; AoE2/WC3-style siege pressure
 - **Shift+Right-Click Waypoint Queuing** — Shift+right-click queues movement destinations; units A*-path through each in order; Stop clears queue; AoE2/WC3-style multi-point command chaining

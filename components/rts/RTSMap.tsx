@@ -73,6 +73,10 @@ const WAR_RAM_ATTACK_MS = 3000;
 const WAR_RAM_GOLD_REWARD = 25;
 const WAR_RAM_XP_REWARD = 50;
 const WAR_RAM_FIRST_WAVE = 6;
+const LOOT_CRATE_SPAWN_MS = 45000;
+const LOOT_CRATE_POSITIONS = [
+  { x: 2, y: 6 }, { x: 6, y: 2 }, { x: 3, y: 10 }, { x: 8, y: 4 }, { x: 1, y: 1 }, { x: 5, y: 7 },
+];
 
 interface FloatingText { id: number; x: number; y: number; text: string; color: string; createdAt: number }
 type TileType = 'grass' | 'dirt' | 'water' | 'tree' | 'rock';
@@ -112,6 +116,15 @@ interface EnemySiege {
   path: { x: number; y: number }[];
   state: 'moving' | 'attacking';
   targetBuildingId: number | null;
+}
+
+interface LootCrate {
+  id: number;
+  x: number;
+  y: number;
+  gold: number;
+  lumber: number;
+  stone: number;
 }
 
 interface NeutralCreep {
@@ -405,6 +418,10 @@ const RTSMap: React.FC = () => {
   const enemySiegeRef = useRef<EnemySiege[]>([]);
   useEffect(() => { enemySiegeRef.current = enemySiege; }, [enemySiege]);
   const siegeIdRef = useRef(1000);
+  const [lootCrates, setLootCrates] = useState<LootCrate[]>([]);
+  const lootCratesRef = useRef<LootCrate[]>([]);
+  useEffect(() => { lootCratesRef.current = lootCrates; }, [lootCrates]);
+  const lootCrateIdRef = useRef(5000);
   const [waveAnnouncement, setWaveAnnouncement] = useState<string | null>(null);
   const gameOverRef = useRef<'victory' | 'defeat' | null>(null);
   const spawnTimerRef = useRef<number | null>(null);
@@ -678,6 +695,30 @@ const RTSMap: React.FC = () => {
     spawnTimerRef.current = window.setTimeout(doSpawnWave, GRUNT_SPAWN_MS);
     return () => { if (spawnTimerRef.current) clearTimeout(spawnTimerRef.current); };
   }, [gameOver, doSpawnWave]);
+
+  // Loot crate spawner — a random crate appears every 45s on a safe tile
+  useEffect(() => {
+    if (gameOver) return;
+    const spawnCrate = () => {
+      if (gameOverRef.current) return;
+      const RESOURCES = [
+        { gold: 30, lumber: 0, stone: 0 }, { gold: 0, lumber: 25, stone: 0 }, { gold: 0, lumber: 0, stone: 20 },
+        { gold: 15, lumber: 10, stone: 0 }, { gold: 20, lumber: 0, stone: 15 },
+      ];
+      const res = RESOURCES[Math.floor(Math.random() * RESOURCES.length)] ?? { gold: 30, lumber: 0, stone: 0 };
+      const candidates = LOOT_CRATE_POSITIONS.filter(p => {
+        const occupied = lootCrates.some(c => c.x === p.x && c.y === p.y);
+        return !occupied;
+      });
+      if (candidates.length === 0) { window.setTimeout(spawnCrate, LOOT_CRATE_SPAWN_MS); return; }
+      const pos = candidates[Math.floor(Math.random() * candidates.length)];
+      if (!pos) { window.setTimeout(spawnCrate, LOOT_CRATE_SPAWN_MS); return; }
+      setLootCrates(cs => [...cs, { id: lootCrateIdRef.current++, x: pos.x, y: pos.y, gold: res.gold, lumber: res.lumber, stone: res.stone }]);
+      window.setTimeout(spawnCrate, LOOT_CRATE_SPAWN_MS);
+    };
+    const t = window.setTimeout(spawnCrate, LOOT_CRATE_SPAWN_MS);
+    return () => clearTimeout(t);
+  }, [gameOver]);
 
   // Archer tower attack loop
   useEffect(() => {
@@ -1301,6 +1342,15 @@ const RTSMap: React.FC = () => {
                   const p = aStar(INITIAL_TILES, { x: w.movingTo.x, y: w.movingTo.y }, nextWP);
                   return { ...w, x: w.movingTo.x, y: w.movingTo.y, movingTo: p[0] ?? nextWP, path: p.slice(1), waypoints: restWPs, state: 'moving' as const };
                 }
+              }
+              // Loot crate pickup: if unit steps onto a crate tile, collect it
+              const arrivedAt = w.movingTo;
+              const crateHere = arrivedAt ? lootCratesRef.current.find(c => Math.round(c.x) === Math.round(arrivedAt.x) && Math.round(c.y) === Math.round(arrivedAt.y)) : undefined;
+              if (crateHere && w.unitType === 'farmer') {
+                setLootCrates(cs => cs.filter(c => c.id !== crateHere.id));
+                setResources(r => ({ ...r, gold: r.gold + crateHere.gold, lumber: r.lumber + crateHere.lumber, stone: r.stone + crateHere.stone }));
+                const label = [crateHere.gold > 0 && `+${crateHere.gold}🪙`, crateHere.lumber > 0 && `+${crateHere.lumber}🌲`, crateHere.stone > 0 && `+${crateHere.stone}🪨`].filter(Boolean).join(' ');
+                addFloatingText(Math.round(w.movingTo.x), Math.round(w.movingTo.y), label, '#fbbf24');
               }
               return { ...w, x: w.movingTo.x, y: w.movingTo.y, movingTo: null, path: [], state: 'idle' };
             }
@@ -2274,6 +2324,9 @@ const RTSMap: React.FC = () => {
                       return;
                     }
                     if (e.shiftKey && anySelected) { commandQueueMove(i, j); return; }
+                    // Loot crate: right-click to send farmers to collect
+                    const crateOnTile = lootCrates.find(c => Math.round(c.x) === i && Math.round(c.y) === j);
+                    if (crateOnTile && anySelected) { commandMove(i, j); return; }
                     commandMove(i, j);
                   }}
                   style={{ cursor: buildMode ? 'crosshair' : patrolMode ? 'crosshair' : attackMoveMode ? 'crosshair' : (anySelected || selectedType === 'farmhouse' ? 'pointer' : undefined) }}
@@ -2578,6 +2631,23 @@ const RTSMap: React.FC = () => {
                 <rect x={isoX + TILE_SIZE / 2 - 14} y={isoY - 4} width={28 * hp} height={4} fill="#ef4444" />
               </>)}
             </g>; })}
+
+          {/* Loot Crates */}
+          {lootCrates.map(crate => {
+            const { isoX, isoY } = tileToSvg(crate.x, crate.y);
+            const label = [crate.gold > 0 && `${crate.gold}🪙`, crate.lumber > 0 && `${crate.lumber}🌲`, crate.stone > 0 && `${crate.stone}🪨`].filter(Boolean).join(' ');
+            return <g key={`crate-${crate.id}`} style={{ cursor: anySelected ? 'pointer' : 'default' }} onContextMenu={e => { e.preventDefault(); commandMove(crate.x, crate.y); }}>
+              {/* Crate body */}
+              <rect x={isoX + TILE_SIZE / 2 - 12} y={isoY + 8} width={24} height={18} fill="#92400e" stroke="#fbbf24" strokeWidth={2} rx={2} />
+              {/* Cross lines */}
+              <line x1={isoX + TILE_SIZE / 2 - 12} y1={isoY + 17} x2={isoX + TILE_SIZE / 2 + 12} y2={isoY + 17} stroke="#fbbf24" strokeWidth={1} />
+              <line x1={isoX + TILE_SIZE / 2} y1={isoY + 8} x2={isoX + TILE_SIZE / 2} y2={isoY + 26} stroke="#fbbf24" strokeWidth={1} />
+              {/* Glow pulse */}
+              <rect x={isoX + TILE_SIZE / 2 - 14} y={isoY + 6} width={28} height={22} fill="none" stroke="#fbbf24" strokeWidth={1.5} rx={3} opacity={0.5} />
+              {/* Label */}
+              <text x={isoX + TILE_SIZE / 2} y={isoY + 4} textAnchor="middle" fontSize="9" fill="#fde68a" fontWeight="bold">{label}</text>
+            </g>;
+          })}
 
           {/* War Rams (enemy siege units) */}
           {enemySiege.filter(r => r.hp > 0).map(r => {
