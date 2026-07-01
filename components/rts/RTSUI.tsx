@@ -8,7 +8,7 @@ export interface WorkerState {
   movingTo: null | { x: number; y: number };
   path: { x: number; y: number }[];
   gathering: null | { type: 'tree' | 'gold' | 'stone'; idx: number };
-  attacking: null | { targetType: 'enemyBarn' } | { targetType: 'grunt'; gruntId: number } | { targetType: 'creep'; creepId: number } | { targetType: 'enemyTower'; towerId: number } | { targetType: 'siege'; siegeId: number };
+  attacking: null | { targetType: 'enemyBarn' } | { targetType: 'grunt'; gruntId: number } | { targetType: 'creep'; creepId: number } | { targetType: 'enemyTower'; towerId: number } | { targetType: 'siege'; siegeId: number } | { targetType: 'shaman'; shamanId: number };
   repairing: null | { buildingId: number };
   chargeCooldown: number;
   sprintCooldown: number;
@@ -128,6 +128,7 @@ interface RTSUIProps {
     treeNodes: { x: number; y: number }[];
     enemyTowers: { x: number; y: number }[];
     warRams: { x: number; y: number }[];
+    shamans: { x: number; y: number }[];
   };
 }
 
@@ -657,6 +658,10 @@ export const RTSUI: React.FC<RTSUIProps> = ({
             {/* War Rams */}
             {minimapData.warRams.map((r, i) => (
               <rect key={`ram${i}`} x={r.x - 0.7} y={r.y - 0.5} width={1.4} height={1} fill="#7c2d12" stroke="#dc2626" strokeWidth={0.2} rx={0.15} />
+            ))}
+            {/* Shamans */}
+            {minimapData.shamans.map((s, i) => (
+              <circle key={`shaman${i}`} cx={s.x} cy={s.y} r={0.6} fill="#4ade80" stroke="#166534" strokeWidth={0.2} />
             ))}
           </svg>
           <div className="mt-0.5 flex flex-wrap gap-x-2 text-[10px] text-slate-500">

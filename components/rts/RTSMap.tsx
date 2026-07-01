@@ -74,6 +74,14 @@ const WAR_RAM_GOLD_REWARD = 25;
 const WAR_RAM_XP_REWARD = 50;
 const WAR_RAM_FIRST_WAVE = 6;
 const LOOT_CRATE_SPAWN_MS = 45000;
+const SHAMAN_MAX_HP = 45;
+const SHAMAN_SPEED = 0.6;
+const SHAMAN_HEAL_AMOUNT = 5;
+const SHAMAN_HEAL_RADIUS = 2.5;
+const SHAMAN_HEAL_MS = 2000;
+const SHAMAN_FIRST_WAVE = 8;
+const SHAMAN_GOLD_REWARD = 15;
+const SHAMAN_XP_REWARD = 35;
 const LOOT_CRATE_POSITIONS = [
   { x: 2, y: 6 }, { x: 6, y: 2 }, { x: 3, y: 10 }, { x: 8, y: 4 }, { x: 1, y: 1 }, { x: 5, y: 7 },
 ];
@@ -125,6 +133,17 @@ interface LootCrate {
   gold: number;
   lumber: number;
   stone: number;
+}
+
+interface EnemyShaman {
+  id: number;
+  x: number;
+  y: number;
+  hp: number;
+  maxHp: number;
+  movingTo: { x: number; y: number } | null;
+  path: { x: number; y: number }[];
+  state: 'moving' | 'healing';
 }
 
 interface NeutralCreep {
@@ -418,6 +437,11 @@ const RTSMap: React.FC = () => {
   const enemySiegeRef = useRef<EnemySiege[]>([]);
   useEffect(() => { enemySiegeRef.current = enemySiege; }, [enemySiege]);
   const siegeIdRef = useRef(1000);
+  const [enemyShamans, setEnemyShamans] = useState<EnemyShaman[]>([]);
+  const enemyShamansRef = useRef<EnemyShaman[]>([]);
+  useEffect(() => { enemyShamansRef.current = enemyShamans; }, [enemyShamans]);
+  const shamanIdRef = useRef(2000);
+  const shamanHealTimersRef = useRef<Record<number, number>>({});
   const [lootCrates, setLootCrates] = useState<LootCrate[]>([]);
   const lootCratesRef = useRef<LootCrate[]>([]);
   useEffect(() => { lootCratesRef.current = lootCrates; }, [lootCrates]);
@@ -681,6 +705,17 @@ const RTSMap: React.FC = () => {
       const ram: EnemySiege = { id: siegeIdRef.current++, x: rx, y: ry, hp: WAR_RAM_MAX_HP, maxHp: WAR_RAM_MAX_HP, movingTo: ramPath[0] ?? { x: ramDest.x, y: ramDest.y }, path: ramPath.slice(1), state: 'moving', targetBuildingId: nearestBuilding?.id ?? -1 };
       setEnemySiege(prev => [...prev, ram]);
       setWaveAnnouncement(`🪵 Wave ${newWave} — WAR RAM INCOMING!`);
+      window.setTimeout(() => setWaveAnnouncement(null), 3000);
+    }
+
+    // Shaman spawn: wave 8+ every 4 waves
+    if (newWave >= SHAMAN_FIRST_WAVE && newWave % 4 === 0) {
+      const sx = Math.max(0, ENEMY_BARN_POS.x - 1);
+      const sy = Math.max(0, ENEMY_BARN_POS.y - 1);
+      const shamanPath = aStar(INITIAL_TILES, { x: sx, y: sy }, BARN_POS, true, wallSet);
+      const shaman: EnemyShaman = { id: shamanIdRef.current++, x: sx, y: sy, hp: SHAMAN_MAX_HP, maxHp: SHAMAN_MAX_HP, movingTo: shamanPath[0] ?? BARN_POS, path: shamanPath.slice(1), state: 'moving' };
+      setEnemyShamans(ss => [...ss, shaman]);
+      setWaveAnnouncement(`🧙 Wave ${newWave} — SHAMAN SPAWNS! Kill the healer!`);
       window.setTimeout(() => setWaveAnnouncement(null), 3000);
     }
 
@@ -1239,6 +1274,8 @@ const RTSMap: React.FC = () => {
             if (nearCreep) return { ...w, attacking: { targetType: 'creep' as const, creepId: nearCreep.id }, state: 'attacking' as const, movingTo: null, path: [] };
             const nearRam = enemySiegeRef.current.find(r => r.hp > 0 && tileDist(w.x, w.y, r.x, r.y) <= AM_SCAN);
             if (nearRam) return { ...w, attacking: { targetType: 'siege' as const, siegeId: nearRam.id }, state: 'attacking' as const, movingTo: null, path: [] };
+            const nearShaman = enemyShamansRef.current.find(s => s.hp > 0 && tileDist(w.x, w.y, s.x, s.y) <= AM_SCAN);
+            if (nearShaman) return { ...w, attacking: { targetType: 'shaman' as const, shamanId: nearShaman.id }, state: 'attacking' as const, movingTo: null, path: [] };
           }
           // Hold position: stay put, auto-attack nearby enemies without chasing
           if (w.holdPosition) {
@@ -1248,6 +1285,8 @@ const RTSMap: React.FC = () => {
               if (nearGruntH) return { ...w, attacking: { targetType: 'grunt' as const, gruntId: nearGruntH.id }, state: 'attacking' as const };
               const nearRamH = enemySiegeRef.current.find(r => r.hp > 0 && tileDist(w.x, w.y, r.x, r.y) <= HP_RANGE);
               if (nearRamH) return { ...w, attacking: { targetType: 'siege' as const, siegeId: nearRamH.id }, state: 'attacking' as const };
+              const nearShamanH = enemyShamansRef.current.find(s => s.hp > 0 && tileDist(w.x, w.y, s.x, s.y) <= HP_RANGE);
+              if (nearShamanH) return { ...w, attacking: { targetType: 'shaman' as const, shamanId: nearShamanH.id }, state: 'attacking' as const };
             }
             // After killing target, go back to idle (don't chase)
             if (w.state === 'attacking' && w.attacking) {
@@ -1593,6 +1632,46 @@ const RTSMap: React.FC = () => {
                   }
                 }, moraleMs5);
               }
+            } else if (w.attacking.targetType === 'shaman') {
+              const shamanId = (w.attacking as { targetType: 'shaman'; shamanId: number }).shamanId;
+              const shamanTarget = enemyShamansRef.current.find(s => s.id === shamanId && s.hp > 0);
+              if (!shamanTarget) return { ...w, attacking: null, state: 'idle' };
+              const distToShaman = tileDist(w.x, w.y, shamanTarget.x, shamanTarget.y);
+              if (distToShaman > 1.8) {
+                const p = aStar(INITIAL_TILES, { x: Math.round(w.x), y: Math.round(w.y) }, { x: Math.round(shamanTarget.x), y: Math.round(shamanTarget.y) });
+                return { ...w, movingTo: p[0] ?? { x: shamanTarget.x, y: shamanTarget.y }, path: p.slice(1), state: 'moving' };
+              }
+              if (!attackT[w.id]) {
+                const capturedShX = Math.round(shamanTarget.x), capturedShY = Math.round(shamanTarget.y);
+                const capturedShamanId = shamanId;
+                const unitBonusSh = w.unitType === 'hero' ? HERO_DAMAGE_BONUS : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
+                const capturedVetSh = w.level;
+                const moraleMs6 = getMoraleMs(w.x, w.y);
+                attackT[w.id] = window.setTimeout(() => {
+                  delete attackTimeoutsRef.current[w.id];
+                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + unitBonusSh + capturedVetSh * VETERAN_ATK_BONUS;
+                  setEnemyShamans(ss => ss.map(s => s.id === capturedShamanId ? { ...s, hp: Math.max(0, s.hp - dmg) } : s));
+                  addFloatingText(capturedShX, capturedShY, `-${dmg}`, '#ef4444');
+                  const shamCurrent = enemyShamansRef.current.find(s => s.id === capturedShamanId);
+                  if (shamCurrent && shamCurrent.hp - dmg <= 0) {
+                    setResources(r => ({ ...r, gold: r.gold + SHAMAN_GOLD_REWARD }));
+                    addFloatingText(capturedShX, capturedShY, `+${SHAMAN_GOLD_REWARD}g`, '#fbbf24');
+                    setWorkers(ws2 => ws2.map(u => {
+                      const isAttacker = u.id === w.id;
+                      const isNearby = !isAttacker && u.hp > 0 && tileDist(u.x, u.y, capturedShX, capturedShY) <= 3;
+                      const xpGain = isAttacker ? SHAMAN_XP_REWARD : isNearby ? Math.round(SHAMAN_XP_REWARD * 0.25) : 0;
+                      if (xpGain === 0) return u;
+                      const newXp = u.xp + xpGain;
+                      const newLevel = newXp >= XP_TO_LEVEL_2 ? 2 : newXp >= XP_TO_LEVEL_1 ? 1 : 0;
+                      if (newLevel > u.level) {
+                        addFloatingText(Math.round(u.x), Math.round(u.y), `⭐ Level ${newLevel}!`, '#fbbf24');
+                        return { ...u, xp: newXp, level: newLevel, maxHp: u.maxHp + VETERAN_HP_BONUS, hp: Math.min(u.hp + VETERAN_HP_BONUS, u.maxHp + VETERAN_HP_BONUS) };
+                      }
+                      return { ...u, xp: newXp };
+                    }));
+                  }
+                }, moraleMs6);
+              }
             } else {
               if (!attackT[w.id]) {
                 const capturedWX = Math.round(w.x), capturedWY = Math.round(w.y);
@@ -1854,6 +1933,59 @@ const RTSMap: React.FC = () => {
           const dest = (nearBuilding && buildingDist < barnDist) ? { x: nearBuilding.x, y: nearBuilding.y } : BARN_POS;
           const p = aStar(INITIAL_TILES, { x: Math.round(r.x), y: Math.round(r.y) }, dest, true, wallSetR);
           return { ...r, movingTo: p[0] ?? dest, path: p.slice(1), state: 'moving' as const };
+        });
+      });
+
+      // Update Shamans
+      setEnemyShamans(ss => {
+        const alive = ss.filter(s => s.hp > 0);
+        const killed = ss.filter(s => s.hp <= 0);
+        if (killed.length > 0) {
+          killed.forEach(s => {
+            setResources(res => ({ ...res, gold: res.gold + SHAMAN_GOLD_REWARD }));
+            addFloatingText(Math.round(s.x), Math.round(s.y), `+${SHAMAN_GOLD_REWARD}🪙`, '#fbbf24');
+          });
+        }
+        return alive.map(s => {
+          // Find nearest injured grunt within heal radius to follow
+          const injuredGrunts = enemyGruntsRef.current.filter(g => g.hp > 0 && g.hp < g.maxHp);
+          const nearInjured = injuredGrunts.sort((a, b2) => tileDist(s.x, s.y, a.x, a.y) - tileDist(s.x, s.y, b2.x, b2.y))[0];
+          if (nearInjured) {
+            const d = tileDist(s.x, s.y, nearInjured.x, nearInjured.y);
+            if (d <= SHAMAN_HEAL_RADIUS) {
+              // In range — heal nearby grunts
+              if (!shamanHealTimersRef.current[s.id]) {
+                const sid = s.id;
+                shamanHealTimersRef.current[sid] = window.setTimeout(() => {
+                  delete shamanHealTimersRef.current[sid];
+                  setEnemyGrunts(gs => gs.map(g => {
+                    if (g.hp <= 0 || tileDist(s.x, s.y, g.x, g.y) > SHAMAN_HEAL_RADIUS) return g;
+                    const newHp = Math.min(g.maxHp, g.hp + SHAMAN_HEAL_AMOUNT);
+                    if (newHp > g.hp) addFloatingText(Math.round(g.x), Math.round(g.y), `🧙+${SHAMAN_HEAL_AMOUNT}`, '#86efac');
+                    return { ...g, hp: newHp };
+                  }));
+                }, SHAMAN_HEAL_MS);
+              }
+              return { ...s, state: 'healing' as const };
+            }
+            // Move toward injured grunt
+            const dx = nearInjured.x - s.x, dy = nearInjured.y - s.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            return { ...s, x: s.x + (dx / dist) * Math.min(SHAMAN_SPEED * dt, dist), y: s.y + (dy / dist) * Math.min(SHAMAN_SPEED * dt, dist), state: 'moving' as const };
+          }
+          // No injured grunts — follow nearest grunt toward barn
+          if (s.movingTo) {
+            const dx = s.movingTo.x - s.x, dy = s.movingTo.y - s.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 0.1) {
+              const next = s.path[0] ?? null;
+              return { ...s, x: s.movingTo.x, y: s.movingTo.y, movingTo: next, path: s.path.slice(1), state: 'moving' as const };
+            }
+            return { ...s, x: s.x + (dx / dist) * Math.min(SHAMAN_SPEED * dt, dist), y: s.y + (dy / dist) * Math.min(SHAMAN_SPEED * dt, dist) };
+          }
+          const wallSetS = new Set(placedBuildingsRef.current.filter(b => b.type === 'wall').map(b => `${b.x},${b.y}`));
+          const p = aStar(INITIAL_TILES, { x: Math.round(s.x), y: Math.round(s.y) }, BARN_POS, true, wallSetS);
+          return { ...s, movingTo: p[0] ?? BARN_POS, path: p.slice(1) };
         });
       });
 
@@ -2147,6 +2279,21 @@ const RTSMap: React.FC = () => {
     }));
   }, [anySelected]);
 
+  const handleAttackShaman = useCallback((shamanId: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!anySelected) return;
+    const shaman = enemyShamansRef.current.find(s => s.id === shamanId);
+    if (!shaman) return;
+    const tx = Math.round(shaman.x), ty = Math.round(shaman.y);
+    setWorkers(ws => ws.map(w => {
+      if (!w.selected) return w;
+      const path = aStar(INITIAL_TILES, { x: Math.round(w.x), y: Math.round(w.y) }, { x: tx, y: ty });
+      const first = path[0] ?? { x: tx, y: ty };
+      return { ...w, movingTo: first, path: path.slice(1), gathering: null, attacking: { targetType: 'shaman' as const, shamanId }, state: 'moving' };
+    }));
+  }, [anySelected]);
+
   const handleAttackCreep = useCallback((creepId: number, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -2174,7 +2321,8 @@ const RTSMap: React.FC = () => {
     stoneNodes: stoneNodes.filter(n => n.amount > 0).map(n => ({ x: n.x, y: n.y })),
     treeNodes: trees.filter(t => t.amount > 0).map(t => ({ x: t.x, y: t.y })),
     warRams: enemySiege.filter(r => r.hp > 0).map(r => ({ x: r.x, y: r.y })),
-  }), [workers, enemyGrunts, enemyBarnHp, placedBuildings, clearedCamps, goldMine, stoneNodes, trees, enemyTowers, enemySiege]);
+    shamans: enemyShamans.filter(s => s.hp > 0).map(s => ({ x: s.x, y: s.y })),
+  }), [workers, enemyGrunts, enemyBarnHp, placedBuildings, clearedCamps, goldMine, stoneNodes, trees, enemyTowers, enemySiege, enemyShamans]);
 
   return (
     <div className="absolute inset-0 bg-black" onContextMenu={e => { if (buildMode) { e.preventDefault(); setBuildMode(null); setGhostTile(null); } }}>
@@ -2697,6 +2845,28 @@ const RTSMap: React.FC = () => {
               {/* HP bar */}
               <rect x={isoX + TILE_SIZE / 2 - 20} y={isoY - 10} width={40} height={4} fill="#1e293b" rx={2} />
               <rect x={isoX + TILE_SIZE / 2 - 20} y={isoY - 10} width={40 * hp} height={4} fill="#dc2626" rx={2} />
+            </g>;
+          })}
+
+          {/* Enemy Shamans */}
+          {enemyShamans.filter(s => s.hp > 0).map(s => {
+            const { isoX, isoY } = tileToSvg(s.x, s.y);
+            const hp = s.hp / s.maxHp;
+            return <g key={`shaman-${s.id}`} style={{ cursor: anySelected ? 'crosshair' : 'default' }} onContextMenu={e => handleAttackShaman(s.id, e)}>
+              {/* Robe */}
+              <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 26} rx={10} ry={14} fill={s.state === 'healing' ? '#4ade80' : '#166534'} stroke="#14532d" strokeWidth={2} />
+              {/* Head */}
+              <circle cx={isoX + TILE_SIZE / 2} cy={isoY + 10} r={8} fill="#fde68a" stroke="#78350f" strokeWidth={1.5} />
+              {/* Staff */}
+              <line x1={isoX + TILE_SIZE / 2 + 12} y1={isoY + 6} x2={isoX + TILE_SIZE / 2 + 12} y2={isoY + 38} stroke="#92400e" strokeWidth={3} strokeLinecap="round" />
+              <circle cx={isoX + TILE_SIZE / 2 + 12} cy={isoY + 5} r={4} fill={s.state === 'healing' ? '#4ade80' : '#a855f7'} />
+              {/* Heal pulse ring */}
+              {s.state === 'healing' && <circle cx={isoX + TILE_SIZE / 2} cy={isoY + 20} r={22} fill="none" stroke="#4ade80" strokeWidth={1.5} opacity={0.5} />}
+              {/* Label */}
+              <text x={isoX + TILE_SIZE / 2} y={isoY - 4} textAnchor="middle" fontSize="8" fill="#86efac" fontWeight="bold">SHAMAN</text>
+              {/* HP bar */}
+              <rect x={isoX + TILE_SIZE / 2 - 16} y={isoY - 10} width={32} height={4} fill="#1e293b" rx={2} />
+              <rect x={isoX + TILE_SIZE / 2 - 16} y={isoY - 10} width={32 * hp} height={4} fill="#22c55e" rx={2} />
             </g>;
           })}
 
