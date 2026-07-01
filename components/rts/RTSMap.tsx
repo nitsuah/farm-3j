@@ -59,7 +59,7 @@ const ARCHER_TOWER_ATTACK_MS = 2500;
 
 interface FloatingText { id: number; x: number; y: number; text: string; color: string; createdAt: number }
 type TileType = 'grass' | 'dirt' | 'water' | 'tree' | 'rock';
-type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market' | 'blacksmith';
+type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market' | 'blacksmith' | 'granary';
 
 interface ResourceNode { x: number; y: number; amount: number }
 interface Resources { gold: number; lumber: number; stone: number; food: number; foodCap: number }
@@ -88,10 +88,11 @@ const BUILDING_COSTS: Record<BuildingType, { gold: number; lumber: number; stone
   siegeWorkshop: { gold: 100, lumber: 80, stone: 60, label: 'Siege Workshop', foodCapBonus: 0 },
   market:        { gold: 80,  lumber: 60, stone: 20, label: 'Market',         foodCapBonus: 0 },
   blacksmith:    { gold: 100, lumber: 60, stone: 80, label: 'Blacksmith',     foodCapBonus: 0 },
+  granary:       { gold: 50,  lumber: 80, stone: 20, label: 'Granary',        foodCapBonus: 8 },
 };
 
 const BUILDING_EMOJI: Record<BuildingType, string> = {
-  farmhouse: '🏠', lumberShed: '🪵', watchtower: '🗼', wall: '🧱', windmill: '💨', barracks: '🏯', siegeWorkshop: '⚙️', market: '🏪', blacksmith: '🔨',
+  farmhouse: '🏠', lumberShed: '🪵', watchtower: '🗼', wall: '🧱', windmill: '💨', barracks: '🏯', siegeWorkshop: '⚙️', market: '🏪', blacksmith: '🔨', granary: '🌾',
 };
 
 const SWORDSMAN_MAX_HP = 80;
@@ -1498,6 +1499,20 @@ const RTSMap: React.FC = () => {
                 <rect x={isoX + TILE_SIZE * 0.2} y={isoY - 4} width={TILE_SIZE * 1.6} height={8} fill="#292524" stroke="none" />
                 <text x={isoX + TILE_SIZE} y={isoY + TILE_SIZE * 0.5} textAnchor="middle" fontSize="22">⚔️</text>
                 <text x={isoX + TILE_SIZE} y={isoY - 8} textAnchor="middle" fontSize="9" fill="#fca5a5" fontWeight="bold">BARRACKS</text>
+              </g>;
+            }
+            if (b.type === 'granary') {
+              return <g key={`building-${b.id}`} pointerEvents="none">
+                {/* Round silo body */}
+                <ellipse cx={isoX + TILE_SIZE * 0.55} cy={isoY + TILE_SIZE * 0.42} rx={22} ry={28} fill="#fef9c3" stroke="#b45309" strokeWidth={3} />
+                <ellipse cx={isoX + TILE_SIZE * 0.55} cy={isoY + TILE_SIZE * 0.12} rx={22} ry={8} fill="#fde68a" stroke="#b45309" strokeWidth={2} />
+                {/* Roof cap */}
+                <ellipse cx={isoX + TILE_SIZE * 0.55} cy={isoY + TILE_SIZE * 0.12 - 7} rx={22} ry={7} fill="#b45309" />
+                {/* Second silo */}
+                <ellipse cx={isoX + TILE_SIZE * 1.1} cy={isoY + TILE_SIZE * 0.48} rx={16} ry={22} fill="#fef3c7" stroke="#b45309" strokeWidth={2} />
+                <ellipse cx={isoX + TILE_SIZE * 1.1} cy={isoY + TILE_SIZE * 0.26} rx={16} ry={6} fill="#fbbf24" stroke="#b45309" strokeWidth={1.5} />
+                <text x={isoX + TILE_SIZE} y={isoY - 6} textAnchor="middle" fontSize="9" fill="#78350f" fontWeight="bold">GRANARY</text>
+                <text x={isoX + TILE_SIZE} y={isoY + 4} textAnchor="middle" fontSize="8" fill="#92400e">+8 pop</text>
               </g>;
             }
             if (b.type === 'blacksmith') {

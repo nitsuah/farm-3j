@@ -20,7 +20,7 @@ export interface WorkerState {
   level: number;
 }
 
-export type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market' | 'blacksmith';
+export type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market' | 'blacksmith' | 'granary';
 
 export interface PlacedBuilding {
   id: number;
@@ -350,6 +350,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                   <button className="rounded border border-orange-600/70 bg-orange-900/20 px-2 py-2 text-xs text-orange-100 hover:bg-orange-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:siegeWorkshop')} disabled={!canAfford(buildingCosts.siegeWorkshop)} title="Siege Workshop — train Catapults (100🪙 80🌲 60🪨)">⚙️ Siege</button>
                   <button className="rounded border border-emerald-600/70 bg-emerald-900/20 px-2 py-2 text-xs text-emerald-100 hover:bg-emerald-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:market')} disabled={!canAfford(buildingCosts.market)} title="Market — trade lumber for gold (80🪙 60🌲 20🪨)">🏪 Market</button>
                   <button className="rounded border border-red-800/70 bg-red-950/30 px-2 py-2 text-xs text-red-100 hover:bg-red-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:blacksmith')} disabled={!canAfford(buildingCosts.blacksmith)} title="Blacksmith — upgrade unit attack and armor (100🪙 60🌲 80🪨)">🔨 Smith</button>
+                  <button className="rounded border border-yellow-600/70 bg-yellow-900/20 px-2 py-2 text-xs text-yellow-100 hover:bg-yellow-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:granary')} disabled={!canAfford(buildingCosts.granary)} title="Granary — +8 population cap (50🪙 80🌲 20🪨)">🌾 Granary</button>
                   {hasMarket && (
                     <>
                       <button
