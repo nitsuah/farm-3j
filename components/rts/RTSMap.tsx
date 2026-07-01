@@ -413,12 +413,20 @@ function loadSave(): SaveData | null {
   } catch { return null; }
 }
 
+// Blocked when a New Game reset is in progress — prevents auto-save from re-writing state
+// after clearSave() but before the new component finishes mounting.
+let _saveLocked = false;
+
 function writeSave(data: SaveData): void {
+  if (_saveLocked) return;
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch {}
 }
 
 function clearSave(): void {
+  _saveLocked = true;
   try { localStorage.removeItem(SAVE_KEY); } catch {}
+  // Unlock after a tick — by then the new component has mounted and taken over
+  setTimeout(() => { _saveLocked = false; }, 500);
 }
 
 function makeUnit(id: number, x: number, y: number, unitType: 'farmer' | 'swordsman' | 'hero' | 'catapult' | 'cavalry' | 'trebuchet'): WorkerState {
