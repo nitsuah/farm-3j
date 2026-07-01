@@ -2298,6 +2298,11 @@ const RTSMap: React.FC = () => {
         onGuardTower={() => handleFarmhouseAction('guardTower')}
         trainingQueue={trainingQueue}
         trainingProgress={trainingProgress}
+        onMinimapClick={(tx, ty) => {
+          const { isoX, isoY } = tileToSvg(tx, ty);
+          const bounds = { minX: -((GRID_SIZE * TILE_SIZE) / 2), maxX: (GRID_SIZE * TILE_SIZE) / 2, minY: -100, maxY: (GRID_SIZE * TILE_SIZE) / 2 };
+          setCamera({ x: Math.max(bounds.minX, Math.min(bounds.maxX, -isoX + 400)), y: Math.max(bounds.minY, Math.min(bounds.maxY, -isoY + 200)) });
+        }}
         minimapData={minimapData}
         enemyBarnHp={enemyBarnHp}
         enemyBarnMaxHp={ENEMY_BARN_MAX_HP}

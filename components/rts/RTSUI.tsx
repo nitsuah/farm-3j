@@ -83,6 +83,7 @@ interface RTSUIProps {
   onGuardTower: () => void;
   trainingQueue: {type: 'swordsman' | 'cavalry'}[];
   trainingProgress: number;
+  onMinimapClick: (tileX: number, tileY: number) => void;
   farmhouse: { built: boolean; level: number };
   farmhouseUpgradeCosts: { gold: number; lumber: number }[];
   farmhouseStorage: { gold: number; lumber: number }[];
@@ -156,6 +157,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
   onGuardTower,
   trainingQueue,
   trainingProgress,
+  onMinimapClick,
 }) => {
   const isHeroSelected = selectedWorkers.some(w => w.unitType === 'hero');
   const selectedCount = selectedWorkers.length;
@@ -546,7 +548,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
             </div>
             <span className="text-xs text-red-300">{enemyBarnHp}/{enemyBarnMaxHp}</span>
           </div>
-          <svg className="mt-1.5 h-16 w-full rounded border border-slate-700 bg-slate-800/80" viewBox={`0 0 ${13} ${13}`} preserveAspectRatio="xMidYMid meet">
+          <svg className="mt-1.5 h-16 w-full cursor-crosshair rounded border border-slate-700 bg-slate-800/80" viewBox={`0 0 ${13} ${13}`} preserveAspectRatio="xMidYMid meet" onClick={e => { const rect = e.currentTarget.getBoundingClientRect(); const tx = Math.round(((e.clientX - rect.left) / rect.width) * 13); const ty = Math.round(((e.clientY - rect.top) / rect.height) * 13); onMinimapClick(tx, ty); }}>
             {/* Resource nodes */}
             {minimapData.treeNodes.map((n, i) => (
               <rect key={`t${i}`} x={n.x - 0.35} y={n.y - 0.35} width={0.7} height={0.7} fill="#15803d" opacity={0.7} />
