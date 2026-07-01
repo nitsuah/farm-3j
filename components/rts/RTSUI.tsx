@@ -8,7 +8,7 @@ export interface WorkerState {
   movingTo: null | { x: number; y: number };
   path: { x: number; y: number }[];
   gathering: null | { type: 'tree' | 'gold' | 'stone'; idx: number };
-  attacking: null | { targetType: 'enemyBarn' } | { targetType: 'grunt'; gruntId: number };
+  attacking: null | { targetType: 'enemyBarn' } | { targetType: 'grunt'; gruntId: number } | { targetType: 'creep'; creepId: number };
   carrying: { gold: number; lumber: number; stone: number };
   state: 'idle' | 'moving' | 'gathering' | 'returning' | 'attacking';
   group: number | null;

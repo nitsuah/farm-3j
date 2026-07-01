@@ -76,6 +76,33 @@ interface EnemyGrunt {
   state: 'moving' | 'attacking';
 }
 
+interface NeutralCreep {
+  id: number;
+  campId: number;
+  x: number;
+  y: number;
+  homeX: number;
+  homeY: number;
+  hp: number;
+  maxHp: number;
+  state: 'idle' | 'chasing' | 'returning';
+  targetWorkerId: number | null;
+}
+
+const CREEP_MAX_HP = 45;
+const CREEP_DAMAGE = 9;
+const CREEP_SPEED = 1.2;
+const CREEP_AGGRO_RANGE = 3.5;
+const CREEP_ATTACK_MS = 1400;
+const CREEP_LEASH_RANGE = 5;
+const CAMP_GOLD_REWARD = 60;
+
+const CREEP_CAMPS: { id: number; x: number; y: number; goldReward: number }[] = [
+  { id: 1, x: 0,  y: 9,  goldReward: CAMP_GOLD_REWARD },
+  { id: 2, x: 6,  y: 0,  goldReward: CAMP_GOLD_REWARD },
+  { id: 3, x: 11, y: 6,  goldReward: CAMP_GOLD_REWARD },
+];
+
 const BARN_POS = { x: 4, y: 4 };
 
 const BUILDING_COSTS: Record<BuildingType, { gold: number; lumber: number; stone: number; label: string; foodCapBonus: number }> = {
@@ -296,6 +323,19 @@ const RTSMap: React.FC = () => {
   useEffect(() => { enemyGruntsRef.current = enemyGrunts; }, [enemyGrunts]);
   const gruntIdRef = useRef(1);
   const gruntAttackTimeoutsRef = useRef<Record<number, number>>({});
+
+  const makeCreeps = () => {
+    let id = 1;
+    return CREEP_CAMPS.flatMap(camp => [
+      { id: id++, campId: camp.id, x: camp.x, y: camp.y, homeX: camp.x, homeY: camp.y, hp: CREEP_MAX_HP, maxHp: CREEP_MAX_HP, state: 'idle' as const, targetWorkerId: null },
+      { id: id++, campId: camp.id, x: camp.x + 1, y: camp.y, homeX: camp.x + 1, homeY: camp.y, hp: CREEP_MAX_HP, maxHp: CREEP_MAX_HP, state: 'idle' as const, targetWorkerId: null },
+    ]);
+  };
+  const [neutralCreeps, setNeutralCreeps] = useState<NeutralCreep[]>(() => makeCreeps());
+  const neutralCreepsRef = useRef(neutralCreeps);
+  useEffect(() => { neutralCreepsRef.current = neutralCreeps; }, [neutralCreeps]);
+  const [clearedCamps, setClearedCamps] = useState<Set<number>>(() => new Set());
+  const creepAttackTimeoutsRef = useRef<Record<number, number>>({});
 
   const [wave, setWave] = useState(() => INITIAL_SAVE?.wave ?? 0);
   const waveRef = useRef(INITIAL_SAVE?.wave ?? 0);
@@ -879,7 +919,46 @@ const RTSMap: React.FC = () => {
           }
 
           if (w.state === 'attacking' && w.attacking) {
-            if (w.attacking.targetType === 'grunt') {
+            if (w.attacking.targetType === 'creep') {
+              const creepId = (w.attacking as { targetType: 'creep'; creepId: number }).creepId;
+              const creepTarget = neutralCreepsRef.current.find(c => c.id === creepId);
+              if (!creepTarget) return { ...w, attacking: null, state: 'idle' };
+              const distToCreep = tileDist(w.x, w.y, creepTarget.x, creepTarget.y);
+              if (distToCreep > 1.8) {
+                const p = aStar(INITIAL_TILES, { x: Math.round(w.x), y: Math.round(w.y) }, { x: Math.round(creepTarget.x), y: Math.round(creepTarget.y) });
+                return { ...w, movingTo: p[0] ?? { x: creepTarget.x, y: creepTarget.y }, path: p.slice(1), state: 'moving' };
+              }
+              if (!attackT[w.id]) {
+                const capturedCX = Math.round(creepTarget.x), capturedCY = Math.round(creepTarget.y);
+                const capturedWX3 = Math.round(w.x), capturedWY3 = Math.round(w.y);
+                const unitBonusC = w.unitType === 'hero' ? HERO_DAMAGE_BONUS : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : 0;
+                const capturedVetC = w.level;
+                attackT[w.id] = window.setTimeout(() => {
+                  delete attackTimeoutsRef.current[w.id];
+                  const dmgC = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + unitBonusC + capturedVetC * VETERAN_ATK_BONUS;
+                  addFloatingText(capturedCX, capturedCY, `-${dmgC}`, '#a855f7');
+                  addFloatingText(capturedWX3, capturedWY3, `⚔️`, '#fbbf24');
+                  // Award XP if creep dies
+                  setNeutralCreeps(cs => cs.map(c => {
+                    if (c.id !== creepId) return c;
+                    const newHp = Math.max(0, c.hp - dmgC);
+                    if (newHp <= 0 && c.hp > 0) {
+                      setWorkers(ws3 => ws3.map(u => {
+                        if (u.id !== w.id) return u;
+                        const newXp = u.xp + XP_PER_KILL;
+                        const newLevel = newXp >= XP_TO_LEVEL_2 ? 2 : newXp >= XP_TO_LEVEL_1 ? 1 : 0;
+                        if (newLevel > u.level) {
+                          addFloatingText(capturedWX3, capturedWY3, `⭐ Level ${newLevel}!`, '#fbbf24');
+                          return { ...u, xp: newXp, level: newLevel, maxHp: u.maxHp + VETERAN_HP_BONUS, hp: Math.min(u.hp + VETERAN_HP_BONUS, u.maxHp + VETERAN_HP_BONUS) };
+                        }
+                        return { ...u, xp: newXp };
+                      }));
+                    }
+                    return { ...c, hp: newHp };
+                  }));
+                }, ATTACK_INTERVAL_MS);
+              }
+            } else if (w.attacking.targetType === 'grunt') {
               const target = enemyGruntsRef.current.find(g => g.id === (w.attacking as { targetType: 'grunt'; gruntId: number }).gruntId);
               if (!target) return { ...w, attacking: null, state: 'idle' };
               const distToGrunt = tileDist(w.x, w.y, target.x, target.y);
@@ -1073,6 +1152,73 @@ const RTSMap: React.FC = () => {
         return g;
       }));
 
+      // Update neutral creeps
+      setNeutralCreeps(creeps => {
+        const alive = creeps.filter(c => c.hp > 0);
+        const killed = creeps.filter(c => c.hp <= 0);
+        if (killed.length > 0) {
+          // Check if any camp is now fully cleared
+          CREEP_CAMPS.forEach(camp => {
+            const campAlive = alive.filter(c => c.campId === camp.id);
+            if (campAlive.length === 0 && killed.some(c => c.campId === camp.id)) {
+              setClearedCamps(s => { if (s.has(camp.id)) return s; const n = new Set(s); n.add(camp.id); return n; });
+              setResources(r => ({ ...r, gold: r.gold + camp.goldReward }));
+              addFloatingText(camp.x, camp.y, `+${camp.goldReward}🪙 Camp!`, '#fbbf24');
+            }
+          });
+          killed.forEach(c => { if (creepAttackTimeoutsRef.current[c.id]) { clearTimeout(creepAttackTimeoutsRef.current[c.id]); delete creepAttackTimeoutsRef.current[c.id]; } });
+        }
+        return alive.map(c => {
+          const workers2 = workersRef.current;
+          // Leash: if too far from home, return
+          const distHome = tileDist(c.x, c.y, c.homeX, c.homeY);
+          if (distHome > CREEP_LEASH_RANGE) {
+            return { ...c, state: 'returning' as const, targetWorkerId: null,
+              x: c.x + ((c.homeX - c.x) / distHome) * Math.min(CREEP_SPEED * dt, distHome),
+              y: c.y + ((c.homeY - c.y) / distHome) * Math.min(CREEP_SPEED * dt, distHome) };
+          }
+          // Aggro nearest worker in range
+          const aggro = workers2.reduce<WorkerState | null>((best, w) => {
+            const d = tileDist(c.x, c.y, w.x, w.y);
+            if (d > CREEP_AGGRO_RANGE) return best;
+            if (!best || d < tileDist(c.x, c.y, best.x, best.y)) return w;
+            return best;
+          }, null);
+          if (aggro) {
+            const distW = tileDist(c.x, c.y, aggro.x, aggro.y);
+            if (distW <= 1.4) {
+              if (!creepAttackTimeoutsRef.current[c.id]) {
+                const wid = aggro.id;
+                const capturedX = Math.round(aggro.x), capturedY = Math.round(aggro.y);
+                creepAttackTimeoutsRef.current[c.id] = window.setTimeout(() => {
+                  delete creepAttackTimeoutsRef.current[c.id];
+                  const creepDmg = Math.max(1, CREEP_DAMAGE - blacksmithUpgradesRef.current.ironHide * 2);
+                  setWorkers(ws2 => ws2.map(w2 => w2.id === wid ? { ...w2, hp: Math.max(0, w2.hp - creepDmg) } : w2));
+                  addFloatingText(capturedX, capturedY, `-${creepDmg}`, '#a855f7');
+                }, CREEP_ATTACK_MS);
+              }
+              return { ...c, state: 'chasing' as const, targetWorkerId: aggro.id };
+            }
+            const dx2 = aggro.x - c.x, dy2 = aggro.y - c.y;
+            const d2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+            return { ...c, state: 'chasing' as const, targetWorkerId: aggro.id,
+              x: c.x + (dx2 / d2) * Math.min(CREEP_SPEED * dt, d2),
+              y: c.y + (dy2 / d2) * Math.min(CREEP_SPEED * dt, d2) };
+          }
+          // Return home if no aggro
+          if (c.state === 'chasing' || c.state === 'returning') {
+            if (distHome < 0.15) return { ...c, state: 'idle' as const, targetWorkerId: null, x: c.homeX, y: c.homeY };
+            const dx3 = c.homeX - c.x, dy3 = c.homeY - c.y;
+            const d3 = Math.sqrt(dx3 * dx3 + dy3 * dy3);
+            return { ...c, state: 'returning' as const, targetWorkerId: null,
+              x: c.x + (dx3 / d3) * Math.min(CREEP_SPEED * dt, d3),
+              y: c.y + (dy3 / d3) * Math.min(CREEP_SPEED * dt, d3) };
+          }
+          return c;
+        });
+      });
+
+      // Workers can also attack creeps (already tracked via attackTimeoutsRef for grunt targets)
       animationRef.current = requestAnimationFrame(animate);
     }
 
@@ -1083,10 +1229,12 @@ const RTSMap: React.FC = () => {
       Object.values(attackTimeoutsRef.current).forEach(clearTimeout);
       Object.values(gruntAttackTimeoutsRef.current).forEach(clearTimeout);
       Object.values(repairTimeoutsRef.current).forEach(clearTimeout);
+      Object.values(creepAttackTimeoutsRef.current).forEach(clearTimeout);
       gatherTimeoutsRef.current = {};
       attackTimeoutsRef.current = {};
       gruntAttackTimeoutsRef.current = {};
       repairTimeoutsRef.current = {};
+      creepAttackTimeoutsRef.current = {};
     };
   }, []);
 
@@ -1253,6 +1401,22 @@ const RTSMap: React.FC = () => {
       const path = aStar(INITIAL_TILES, { x: Math.round(w.x), y: Math.round(w.y) }, { x: tx, y: ty });
       const first = path[0] ?? { x: tx, y: ty };
       return { ...w, movingTo: first, path: path.slice(1), gathering: null, attacking: { targetType: 'grunt' as const, gruntId }, state: 'moving' };
+    }));
+  }, [anySelected]);
+
+  const handleAttackCreep = useCallback((creepId: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!anySelected) return;
+    const creep = neutralCreepsRef.current.find(c => c.id === creepId);
+    if (!creep) return;
+    const tx = Math.round(creep.x), ty = Math.round(creep.y);
+    setWorkers(ws => ws.map(w => {
+      if (!w.selected) return w;
+      const path = aStar(INITIAL_TILES, { x: Math.round(w.x), y: Math.round(w.y) }, { x: tx, y: ty });
+      const first = path[0] ?? { x: tx, y: ty };
+      // Reuse grunt attack state but target creep — we handle damage via attackTimeoutsRef with a creep target type
+      return { ...w, movingTo: first, path: path.slice(1), gathering: null, attacking: { targetType: 'creep' as const, creepId }, state: 'moving' };
     }));
   }, [anySelected]);
 
@@ -1590,6 +1754,23 @@ const RTSMap: React.FC = () => {
                 <text x={isoX + TILE_SIZE - 6} y={isoY + 14} textAnchor="middle" fontSize="10" fill="#7dd3fc" fontWeight="bold">{garrisoned.length}</text>
               </>}
             </g>; })()}
+
+          {/* Neutral creep camps */}
+          {CREEP_CAMPS.filter(camp => !clearedCamps.has(camp.id)).map(camp => {
+            const { isoX, isoY } = tileToSvg(camp.x, camp.y);
+            return <g key={`camp-${camp.id}`} pointerEvents="none">
+              <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 28} rx={28} ry={12} fill="rgba(88,28,135,0.3)" />
+              <text x={isoX + TILE_SIZE / 2} y={isoY - 4} textAnchor="middle" fontSize="9" fill="#c084fc" fontWeight="bold">⚠ CAMP +{camp.goldReward}🪙</text>
+            </g>;
+          })}
+          {/* Neutral creeps */}
+          {neutralCreeps.map(c => { const { isoX, isoY } = tileToSvg(c.x, c.y); const hp = c.hp / c.maxHp;
+            return <g key={`creep-${c.id}`} style={{ cursor: anySelected ? 'crosshair' : 'default' }} onContextMenu={e => handleAttackCreep(c.id, e)}>
+              <circle cx={isoX + TILE_SIZE / 2} cy={isoY + 18} r={15} fill={c.state === 'chasing' ? '#7c3aed' : '#581c87'} stroke="#3b0764" strokeWidth={3} />
+              <text x={isoX + TILE_SIZE / 2} y={isoY + 26} textAnchor="middle" fontSize="13">🐗</text>
+              <rect x={isoX + TILE_SIZE / 2 - 13} y={isoY - 3} width={26} height={4} fill="#1e293b" />
+              <rect x={isoX + TILE_SIZE / 2 - 13} y={isoY - 3} width={26 * hp} height={4} fill="#a855f7" />
+            </g>; })}
 
           {/* Enemy grunts */}
           {enemyGrunts.map(g => { const { isoX, isoY } = tileToSvg(g.x, g.y); const hp = g.hp / g.maxHp;
