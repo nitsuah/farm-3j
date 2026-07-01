@@ -54,7 +54,7 @@ const ARCHER_TOWER_ATTACK_MS = 2500;
 
 interface FloatingText { id: number; x: number; y: number; text: string; color: string; createdAt: number }
 type TileType = 'grass' | 'dirt' | 'water' | 'tree' | 'rock';
-type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market';
+type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market' | 'blacksmith';
 
 interface ResourceNode { x: number; y: number; amount: number }
 interface Resources { gold: number; lumber: number; stone: number; food: number; foodCap: number }
@@ -82,10 +82,11 @@ const BUILDING_COSTS: Record<BuildingType, { gold: number; lumber: number; stone
   barracks:      { gold: 80, lumber: 60, stone: 40, label: 'Barracks', foodCapBonus: 0 },
   siegeWorkshop: { gold: 100, lumber: 80, stone: 60, label: 'Siege Workshop', foodCapBonus: 0 },
   market:        { gold: 80,  lumber: 60, stone: 20, label: 'Market',         foodCapBonus: 0 },
+  blacksmith:    { gold: 100, lumber: 60, stone: 80, label: 'Blacksmith',     foodCapBonus: 0 },
 };
 
 const BUILDING_EMOJI: Record<BuildingType, string> = {
-  farmhouse: '🏠', lumberShed: '🪵', watchtower: '🗼', wall: '🧱', windmill: '💨', barracks: '🏯', siegeWorkshop: '⚙️', market: '🏪',
+  farmhouse: '🏠', lumberShed: '🪵', watchtower: '🗼', wall: '🧱', windmill: '💨', barracks: '🏯', siegeWorkshop: '⚙️', market: '🏪', blacksmith: '🔨',
 };
 
 const SWORDSMAN_MAX_HP = 80;
@@ -336,6 +337,10 @@ const RTSMap: React.FC = () => {
   const [upgrades, setUpgrades] = useState<Upgrades>(() => INITIAL_SAVE?.upgrades ?? { sharperTools: 0, swiftHarvest: 0, ironWill: 0 });
   const upgradesRef = useRef(upgrades);
   useEffect(() => { upgradesRef.current = upgrades; }, [upgrades]);
+
+  const [blacksmithUpgrades, setBlacksmithUpgrades] = useState({ steelEdge: 0, ironHide: 0 });
+  const blacksmithUpgradesRef = useRef(blacksmithUpgrades);
+  useEffect(() => { blacksmithUpgradesRef.current = blacksmithUpgrades; }, [blacksmithUpgrades]);
 
   // Day/Night cycle
   const DAY_DURATION_MS = 60000;
@@ -883,7 +888,7 @@ const RTSMap: React.FC = () => {
                 const unitBonus = w.unitType === 'hero' ? HERO_DAMAGE_BONUS : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : 0;
                 attackT[w.id] = window.setTimeout(() => {
                   delete attackTimeoutsRef.current[w.id];
-                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + unitBonus;
+                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + unitBonus;
                   setEnemyGrunts(gs => gs.map(g => g.id === gruntId ? { ...g, hp: Math.max(0, g.hp - dmg) } : g));
                   addFloatingText(capturedGX, capturedGY, `-${dmg}`, '#f97316');
                   addFloatingText(capturedWX, capturedWY, `⚔️`, '#fbbf24');
@@ -895,13 +900,14 @@ const RTSMap: React.FC = () => {
                 const unitBonus2 = w.unitType === 'hero' ? HERO_DAMAGE_BONUS : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : 0;
                 attackT[w.id] = window.setTimeout(() => {
                   delete attackTimeoutsRef.current[w.id];
-                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + unitBonus2;
+                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + unitBonus2;
                   setWorkers(ws2 => ws2.map(w2 => {
                     if (w2.id !== w.id || w2.state !== 'attacking' || !w2.attacking) return w2;
                     setEnemyBarnHp(hp => { const nHp = Math.max(0, hp - dmg); if (nHp <= 0) setGameOver('victory'); return nHp; });
                     addFloatingText(ENEMY_BARN_POS.x, ENEMY_BARN_POS.y, `-${dmg}`, '#ef4444');
-                    addFloatingText(capturedWX, capturedWY, `-${ENEMY_COUNTER_DAMAGE}`, '#fca5a5');
-                    return { ...w2, hp: Math.max(0, w2.hp - ENEMY_COUNTER_DAMAGE) };
+                    const counterDmg = Math.max(1, ENEMY_COUNTER_DAMAGE - blacksmithUpgradesRef.current.ironHide * 2);
+                    addFloatingText(capturedWX, capturedWY, `-${counterDmg}`, '#fca5a5');
+                    return { ...w2, hp: Math.max(0, w2.hp - counterDmg) };
                   }));
                 }, ATTACK_INTERVAL_MS);
               }
@@ -991,8 +997,9 @@ const RTSMap: React.FC = () => {
               const capturedWX = Math.round(nearWorker.x), capturedWY = Math.round(nearWorker.y);
               gruntAttackTimeoutsRef.current[g.id] = window.setTimeout(() => {
                 delete gruntAttackTimeoutsRef.current[g.id];
-                setWorkers(ws2 => ws2.map(w2 => w2.id === wid ? { ...w2, hp: Math.max(0, w2.hp - GRUNT_DAMAGE) } : w2));
-                addFloatingText(capturedWX, capturedWY, `-${GRUNT_DAMAGE}`, '#ef4444');
+                const gruntDmg = Math.max(1, GRUNT_DAMAGE - blacksmithUpgradesRef.current.ironHide * 2);
+                setWorkers(ws2 => ws2.map(w2 => w2.id === wid ? { ...w2, hp: Math.max(0, w2.hp - gruntDmg) } : w2));
+                addFloatingText(capturedWX, capturedWY, `-${gruntDmg}`, '#ef4444');
               }, GRUNT_ATTACK_MS);
             }
             return { ...g, movingTo: null, path: [], state: 'attacking' };
@@ -1145,6 +1152,22 @@ const RTSMap: React.FC = () => {
       if (resources.stone < 30) return;
       setResources(r => ({ ...r, stone: r.stone - 30, gold: r.gold + 20 }));
       addFloatingText(BARN_POS.x, BARN_POS.y, '+20🪙', '#fbbf24');
+    } else if (action === 'blacksmith:steelEdge') {
+      const level = blacksmithUpgrades.steelEdge;
+      if (level >= 2) return;
+      const cost = level === 0 ? { gold: 80, stone: 60 } : { gold: 160, stone: 120 };
+      if (resources.gold < cost.gold || resources.stone < cost.stone) return;
+      setResources(r => ({ ...r, gold: r.gold - cost.gold, stone: r.stone - cost.stone }));
+      setBlacksmithUpgrades(u => ({ ...u, steelEdge: u.steelEdge + 1 }));
+      addFloatingText(BARN_POS.x, BARN_POS.y, `⚔️ Steel Edge ${level + 1}!`, '#f59e0b');
+    } else if (action === 'blacksmith:ironHide') {
+      const level = blacksmithUpgrades.ironHide;
+      if (level >= 2) return;
+      const cost = level === 0 ? { gold: 80, lumber: 50 } : { gold: 160, lumber: 100 };
+      if (resources.gold < cost.gold || resources.lumber < cost.lumber) return;
+      setResources(r => ({ ...r, gold: r.gold - cost.gold, lumber: r.lumber - cost.lumber }));
+      setBlacksmithUpgrades(u => ({ ...u, ironHide: u.ironHide + 1 }));
+      addFloatingText(BARN_POS.x, BARN_POS.y, `🛡️ Iron Hide ${level + 1}!`, '#38bdf8');
     } else if (action.startsWith('build:')) {
       const btype = action.split(':')[1] as BuildingType;
       if (BUILDING_COSTS[btype]) setBuildMode(btype);
@@ -1443,6 +1466,19 @@ const RTSMap: React.FC = () => {
                 <text x={isoX + TILE_SIZE} y={isoY - 8} textAnchor="middle" fontSize="9" fill="#fca5a5" fontWeight="bold">BARRACKS</text>
               </g>;
             }
+            if (b.type === 'blacksmith') {
+              return <g key={`building-${b.id}`} pointerEvents="none">
+                {/* Stone base */}
+                <rect x={isoX + TILE_SIZE * 0.15} y={isoY + 4} width={TILE_SIZE * 1.7} height={TILE_SIZE * 0.76} fill="#374151" stroke="#dc2626" strokeWidth={3} rx={4} />
+                {/* Chimney */}
+                <rect x={isoX + TILE_SIZE * 0.35} y={isoY - 18} width={14} height={24} fill="#1f2937" stroke="#4b5563" strokeWidth={2} rx={2} />
+                {/* Smoke puff */}
+                <circle cx={isoX + TILE_SIZE * 0.35 + 7} cy={isoY - 22} r={5} fill="#6b7280" opacity={0.7} />
+                <circle cx={isoX + TILE_SIZE * 0.35 + 2} cy={isoY - 28} r={4} fill="#4b5563" opacity={0.5} />
+                <text x={isoX + TILE_SIZE} y={isoY + TILE_SIZE * 0.52} textAnchor="middle" fontSize="22">🔨</text>
+                <text x={isoX + TILE_SIZE} y={isoY + 2} textAnchor="middle" fontSize="9" fill="#fca5a5" fontWeight="bold">BLACKSMITH</text>
+              </g>;
+            }
             const colors: Record<string, { fill: string; stroke: string }> = { farmhouse: { fill: '#fef3c7', stroke: '#92400e' }, lumberShed: { fill: '#a16207', stroke: '#78350f' }, watchtower: { fill: '#64748b', stroke: '#1e293b' } };
             const c = colors[b.type] ?? { fill: '#374151', stroke: '#1f2937' };
             return <g key={`building-${b.id}`}>
@@ -1637,6 +1673,9 @@ const RTSMap: React.FC = () => {
         onRecruitHero={() => handleFarmhouseAction('recruitHero')}
         hasSiegeWorkshop={placedBuildings.some(b => b.type === 'siegeWorkshop')}
         hasMarket={placedBuildings.some(b => b.type === 'market')}
+        hasBlacksmith={placedBuildings.some(b => b.type === 'blacksmith')}
+        blacksmithUpgrades={blacksmithUpgrades}
+        onBlacksmithUpgrade={(type) => handleFarmhouseAction(`blacksmith:${type}`)}
         minimapData={minimapData}
         enemyBarnHp={enemyBarnHp}
         enemyBarnMaxHp={ENEMY_BARN_MAX_HP}

@@ -18,7 +18,7 @@ export interface WorkerState {
   unitType: 'farmer' | 'swordsman' | 'hero' | 'catapult';
 }
 
-export type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market';
+export type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market' | 'blacksmith';
 
 export interface PlacedBuilding {
   id: number;
@@ -69,6 +69,9 @@ interface RTSUIProps {
   onRecruitHero: () => void;
   hasSiegeWorkshop: boolean;
   hasMarket: boolean;
+  hasBlacksmith: boolean;
+  blacksmithUpgrades: { steelEdge: number; ironHide: number };
+  onBlacksmithUpgrade: (type: 'steelEdge' | 'ironHide') => void;
   farmhouse: { built: boolean; level: number };
   farmhouseUpgradeCosts: { gold: number; lumber: number }[];
   farmhouseStorage: { gold: number; lumber: number }[];
@@ -124,6 +127,9 @@ export const RTSUI: React.FC<RTSUIProps> = ({
   onRecruitHero,
   hasSiegeWorkshop,
   hasMarket,
+  hasBlacksmith,
+  blacksmithUpgrades,
+  onBlacksmithUpgrade,
 }) => {
   const isHeroSelected = selectedWorkers.some(w => w.unitType === 'hero');
   const selectedCount = selectedWorkers.length;
@@ -324,6 +330,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                   <button className="rounded border border-red-700/70 bg-red-900/20 px-2 py-2 text-xs text-red-100 hover:bg-red-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:barracks')} disabled={!canAfford(buildingCosts.barracks)} title="Barracks — train Swordsmen">🏯 Barracks</button>
                   <button className="rounded border border-orange-600/70 bg-orange-900/20 px-2 py-2 text-xs text-orange-100 hover:bg-orange-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:siegeWorkshop')} disabled={!canAfford(buildingCosts.siegeWorkshop)} title="Siege Workshop — train Catapults (100🪙 80🌲 60🪨)">⚙️ Siege</button>
                   <button className="rounded border border-emerald-600/70 bg-emerald-900/20 px-2 py-2 text-xs text-emerald-100 hover:bg-emerald-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:market')} disabled={!canAfford(buildingCosts.market)} title="Market — trade lumber for gold (80🪙 60🌲 20🪨)">🏪 Market</button>
+                  <button className="rounded border border-red-800/70 bg-red-950/30 px-2 py-2 text-xs text-red-100 hover:bg-red-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:blacksmith')} disabled={!canAfford(buildingCosts.blacksmith)} title="Blacksmith — upgrade unit attack and armor (100🪙 60🌲 80🪨)">🔨 Smith</button>
                   {hasMarket && (
                     <>
                       <button
@@ -341,6 +348,26 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                         title="Sell 30🪨 for 20🪙 at the Market"
                       >
                         🏪 Sell 30🪨 → 20🪙
+                      </button>
+                    </>
+                  )}
+                  {hasBlacksmith && (
+                    <>
+                      <button
+                        className="col-span-2 rounded border border-red-700/70 bg-red-950/20 px-2 py-2 text-xs text-red-100 hover:bg-red-900/40 disabled:opacity-40"
+                        onClick={() => onBlacksmithUpgrade('steelEdge')}
+                        disabled={blacksmithUpgrades.steelEdge >= 2 || (blacksmithUpgrades.steelEdge === 0 ? resources.gold < 80 || resources.stone < 60 : resources.gold < 160 || resources.stone < 120)}
+                        title={blacksmithUpgrades.steelEdge >= 2 ? '⚔️ Steel Edge maxed (+10 atk)' : blacksmithUpgrades.steelEdge === 0 ? '⚔️ Steel Edge I — +5 atk dmg all units (80🪙 60🪨)' : '⚔️ Steel Edge II — +5 atk dmg all units (160🪙 120🪨)'}
+                      >
+                        ⚔️ Steel Edge {'★'.repeat(blacksmithUpgrades.steelEdge)}{'☆'.repeat(2 - blacksmithUpgrades.steelEdge)} {blacksmithUpgrades.steelEdge >= 2 ? 'MAX' : blacksmithUpgrades.steelEdge === 0 ? '80🪙 60🪨' : '160🪙 120🪨'}
+                      </button>
+                      <button
+                        className="col-span-2 rounded border border-sky-700/70 bg-sky-950/20 px-2 py-2 text-xs text-sky-100 hover:bg-sky-900/40 disabled:opacity-40"
+                        onClick={() => onBlacksmithUpgrade('ironHide')}
+                        disabled={blacksmithUpgrades.ironHide >= 2 || (blacksmithUpgrades.ironHide === 0 ? resources.gold < 80 || resources.lumber < 50 : resources.gold < 160 || resources.lumber < 100)}
+                        title={blacksmithUpgrades.ironHide >= 2 ? '🛡️ Iron Hide maxed (-4 dmg taken)' : blacksmithUpgrades.ironHide === 0 ? '🛡️ Iron Hide I — -2 dmg from grunts (80🪙 50🌲)' : '🛡️ Iron Hide II — -2 dmg from grunts (160🪙 100🌲)'}
+                      >
+                        🛡️ Iron Hide {'★'.repeat(blacksmithUpgrades.ironHide)}{'☆'.repeat(2 - blacksmithUpgrades.ironHide)} {blacksmithUpgrades.ironHide >= 2 ? 'MAX' : blacksmithUpgrades.ironHide === 0 ? '80🪙 50🌲' : '160🪙 100🌲'}
                       </button>
                     </>
                   )}
