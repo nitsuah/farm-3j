@@ -73,7 +73,7 @@ type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmi
 
 interface ResourceNode { x: number; y: number; amount: number }
 interface Resources { gold: number; lumber: number; stone: number; food: number; foodCap: number }
-interface PlacedBuilding { id: number; type: BuildingType; x: number; y: number }
+interface PlacedBuilding { id: number; type: BuildingType; x: number; y: number; hp: number; maxHp: number }
 
 interface EnemyGrunt {
   id: number;
@@ -142,6 +142,12 @@ const BUILDING_COSTS: Record<BuildingType, { gold: number; lumber: number; stone
 const BUILDING_EMOJI: Record<BuildingType, string> = {
   farmhouse: '🏠', lumberShed: '🪵', watchtower: '🗼', wall: '🧱', windmill: '💨', barracks: '🏯', siegeWorkshop: '⚙️', market: '🏪', blacksmith: '🔨', granary: '🌾', stable: '🐴', spikeTrap: '🪤',
 };
+
+const BUILDING_MAX_HP: Record<BuildingType, number> = {
+  farmhouse: 200, lumberShed: 150, watchtower: 180, wall: 120, windmill: 100,
+  barracks: 250, siegeWorkshop: 220, market: 160, blacksmith: 200, granary: 140, stable: 200, spikeTrap: 60,
+};
+const BUILDING_GRUNT_DAMAGE = 8; // damage per hit from grunt to building
 
 const SWORDSMAN_MAX_HP = 80;
 const SWORDSMAN_DAMAGE_BONUS = 10;
@@ -305,7 +311,7 @@ const RTSMap: React.FC = () => {
   const isDraggingRef = useRef(false);
   const [buildMode, setBuildMode] = useState<BuildingType | null>(null);
   const [ghostTile, setGhostTile] = useState<{ x: number; y: number } | null>(null);
-  const [placedBuildings, setPlacedBuildings] = useState<PlacedBuilding[]>(() => INITIAL_SAVE?.placedBuildings ?? []);
+  const [placedBuildings, setPlacedBuildings] = useState<PlacedBuilding[]>(() => (INITIAL_SAVE?.placedBuildings ?? []).map((b: PlacedBuilding) => b.hp != null ? b : { ...b, hp: BUILDING_MAX_HP[b.type] ?? 100, maxHp: BUILDING_MAX_HP[b.type] ?? 100 }));
   const buildingIdRef = useRef(INITIAL_SAVE?.buildingNextId ?? 1);
   const placedBuildingsRef = useRef(placedBuildings);
   useEffect(() => { placedBuildingsRef.current = placedBuildings; }, [placedBuildings]);
@@ -519,6 +525,7 @@ const RTSMap: React.FC = () => {
   const archerTowerTimerRef = useRef<number | null>(null);
   const watchtowerTimersRef = useRef<Record<number, number>>({});
   const trapTriggeredRef = useRef<Record<number, number>>({}); // buildingId → trigger timestamp
+  const buildingAttackTimeoutsRef = useRef<Record<number, number>>({}); // gruntId → timeout for building attacks
   const animationRef = useRef<number | null>(null);
   const prevTimeRef = useRef<number | null>(null);
 
@@ -913,7 +920,7 @@ const RTSMap: React.FC = () => {
           const cost = BUILDING_COSTS[buildMode];
           setResources(r => {
             if (r.gold < cost.gold || r.lumber < cost.lumber || r.stone < cost.stone) return r;
-            setPlacedBuildings(bs => [...bs, { id: buildingIdRef.current++, type: buildMode, x: tx, y: ty }]);
+            setPlacedBuildings(bs => { const maxHp = BUILDING_MAX_HP[buildMode]; return [...bs, { id: buildingIdRef.current++, type: buildMode, x: tx, y: ty, hp: maxHp, maxHp }]; });
             return { ...r, gold: r.gold - cost.gold, lumber: r.lumber - cost.lumber, stone: r.stone - cost.stone, foodCap: cost.foodCapBonus > 0 ? r.foodCap + cost.foodCapBonus : r.foodCap };
           });
           setBuildMode(null); setGhostTile(null);
@@ -947,6 +954,19 @@ const RTSMap: React.FC = () => {
       if (e.key === 'Escape') { setBuildMode(null); setGhostTile(null); setPatrolMode(false); }
       if ((e.key === 'p' || e.key === 'P') && !e.ctrlKey && !e.metaKey) {
         setWorkers(ws => { if (ws.some(w => w.selected)) { setPatrolMode(m => !m); } return ws; });
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  // Ctrl+A: select all living units
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.key === 'a' || e.key === 'A') && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        setWorkers(ws => ws.map(w => w.hp > 0 ? { ...w, selected: true } : w));
+        setSelectedType('worker');
       }
     };
     window.addEventListener('keydown', onKey);
@@ -1365,6 +1385,9 @@ const RTSMap: React.FC = () => {
         }
         return survived;
       });
+      // Remove destroyed buildings (hp <= 0)
+      setPlacedBuildings(bs => bs.filter(b => b.hp > 0));
+
       const gruntSpeedMult = isNightRef.current ? NIGHT_SPEED_MULT : 1;
       setEnemyGrunts(gs => gs.map(g => {
         // Proximity aggro: switch to attack nearest worker within 2 tiles
@@ -1390,6 +1413,20 @@ const RTSMap: React.FC = () => {
           const dx = nearWorker.x - g.x, dy = nearWorker.y - g.y;
           const d = Math.sqrt(dx * dx + dy * dy);
           return { ...g, movingTo: p[0] ?? { x: nearWorker.x, y: nearWorker.y }, path: p.slice(1), state: 'moving', x: g.x + (dx / d) * Math.min(GRUNT_SPEED * gruntSpeedMult * dt, d), y: g.y + (dy / d) * Math.min(GRUNT_SPEED * gruntSpeedMult * dt, d) };
+        }
+
+        // Building aggro: attack nearest building within 1.2 tiles (not walls — they block, not targets)
+        const nearBuilding = placedBuildingsRef.current.find(b => b.type !== 'wall' && b.hp > 0 && tileDist(g.x, g.y, b.x, b.y) <= 1.2);
+        if (nearBuilding) {
+          if (!buildingAttackTimeoutsRef.current[g.id]) {
+            const bid = nearBuilding.id; const bx = nearBuilding.x; const by = nearBuilding.y;
+            buildingAttackTimeoutsRef.current[g.id] = window.setTimeout(() => {
+              delete buildingAttackTimeoutsRef.current[g.id];
+              setPlacedBuildings(bs => bs.map(b => b.id === bid ? { ...b, hp: Math.max(0, b.hp - BUILDING_GRUNT_DAMAGE) } : b));
+              addFloatingText(bx, by, `-${BUILDING_GRUNT_DAMAGE}`, '#f97316');
+            }, GRUNT_ATTACK_MS);
+          }
+          return { ...g, movingTo: null, path: [], state: 'attacking' };
         }
 
         if (g.movingTo) {
@@ -1785,7 +1822,7 @@ const RTSMap: React.FC = () => {
             🔄 Patrol Mode · Right-click destination · Esc to cancel
           </span>
         ) : (
-          <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 400 }}>WASD pan · scroll zoom · Ctrl+1-9 groups · P patrol · F farmer · Q sword · R cavalry · Del stop · G garrison</span>
+          <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 400 }}>WASD pan · scroll zoom · Ctrl+A all · Ctrl+1-9 groups · P patrol · F farmer · Q sword · R cavalry · Del stop · G garrison</span>
         )}
         <button onClick={doSave} style={{ background: saveStatus === 'saved' ? 'rgba(74,222,128,0.2)' : 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', color: saveStatus === 'saved' ? '#4ade80' : '#94a3b8', padding: '2px 10px', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>
           {saveStatus === 'saved' ? '✓ Saved' : '💾 Save'}
@@ -2015,6 +2052,16 @@ const RTSMap: React.FC = () => {
               <rect x={isoX + TILE_SIZE / 4} y={isoY} width={TILE_SIZE * 1.5} height={TILE_SIZE * 0.8} fill={c.fill} stroke={c.stroke} strokeWidth={3} rx={8} />
               <text x={isoX + TILE_SIZE} y={isoY + TILE_SIZE / 2} textAnchor="middle" fontSize="22">{BUILDING_EMOJI[b.type]}</text>
             </g>; })}
+
+          {/* Building HP bars — only shown when damaged */}
+          {placedBuildings.filter(b => b.hp < b.maxHp && b.hp > 0).map(b => {
+            const { isoX, isoY } = tileToSvg(b.x, b.y);
+            const pct = b.hp / b.maxHp;
+            return <g key={`bhp-${b.id}`} pointerEvents="none">
+              <rect x={isoX + TILE_SIZE * 0.1} y={isoY - 14} width={TILE_SIZE * 1.8} height={6} fill="#1e293b" rx={3} />
+              <rect x={isoX + TILE_SIZE * 0.1} y={isoY - 14} width={TILE_SIZE * 1.8 * pct} height={6} fill={pct > 0.5 ? '#4ade80' : pct > 0.25 ? '#fbbf24' : '#ef4444'} rx={3} />
+            </g>;
+          })}
 
           {/* Enemy barn */}
           {enemyBarnHp > 0 && (() => { const { isoX, isoY } = tileToSvg(ENEMY_BARN_POS.x, ENEMY_BARN_POS.y); const hpPct = enemyBarnHp / ENEMY_BARN_MAX_HP;

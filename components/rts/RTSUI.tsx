@@ -27,6 +27,8 @@ export interface PlacedBuilding {
   type: BuildingType;
   x: number;
   y: number;
+  hp: number;
+  maxHp: number;
 }
 
 interface BuildingCost {
