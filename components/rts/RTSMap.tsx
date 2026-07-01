@@ -289,7 +289,7 @@ function clearSave(): void {
 
 function makeUnit(id: number, x: number, y: number, unitType: 'farmer' | 'swordsman' | 'hero' | 'catapult' | 'cavalry'): WorkerState {
   const maxHp = unitType === 'hero' ? HERO_MAX_HP : unitType === 'swordsman' ? SWORDSMAN_MAX_HP : unitType === 'catapult' ? CATAPULT_MAX_HP : unitType === 'cavalry' ? CAVALRY_MAX_HP : WORKER_MAX_HP;
-  return { id, x, y, selected: false, movingTo: null, path: [], gathering: null, attacking: null, repairing: null, carrying: { gold: 0, lumber: 0, stone: 0 }, state: 'idle', group: null, hp: maxHp, maxHp, patrol: null, unitType, xp: 0, level: 0 };
+  return { id, x, y, selected: false, movingTo: null, path: [], gathering: null, attacking: null, repairing: null, attackMove: false, attackMoveTarget: null, carrying: { gold: 0, lumber: 0, stone: 0 }, state: 'idle', group: null, hp: maxHp, maxHp, patrol: null, unitType, xp: 0, level: 0 };
 }
 // ---------------------------------
 
@@ -428,6 +428,9 @@ const RTSMap: React.FC = () => {
   const [patrolMode, setPatrolMode] = useState(false);
   const patrolModeRef = useRef(false);
   useEffect(() => { patrolModeRef.current = patrolMode; }, [patrolMode]);
+  const [attackMoveMode, setAttackMoveMode] = useState(false);
+  const attackMoveModeRef = useRef(false);
+  useEffect(() => { attackMoveModeRef.current = attackMoveMode; }, [attackMoveMode]);
   const [upgrades, setUpgrades] = useState<Upgrades>(() => INITIAL_SAVE?.upgrades ?? { sharperTools: 0, swiftHarvest: 0, ironWill: 0 });
   const upgradesRef = useRef(upgrades);
   useEffect(() => { upgradesRef.current = upgrades; }, [upgrades]);
@@ -887,7 +890,7 @@ const RTSMap: React.FC = () => {
         const startTile = { x: Math.round(w.x), y: Math.round(w.y) };
         const rawPath = aStar(INITIAL_TILES, startTile, dest);
         const first = rawPath[0] ?? dest;
-        return { ...w, movingTo: first, path: rawPath.slice(1), gathering: gathering ?? null, attacking: attacking ?? null, repairing: null, patrol: null, state: 'moving' };
+        return { ...w, movingTo: first, path: rawPath.slice(1), gathering: gathering ?? null, attacking: attacking ?? null, repairing: null, attackMove: false, attackMoveTarget: null, patrol: null, state: 'moving' };
       });
     });
   }, []);
@@ -952,9 +955,12 @@ const RTSMap: React.FC = () => {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { setBuildMode(null); setGhostTile(null); setPatrolMode(false); }
+      if (e.key === 'Escape') { setBuildMode(null); setGhostTile(null); setPatrolMode(false); setAttackMoveMode(false); }
       if ((e.key === 'p' || e.key === 'P') && !e.ctrlKey && !e.metaKey) {
         setWorkers(ws => { if (ws.some(w => w.selected)) { setPatrolMode(m => !m); } return ws; });
+      }
+      if ((e.key === 'a' || e.key === 'A') && !e.ctrlKey && !e.metaKey) {
+        setWorkers(ws => { if (ws.some(w => w.selected && w.unitType !== 'farmer' && w.unitType !== 'catapult')) { setAttackMoveMode(m => !m); } return ws; });
       }
     };
     window.addEventListener('keydown', onKey);
@@ -984,7 +990,7 @@ const RTSMap: React.FC = () => {
       if (e.key === 'r' || e.key === 'R') { e.preventDefault(); handleFarmhouseAction('trainCavalry'); }
       if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault();
-        setWorkers(ws => ws.map(w => w.selected ? { ...w, movingTo: null, path: [], gathering: null, attacking: null, repairing: null, patrol: null, state: 'idle' as const } : w));
+        setWorkers(ws => ws.map(w => w.selected ? { ...w, movingTo: null, path: [], gathering: null, attacking: null, repairing: null, attackMove: false, attackMoveTarget: null, patrol: null, state: 'idle' as const } : w));
       }
       if (e.key === 'g' || e.key === 'G') { e.preventDefault(); handleGarrison(); }
     };
@@ -1042,6 +1048,25 @@ const RTSMap: React.FC = () => {
         if (alive.length < ws.length) setResources(r => ({ ...r, food: Math.max(0, r.food - (ws.length - alive.length)) }));
 
         return alive.map(w => {
+          // Attack-move: scan for nearby enemies while marching
+          if (w.attackMove && w.state === 'moving' && !w.attacking) {
+            const AM_SCAN = 2.5;
+            const nearGrunt = enemyGruntsRef.current.find(g => g.hp > 0 && tileDist(w.x, w.y, g.x, g.y) <= AM_SCAN);
+            if (nearGrunt) return { ...w, attacking: { targetType: 'grunt' as const, gruntId: nearGrunt.id }, state: 'attacking' as const, movingTo: null, path: [] };
+            const nearCreep = neutralCreepsRef.current.find(c => c.hp > 0 && tileDist(w.x, w.y, c.x, c.y) <= AM_SCAN);
+            if (nearCreep) return { ...w, attacking: { targetType: 'creep' as const, creepId: nearCreep.id }, state: 'attacking' as const, movingTo: null, path: [] };
+          }
+          // When attack-move unit finishes its target, resume march to original destination
+          if (w.attackMove && w.state === 'idle' && w.attackMoveTarget) {
+            const dest = w.attackMoveTarget;
+            const atDest = tileDist(w.x, w.y, dest.x, dest.y) < 0.5;
+            if (!atDest) {
+              const p = aStar(INITIAL_TILES, { x: Math.round(w.x), y: Math.round(w.y) }, dest);
+              return { ...w, movingTo: p[0] ?? dest, path: p.slice(1), state: 'moving' as const };
+            }
+            return { ...w, attackMove: false, attackMoveTarget: null };
+          }
+
           if (w.movingTo) {
             const dx = w.movingTo.x - w.x, dy = w.movingTo.y - w.y;
             const d = Math.sqrt(dx * dx + dy * dy);
@@ -1700,7 +1725,7 @@ const RTSMap: React.FC = () => {
       gatherTimeoutsRef.current = {};
       attackTimeoutsRef.current = {};
       setPatrolMode(false);
-      setWorkers(ws => ws.map(w => w.selected ? { ...w, movingTo: null, path: [], gathering: null, attacking: null, repairing: null, patrol: null, state: 'idle' } : w));
+      setWorkers(ws => ws.map(w => w.selected ? { ...w, movingTo: null, path: [], gathering: null, attacking: null, repairing: null, attackMove: false, attackMoveTarget: null, patrol: null, state: 'idle' } : w));
     }
   };
 
@@ -1864,8 +1889,12 @@ const RTSMap: React.FC = () => {
           <span style={{ color: '#22d3ee', background: 'rgba(6,182,212,0.2)', padding: '2px 12px', borderRadius: 6, fontSize: 13 }}>
             🔄 Patrol Mode · Right-click destination · Esc to cancel
           </span>
+        ) : attackMoveMode ? (
+          <span style={{ color: '#f87171', background: 'rgba(239,68,68,0.2)', padding: '2px 12px', borderRadius: 6, fontSize: 13 }}>
+            ⚔️ Attack-Move · Right-click destination · Esc to cancel
+          </span>
         ) : (
-          <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 400 }}>WASD pan · scroll zoom · Ctrl+A all · Ctrl+1-9 groups · P patrol · F farmer · Q sword · R cavalry · Del stop · G garrison</span>
+          <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 400 }}>WASD pan · scroll zoom · Ctrl+A all · Ctrl+1-9 groups · P patrol · A attack-move · F farmer · Q sword · R cavalry · Del stop · G garrison</span>
         )}
         <button onClick={doSave} style={{ background: saveStatus === 'saved' ? 'rgba(74,222,128,0.2)' : 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', color: saveStatus === 'saved' ? '#4ade80' : '#94a3b8', padding: '2px 10px', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>
           {saveStatus === 'saved' ? '✓ Saved' : '💾 Save'}
@@ -1923,14 +1952,25 @@ const RTSMap: React.FC = () => {
                         if (!w.selected) return w;
                         const a = { x: Math.round(w.x), y: Math.round(w.y) };
                         const p = aStar(INITIAL_TILES, a, dest);
-                        return { ...w, patrol: { a, b: dest, heading: 'b' }, movingTo: p[0] ?? dest, path: p.slice(1), gathering: null, attacking: null, state: 'moving' };
+                        return { ...w, patrol: { a, b: dest, heading: 'b' }, movingTo: p[0] ?? dest, path: p.slice(1), gathering: null, attacking: null, repairing: null, state: 'moving' };
                       }));
                       setPatrolMode(false);
                       return;
                     }
+                    if (attackMoveModeRef.current) {
+                      const dest = { x: i, y: j };
+                      setWorkers(ws => ws.map(w => {
+                        if (!w.selected || w.unitType === 'farmer' || w.unitType === 'catapult') return w;
+                        const a = { x: Math.round(w.x), y: Math.round(w.y) };
+                        const p = aStar(INITIAL_TILES, a, dest);
+                        return { ...w, attackMove: true, attackMoveTarget: dest, movingTo: p[0] ?? dest, path: p.slice(1), gathering: null, attacking: null, repairing: null, patrol: null, state: 'moving' };
+                      }));
+                      setAttackMoveMode(false);
+                      return;
+                    }
                     commandMove(i, j);
                   }}
-                  style={{ cursor: buildMode ? 'crosshair' : patrolMode ? 'crosshair' : (anySelected || selectedType === 'farmhouse' ? 'pointer' : undefined) }}
+                  style={{ cursor: buildMode ? 'crosshair' : patrolMode ? 'crosshair' : attackMoveMode ? 'crosshair' : (anySelected || selectedType === 'farmhouse' ? 'pointer' : undefined) }}
                 />
               );
             })

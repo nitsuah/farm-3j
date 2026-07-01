@@ -10,6 +10,8 @@ export interface WorkerState {
   gathering: null | { type: 'tree' | 'gold' | 'stone'; idx: number };
   attacking: null | { targetType: 'enemyBarn' } | { targetType: 'grunt'; gruntId: number } | { targetType: 'creep'; creepId: number } | { targetType: 'enemyTower'; towerId: number };
   repairing: null | { buildingId: number };
+  attackMove: boolean;
+  attackMoveTarget: { x: number; y: number } | null;
   carrying: { gold: number; lumber: number; stone: number };
   state: 'idle' | 'moving' | 'gathering' | 'returning' | 'attacking' | 'repairing';
   group: number | null;
