@@ -117,13 +117,20 @@ const FROST_TOWER_GOLD_COST = 80;
 const FROST_TOWER_LUMBER_COST = 40;
 const FROST_TOWER_STONE_COST = 60;
 
+const BALLISTA_RANGE = 6.5;
+const BALLISTA_DAMAGE = 18;
+const BALLISTA_PIERCE_RANGE = 1.5;
+const BALLISTA_PIERCE_DAMAGE = 9;
+const BALLISTA_ATTACK_MS = 4000;
+const BALLISTA_HP = 150;
+
 const LOOT_CRATE_POSITIONS = [
   { x: 3, y: 10 }, { x: 10, y: 3 }, { x: 5, y: 15 }, { x: 15, y: 5 }, { x: 1, y: 1 }, { x: 7, y: 8 }, { x: 8, y: 7 }, { x: 13, y: 13 },
 ];
 
 interface FloatingText { id: number; x: number; y: number; text: string; color: string; createdAt: number }
 type TileType = 'grass' | 'dirt' | 'water' | 'tree' | 'rock';
-type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market' | 'blacksmith' | 'granary' | 'stable' | 'spikeTrap' | 'frostTower';
+type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market' | 'blacksmith' | 'granary' | 'stable' | 'spikeTrap' | 'frostTower' | 'ballista';
 
 interface ResourceNode { x: number; y: number; amount: number }
 interface Resources { gold: number; lumber: number; stone: number; food: number; foodCap: number }
@@ -252,15 +259,16 @@ const BUILDING_COSTS: Record<BuildingType, { gold: number; lumber: number; stone
   stable:        { gold: 80,  lumber: 60, stone: 30, label: 'Stable',         foodCapBonus: 0 },
   spikeTrap:     { gold: 30,  lumber: 20, stone: 10, label: 'Spike Trap',     foodCapBonus: 0 },
   frostTower:    { gold: FROST_TOWER_GOLD_COST, lumber: FROST_TOWER_LUMBER_COST, stone: FROST_TOWER_STONE_COST, label: 'Frost Tower', foodCapBonus: 0 },
+  ballista:      { gold: 100, lumber: 60, stone: 80, label: 'Ballista Tower', foodCapBonus: 0 },
 };
 
 const BUILDING_EMOJI: Record<BuildingType, string> = {
-  farmhouse: '🏠', lumberShed: '🪵', watchtower: '🗼', wall: '🧱', windmill: '💨', barracks: '🏯', siegeWorkshop: '⚙️', market: '🏪', blacksmith: '🔨', granary: '🌾', stable: '🐴', spikeTrap: '🪤', frostTower: '❄️',
+  farmhouse: '🏠', lumberShed: '🪵', watchtower: '🗼', wall: '🧱', windmill: '💨', barracks: '🏯', siegeWorkshop: '⚙️', market: '🏪', blacksmith: '🔨', granary: '🌾', stable: '🐴', spikeTrap: '🪤', frostTower: '❄️', ballista: '🏹',
 };
 
 const BUILDING_MAX_HP: Record<BuildingType, number> = {
   farmhouse: 200, lumberShed: 150, watchtower: 180, wall: 120, windmill: 100,
-  barracks: 250, siegeWorkshop: 220, market: 160, blacksmith: 200, granary: 140, stable: 200, spikeTrap: 60, frostTower: FROST_TOWER_HP,
+  barracks: 250, siegeWorkshop: 220, market: 160, blacksmith: 200, granary: 140, stable: 200, spikeTrap: 60, frostTower: FROST_TOWER_HP, ballista: BALLISTA_HP,
 };
 const BUILDING_GRUNT_DAMAGE = 8; // damage per hit from grunt to building
 
@@ -699,6 +707,17 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
   }, [gameOver]);
 
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle');
+  const [incomeRate, setIncomeRate] = useState({ gold: 0, lumber: 0, stone: 0 });
+  const incomeAccRef = useRef({ gold: 0, lumber: 0, stone: 0 });
+  const [underAttack, setUnderAttack] = useState(false);
+  const underAttackTimerRef = useRef<number | null>(null);
+  const triggerUnderAttack = useCallback(() => {
+    setUnderAttack(true);
+    if (underAttackTimerRef.current) clearTimeout(underAttackTimerRef.current);
+    underAttackTimerRef.current = window.setTimeout(() => setUnderAttack(false), 4000);
+  }, []);
+  const triggerUnderAttackRef = useRef(triggerUnderAttack);
+  useEffect(() => { triggerUnderAttackRef.current = triggerUnderAttack; }, [triggerUnderAttack]);
 
   const doSave = useCallback(() => {
     writeSave({
@@ -731,6 +750,16 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
     const id = setInterval(doSave, 30000);
     return () => clearInterval(id);
   }, [gameOver, doSave]);
+
+  // Income rate: snapshot every 30s, publish as per-minute rate
+  useEffect(() => {
+    const id = setInterval(() => {
+      const acc = incomeAccRef.current;
+      setIncomeRate({ gold: acc.gold * 2, lumber: acc.lumber * 2, stone: acc.stone * 2 });
+      incomeAccRef.current = { gold: 0, lumber: 0, stone: 0 };
+    }, 30000);
+    return () => clearInterval(id);
+  }, []);
 
   // Save on tab close
   useEffect(() => {
@@ -998,6 +1027,32 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
     };
     frostTowers.forEach(t => { if (!frostTowerTimersRef.current[t.id]) scheduleFrost(t.id, t.x, t.y); });
     return () => { Object.values(frostTowerTimersRef.current).forEach(clearTimeout); frostTowerTimersRef.current = {}; };
+  }, [placedBuildings, gameOver, addFloatingText]);
+
+  // Ballista Tower auto-fire — piercing bolt hits primary target + nearby grunts
+  const ballistaTimersRef = useRef<Record<number, number>>({});
+  useEffect(() => {
+    if (gameOver) return;
+    const ballistaTowers = placedBuildings.filter(b => b.type === 'ballista' && b.hp > 0);
+    const scheduleBallista = (towerId: number, tx: number, ty: number) => {
+      ballistaTimersRef.current[towerId] = window.setTimeout(() => {
+        delete ballistaTimersRef.current[towerId];
+        if (gameOverRef.current) return;
+        const grunts = enemyGruntsRef.current.filter(g => g.hp > 0 && tileDist(g.x, g.y, tx, ty) <= BALLISTA_RANGE);
+        const primary = grunts.reduce<EnemyGrunt | null>((best, g) => (!best || tileDist(g.x, g.y, tx, ty) < tileDist(best.x, best.y, tx, ty) ? g : best), null);
+        if (primary) {
+          const px = primary.x, py = primary.y;
+          setEnemyGrunts(gs => gs.map(g => {
+            if (g.id === primary.id) { addFloatingText(Math.round(px), Math.round(py), `🏹-${BALLISTA_DAMAGE}`, '#f59e0b'); return { ...g, hp: Math.max(0, g.hp - BALLISTA_DAMAGE) }; }
+            if (tileDist(g.x, g.y, px, py) <= BALLISTA_PIERCE_RANGE) { addFloatingText(Math.round(g.x), Math.round(g.y), `-${BALLISTA_PIERCE_DAMAGE}`, '#fbbf24'); return { ...g, hp: Math.max(0, g.hp - BALLISTA_PIERCE_DAMAGE) }; }
+            return g;
+          }));
+        }
+        scheduleBallista(towerId, tx, ty);
+      }, BALLISTA_ATTACK_MS);
+    };
+    ballistaTowers.forEach(t => { if (!ballistaTimersRef.current[t.id]) scheduleBallista(t.id, t.x, t.y); });
+    return () => { Object.values(ballistaTimersRef.current).forEach(clearTimeout); ballistaTimersRef.current = {}; };
   }, [placedBuildings, gameOver, addFloatingText]);
 
   // Player barn defense fire — scales with wave and garrison count
@@ -1528,6 +1583,9 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                 const atLumberShed = !atBarn && w.carrying.lumber > 0 && placedBuildingsRef.current.some(b => b.type === 'lumberShed' && b.hp > 0 && tileDist(movDest.x, movDest.y, b.x, b.y) < epsilon);
                 if (atBarn || atLumberShed) {
                   setResources(r => ({ ...r, gold: r.gold + w.carrying.gold, lumber: r.lumber + w.carrying.lumber, stone: r.stone + w.carrying.stone }));
+                  incomeAccRef.current.gold += w.carrying.gold;
+                  incomeAccRef.current.lumber += w.carrying.lumber;
+                  incomeAccRef.current.stone += w.carrying.stone;
                   if (w.carrying.gold > 0) setTotalGold(g => g + w.carrying.gold);
                   if (w.carrying.lumber > 0) setTotalLumber(l => l + w.carrying.lumber);
                   if (w.gathering) {
@@ -2137,6 +2195,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                   return { ...w2, hp: newHp };
                 }));
                 addFloatingText(capturedWX, capturedWY, `-${gruntDmg}`, '#ef4444');
+                triggerUnderAttackRef.current();
               }, GRUNT_ATTACK_MS);
             }
             return { ...g, movingTo: null, path: [], state: 'attacking' };
@@ -2186,6 +2245,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
               const barnDmg = Math.max(1, rawBarnDmg - barnArmor);
               setPlayerBarnHp(hp => { const nHp = Math.max(0, hp - barnDmg); if (nHp <= 0) setGameOver('defeat'); return nHp; });
               addFloatingText(BARN_POS.x, BARN_POS.y, `-${barnDmg}`, g.isBoss ? '#dc2626' : '#ef4444');
+              triggerUnderAttackRef.current();
             }, GRUNT_ATTACK_MS);
           }
         }
@@ -2867,6 +2927,12 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
         </div>
       )}
 
+      {underAttack && (
+        <div style={{ position: 'absolute', top: 56, left: '50%', transform: 'translateX(-50%)', background: 'rgba(185,28,28,0.92)', color: '#fecaca', fontSize: 15, fontWeight: 800, padding: '6px 28px', borderRadius: 8, zIndex: 26, pointerEvents: 'none', border: '2px solid #ef4444', letterSpacing: 1, animation: 'pulse 0.6s infinite' }}>
+          ⚠ UNDER ATTACK ⚠
+        </div>
+      )}
+
       {phaseAnnouncement && (
         <div style={{ position: 'absolute', top: '30%', left: '50%', transform: 'translateX(-50%)', background: dayPhase === 'night' ? 'rgba(15,10,40,0.95)' : 'rgba(120,80,0,0.92)', color: dayPhase === 'night' ? '#a5b4fc' : '#fde68a', fontSize: 24, fontWeight: 800, padding: '10px 28px', borderRadius: 12, zIndex: 24, pointerEvents: 'none', border: `2px solid ${dayPhase === 'night' ? '#6366f1' : '#fbbf24'}`, letterSpacing: 1 }}>
           {phaseAnnouncement}
@@ -2881,9 +2947,9 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
             <span style={{ display: 'block', width: `${(1 - dayProgress) * 100}%`, height: '100%', background: dayPhase === 'night' ? '#6366f1' : '#fbbf24', borderRadius: 2 }} />
           </span>
         </span>
-        <span style={{ color: resources.gold < 30 ? '#ef4444' : '#fde68a', fontWeight: resources.gold < 30 ? 700 : 400, animation: resources.gold < 30 ? 'pulse 1s infinite' : 'none' }}>🪙 {resources.gold}</span>
-        <span style={{ color: resources.lumber < 20 ? '#ef4444' : '#bbf7d0', fontWeight: resources.lumber < 20 ? 700 : 400, animation: resources.lumber < 20 ? 'pulse 1s infinite' : 'none' }}>🌲 {resources.lumber}</span>
-        <span style={{ color: resources.stone < 10 ? '#ef4444' : '#cbd5e1', fontWeight: resources.stone < 10 ? 700 : 400, animation: resources.stone < 10 ? 'pulse 1s infinite' : 'none' }}>🪨 {resources.stone}</span>
+        <span style={{ color: resources.gold < 30 ? '#ef4444' : '#fde68a', fontWeight: resources.gold < 30 ? 700 : 400, animation: resources.gold < 30 ? 'pulse 1s infinite' : 'none' }}>🪙 {resources.gold}{incomeRate.gold > 0 && <span style={{ fontSize: 11, color: '#a3e635', marginLeft: 2 }}>+{incomeRate.gold}/m</span>}</span>
+        <span style={{ color: resources.lumber < 20 ? '#ef4444' : '#bbf7d0', fontWeight: resources.lumber < 20 ? 700 : 400, animation: resources.lumber < 20 ? 'pulse 1s infinite' : 'none' }}>🌲 {resources.lumber}{incomeRate.lumber > 0 && <span style={{ fontSize: 11, color: '#a3e635', marginLeft: 2 }}>+{incomeRate.lumber}/m</span>}</span>
+        <span style={{ color: resources.stone < 10 ? '#ef4444' : '#cbd5e1', fontWeight: resources.stone < 10 ? 700 : 400, animation: resources.stone < 10 ? 'pulse 1s infinite' : 'none' }}>🪨 {resources.stone}{incomeRate.stone > 0 && <span style={{ fontSize: 11, color: '#a3e635', marginLeft: 2 }}>+{incomeRate.stone}/m</span>}</span>
         {wave > 0 && <span style={{ color: '#f97316', background: 'rgba(249,115,22,0.15)', padding: '1px 10px', borderRadius: 6, fontSize: 14 }}>Wave {wave}</span>}
         {!gameOver && nextWaveAt && (() => { const secsLeft = Math.max(0, Math.ceil((nextWaveAt - Date.now()) / 1000)); const urgent = secsLeft <= 5; return <span style={{ color: urgent ? '#ef4444' : '#94a3b8', fontSize: 13, fontWeight: urgent ? 700 : 400, animation: urgent ? 'pulse 0.6s infinite' : 'none' }}>⏱ {secsLeft}s</span>; })()}
         {killCount > 0 && <span style={{ color: '#4ade80', fontSize: 14 }}>☠ {killCount}</span>}
@@ -3142,6 +3208,23 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                   ))}
                   <text x={cx2} y={cy2 - 8} textAnchor="middle" fontSize="8" fill="#9ca3af">REARM</text>
                 </>)}
+              </g>;
+            }
+            if (b.type === 'ballista') {
+              const cx2 = isoX + TILE_SIZE / 2; const cy2 = isoY + TILE_SIZE * 0.4;
+              return <g key={`building-${b.id}`} pointerEvents="none">
+                {/* Stone platform */}
+                <rect x={isoX + TILE_SIZE * 0.2} y={cy2 + 2} width={TILE_SIZE * 1.6} height={14} fill="#475569" stroke="#1e293b" strokeWidth={2} rx={3} />
+                {/* Ballista frame */}
+                <rect x={cx2 - 18} y={cy2 - 10} width={36} height={14} fill="#44231a" stroke="#6b3d2e" strokeWidth={2} rx={2} />
+                {/* Bow arms */}
+                <path d={`M${cx2 - 18},${cy2 - 4} Q${cx2 - 32},${cy2 - 22} ${cx2 - 18},${cy2 - 10}`} fill="none" stroke="#92400e" strokeWidth={3} strokeLinecap="round" />
+                <path d={`M${cx2 + 18},${cy2 - 4} Q${cx2 + 32},${cy2 - 22} ${cx2 + 18},${cy2 - 10}`} fill="none" stroke="#92400e" strokeWidth={3} strokeLinecap="round" />
+                {/* Bolt */}
+                <line x1={cx2 - 16} y1={cy2 - 3} x2={cx2 + 24} y2={cy2 - 3} stroke="#6b7280" strokeWidth={2.5} strokeLinecap="round" />
+                <polygon points={`${cx2 + 24},${cy2 - 6} ${cx2 + 32},${cy2 - 3} ${cx2 + 24},${cy2}`} fill="#9ca3af" />
+                <text x={cx2} y={isoY - 4} textAnchor="middle" fontSize="9" fill="#fbbf24" fontWeight="bold">BALLISTA</text>
+                <text x={cx2} y={isoY + 4} textAnchor="middle" fontSize="7" fill="#94a3b8">{BALLISTA_RANGE}🎯 pierce</text>
               </g>;
             }
             const colors: Record<string, { fill: string; stroke: string }> = { farmhouse: { fill: '#fef3c7', stroke: '#92400e' }, lumberShed: { fill: '#a16207', stroke: '#78350f' }, watchtower: { fill: '#64748b', stroke: '#1e293b' } };
@@ -3626,6 +3709,8 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
         enemyBarnMaxHp={ENEMY_BARN_MAX_HP}
         playerBarnHp={playerBarnHp}
         playerBarnMaxHp={PLAYER_BARN_MAX_HP}
+        underAttack={underAttack}
+        incomeRate={incomeRate}
       />
     </div>
   );

@@ -34,7 +34,7 @@ export interface WorkerState {
   level: number;
 }
 
-export type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market' | 'blacksmith' | 'granary' | 'stable' | 'spikeTrap' | 'frostTower';
+export type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market' | 'blacksmith' | 'granary' | 'stable' | 'spikeTrap' | 'frostTower' | 'ballista';
 
 export interface PlacedBuilding {
   id: number;
@@ -121,6 +121,8 @@ interface RTSUIProps {
   onResearch: (type: keyof Upgrades) => void;
   stance: 'aggressive' | 'passive';
   onToggleStance: () => void;
+  underAttack: boolean;
+  incomeRate: { gold: number; lumber: number; stone: number };
   enemyBarnHp: number;
   enemyBarnMaxHp: number;
   playerBarnHp: number;
@@ -194,6 +196,8 @@ export const RTSUI: React.FC<RTSUIProps> = ({
   onMinimapClick,
   stance,
   onToggleStance,
+  underAttack,
+  incomeRate,
 }) => {
   const isHeroSelected = selectedWorkers.some(w => w.unitType === 'hero');
   const selectedCount = selectedWorkers.length;
@@ -643,6 +647,15 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                     title={`Frost Tower — ${buildingCosts.frostTower.gold}🪙 ${buildingCosts.frostTower.lumber}🌲 ${buildingCosts.frostTower.stone}🪨 | Slows enemies 50% for 3s and deals 5 dmg; 4.5-tile range every 2.5s`}
                   >
                     ❄️ Frost Tower {buildingCosts.frostTower.gold}🪙
+                  </button>
+                  <button
+                    type="button"
+                    className="col-span-2 rounded border border-yellow-700/70 bg-yellow-900/20 px-2 py-2 text-xs text-yellow-200 hover:bg-yellow-800/30 disabled:opacity-40"
+                    onClick={() => onFarmhouseAction('build:ballista')}
+                    disabled={!canAfford(buildingCosts.ballista)}
+                    title={`Ballista Tower — ${buildingCosts.ballista.gold}🪙 ${buildingCosts.ballista.lumber}🌲 ${buildingCosts.ballista.stone}🪨 | Piercing bolt: ${buildingCosts.ballista.gold ? '18' : '18'} dmg in 6.5-tile range, pierce nearby for 9 dmg every 4s`}
+                  >
+                    🏹 Ballista {buildingCosts.ballista.gold}🪙
                   </button>
                   {(Object.keys(UPGRADE_META) as (keyof Upgrades)[]).map(key => {
                     const level = upgrades[key];
