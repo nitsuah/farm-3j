@@ -8,8 +8,8 @@ Last Updated: 2026-06-25
 
 ## 2026 Q2–Q3: Farm RTS MVP
 
-- [ ] Complete all MVP milestones as defined in docs/Farm_RTS_Game_Manual.md and docs/FARM-RTS-TODO.md
-  - Progress: Milestones 1, 3, 4 (partial), 5 (building placement), 7 (enemy+win/lose) complete
+- [ ] Complete all MVP milestones as defined in docs/Farm_RTS_Game_Manual.md and docs/FARM-RTS-TODO.md and refer to docs/FARM-RTS-NORTH-STAR.md for guidance on the overall vision.
+  - Progress: Milestones 1, 3, 4 (partial), 5 (building placement), 7 (enemy+win/lose) complete (reverify progress and remaining tasks in docs/FARM-RTS-TODO.md docs/TASKS.md)
   - Also shipped: fog of war, control groups, stone resource, box selection, population cap, unit HP
   - Remaining: animal units, grunt-vs-worker combat, combat polish, formation commands
 
@@ -21,7 +21,7 @@ Last Updated: 2026-06-25
 - [ ] Evaluate subscription or recurring-order follow-ons.
 - [ ] Harden accessibility and SEO for a broader launch.
 - [ ] **Fog of war** — tile visibility driven by unit and building vision radius; unexplored tiles dark, explored-but-unoccupied tiles dimmed; creates strategic exploration tension without adding a full multiplayer requirement.
-- [ ] **Unit formation commands** — move a selected group in a named formation (line, wedge, box); prevents all units pathfinding to the same point and adds visual strategic depth to multi-unit control.
+- [ ] **Unit formation commands** — move a selected group in a named formation (line, wedge, box); prevents all units path-finding to the same point and adds visual strategic depth to multi-unit control.
 
 ## Legacy Tycoon Tasks (on hold)
 
