@@ -102,5 +102,5 @@ Last Updated: 2026-06-26 (Farm RTS MVP focus)
 - [x] More starting resources — players start with 150🪙 80🌲 30🪨 instead of 0/0/0; reduces early frustration while keeping strategic decisions meaningful (2026-07-01)
 - [x] RTSUI code-quality pass — fixed mixed-selection label (heterogeneous unit groups now show ⚔️/🌾 Mixed); fixed attack label (shows actual target type not always "enemy barn"); gated Harvest and Build commands on anyFarmers; added type="button" to all non-submit buttons; derived Granary/Stable/building tooltips from buildingCosts; fixed Cavalry tooltip (2×, not 2.5×); fixed farmhouse level cap from prop length; minimap constants (MINIMAP_GRID, MINIMAP_BARN, MINIMAP_ENEMY_BARN) replacing hardcoded literals; LUMBER_SHED_BONUS_MS shared constant (2026-07-01)
 - [ ] Blacksmith: extract upgrade costs to shared config constants (currently hardcoded in disable logic)
-- [ ] Market: add stone→lumber trading option (complement existing lumber→gold and stone→gold)
-- [ ] Siege Workshop: add Trebuchet or mortar unit with longer range than catapult
+- [x] Market: add stone→lumber trading option — sell 40🪨 for 25🌲 via new Market button (2026-07-01)
+- [x] Siege Workshop: Trebuchet unit — 200🪙 80🌲 60🪨, 45HP, auto-fires 40 dmg at enemy barn and towers from 9-tile range, 6s cooldown, 2.5-tile minimum range; AoE2-style long-range siege that rewards positioning (2026-07-01)

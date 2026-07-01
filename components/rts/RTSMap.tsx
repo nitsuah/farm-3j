@@ -100,6 +100,12 @@ const SAPPER_FIRST_WAVE = 12;
 const SAPPER_GOLD_REWARD = 20;
 const SAPPER_XP_REWARD = 45;
 const LUMBER_SHED_BONUS_MS = 200;
+const TREBUCHET_MAX_HP = 45;
+const TREBUCHET_SPEED = 0.28;
+const TREBUCHET_RANGE = 9;
+const TREBUCHET_MIN_RANGE = 2.5;
+const TREBUCHET_DAMAGE = 40;
+const TREBUCHET_FIRE_MS = 6000;
 
 const FROST_TOWER_RANGE = 4.5;
 const FROST_TOWER_DAMAGE = 5;
@@ -374,7 +380,7 @@ const INITIAL_TILES = makeTiles();
 // ---------- Save / Load ----------
 const SAVE_KEY = 'farm3j_rts_v1';
 
-interface SaveWorker { id: number; x: number; y: number; hp: number; maxHp: number; unitType: 'farmer' | 'swordsman' | 'hero' | 'catapult' | 'cavalry'; group: number | null; xp?: number; level?: number }
+interface SaveWorker { id: number; x: number; y: number; hp: number; maxHp: number; unitType: 'farmer' | 'swordsman' | 'hero' | 'catapult' | 'cavalry' | 'trebuchet'; group: number | null; xp?: number; level?: number }
 interface SaveData {
   version: 1;
   resources: Resources;
@@ -415,8 +421,8 @@ function clearSave(): void {
   try { localStorage.removeItem(SAVE_KEY); } catch {}
 }
 
-function makeUnit(id: number, x: number, y: number, unitType: 'farmer' | 'swordsman' | 'hero' | 'catapult' | 'cavalry'): WorkerState {
-  const maxHp = unitType === 'hero' ? HERO_MAX_HP : unitType === 'swordsman' ? SWORDSMAN_MAX_HP : unitType === 'catapult' ? CATAPULT_MAX_HP : unitType === 'cavalry' ? CAVALRY_MAX_HP : WORKER_MAX_HP;
+function makeUnit(id: number, x: number, y: number, unitType: 'farmer' | 'swordsman' | 'hero' | 'catapult' | 'cavalry' | 'trebuchet'): WorkerState {
+  const maxHp = unitType === 'hero' ? HERO_MAX_HP : unitType === 'swordsman' ? SWORDSMAN_MAX_HP : unitType === 'catapult' ? CATAPULT_MAX_HP : unitType === 'cavalry' ? CAVALRY_MAX_HP : unitType === 'trebuchet' ? TREBUCHET_MAX_HP : WORKER_MAX_HP;
   return { id, x, y, selected: false, movingTo: null, path: [], gathering: null, attacking: null, repairing: null, chargeCooldown: 0, sprintCooldown: 0, sprinting: false, waypoints: [], attackMove: false, attackMoveTarget: null, carrying: { gold: 0, lumber: 0, stone: 0 }, state: 'idle', group: null, hp: maxHp, maxHp, patrol: null, holdPosition: false, unitType, xp: 0, level: 0 };
 }
 // ---------------------------------
@@ -550,6 +556,8 @@ const RTSMap: React.FC = () => {
   useEffect(() => { gameSpeedRef.current = gameSpeed; }, [gameSpeed]);
 
   const [enemyBarnHp, setEnemyBarnHp] = useState(() => INITIAL_SAVE?.enemyBarnHp ?? ENEMY_BARN_MAX_HP);
+  const enemyBarnHpRef = useRef(INITIAL_SAVE?.enemyBarnHp ?? ENEMY_BARN_MAX_HP);
+  useEffect(() => { enemyBarnHpRef.current = enemyBarnHp; }, [enemyBarnHp]);
   const [playerBarnHp, setPlayerBarnHp] = useState(() => INITIAL_SAVE?.playerBarnHp ?? PLAYER_BARN_MAX_HP);
   const playerBarnHpRef = useRef(INITIAL_SAVE?.playerBarnHp ?? PLAYER_BARN_MAX_HP);
   useEffect(() => { playerBarnHpRef.current = playerBarnHp; }, [playerBarnHp]);
@@ -1077,7 +1085,7 @@ const RTSMap: React.FC = () => {
       const current = towerGarrisonRef.current[towerId] ?? [];
       const slots = TOWER_CAP - current.length;
       if (slots <= 0) return ws;
-      const selected = ws.filter(w => w.selected && w.unitType !== 'catapult').slice(0, slots);
+      const selected = ws.filter(w => w.selected && w.unitType !== 'catapult' && w.unitType !== 'trebuchet').slice(0, slots);
       if (selected.length === 0) return ws;
       const ids = new Set(selected.map(w => w.id));
       setTowerGarrison(tg => ({ ...tg, [towerId]: [...(tg[towerId] ?? []), ...selected.map(w => ({ ...w, selected: false, state: 'idle' as const, movingTo: null, path: [], gathering: null, attacking: null, repairing: null, patrol: null, attackMove: false, attackMoveTarget: null }))] }));
@@ -1213,7 +1221,7 @@ const RTSMap: React.FC = () => {
       let idx = 0;
       return ws.map(w => {
         if (!w.selected) return w;
-        if (gathering && (w.unitType === 'swordsman' || w.unitType === 'catapult' || w.unitType === 'hero' || w.unitType === 'cavalry')) return w;
+        if (gathering && (w.unitType === 'swordsman' || w.unitType === 'catapult' || w.unitType === 'trebuchet' || w.unitType === 'hero' || w.unitType === 'cavalry')) return w;
         const isFormation = !gathering && !attacking;
         const offset = isFormation ? (FORMATION_OFFSETS[idx++] ?? { dx: 0, dy: 0 }) : { dx: 0, dy: 0 };
         const tx = Math.max(0, Math.min(GRID_SIZE - 1, targetX + offset.dx));
@@ -1314,7 +1322,7 @@ const RTSMap: React.FC = () => {
         setWorkers(ws => { if (ws.some(w => w.selected)) { setPatrolMode(m => !m); } return ws; });
       }
       if ((e.key === 'a' || e.key === 'A') && !e.ctrlKey && !e.metaKey) {
-        setWorkers(ws => { if (ws.some(w => w.selected && w.unitType !== 'farmer' && w.unitType !== 'catapult')) { setAttackMoveMode(m => !m); } return ws; });
+        setWorkers(ws => { if (ws.some(w => w.selected && w.unitType !== 'farmer' && w.unitType !== 'catapult' && w.unitType !== 'trebuchet')) { setAttackMoveMode(m => !m); } return ws; });
       }
     };
     window.addEventListener('keydown', onKey);
@@ -1426,7 +1434,7 @@ const RTSMap: React.FC = () => {
           }
           // Hold position: stay put, auto-attack nearby enemies without chasing
           if (w.holdPosition) {
-            if (w.state === 'idle' && !w.attacking && w.unitType !== 'farmer' && w.unitType !== 'catapult') {
+            if (w.state === 'idle' && !w.attacking && w.unitType !== 'farmer' && w.unitType !== 'catapult' && w.unitType !== 'trebuchet') {
               const HP_RANGE = 1.8;
               const nearGruntH = enemyGruntsRef.current.find(g => g.hp > 0 && tileDist(w.x, w.y, g.x, g.y) <= HP_RANGE);
               if (nearGruntH) return { ...w, attacking: { targetType: 'grunt' as const, gruntId: nearGruntH.id }, state: 'attacking' as const };
@@ -1568,7 +1576,7 @@ const RTSMap: React.FC = () => {
               });
             }
             const sprintMult = w.sprinting ? CAVALRY_SPRINT_SPEED_MULT : 1;
-            const moveSpeed = (w.unitType === 'catapult' ? CATAPULT_SPEED : w.unitType === 'cavalry' ? CAVALRY_SPEED : WORKER_SPEED) * sprintMult;
+            const moveSpeed = (w.unitType === 'catapult' ? CATAPULT_SPEED : w.unitType === 'trebuchet' ? TREBUCHET_SPEED : w.unitType === 'cavalry' ? CAVALRY_SPEED : WORKER_SPEED) * sprintMult;
             return { ...w, x: w.x + (dx / d) * Math.min(moveSpeed * dt, d), y: w.y + (dy / d) * Math.min(moveSpeed * dt, d) };
           }
 
@@ -1956,6 +1964,29 @@ const RTSMap: React.FC = () => {
                   return g;
                 }));
               }, CATAPULT_FIRE_MS);
+            }
+          }
+
+          // Trebuchet auto-fire: idle trebuchet fires at enemy barn or enemy towers in range (min range enforced)
+          if (w.unitType === 'trebuchet' && w.state === 'idle' && !attackT[w.id]) {
+            const barnDist = tileDist(w.x, w.y, ENEMY_BARN_POS.x, ENEMY_BARN_POS.y);
+            const barnAlive = enemyBarnHpRef.current > 0;
+            const towerTarget = enemyTowersRef.current.find(t => t.hp > 0 && tileDist(w.x, w.y, t.x, t.y) <= TREBUCHET_RANGE && tileDist(w.x, w.y, t.x, t.y) >= TREBUCHET_MIN_RANGE);
+            const shootBarn = barnAlive && barnDist <= TREBUCHET_RANGE && barnDist >= TREBUCHET_MIN_RANGE;
+            if (shootBarn || towerTarget) {
+              const capturedWX = Math.round(w.x), capturedWY = Math.round(w.y);
+              const targetPos = towerTarget ? { x: towerTarget.x, y: towerTarget.y, isTower: true, towerId: towerTarget.id } : { x: ENEMY_BARN_POS.x, y: ENEMY_BARN_POS.y, isTower: false, towerId: -1 };
+              attackT[w.id] = window.setTimeout(() => {
+                delete attackTimeoutsRef.current[w.id];
+                addFloatingText(capturedWX, capturedWY, '🪨 FIRE!', '#b45309');
+                if (targetPos.isTower) {
+                  addFloatingText(targetPos.x, targetPos.y, `-${TREBUCHET_DAMAGE}`, '#b45309');
+                  setEnemyTowers(ts => ts.map(t => t.id === targetPos.towerId ? { ...t, hp: Math.max(0, t.hp - TREBUCHET_DAMAGE) } : t));
+                } else {
+                  addFloatingText(ENEMY_BARN_POS.x, ENEMY_BARN_POS.y, `-${TREBUCHET_DAMAGE}`, '#b45309');
+                  setEnemyBarnHp(hp => { const nHp = Math.max(0, hp - TREBUCHET_DAMAGE); if (nHp <= 0) setGameOver('victory'); return nHp; });
+                }
+              }, TREBUCHET_FIRE_MS);
             }
           }
 
@@ -2533,6 +2564,18 @@ const RTSMap: React.FC = () => {
         }
         return [...ws, makeUnit(newId, BARN_POS.x, BARN_POS.y, 'catapult')];
       });
+    } else if (action === 'trainTrebuchet') {
+      if (resources.gold < 200 || resources.lumber < 80 || resources.stone < 60 || resources.food >= resources.foodCap) return;
+      setResources(r => ({ ...r, gold: r.gold - 200, lumber: r.lumber - 80, stone: r.stone - 60, food: r.food + 1 }));
+      setWorkers(ws => {
+        const newId = Math.max(...ws.map(w => w.id), 0) + 1;
+        const rp = rallyPoint;
+        if (rp) {
+          const path = aStar(INITIAL_TILES, BARN_POS, rp);
+          return [...ws, { ...makeUnit(newId, BARN_POS.x, BARN_POS.y, 'trebuchet'), movingTo: path[0] ?? rp, path: path.slice(1), state: 'moving' as const }];
+        }
+        return [...ws, makeUnit(newId, BARN_POS.x, BARN_POS.y, 'trebuchet')];
+      });
     } else if (action === 'trade:lumberToGold') {
       if (resources.lumber < 50) return;
       setResources(r => ({ ...r, lumber: r.lumber - 50, gold: r.gold + 30 }));
@@ -2541,6 +2584,10 @@ const RTSMap: React.FC = () => {
       if (resources.stone < 30) return;
       setResources(r => ({ ...r, stone: r.stone - 30, gold: r.gold + 20 }));
       addFloatingText(BARN_POS.x, BARN_POS.y, '+20🪙', '#fbbf24');
+    } else if (action === 'trade:stoneToLumber') {
+      if (resources.stone < 40) return;
+      setResources(r => ({ ...r, stone: r.stone - 40, lumber: r.lumber + 25 }));
+      addFloatingText(BARN_POS.x, BARN_POS.y, '+25🌲', '#4ade80');
     } else if (action === 'blacksmith:steelEdge') {
       const level = blacksmithUpgrades.steelEdge;
       if (level >= 2) return;
@@ -2599,7 +2646,7 @@ const RTSMap: React.FC = () => {
     if (!anySelected) return;
     const target = { x: bx, y: by };
     setWorkers(ws => ws.map(w => {
-      if (!w.selected || w.unitType === 'catapult') return w;
+      if (!w.selected || w.unitType === 'catapult' || w.unitType === 'trebuchet') return w;
       const start = { x: Math.round(w.x), y: Math.round(w.y) };
       const path = aStar(INITIAL_TILES, start, target);
       return { ...w, movingTo: path[0] ?? target, path: path.slice(1), gathering: null, attacking: null, repairing: { buildingId }, patrol: null, state: 'moving' as const };
@@ -2874,7 +2921,7 @@ const RTSMap: React.FC = () => {
                     if (attackMoveModeRef.current) {
                       const dest = { x: i, y: j };
                       setWorkers(ws => ws.map(w => {
-                        if (!w.selected || w.unitType === 'farmer' || w.unitType === 'catapult') return w;
+                        if (!w.selected || w.unitType === 'farmer' || w.unitType === 'catapult' || w.unitType === 'trebuchet') return w;
                         const a = { x: Math.round(w.x), y: Math.round(w.y) };
                         const p = aStar(INITIAL_TILES, a, dest);
                         return { ...w, attackMove: true, attackMoveTarget: dest, movingTo: p[0] ?? dest, path: p.slice(1), gathering: null, attacking: null, repairing: null, patrol: null, state: 'moving' };
@@ -3336,7 +3383,7 @@ const RTSMap: React.FC = () => {
               onClick={e => { e.stopPropagation(); if (!isDraggingRef.current && !buildMode) { setSelectedType('worker'); setWorkers(ws => ws.map(w => ({ ...w, selected: w.id === worker.id }))); } }}
               style={{ cursor: 'pointer' }}>
               {hasMoraleAura && <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 32} rx={26} ry={12} fill="none" stroke="#fbbf24" strokeWidth={1.5} strokeDasharray="3 2" opacity={0.6} />}
-              {worker.selected && <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 32} rx={worker.unitType === 'hero' ? 26 : worker.unitType === 'catapult' ? 28 : 22} ry={10} fill="none" stroke={worker.unitType === 'hero' ? '#fbbf24' : worker.unitType === 'catapult' ? '#ea580c' : worker.unitType === 'swordsman' ? '#f87171' : '#38bdf8'} strokeWidth={3} />}
+              {worker.selected && <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 32} rx={worker.unitType === 'hero' ? 26 : worker.unitType === 'catapult' || worker.unitType === 'trebuchet' ? 28 : 22} ry={10} fill="none" stroke={worker.unitType === 'hero' ? '#fbbf24' : worker.unitType === 'catapult' ? '#ea580c' : worker.unitType === 'trebuchet' ? '#92400e' : worker.unitType === 'swordsman' ? '#f87171' : '#38bdf8'} strokeWidth={3} />}
               {worker.holdPosition && <text x={isoX + TILE_SIZE / 2 + 14} y={isoY - 2} textAnchor="middle" fontSize="12">🛡️</text>}
               {worker.unitType === 'cavalry' ? (
                 <g>
@@ -3364,6 +3411,21 @@ const RTSMap: React.FC = () => {
                   <line x1={isoX + TILE_SIZE / 2} y1={isoY + 14} x2={isoX + TILE_SIZE / 2 - 6} y2={isoY - 8} stroke="#a16207" strokeWidth={3} strokeLinecap="round" />
                   {/* Boulder */}
                   <circle cx={isoX + TILE_SIZE / 2 - 8} cy={isoY - 12} r={5} fill="#6b7280" stroke="#374151" strokeWidth={1.5} />
+                </g>
+              ) : worker.unitType === 'trebuchet' ? (
+                <g>
+                  {/* Trebuchet base — wider than catapult */}
+                  <rect x={isoX + TILE_SIZE / 2 - 26} y={isoY + 10} width={52} height={14} fill="#44231a" stroke="#6b3d2e" strokeWidth={2} rx={2} />
+                  {/* Larger wheels */}
+                  <circle cx={isoX + TILE_SIZE / 2 - 18} cy={isoY + 28} r={9} fill="#1c1917" stroke="#6b3d2e" strokeWidth={2} />
+                  <circle cx={isoX + TILE_SIZE / 2 + 18} cy={isoY + 28} r={9} fill="#1c1917" stroke="#6b3d2e" strokeWidth={2} />
+                  {/* Counterweight housing */}
+                  <rect x={isoX + TILE_SIZE / 2 - 6} y={isoY + 2} width={12} height={10} fill="#92400e" stroke="#78350f" strokeWidth={1.5} rx={1} />
+                  {/* Long arm */}
+                  <line x1={isoX + TILE_SIZE / 2} y1={isoY + 6} x2={isoX + TILE_SIZE / 2 + 14} y2={isoY - 18} stroke="#92400e" strokeWidth={4} strokeLinecap="round" />
+                  {/* Sling + projectile */}
+                  <circle cx={isoX + TILE_SIZE / 2 + 18} cy={isoY - 22} r={6} fill="#9ca3af" stroke="#374151" strokeWidth={1.5} />
+                  <text x={isoX + TILE_SIZE / 2} y={isoY + 44} textAnchor="middle" fontSize="7" fill="#fde68a" fontWeight="bold">TREBUCHET</text>
                 </g>
               ) : (
                 <>

@@ -29,7 +29,7 @@ export interface WorkerState {
   maxHp: number;
   patrol: { a: { x: number; y: number }; b: { x: number; y: number }; heading: 'a' | 'b' } | null;
   holdPosition: boolean;
-  unitType: 'farmer' | 'swordsman' | 'hero' | 'catapult' | 'cavalry';
+  unitType: 'farmer' | 'swordsman' | 'hero' | 'catapult' | 'cavalry' | 'trebuchet';
   xp: number;
   level: number;
 }
@@ -226,7 +226,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
           {selectedType === 'worker' && firstWorker ? (
             <>
               <div className="mt-1 text-sm font-semibold">
-                {firstWorker.unitType === 'hero' ? '🦸 Barnabas' : firstWorker.unitType === 'catapult' ? '🪨 Catapult' : !allSameType ? '⚔️/🌾 Mixed' : firstWorker.unitType === 'cavalry' ? '🐴 Cavalry' : allSwordsmen ? '⚔️ Swordsman' : 'Farmer'}{selectedCount > 1 && firstWorker.unitType !== 'hero' ? ` ×${selectedCount}` : ''}
+                {firstWorker.unitType === 'hero' ? '🦸 Barnabas' : firstWorker.unitType === 'catapult' ? '🪨 Catapult' : firstWorker.unitType === 'trebuchet' ? '🏰 Trebuchet' : !allSameType ? '⚔️/🌾 Mixed' : firstWorker.unitType === 'cavalry' ? '🐴 Cavalry' : allSwordsmen ? '⚔️ Swordsman' : 'Farmer'}{selectedCount > 1 && firstWorker.unitType !== 'hero' ? ` ×${selectedCount}` : ''}
                 {firstWorker.group !== null && selectedCount === 1 && (
                   <span className="ml-2 rounded bg-amber-900/60 px-1.5 text-xs text-amber-300">G{firstWorker.group}</span>
                 )}
@@ -486,6 +486,15 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                       >
                         🏪 Sell 30🪨 → 20🪙
                       </button>
+                      <button
+                        type="button"
+                        className="col-span-2 rounded border border-green-600/70 bg-green-900/20 px-2 py-2 text-xs text-green-100 hover:bg-green-900/40 disabled:opacity-40"
+                        onClick={() => onFarmhouseAction('trade:stoneToLumber')}
+                        disabled={resources.stone < 40}
+                        title="Convert 40🪨 stone to 25🌲 lumber at the Market"
+                      >
+                        🏪 Convert 40🪨 → 25🌲
+                      </button>
                     </>
                   )}
                   {hasBlacksmith && (
@@ -567,9 +576,20 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                       className="col-span-2 rounded border border-orange-500/70 bg-orange-500/15 px-2 py-2 text-xs text-orange-100 hover:bg-orange-500/30 disabled:opacity-40"
                       onClick={() => onFarmhouseAction('trainCatapult')}
                       disabled={resources.gold < 150 || resources.lumber < 80 || resources.food >= resources.foodCap}
-                      title="Train Catapult — 150🪙 80🌲, 60HP, AoE splash damage, slow"
+                      title="Train Catapult — 150🪙 80🌲, 60HP, AoE splash vs grunts, 6-tile range"
                     >
                       🪨 Train Catapult 150🪙
+                    </button>
+                  )}
+                  {hasSiegeWorkshop && (
+                    <button
+                      type="button"
+                      className="col-span-2 rounded border border-yellow-700/70 bg-yellow-900/20 px-2 py-2 text-xs text-yellow-100 hover:bg-yellow-900/40 disabled:opacity-40"
+                      onClick={() => onFarmhouseAction('trainTrebuchet')}
+                      disabled={resources.gold < 200 || resources.lumber < 80 || resources.stone < 60 || resources.food >= resources.foodCap}
+                      title="Train Trebuchet — 200🪙 80🌲 60🪨, 45HP, auto-fires at enemy barn &amp; towers from 9-tile range, min 2.5-tile range"
+                    >
+                      🏰 Train Trebuchet 200🪙
                     </button>
                   )}
                   {hasWatchtower && (
