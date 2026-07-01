@@ -8,7 +8,7 @@ export interface WorkerState {
   movingTo: null | { x: number; y: number };
   path: { x: number; y: number }[];
   gathering: null | { type: 'tree' | 'gold' | 'stone'; idx: number };
-  attacking: null | { targetType: 'enemyBarn' } | { targetType: 'grunt'; gruntId: number } | { targetType: 'creep'; creepId: number };
+  attacking: null | { targetType: 'enemyBarn' } | { targetType: 'grunt'; gruntId: number } | { targetType: 'creep'; creepId: number } | { targetType: 'enemyTower'; towerId: number };
   carrying: { gold: number; lumber: number; stone: number };
   state: 'idle' | 'moving' | 'gathering' | 'returning' | 'attacking';
   group: number | null;
@@ -104,6 +104,7 @@ interface RTSUIProps {
     goldNodes: { x: number; y: number }[];
     stoneNodes: { x: number; y: number }[];
     treeNodes: { x: number; y: number }[];
+    enemyTowers: { x: number; y: number }[];
   };
 }
 
@@ -524,6 +525,10 @@ export const RTSUI: React.FC<RTSUIProps> = ({
             <rect x={4 - 0.7} y={4 - 0.7} width={1.4} height={1.4} fill="#fbbf24" rx={0.2} />
             {/* Enemy barn */}
             {minimapData.enemyBarnAlive && <rect x={10 - 0.7} y={10 - 0.7} width={1.4} height={1.4} fill="#ef4444" rx={0.2} />}
+            {/* Enemy fortress towers */}
+            {minimapData.enemyTowers.map((t, i) => (
+              <rect key={`et${i}`} x={t.x - 0.45} y={t.y - 0.45} width={0.9} height={0.9} fill="#dc2626" opacity={0.9} rx={0.1} />
+            ))}
             {/* Workers */}
             {minimapData.workers.map((w, i) => (
               <circle key={i} cx={w.x} cy={w.y} r={0.55} fill={w.selected ? '#38bdf8' : '#4ade80'} />

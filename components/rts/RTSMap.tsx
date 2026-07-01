@@ -55,6 +55,12 @@ const VETERAN_ATK_BONUS = 5;
 const ARCHER_TOWER_POS = { x: 8, y: 9 };
 const ARCHER_TOWER_RANGE = 4;
 const ARCHER_TOWER_DAMAGE = 10;
+const ENEMY_TOWER_SPAWN_WAVES = [5, 10, 15] as const;
+const ENEMY_TOWER_POSITIONS = [{ x: 9, y: 7 }, { x: 7, y: 11 }, { x: 11, y: 8 }];
+const ENEMY_TOWER_MAX_HP = 60;
+const ENEMY_TOWER_DAMAGE = 9;
+const ENEMY_TOWER_RANGE = 4.5;
+const ENEMY_TOWER_ATTACK_MS = 2500;
 const ARCHER_TOWER_ATTACK_MS = 2500;
 
 interface FloatingText { id: number; x: number; y: number; text: string; color: string; createdAt: number }
@@ -74,6 +80,14 @@ interface EnemyGrunt {
   movingTo: { x: number; y: number } | null;
   path: { x: number; y: number }[];
   state: 'moving' | 'attacking';
+}
+
+interface EnemyTower {
+  id: number;
+  x: number;
+  y: number;
+  hp: number;
+  maxHp: number;
 }
 
 interface NeutralCreep {
@@ -343,6 +357,10 @@ const RTSMap: React.FC = () => {
 
   const [wave, setWave] = useState(() => INITIAL_SAVE?.wave ?? 0);
   const waveRef = useRef(INITIAL_SAVE?.wave ?? 0);
+  const [enemyTowers, setEnemyTowers] = useState<EnemyTower[]>([]);
+  const enemyTowersRef = useRef<EnemyTower[]>([]);
+  useEffect(() => { enemyTowersRef.current = enemyTowers; }, [enemyTowers]);
+  const enemyTowerTimersRef = useRef<Record<number, number>>({});
   const [waveAnnouncement, setWaveAnnouncement] = useState<string | null>(null);
   const gameOverRef = useRef<'victory' | 'defeat' | null>(null);
   const spawnTimerRef = useRef<number | null>(null);
@@ -517,7 +535,15 @@ const RTSMap: React.FC = () => {
     const newWave = waveRef.current + 1;
     waveRef.current = newWave;
     setWave(newWave);
-    setWaveAnnouncement(`⚔️ Wave ${newWave}${newWave % 3 === 0 ? ' — DOUBLE ASSAULT!' : '!'}`);
+    const towerIdx = ENEMY_TOWER_SPAWN_WAVES.indexOf(newWave as typeof ENEMY_TOWER_SPAWN_WAVES[number]);
+    if (towerIdx >= 0) {
+      const pos = ENEMY_TOWER_POSITIONS[towerIdx];
+      if (!pos) return;
+      setEnemyTowers(ts => [...ts, { id: newWave, x: pos.x, y: pos.y, hp: ENEMY_TOWER_MAX_HP, maxHp: ENEMY_TOWER_MAX_HP }]);
+      setWaveAnnouncement(`⚔️ Wave ${newWave} — ENEMY TOWER BUILT!`);
+    } else {
+      setWaveAnnouncement(`⚔️ Wave ${newWave}${newWave % 3 === 0 ? ' — DOUBLE ASSAULT!' : '!'}`);
+    }
     window.setTimeout(() => setWaveAnnouncement(null), 2500);
 
     const gruntHp = GRUNT_MAX_HP + (newWave - 1) * 10;
@@ -561,6 +587,28 @@ const RTSMap: React.FC = () => {
     archerTowerTimerRef.current = window.setTimeout(fireArrow, ARCHER_TOWER_ATTACK_MS);
     return () => { if (archerTowerTimerRef.current) { clearTimeout(archerTowerTimerRef.current); archerTowerTimerRef.current = null; } };
   }, [gameOver, addFloatingText]);
+
+  // Enemy fortress towers fire at workers in range
+  useEffect(() => {
+    if (gameOver || enemyTowers.length === 0) return;
+    const scheduleShot = (towerId: number, tx: number, ty: number) => {
+      enemyTowerTimersRef.current[towerId] = window.setTimeout(() => {
+        delete enemyTowerTimersRef.current[towerId];
+        if (gameOverRef.current) return;
+        if (!enemyTowersRef.current.find(t => t.id === towerId && t.hp > 0)) return;
+        const dmg = Math.max(1, ENEMY_TOWER_DAMAGE - blacksmithUpgradesRef.current.ironHide * 2);
+        const inRange = workersRef.current.filter(w => w.hp > 0 && tileDist(w.x, w.y, tx, ty) <= ENEMY_TOWER_RANGE);
+        if (inRange.length > 0) {
+          const target = inRange.reduce((a, b) => tileDist(a.x, a.y, tx, ty) < tileDist(b.x, b.y, tx, ty) ? a : b);
+          setWorkers(prev => prev.map(w => w.id === target.id ? { ...w, hp: Math.max(0, w.hp - dmg) } : w));
+          addFloatingText(Math.round(target.x), Math.round(target.y), `🏹-${dmg}`, '#dc2626');
+        }
+        scheduleShot(towerId, tx, ty);
+      }, ENEMY_TOWER_ATTACK_MS);
+    };
+    enemyTowers.filter(t => t.hp > 0).forEach(t => { if (!enemyTowerTimersRef.current[t.id]) scheduleShot(t.id, t.x, t.y); });
+    return () => { Object.values(enemyTowerTimersRef.current).forEach(clearTimeout); enemyTowerTimersRef.current = {}; };
+  }, [enemyTowers, gameOver, addFloatingText]);
 
   // Player watchtowers fire arrows at enemy grunts in range
   useEffect(() => {
@@ -1061,6 +1109,27 @@ const RTSMap: React.FC = () => {
                   });
                 }, ATTACK_INTERVAL_MS);
               }
+            } else if (w.attacking.targetType === 'enemyTower') {
+              const towerId = (w.attacking as { targetType: 'enemyTower'; towerId: number }).towerId;
+              const towerTarget = enemyTowersRef.current.find(t => t.id === towerId && t.hp > 0);
+              if (!towerTarget) return { ...w, attacking: null, state: 'idle' };
+              const distToTower = tileDist(w.x, w.y, towerTarget.x, towerTarget.y);
+              if (distToTower > 1.8) {
+                const p = aStar(INITIAL_TILES, { x: Math.round(w.x), y: Math.round(w.y) }, { x: Math.max(0, towerTarget.x - 1), y: towerTarget.y });
+                return { ...w, movingTo: p[0] ?? { x: towerTarget.x - 1, y: towerTarget.y }, path: p.slice(1), state: 'moving' };
+              }
+              if (!attackT[w.id]) {
+                const capturedTX = towerTarget.x, capturedTY = towerTarget.y;
+                const capturedTId = towerId;
+                const unitBonusT = w.unitType === 'hero' ? HERO_DAMAGE_BONUS : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
+                const capturedVetT = w.level;
+                attackT[w.id] = window.setTimeout(() => {
+                  delete attackTimeoutsRef.current[w.id];
+                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + unitBonusT + capturedVetT * VETERAN_ATK_BONUS;
+                  setEnemyTowers(ts => ts.map(t => t.id === capturedTId ? { ...t, hp: Math.max(0, t.hp - dmg) } : t));
+                  addFloatingText(capturedTX, capturedTY, `-${dmg}`, '#ef4444');
+                }, ATTACK_INTERVAL_MS);
+              }
             } else {
               if (!attackT[w.id]) {
                 const capturedWX = Math.round(w.x), capturedWY = Math.round(w.y);
@@ -1455,6 +1524,13 @@ const RTSMap: React.FC = () => {
     commandMove(adjTile.x, adjTile.y, null, { targetType: 'enemyBarn' });
   };
 
+  const handleAttackEnemyTower = (towerId: number, tx: number, ty: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!anySelected) return;
+    const adj = { x: Math.max(0, tx - 1), y: ty };
+    commandMove(adj.x, adj.y, null, { targetType: 'enemyTower', towerId });
+  };
+
   const handleAttackGrunt = useCallback((gruntId: number, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -1492,10 +1568,11 @@ const RTSMap: React.FC = () => {
     enemyBarnAlive: enemyBarnHp > 0,
     buildings: placedBuildings.map(b => ({ x: b.x, y: b.y, type: b.type })),
     creepCamps: CREEP_CAMPS.map(c => ({ x: c.x, y: c.y, cleared: clearedCamps.has(c.id) })),
+    enemyTowers: enemyTowers.filter(t => t.hp > 0).map(t => ({ x: t.x, y: t.y })),
     goldNodes: goldMine.amount > 0 ? [{ x: goldMine.x, y: goldMine.y }] : [],
     stoneNodes: stoneNodes.filter(n => n.amount > 0).map(n => ({ x: n.x, y: n.y })),
     treeNodes: trees.filter(t => t.amount > 0).map(t => ({ x: t.x, y: t.y })),
-  }), [workers, enemyGrunts, enemyBarnHp, placedBuildings, clearedCamps, goldMine, stoneNodes, trees]);
+  }), [workers, enemyGrunts, enemyBarnHp, placedBuildings, clearedCamps, goldMine, stoneNodes, trees, enemyTowers]);
 
   return (
     <div className="absolute inset-0 bg-black" onContextMenu={e => { if (buildMode) { e.preventDefault(); setBuildMode(null); setGhostTile(null); } }}>
@@ -1807,6 +1884,24 @@ const RTSMap: React.FC = () => {
               </g>
             );
           })()}
+
+          {/* Enemy fortress towers (wave 5/10/15) */}
+          {enemyTowers.filter(t => t.hp > 0).map(t => {
+            const { isoX, isoY } = tileToSvg(t.x, t.y);
+            const hpPct = t.hp / t.maxHp;
+            return (
+              <g key={`etower-${t.id}`} style={{ cursor: 'crosshair' }} onContextMenu={e => handleAttackEnemyTower(t.id, t.x, t.y, e)}>
+                <rect x={isoX + TILE_SIZE / 4} y={isoY} width={TILE_SIZE / 2} height={TILE_SIZE * 0.8} fill="#7f1d1d" stroke="#dc2626" strokeWidth={3} rx={4} />
+                <rect x={isoX + TILE_SIZE / 4 - 6} y={isoY - 8} width={TILE_SIZE / 2 + 12} height={16} fill="#991b1b" stroke="#ef4444" strokeWidth={2} rx={3} />
+                <rect x={isoX + TILE_SIZE / 4 + 2} y={isoY - 20} width={8} height={14} fill="#b91c1c" stroke="#ef4444" strokeWidth={1.5} />
+                <rect x={isoX + TILE_SIZE / 2 + 2} y={isoY - 20} width={8} height={14} fill="#b91c1c" stroke="#ef4444" strokeWidth={1.5} />
+                <text x={isoX + TILE_SIZE / 2} y={isoY + 38} textAnchor="middle" fontSize="16">🏹</text>
+                <text x={isoX + TILE_SIZE / 2} y={isoY - 26} textAnchor="middle" fontSize="8" fill="#fca5a5" fontWeight="bold">TOWER</text>
+                <rect x={isoX + TILE_SIZE / 4} y={isoY - 38} width={TILE_SIZE / 2} height={5} fill="#1e293b" rx={2} />
+                <rect x={isoX + TILE_SIZE / 4} y={isoY - 38} width={(TILE_SIZE / 2) * hpPct} height={5} fill="#ef4444" rx={2} />
+              </g>
+            );
+          })}
 
           {/* Rally point flag */}
           {rallyPoint && fogVisible[rallyPoint.x]?.[rallyPoint.y] && (() => {
