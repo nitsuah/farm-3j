@@ -289,7 +289,7 @@ function clearSave(): void {
 
 function makeUnit(id: number, x: number, y: number, unitType: 'farmer' | 'swordsman' | 'hero' | 'catapult' | 'cavalry'): WorkerState {
   const maxHp = unitType === 'hero' ? HERO_MAX_HP : unitType === 'swordsman' ? SWORDSMAN_MAX_HP : unitType === 'catapult' ? CATAPULT_MAX_HP : unitType === 'cavalry' ? CAVALRY_MAX_HP : WORKER_MAX_HP;
-  return { id, x, y, selected: false, movingTo: null, path: [], gathering: null, attacking: null, carrying: { gold: 0, lumber: 0, stone: 0 }, state: 'idle', group: null, hp: maxHp, maxHp, patrol: null, unitType, xp: 0, level: 0 };
+  return { id, x, y, selected: false, movingTo: null, path: [], gathering: null, attacking: null, repairing: null, carrying: { gold: 0, lumber: 0, stone: 0 }, state: 'idle', group: null, hp: maxHp, maxHp, patrol: null, unitType, xp: 0, level: 0 };
 }
 // ---------------------------------
 
@@ -524,8 +524,9 @@ const RTSMap: React.FC = () => {
   const repairTimeoutsRef = useRef<Record<number, number>>({});
   const archerTowerTimerRef = useRef<number | null>(null);
   const watchtowerTimersRef = useRef<Record<number, number>>({});
-  const trapTriggeredRef = useRef<Record<number, number>>({}); // buildingId → trigger timestamp
-  const buildingAttackTimeoutsRef = useRef<Record<number, number>>({}); // gruntId → timeout for building attacks
+  const trapTriggeredRef = useRef<Record<number, number>>({});
+  const buildingAttackTimeoutsRef = useRef<Record<number, number>>({});
+  const buildingRepairTimeoutsRef = useRef<Record<number, number>>({});
   const animationRef = useRef<number | null>(null);
   const prevTimeRef = useRef<number | null>(null);
 
@@ -793,7 +794,7 @@ const RTSMap: React.FC = () => {
       const toGarrison = ws.filter(w => w.selected).slice(0, slots);
       if (toGarrison.length === 0) return ws;
       const ids = new Set(toGarrison.map(w => w.id));
-      setGarrisoned(g => [...g, ...toGarrison.map(w => ({ ...w, selected: false, state: 'idle' as const, movingTo: null, path: [], gathering: null, attacking: null, patrol: null }))]);
+      setGarrisoned(g => [...g, ...toGarrison.map(w => ({ ...w, selected: false, state: 'idle' as const, movingTo: null, path: [], gathering: null, attacking: null, repairing: null, patrol: null }))]);
       setResources(r => ({ ...r, food: r.food - toGarrison.length }));
       return ws.filter(w => !ids.has(w.id));
     });
@@ -886,7 +887,7 @@ const RTSMap: React.FC = () => {
         const startTile = { x: Math.round(w.x), y: Math.round(w.y) };
         const rawPath = aStar(INITIAL_TILES, startTile, dest);
         const first = rawPath[0] ?? dest;
-        return { ...w, movingTo: first, path: rawPath.slice(1), gathering: gathering ?? null, attacking: attacking ?? null, patrol: null, state: 'moving' };
+        return { ...w, movingTo: first, path: rawPath.slice(1), gathering: gathering ?? null, attacking: attacking ?? null, repairing: null, patrol: null, state: 'moving' };
       });
     });
   }, []);
@@ -983,7 +984,7 @@ const RTSMap: React.FC = () => {
       if (e.key === 'r' || e.key === 'R') { e.preventDefault(); handleFarmhouseAction('trainCavalry'); }
       if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault();
-        setWorkers(ws => ws.map(w => w.selected ? { ...w, movingTo: null, path: [], gathering: null, attacking: null, patrol: null, state: 'idle' as const } : w));
+        setWorkers(ws => ws.map(w => w.selected ? { ...w, movingTo: null, path: [], gathering: null, attacking: null, repairing: null, patrol: null, state: 'idle' as const } : w));
       }
       if (e.key === 'g' || e.key === 'G') { e.preventDefault(); handleGarrison(); }
     };
@@ -1054,6 +1055,7 @@ const RTSMap: React.FC = () => {
               // Arrived at final destination
               if (w.gathering && w.state !== 'returning') return { ...w, x: w.movingTo.x, y: w.movingTo.y, movingTo: null, path: [], state: 'gathering' };
               if (w.attacking && w.state !== 'returning') return { ...w, x: w.movingTo.x, y: w.movingTo.y, movingTo: null, path: [], state: 'attacking' };
+              if (w.repairing && w.state !== 'returning') return { ...w, x: w.movingTo.x, y: w.movingTo.y, movingTo: null, path: [], state: 'repairing' };
               if (w.state === 'returning') {
                 const atBarn = tileDist(w.movingTo.x, w.movingTo.y, BARN_POS.x, BARN_POS.y) < epsilon;
                 if (atBarn) {
@@ -1342,6 +1344,32 @@ const RTSMap: React.FC = () => {
             }
           }
 
+          // Building repair: worker in 'repairing' state ticks HP up on the target building
+          if (w.state === 'repairing' && w.repairing) {
+            const bid = w.repairing.buildingId;
+            if (!buildingRepairTimeoutsRef.current[w.id]) {
+              const capturedWId = w.id;
+              buildingRepairTimeoutsRef.current[capturedWId] = window.setTimeout(() => {
+                delete buildingRepairTimeoutsRef.current[capturedWId];
+                let stillDamaged = false;
+                setPlacedBuildings(bs => bs.map(b => {
+                  if (b.id !== bid) return b;
+                  const newHp = Math.min(b.maxHp, b.hp + 5);
+                  stillDamaged = newHp < b.maxHp;
+                  addFloatingText(b.x, b.y, '+5🔧', '#34d399');
+                  return { ...b, hp: newHp };
+                }));
+                // If building is fully repaired, go idle
+                if (!stillDamaged) {
+                  setWorkers(ws2 => ws2.map(w2 => w2.id === capturedWId ? { ...w2, repairing: null, state: 'idle' as const } : w2));
+                }
+              }, REPAIR_INTERVAL_MS);
+            }
+          } else if (buildingRepairTimeoutsRef.current[w.id] && w.state !== 'repairing') {
+            clearTimeout(buildingRepairTimeoutsRef.current[w.id]);
+            delete buildingRepairTimeoutsRef.current[w.id];
+          }
+
           // Auto-repair: idle workers near barn slowly regenerate HP
           if (w.state === 'idle' && w.hp < w.maxHp && tileDist(w.x, w.y, BARN_POS.x, BARN_POS.y) <= REPAIR_RADIUS) {
             if (!repairTimeoutsRef.current[w.id]) {
@@ -1535,11 +1563,13 @@ const RTSMap: React.FC = () => {
       Object.values(gruntAttackTimeoutsRef.current).forEach(clearTimeout);
       Object.values(repairTimeoutsRef.current).forEach(clearTimeout);
       Object.values(creepAttackTimeoutsRef.current).forEach(clearTimeout);
+      Object.values(buildingRepairTimeoutsRef.current).forEach(clearTimeout);
       gatherTimeoutsRef.current = {};
       attackTimeoutsRef.current = {};
       gruntAttackTimeoutsRef.current = {};
       repairTimeoutsRef.current = {};
       creepAttackTimeoutsRef.current = {};
+      buildingRepairTimeoutsRef.current = {};
     };
   }, []);
 
@@ -1670,7 +1700,7 @@ const RTSMap: React.FC = () => {
       gatherTimeoutsRef.current = {};
       attackTimeoutsRef.current = {};
       setPatrolMode(false);
-      setWorkers(ws => ws.map(w => w.selected ? { ...w, movingTo: null, path: [], gathering: null, attacking: null, patrol: null, state: 'idle' } : w));
+      setWorkers(ws => ws.map(w => w.selected ? { ...w, movingTo: null, path: [], gathering: null, attacking: null, repairing: null, patrol: null, state: 'idle' } : w));
     }
   };
 
@@ -1687,6 +1717,19 @@ const RTSMap: React.FC = () => {
       setWorkers(ws => ws.map(w => ({ ...w, maxHp: w.maxHp + hpBonus, hp: Math.min(w.hp + hpBonus, w.maxHp + hpBonus) })));
     }
   };
+
+  const handleRepairBuilding = useCallback((buildingId: number, bx: number, by: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!anySelected) return;
+    const target = { x: bx, y: by };
+    setWorkers(ws => ws.map(w => {
+      if (!w.selected || w.unitType === 'catapult') return w;
+      const start = { x: Math.round(w.x), y: Math.round(w.y) };
+      const path = aStar(INITIAL_TILES, start, target);
+      return { ...w, movingTo: path[0] ?? target, path: path.slice(1), gathering: null, attacking: null, repairing: { buildingId }, patrol: null, state: 'moving' as const };
+    }));
+  }, [anySelected]);
 
   const handleAttackEnemyBarn = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -2048,9 +2091,12 @@ const RTSMap: React.FC = () => {
             }
             const colors: Record<string, { fill: string; stroke: string }> = { farmhouse: { fill: '#fef3c7', stroke: '#92400e' }, lumberShed: { fill: '#a16207', stroke: '#78350f' }, watchtower: { fill: '#64748b', stroke: '#1e293b' } };
             const c = colors[b.type] ?? { fill: '#374151', stroke: '#1f2937' };
-            return <g key={`building-${b.id}`}>
-              <rect x={isoX + TILE_SIZE / 4} y={isoY} width={TILE_SIZE * 1.5} height={TILE_SIZE * 0.8} fill={c.fill} stroke={c.stroke} strokeWidth={3} rx={8} />
+            const isDamaged = b.hp < b.maxHp;
+            return <g key={`building-${b.id}`} style={{ cursor: isDamaged && anySelected ? 'pointer' : 'default' }}
+              onContextMenu={isDamaged && anySelected ? e => handleRepairBuilding(b.id, b.x, b.y, e) : undefined}>
+              <rect x={isoX + TILE_SIZE / 4} y={isoY} width={TILE_SIZE * 1.5} height={TILE_SIZE * 0.8} fill={c.fill} stroke={isDamaged ? '#f97316' : c.stroke} strokeWidth={isDamaged ? 4 : 3} rx={8} />
               <text x={isoX + TILE_SIZE} y={isoY + TILE_SIZE / 2} textAnchor="middle" fontSize="22">{BUILDING_EMOJI[b.type]}</text>
+              {isDamaged && <text x={isoX + TILE_SIZE} y={isoY - 18} textAnchor="middle" fontSize="9" fill="#f97316" fontWeight="bold">🔧 REPAIR</text>}
             </g>; })}
 
           {/* Building HP bars — only shown when damaged */}

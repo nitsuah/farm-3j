@@ -9,8 +9,9 @@ export interface WorkerState {
   path: { x: number; y: number }[];
   gathering: null | { type: 'tree' | 'gold' | 'stone'; idx: number };
   attacking: null | { targetType: 'enemyBarn' } | { targetType: 'grunt'; gruntId: number } | { targetType: 'creep'; creepId: number } | { targetType: 'enemyTower'; towerId: number };
+  repairing: null | { buildingId: number };
   carrying: { gold: number; lumber: number; stone: number };
-  state: 'idle' | 'moving' | 'gathering' | 'returning' | 'attacking';
+  state: 'idle' | 'moving' | 'gathering' | 'returning' | 'attacking' | 'repairing';
   group: number | null;
   hp: number;
   maxHp: number;
@@ -174,6 +175,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
     if (w.state === 'gathering') return 'Gathering';
     if (w.state === 'returning') return 'Returning';
     if (w.state === 'attacking') return '⚔️ Attacking';
+    if (w.state === 'repairing') return '🔧 Repairing';
     return w.state;
   };
 
