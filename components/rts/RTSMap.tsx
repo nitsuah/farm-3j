@@ -82,6 +82,16 @@ const SHAMAN_HEAL_MS = 2000;
 const SHAMAN_FIRST_WAVE = 8;
 const SHAMAN_GOLD_REWARD = 15;
 const SHAMAN_XP_REWARD = 35;
+const TROLL_MAX_HP = 30;
+const TROLL_SPEED = 0.9;
+const TROLL_ATTACK_RANGE = 4.0;
+const TROLL_KITE_RANGE = 3.0;
+const TROLL_DAMAGE = 8;
+const TROLL_ATTACK_MS = 2500;
+const TROLL_FIRST_WAVE = 10;
+const TROLL_GOLD_REWARD = 12;
+const TROLL_XP_REWARD = 30;
+
 const LOOT_CRATE_POSITIONS = [
   { x: 2, y: 6 }, { x: 6, y: 2 }, { x: 3, y: 10 }, { x: 8, y: 4 }, { x: 1, y: 1 }, { x: 5, y: 7 },
 ];
@@ -144,6 +154,19 @@ interface EnemyShaman {
   movingTo: { x: number; y: number } | null;
   path: { x: number; y: number }[];
   state: 'moving' | 'healing';
+}
+
+interface EnemyTroll {
+  id: number;
+  x: number;
+  y: number;
+  hp: number;
+  maxHp: number;
+  movingTo: { x: number; y: number } | null;
+  path: { x: number; y: number }[];
+  state: 'moving' | 'attacking' | 'kiting';
+  targetType: 'worker' | 'building' | 'barn';
+  targetId: number | null;
 }
 
 interface NeutralCreep {
@@ -442,6 +465,11 @@ const RTSMap: React.FC = () => {
   useEffect(() => { enemyShamansRef.current = enemyShamans; }, [enemyShamans]);
   const shamanIdRef = useRef(2000);
   const shamanHealTimersRef = useRef<Record<number, number>>({});
+  const [enemyTrolls, setEnemyTrolls] = useState<EnemyTroll[]>([]);
+  const enemyTrollsRef = useRef<EnemyTroll[]>([]);
+  useEffect(() => { enemyTrollsRef.current = enemyTrolls; }, [enemyTrolls]);
+  const trollIdRef = useRef(3000);
+  const trollAttackTimersRef = useRef<Record<number, number>>({});
   const [lootCrates, setLootCrates] = useState<LootCrate[]>([]);
   const lootCratesRef = useRef<LootCrate[]>([]);
   useEffect(() => { lootCratesRef.current = lootCrates; }, [lootCrates]);
@@ -716,6 +744,16 @@ const RTSMap: React.FC = () => {
       const shaman: EnemyShaman = { id: shamanIdRef.current++, x: sx, y: sy, hp: SHAMAN_MAX_HP, maxHp: SHAMAN_MAX_HP, movingTo: shamanPath[0] ?? BARN_POS, path: shamanPath.slice(1), state: 'moving' };
       setEnemyShamans(ss => [...ss, shaman]);
       setWaveAnnouncement(`🧙 Wave ${newWave} — SHAMAN SPAWNS! Kill the healer!`);
+      window.setTimeout(() => setWaveAnnouncement(null), 3000);
+    }
+
+    // Troll spawn: wave 10+ every 5 waves
+    if (newWave >= TROLL_FIRST_WAVE && newWave % 5 === 0) {
+      const tx2 = Math.max(0, ENEMY_BARN_POS.x - 1);
+      const ty2 = Math.max(0, ENEMY_BARN_POS.y + 1);
+      const troll: EnemyTroll = { id: trollIdRef.current++, x: tx2, y: ty2, hp: TROLL_MAX_HP, maxHp: TROLL_MAX_HP, movingTo: null, path: [], state: 'moving', targetType: 'barn', targetId: null };
+      setEnemyTrolls(ts => [...ts, troll]);
+      setWaveAnnouncement(`🏹 Wave ${newWave} — TROLL ARCHER! Flank with cavalry!`);
       window.setTimeout(() => setWaveAnnouncement(null), 3000);
     }
 
@@ -1276,6 +1314,8 @@ const RTSMap: React.FC = () => {
             if (nearRam) return { ...w, attacking: { targetType: 'siege' as const, siegeId: nearRam.id }, state: 'attacking' as const, movingTo: null, path: [] };
             const nearShaman = enemyShamansRef.current.find(s => s.hp > 0 && tileDist(w.x, w.y, s.x, s.y) <= AM_SCAN);
             if (nearShaman) return { ...w, attacking: { targetType: 'shaman' as const, shamanId: nearShaman.id }, state: 'attacking' as const, movingTo: null, path: [] };
+            const nearTroll = enemyTrollsRef.current.find(t => t.hp > 0 && tileDist(w.x, w.y, t.x, t.y) <= AM_SCAN);
+            if (nearTroll) return { ...w, attacking: { targetType: 'troll' as const, trollId: nearTroll.id }, state: 'attacking' as const, movingTo: null, path: [] };
           }
           // Hold position: stay put, auto-attack nearby enemies without chasing
           if (w.holdPosition) {
@@ -1287,6 +1327,8 @@ const RTSMap: React.FC = () => {
               if (nearRamH) return { ...w, attacking: { targetType: 'siege' as const, siegeId: nearRamH.id }, state: 'attacking' as const };
               const nearShamanH = enemyShamansRef.current.find(s => s.hp > 0 && tileDist(w.x, w.y, s.x, s.y) <= HP_RANGE);
               if (nearShamanH) return { ...w, attacking: { targetType: 'shaman' as const, shamanId: nearShamanH.id }, state: 'attacking' as const };
+              const nearTrollH = enemyTrollsRef.current.find(t => t.hp > 0 && tileDist(w.x, w.y, t.x, t.y) <= HP_RANGE);
+              if (nearTrollH) return { ...w, attacking: { targetType: 'troll' as const, trollId: nearTrollH.id }, state: 'attacking' as const };
             }
             // After killing target, go back to idle (don't chase)
             if (w.state === 'attacking' && w.attacking) {
@@ -1672,6 +1714,44 @@ const RTSMap: React.FC = () => {
                   }
                 }, moraleMs6);
               }
+            } else if (w.attacking.targetType === 'troll') {
+              const trollId = (w.attacking as { targetType: 'troll'; trollId: number }).trollId;
+              const trollTarget = enemyTrollsRef.current.find(t => t.id === trollId && t.hp > 0);
+              if (!trollTarget) return { ...w, attacking: null, state: 'idle' };
+              const distToTroll = tileDist(w.x, w.y, trollTarget.x, trollTarget.y);
+              if (distToTroll > 1.8) {
+                const p = aStar(INITIAL_TILES, { x: Math.round(w.x), y: Math.round(w.y) }, { x: Math.round(trollTarget.x), y: Math.round(trollTarget.y) });
+                return { ...w, movingTo: p[0] ?? { x: trollTarget.x, y: trollTarget.y }, path: p.slice(1), state: 'moving' };
+              }
+              if (!attackT[w.id]) {
+                const capturedTrX = Math.round(trollTarget.x), capturedTrY = Math.round(trollTarget.y);
+                const capturedTrollId = trollId;
+                const unitBonusTr = w.unitType === 'hero' ? HERO_DAMAGE_BONUS : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
+                const capturedVetTr = w.level;
+                const moraleMs7 = getMoraleMs(w.x, w.y);
+                attackT[w.id] = window.setTimeout(() => {
+                  delete attackTimeoutsRef.current[w.id];
+                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + unitBonusTr + capturedVetTr * VETERAN_ATK_BONUS;
+                  setEnemyTrolls(ts => ts.map(t => t.id === capturedTrollId ? { ...t, hp: Math.max(0, t.hp - dmg) } : t));
+                  addFloatingText(capturedTrX, capturedTrY, `-${dmg}`, '#ef4444');
+                  const trCurrent = enemyTrollsRef.current.find(t => t.id === capturedTrollId);
+                  if (trCurrent && trCurrent.hp - dmg <= 0) {
+                    setWorkers(ws2 => ws2.map(u => {
+                      const isAttacker = u.id === w.id;
+                      const isNearby = !isAttacker && u.hp > 0 && tileDist(u.x, u.y, capturedTrX, capturedTrY) <= 3;
+                      const xpGain = isAttacker ? TROLL_XP_REWARD : isNearby ? Math.round(TROLL_XP_REWARD * 0.25) : 0;
+                      if (xpGain === 0) return u;
+                      const newXp = u.xp + xpGain;
+                      const newLevel = newXp >= XP_TO_LEVEL_2 ? 2 : newXp >= XP_TO_LEVEL_1 ? 1 : 0;
+                      if (newLevel > u.level) {
+                        addFloatingText(Math.round(u.x), Math.round(u.y), `⭐ Level ${newLevel}!`, '#fbbf24');
+                        return { ...u, xp: newXp, level: newLevel, maxHp: u.maxHp + VETERAN_HP_BONUS, hp: Math.min(u.hp + VETERAN_HP_BONUS, u.maxHp + VETERAN_HP_BONUS) };
+                      }
+                      return { ...u, xp: newXp };
+                    }));
+                  }
+                }, moraleMs7);
+              }
             } else {
               if (!attackT[w.id]) {
                 const capturedWX = Math.round(w.x), capturedWY = Math.round(w.y);
@@ -1989,6 +2069,75 @@ const RTSMap: React.FC = () => {
         });
       });
 
+      // Update enemy Troll Archers
+      setEnemyTrolls(ts => {
+        const alive = ts.filter(t => t.hp > 0);
+        const killed = ts.filter(t => t.hp <= 0);
+        killed.forEach(t => {
+          setResources(r => ({ ...r, gold: r.gold + TROLL_GOLD_REWARD }));
+          addFloatingText(Math.round(t.x), Math.round(t.y), `+${TROLL_GOLD_REWARD}🪙`, '#fbbf24');
+        });
+        return alive.map(t => {
+          // Find nearest player unit within attack range
+          const nearestWorker = workersRef.current.filter(w => w.hp > 0).sort((a, b2) => tileDist(t.x, t.y, a.x, a.y) - tileDist(t.x, t.y, b2.x, b2.y))[0];
+          const distToWorker = nearestWorker ? tileDist(t.x, t.y, nearestWorker.x, nearestWorker.y) : 999;
+
+          if (distToWorker <= TROLL_ATTACK_RANGE) {
+            // Fire arrows at nearest worker
+            if (!trollAttackTimersRef.current[t.id]) {
+              const tid = t.id, twx = Math.round(nearestWorker!.x), twy = Math.round(nearestWorker!.y), wid = nearestWorker!.id;
+              const capturedTX = Math.round(t.x), capturedTY = Math.round(t.y);
+              trollAttackTimersRef.current[tid] = window.setTimeout(() => {
+                delete trollAttackTimersRef.current[tid];
+                addFloatingText(capturedTX, capturedTY, '🏹', '#f97316');
+                setWorkers(ws => ws.map(w => {
+                  if (w.id !== wid || w.hp <= 0) return w;
+                  addFloatingText(twx, twy, `-${TROLL_DAMAGE}`, '#fca5a5');
+                  return { ...w, hp: Math.max(0, w.hp - TROLL_DAMAGE) };
+                }));
+              }, TROLL_ATTACK_MS);
+            }
+            // Kite: if worker is getting close, back away
+            if (distToWorker < TROLL_KITE_RANGE) {
+              const dx = t.x - nearestWorker!.x, dy = t.y - nearestWorker!.y;
+              const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+              const nx = Math.max(0, Math.min(GRID_SIZE - 1, t.x + (dx / dist) * TROLL_SPEED * dt));
+              const ny = Math.max(0, Math.min(GRID_SIZE - 1, t.y + (dy / dist) * TROLL_SPEED * dt));
+              return { ...t, x: nx, y: ny, movingTo: null, path: [], state: 'kiting' as const };
+            }
+            return { ...t, state: 'attacking' as const };
+          }
+
+          // March toward barn but stop at attack range
+          const distToBarn = tileDist(t.x, t.y, BARN_POS.x, BARN_POS.y);
+          if (distToBarn <= TROLL_ATTACK_RANGE) {
+            // Fire at barn if no worker target
+            if (!trollAttackTimersRef.current[t.id]) {
+              const tid = t.id;
+              trollAttackTimersRef.current[tid] = window.setTimeout(() => {
+                delete trollAttackTimersRef.current[tid];
+                addFloatingText(BARN_POS.x, BARN_POS.y, `🏹-${TROLL_DAMAGE}`, '#fca5a5');
+                setPlayerBarnHp(hp => { const nHp = Math.max(0, hp - TROLL_DAMAGE); if (nHp <= 0) setGameOver('defeat'); return nHp; });
+              }, TROLL_ATTACK_MS);
+            }
+            return { ...t, state: 'attacking' as const };
+          }
+
+          if (t.movingTo) {
+            const dx = t.movingTo.x - t.x, dy = t.movingTo.y - t.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 0.1) {
+              const next = t.path[0] ?? null;
+              return { ...t, x: t.movingTo.x, y: t.movingTo.y, movingTo: next, path: t.path.slice(1), state: 'moving' as const };
+            }
+            return { ...t, x: t.x + (dx / dist) * Math.min(TROLL_SPEED * dt, dist), y: t.y + (dy / dist) * Math.min(TROLL_SPEED * dt, dist) };
+          }
+          const wallSetT = new Set(placedBuildingsRef.current.filter(b => b.type === 'wall').map(b => `${b.x},${b.y}`));
+          const p = aStar(INITIAL_TILES, { x: Math.round(t.x), y: Math.round(t.y) }, BARN_POS, true, wallSetT);
+          return { ...t, movingTo: p[0] ?? BARN_POS, path: p.slice(1), state: 'moving' as const };
+        });
+      });
+
       // Update neutral creeps
       setNeutralCreeps(creeps => {
         const alive = creeps.filter(c => c.hp > 0);
@@ -2294,6 +2443,21 @@ const RTSMap: React.FC = () => {
     }));
   }, [anySelected]);
 
+  const handleAttackTroll = useCallback((trollId: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!anySelected) return;
+    const troll = enemyTrollsRef.current.find(t => t.id === trollId);
+    if (!troll) return;
+    const tx = Math.round(troll.x), ty = Math.round(troll.y);
+    setWorkers(ws => ws.map(w => {
+      if (!w.selected) return w;
+      const path = aStar(INITIAL_TILES, { x: Math.round(w.x), y: Math.round(w.y) }, { x: tx, y: ty });
+      const first = path[0] ?? { x: tx, y: ty };
+      return { ...w, movingTo: first, path: path.slice(1), gathering: null, attacking: { targetType: 'troll' as const, trollId }, state: 'moving' };
+    }));
+  }, [anySelected]);
+
   const handleAttackCreep = useCallback((creepId: number, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -2322,7 +2486,8 @@ const RTSMap: React.FC = () => {
     treeNodes: trees.filter(t => t.amount > 0).map(t => ({ x: t.x, y: t.y })),
     warRams: enemySiege.filter(r => r.hp > 0).map(r => ({ x: r.x, y: r.y })),
     shamans: enemyShamans.filter(s => s.hp > 0).map(s => ({ x: s.x, y: s.y })),
-  }), [workers, enemyGrunts, enemyBarnHp, placedBuildings, clearedCamps, goldMine, stoneNodes, trees, enemyTowers, enemySiege, enemyShamans]);
+    trolls: enemyTrolls.filter(t => t.hp > 0).map(t => ({ x: t.x, y: t.y })),
+  }), [workers, enemyGrunts, enemyBarnHp, placedBuildings, clearedCamps, goldMine, stoneNodes, trees, enemyTowers, enemySiege, enemyShamans, enemyTrolls]);
 
   return (
     <div className="absolute inset-0 bg-black" onContextMenu={e => { if (buildMode) { e.preventDefault(); setBuildMode(null); setGhostTile(null); } }}>
@@ -2864,6 +3029,32 @@ const RTSMap: React.FC = () => {
               {s.state === 'healing' && <circle cx={isoX + TILE_SIZE / 2} cy={isoY + 20} r={22} fill="none" stroke="#4ade80" strokeWidth={1.5} opacity={0.5} />}
               {/* Label */}
               <text x={isoX + TILE_SIZE / 2} y={isoY - 4} textAnchor="middle" fontSize="8" fill="#86efac" fontWeight="bold">SHAMAN</text>
+              {/* HP bar */}
+              <rect x={isoX + TILE_SIZE / 2 - 16} y={isoY - 10} width={32} height={4} fill="#1e293b" rx={2} />
+              <rect x={isoX + TILE_SIZE / 2 - 16} y={isoY - 10} width={32 * hp} height={4} fill="#22c55e" rx={2} />
+            </g>;
+          })}
+
+          {/* Enemy Troll Archers */}
+          {enemyTrolls.filter(t => t.hp > 0).map(t => {
+            const { isoX, isoY } = tileToSvg(t.x, t.y);
+            const hp = t.hp / t.maxHp;
+            return <g key={`troll-${t.id}`} style={{ cursor: anySelected ? 'crosshair' : 'default' }} onContextMenu={e => handleAttackTroll(t.id, e)}>
+              {/* Body */}
+              <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 24} rx={9} ry={12} fill={t.state === 'attacking' ? '#16a34a' : '#15803d'} stroke="#14532d" strokeWidth={2} />
+              {/* Head — big troll head */}
+              <circle cx={isoX + TILE_SIZE / 2} cy={isoY + 10} r={9} fill="#4ade80" stroke="#14532d" strokeWidth={1.5} />
+              {/* Tusks */}
+              <line x1={isoX + TILE_SIZE / 2 - 5} y1={isoY + 16} x2={isoX + TILE_SIZE / 2 - 7} y2={isoY + 20} stroke="#fde68a" strokeWidth={2} strokeLinecap="round" />
+              <line x1={isoX + TILE_SIZE / 2 + 5} y1={isoY + 16} x2={isoX + TILE_SIZE / 2 + 7} y2={isoY + 20} stroke="#fde68a" strokeWidth={2} strokeLinecap="round" />
+              {/* Bow */}
+              <path d={`M${isoX + TILE_SIZE / 2 + 12},${isoY + 8} Q${isoX + TILE_SIZE / 2 + 22},${isoY + 15} ${isoX + TILE_SIZE / 2 + 12},${isoY + 22}`} fill="none" stroke="#92400e" strokeWidth={2.5} />
+              {/* Arrow */}
+              <line x1={isoX + TILE_SIZE / 2 + 12} y1={isoY + 15} x2={isoX + TILE_SIZE / 2 - 2} y2={isoY + 15} stroke="#d97706" strokeWidth={1.5} />
+              {/* Attack range ring when attacking */}
+              {t.state === 'attacking' && <circle cx={isoX + TILE_SIZE / 2} cy={isoY + 20} r={30} fill="none" stroke="#f97316" strokeWidth={1} strokeDasharray="3 3" opacity={0.4} />}
+              {/* Label */}
+              <text x={isoX + TILE_SIZE / 2} y={isoY - 4} textAnchor="middle" fontSize="8" fill="#86efac" fontWeight="bold">TROLL</text>
               {/* HP bar */}
               <rect x={isoX + TILE_SIZE / 2 - 16} y={isoY - 10} width={32} height={4} fill="#1e293b" rx={2} />
               <rect x={isoX + TILE_SIZE / 2 - 16} y={isoY - 10} width={32 * hp} height={4} fill="#22c55e" rx={2} />

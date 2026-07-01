@@ -8,7 +8,7 @@ export interface WorkerState {
   movingTo: null | { x: number; y: number };
   path: { x: number; y: number }[];
   gathering: null | { type: 'tree' | 'gold' | 'stone'; idx: number };
-  attacking: null | { targetType: 'enemyBarn' } | { targetType: 'grunt'; gruntId: number } | { targetType: 'creep'; creepId: number } | { targetType: 'enemyTower'; towerId: number } | { targetType: 'siege'; siegeId: number } | { targetType: 'shaman'; shamanId: number };
+  attacking: null | { targetType: 'enemyBarn' } | { targetType: 'grunt'; gruntId: number } | { targetType: 'creep'; creepId: number } | { targetType: 'enemyTower'; towerId: number } | { targetType: 'siege'; siegeId: number } | { targetType: 'shaman'; shamanId: number } | { targetType: 'troll'; trollId: number };
   repairing: null | { buildingId: number };
   chargeCooldown: number;
   sprintCooldown: number;
@@ -129,6 +129,7 @@ interface RTSUIProps {
     enemyTowers: { x: number; y: number }[];
     warRams: { x: number; y: number }[];
     shamans: { x: number; y: number }[];
+    trolls: { x: number; y: number }[];
   };
 }
 
@@ -662,6 +663,10 @@ export const RTSUI: React.FC<RTSUIProps> = ({
             {/* Shamans */}
             {minimapData.shamans.map((s, i) => (
               <circle key={`shaman${i}`} cx={s.x} cy={s.y} r={0.6} fill="#4ade80" stroke="#166534" strokeWidth={0.2} />
+            ))}
+            {/* Troll Archers */}
+            {minimapData.trolls.map((t, i) => (
+              <polygon key={`troll${i}`} points={`${t.x},${t.y - 0.8} ${t.x + 0.7},${t.y + 0.5} ${t.x - 0.7},${t.y + 0.5}`} fill="#f97316" stroke="#7c2d12" strokeWidth={0.15} />
             ))}
           </svg>
           <div className="mt-0.5 flex flex-wrap gap-x-2 text-[10px] text-slate-500">
