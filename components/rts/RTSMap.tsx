@@ -82,6 +82,13 @@ const DEMOLISHER_ATTACK_MS = 4500;
 const DEMOLISHER_GOLD_REWARD = 30;
 const DEMOLISHER_XP_REWARD = 60;
 const DEMOLISHER_FIRST_WAVE = 14;
+const NECROMANCER_MAX_HP = 35;
+const NECROMANCER_SPEED = 0.5;
+const NECROMANCER_RAISE_RADIUS = 3.0;
+const NECROMANCER_RAISE_MS = 4000;
+const NECROMANCER_FIRST_WAVE = 16;
+const NECROMANCER_GOLD_REWARD = 20;
+const NECROMANCER_XP_REWARD = 45;
 const LOOT_CRATE_SPAWN_MS = 45000;
 const SHAMAN_MAX_HP = 45;
 const SHAMAN_SPEED = 0.6;
@@ -155,6 +162,7 @@ interface EnemyGrunt {
   path: { x: number; y: number }[];
   state: 'moving' | 'attacking';
   isBoss?: boolean;
+  isSkeleton?: boolean;
   frozenUntil?: number;
 }
 
@@ -197,6 +205,17 @@ interface EnemyShaman {
   movingTo: { x: number; y: number } | null;
   path: { x: number; y: number }[];
   state: 'moving' | 'healing';
+}
+
+interface EnemyNecromancer {
+  id: number;
+  x: number;
+  y: number;
+  hp: number;
+  maxHp: number;
+  movingTo: { x: number; y: number } | null;
+  path: { x: number; y: number }[];
+  state: 'moving' | 'raising';
 }
 
 interface EnemyTroll {
@@ -575,6 +594,14 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
   useEffect(() => { enemyShamansRef.current = enemyShamans; }, [enemyShamans]);
   const shamanIdRef = useRef(2000);
   const shamanHealTimersRef = useRef<Record<number, number>>({});
+  const [enemyNecromancers, setEnemyNecromancers] = useState<EnemyNecromancer[]>([]);
+  const enemyNecromancersRef = useRef<EnemyNecromancer[]>([]);
+  useEffect(() => { enemyNecromancersRef.current = enemyNecromancers; }, [enemyNecromancers]);
+  const necromancerIdRef = useRef(7000);
+  const necromancerRaiseTimersRef = useRef<Record<number, number>>({});
+  const [deadGruntPositions, setDeadGruntPositions] = useState<{ x: number; y: number; t: number }[]>([]);
+  const deadGruntPositionsRef = useRef<{ x: number; y: number; t: number }[]>([]);
+  useEffect(() => { deadGruntPositionsRef.current = deadGruntPositions; }, [deadGruntPositions]);
   const [enemyTrolls, setEnemyTrolls] = useState<EnemyTroll[]>([]);
   const enemyTrollsRef = useRef<EnemyTroll[]>([]);
   useEffect(() => { enemyTrollsRef.current = enemyTrolls; }, [enemyTrolls]);
@@ -922,6 +949,17 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
       const sapper: EnemySapper = { id: sapperIdRef.current++, x: sx2, y: sy2, hp: SAPPER_MAX_HP, maxHp: SAPPER_MAX_HP, movingTo: sapperPath[0] ?? { x: sapperTarget.x, y: sapperTarget.y }, path: sapperPath.slice(1), targetX: sapperTarget.x, targetY: sapperTarget.y, exploded: false };
       setEnemySappers(ss => [...ss, sapper]);
       setWaveAnnouncement(`💥 Wave ${newWave} — GOBLIN SAPPER! Kill it before it reaches your walls!`);
+      window.setTimeout(() => setWaveAnnouncement(null), 4000);
+    }
+
+    // Necromancer spawn: wave 16+ every 5 waves
+    if (newWave >= NECROMANCER_FIRST_WAVE && newWave % 5 === 0) {
+      const nx = Math.max(0, ENEMY_BARN_POS.x - 2);
+      const ny = ENEMY_BARN_POS.y - 1;
+      const nPath = aStar(INITIAL_TILES, { x: nx, y: ny }, BARN_POS, true, wallSet);
+      const necro: EnemyNecromancer = { id: necromancerIdRef.current++, x: nx, y: ny, hp: NECROMANCER_MAX_HP, maxHp: NECROMANCER_MAX_HP, movingTo: nPath[0] ?? BARN_POS, path: nPath.slice(1), state: 'moving' };
+      setEnemyNecromancers(ns => [...ns, necro]);
+      setWaveAnnouncement(`💀 Wave ${newWave} — NECROMANCER! Kill it before it raises the dead!`);
       window.setTimeout(() => setWaveAnnouncement(null), 4000);
     }
 
@@ -1557,6 +1595,8 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
             if (nearTroll) return { ...w, attacking: { targetType: 'troll' as const, trollId: nearTroll.id }, state: 'attacking' as const, movingTo: null, path: [] };
             const nearSapper = enemySappersRef.current.find(s => s.hp > 0 && !s.exploded && tileDist(w.x, w.y, s.x, s.y) <= AM_SCAN);
             if (nearSapper) return { ...w, attacking: { targetType: 'sapper' as const, sapperId: nearSapper.id }, state: 'attacking' as const, movingTo: null, path: [] };
+            const nearNecro = enemyNecromancersRef.current.find(n => n.hp > 0 && tileDist(w.x, w.y, n.x, n.y) <= AM_SCAN);
+            if (nearNecro) return { ...w, attacking: { targetType: 'necromancer' as const, necromancerId: nearNecro.id }, state: 'attacking' as const, movingTo: null, path: [] };
           }
           // Hold position: stay put, auto-attack nearby enemies without chasing
           if (w.holdPosition) {
@@ -1572,6 +1612,8 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
               if (nearTrollH) return { ...w, attacking: { targetType: 'troll' as const, trollId: nearTrollH.id }, state: 'attacking' as const };
               const nearSapperH = enemySappersRef.current.find(s => s.hp > 0 && !s.exploded && tileDist(w.x, w.y, s.x, s.y) <= HP_RANGE);
               if (nearSapperH) return { ...w, attacking: { targetType: 'sapper' as const, sapperId: nearSapperH.id }, state: 'attacking' as const };
+              const nearNecroH = enemyNecromancersRef.current.find(n => n.hp > 0 && tileDist(w.x, w.y, n.x, n.y) <= HP_RANGE);
+              if (nearNecroH) return { ...w, attacking: { targetType: 'necromancer' as const, necromancerId: nearNecroH.id }, state: 'attacking' as const };
             }
             // After killing target, go back to idle (don't chase)
             if (w.state === 'attacking' && w.attacking) {
@@ -1593,6 +1635,8 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
             if (nearRamA) return { ...w, attacking: { targetType: 'siege' as const, siegeId: nearRamA.id }, state: 'attacking' as const };
             const nearSapperA = enemySappersRef.current.find(s => s.hp > 0 && !s.exploded && tileDist(w.x, w.y, s.x, s.y) <= AGG_RANGE);
             if (nearSapperA) return { ...w, attacking: { targetType: 'sapper' as const, sapperId: nearSapperA.id }, state: 'attacking' as const };
+            const nearNecroA = enemyNecromancersRef.current.find(n => n.hp > 0 && tileDist(w.x, w.y, n.x, n.y) <= AGG_RANGE);
+            if (nearNecroA) return { ...w, attacking: { targetType: 'necromancer' as const, necromancerId: nearNecroA.id }, state: 'attacking' as const };
           }
           // When attack-move unit finishes its target, resume march to original destination
           if (w.attackMove && w.state === 'idle' && w.attackMoveTarget) {
@@ -2059,6 +2103,44 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                   addFloatingText(capturedSpX, capturedSpY, `-${dmg}`, '#ef4444');
                 }, moraleMs8);
               }
+            } else if (w.attacking.targetType === 'necromancer') {
+              const necroId = (w.attacking as { targetType: 'necromancer'; necromancerId: number }).necromancerId;
+              const necroTarget = enemyNecromancersRef.current.find(n => n.id === necroId && n.hp > 0);
+              if (!necroTarget) return { ...w, attacking: null, state: 'idle' };
+              const distToNecro = tileDist(w.x, w.y, necroTarget.x, necroTarget.y);
+              if (distToNecro > 1.8) {
+                const p = aStar(INITIAL_TILES, { x: Math.round(w.x), y: Math.round(w.y) }, { x: Math.round(necroTarget.x), y: Math.round(necroTarget.y) });
+                return { ...w, movingTo: p[0] ?? { x: necroTarget.x, y: necroTarget.y }, path: p.slice(1), state: 'moving' };
+              }
+              if (!attackT[w.id]) {
+                const capturedNcX = Math.round(necroTarget.x), capturedNcY = Math.round(necroTarget.y);
+                const capturedNecroId = necroId;
+                const unitBonusNc = w.unitType === 'hero' ? HERO_DAMAGE_BONUS : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
+                const capturedVetNc = w.level;
+                const moraleMs9 = getMoraleMs(w.x, w.y);
+                attackT[w.id] = window.setTimeout(() => {
+                  delete attackTimeoutsRef.current[w.id];
+                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + unitBonusNc + capturedVetNc * VETERAN_ATK_BONUS;
+                  setEnemyNecromancers(ns => ns.map(n => n.id === capturedNecroId ? { ...n, hp: Math.max(0, n.hp - dmg) } : n));
+                  addFloatingText(capturedNcX, capturedNcY, `-${dmg}`, '#ef4444');
+                  const necroCurrent = enemyNecromancersRef.current.find(n => n.id === capturedNecroId);
+                  if (necroCurrent && necroCurrent.hp - dmg <= 0) {
+                    setWorkers(ws2 => ws2.map(u => {
+                      const isAttacker = u.id === w.id;
+                      const isNearby = !isAttacker && u.hp > 0 && tileDist(u.x, u.y, capturedNcX, capturedNcY) <= 3;
+                      const xpGain = isAttacker ? NECROMANCER_XP_REWARD : isNearby ? Math.round(NECROMANCER_XP_REWARD * 0.25) : 0;
+                      if (xpGain === 0) return u;
+                      const newXp = u.xp + xpGain;
+                      const newLevel = newXp >= XP_TO_LEVEL_2 ? 2 : newXp >= XP_TO_LEVEL_1 ? 1 : 0;
+                      if (newLevel > u.level) {
+                        addFloatingText(Math.round(u.x), Math.round(u.y), `⭐ Level ${newLevel}!`, '#fbbf24');
+                        return { ...u, xp: newXp, level: newLevel, maxHp: u.maxHp + VETERAN_HP_BONUS, hp: Math.min(u.hp + VETERAN_HP_BONUS, u.maxHp + VETERAN_HP_BONUS) };
+                      }
+                      return { ...u, xp: newXp };
+                    }));
+                  }
+                }, moraleMs9);
+              }
             } else {
               if (!attackT[w.id]) {
                 const capturedWX = Math.round(w.x), capturedWY = Math.round(w.y);
@@ -2207,6 +2289,9 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
           const goldDrop = killed.reduce((sum, g) => sum + (g.isBoss ? BOSS_GOLD_REWARD : 5), 0);
           setResources(r => ({ ...r, gold: r.gold + goldDrop }));
           killed.forEach(g => addFloatingText(Math.round(g.x), Math.round(g.y), g.isBoss ? `💀+${BOSS_GOLD_REWARD}🪙` : `+5🪙`, '#fbbf24'));
+          // Record positions for necromancer to raise
+          const now = Date.now();
+          setDeadGruntPositions(prev => [...prev.filter(p => now - p.t < 20000), ...killed.map(g => ({ x: Math.round(g.x), y: Math.round(g.y), t: now }))]);
         }
         return survived;
       });
@@ -2453,6 +2538,55 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
           const wallSetS = new Set(placedBuildingsRef.current.filter(b => b.type === 'wall').map(b => `${b.x},${b.y}`));
           const p = aStar(INITIAL_TILES, { x: Math.round(s.x), y: Math.round(s.y) }, BARN_POS, true, wallSetS);
           return { ...s, movingTo: p[0] ?? BARN_POS, path: p.slice(1) };
+        });
+      });
+
+      // Update Necromancers
+      setEnemyNecromancers(ns => {
+        const alive = ns.filter(n => n.hp > 0);
+        const killed = ns.filter(n => n.hp <= 0);
+        if (killed.length > 0) {
+          killed.forEach(n => {
+            setResources(r => ({ ...r, gold: r.gold + NECROMANCER_GOLD_REWARD }));
+            addFloatingText(Math.round(n.x), Math.round(n.y), `+${NECROMANCER_GOLD_REWARD}🪙`, '#fbbf24');
+          });
+        }
+        return alive.map(n => {
+          // Look for a recent dead grunt position within raise radius
+          const now = Date.now();
+          const nearCorpse = deadGruntPositionsRef.current.find(p => now - p.t < 20000 && tileDist(n.x, n.y, p.x, p.y) <= NECROMANCER_RAISE_RADIUS);
+          if (nearCorpse) {
+            if (!necromancerRaiseTimersRef.current[n.id]) {
+              const nid = n.id; const cx2 = nearCorpse.x; const cy2 = nearCorpse.y;
+              necromancerRaiseTimersRef.current[nid] = window.setTimeout(() => {
+                delete necromancerRaiseTimersRef.current[nid];
+                // Consume the corpse and spawn a skeleton grunt (half HP)
+                setDeadGruntPositions(prev => prev.filter(p => !(p.x === cx2 && p.y === cy2)));
+                const skeletonHp = Math.round(GRUNT_MAX_HP * 0.5);
+                const wallSetN = new Set(placedBuildingsRef.current.filter(b => b.type === 'wall').map(b => `${b.x},${b.y}`));
+                const skPath = aStar(INITIAL_TILES, { x: cx2, y: cy2 }, BARN_POS, true, wallSetN);
+                const skeleton: EnemyGrunt = { id: gruntIdRef.current++, x: cx2, y: cy2, hp: skeletonHp, maxHp: skeletonHp, movingTo: skPath[0] ?? BARN_POS, path: skPath.slice(1), state: 'moving', isSkeleton: true };
+                setEnemyGrunts(gs => [...gs, skeleton]);
+                addFloatingText(cx2, cy2, '💀 RAISED!', '#a855f7');
+              }, NECROMANCER_RAISE_MS);
+            }
+            return { ...n, state: 'raising' as const };
+          }
+          // Move toward nearest corpse or follow grunts toward barn
+          const nearestCorpse = deadGruntPositionsRef.current.filter(p => now - p.t < 20000).sort((a, b2) => tileDist(n.x, n.y, a.x, a.y) - tileDist(n.x, n.y, b2.x, b2.y))[0];
+          const moveDest = nearestCorpse ? { x: nearestCorpse.x, y: nearestCorpse.y } : BARN_POS;
+          if (n.movingTo) {
+            const dx2 = n.movingTo.x - n.x, dy2 = n.movingTo.y - n.y;
+            const d2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+            if (d2 < 0.1) {
+              const next2 = n.path[0] ?? null;
+              return { ...n, x: n.movingTo.x, y: n.movingTo.y, movingTo: next2, path: n.path.slice(1), state: 'moving' as const };
+            }
+            return { ...n, x: n.x + (dx2 / d2) * Math.min(NECROMANCER_SPEED * dt, d2), y: n.y + (dy2 / d2) * Math.min(NECROMANCER_SPEED * dt, d2) };
+          }
+          const wallSetN2 = new Set(placedBuildingsRef.current.filter(b => b.type === 'wall').map(b => `${b.x},${b.y}`));
+          const p2 = aStar(INITIAL_TILES, { x: Math.round(n.x), y: Math.round(n.y) }, moveDest, true, wallSetN2);
+          return { ...n, movingTo: p2[0] ?? moveDest, path: p2.slice(1) };
         });
       });
 
@@ -2906,6 +3040,21 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
       const path = aStar(INITIAL_TILES, { x: Math.round(w.x), y: Math.round(w.y) }, { x: tx, y: ty });
       const first = path[0] ?? { x: tx, y: ty };
       return { ...w, movingTo: first, path: path.slice(1), gathering: null, attacking: { targetType: 'shaman' as const, shamanId }, state: 'moving' };
+    }));
+  }, [anySelected]);
+
+  const handleAttackNecromancer = useCallback((necroId: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!anySelected) return;
+    const necro = enemyNecromancersRef.current.find(n => n.id === necroId);
+    if (!necro) return;
+    const tx = Math.round(necro.x), ty = Math.round(necro.y);
+    setWorkers(ws => ws.map(w => {
+      if (!w.selected) return w;
+      const path = aStar(INITIAL_TILES, { x: Math.round(w.x), y: Math.round(w.y) }, { x: tx, y: ty });
+      const first = path[0] ?? { x: tx, y: ty };
+      return { ...w, movingTo: first, path: path.slice(1), gathering: null, attacking: { targetType: 'necromancer' as const, necromancerId: necroId }, state: 'moving' };
     }));
   }, [anySelected]);
 
@@ -3474,6 +3623,13 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                 <text x={isoX + TILE_SIZE / 2} y={isoY - 10} textAnchor="middle" fontSize="9" fill="#fca5a5" fontWeight="bold">WAR BULL</text>
                 <rect x={isoX + TILE_SIZE / 2 - 20} y={isoY - 5} width={40} height={5} fill="#1e293b" rx={2} />
                 <rect x={isoX + TILE_SIZE / 2 - 20} y={isoY - 5} width={40 * hp} height={5} fill="#dc2626" rx={2} />
+              </>) : g.isSkeleton ? (<>
+                {/* Skeleton grunt — purple-tinted risen dead */}
+                <circle cx={isoX + TILE_SIZE / 2} cy={isoY + 18} r={14} fill={g.state === 'attacking' ? '#4c1d95' : '#6d28d9'} stroke="#2e1065" strokeWidth={2} />
+                <text x={isoX + TILE_SIZE / 2} y={isoY + 26} textAnchor="middle" fontSize="14">💀</text>
+                <text x={isoX + TILE_SIZE / 2} y={isoY - 5} textAnchor="middle" fontSize="7" fill="#c4b5fd" fontWeight="bold">SKELETON</text>
+                <rect x={isoX + TILE_SIZE / 2 - 12} y={isoY - 10} width={24} height={4} fill="#1e293b" />
+                <rect x={isoX + TILE_SIZE / 2 - 12} y={isoY - 10} width={24 * hp} height={4} fill="#a855f7" />
               </>) : (<>
                 <circle cx={isoX + TILE_SIZE / 2} cy={isoY + 18} r={16} fill={g.state === 'attacking' ? '#dc2626' : '#f97316'} stroke="#7f1d1d" strokeWidth={3} />
                 <text x={isoX + TILE_SIZE / 2} y={isoY + 26} textAnchor="middle" fontSize="14">👹</text>
@@ -3558,6 +3714,29 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
               {/* HP bar */}
               <rect x={isoX + TILE_SIZE / 2 - 16} y={isoY - 10} width={32} height={4} fill="#1e293b" rx={2} />
               <rect x={isoX + TILE_SIZE / 2 - 16} y={isoY - 10} width={32 * hp} height={4} fill="#22c55e" rx={2} />
+            </g>;
+          })}
+
+          {/* Necromancers */}
+          {enemyNecromancers.filter(n => n.hp > 0).map(n => {
+            const { isoX, isoY } = tileToSvg(n.x, n.y);
+            const hp = n.hp / n.maxHp;
+            const cx = isoX + TILE_SIZE / 2;
+            return <g key={`necro-${n.id}`} style={{ cursor: anySelected ? 'crosshair' : 'default' }} onContextMenu={e => handleAttackNecromancer(n.id, e)}>
+              {/* Dark robe */}
+              <ellipse cx={cx} cy={isoY + 26} rx={10} ry={14} fill={n.state === 'raising' ? '#7c3aed' : '#1e1b4b'} stroke="#0f0a2a" strokeWidth={2} />
+              {/* Skull head */}
+              <circle cx={cx} cy={isoY + 10} r={8} fill="#e2e8f0" stroke="#475569" strokeWidth={1.5} />
+              <circle cx={cx - 2} cy={isoY + 9} r={1.5} fill="#1e293b" />
+              <circle cx={cx + 2} cy={isoY + 9} r={1.5} fill="#1e293b" />
+              {/* Staff with orb */}
+              <line x1={cx + 12} y1={isoY + 6} x2={cx + 12} y2={isoY + 38} stroke="#4c1d95" strokeWidth={3} strokeLinecap="round" />
+              <circle cx={cx + 12} cy={isoY + 4} r={5} fill={n.state === 'raising' ? '#a855f7' : '#4c1d95'} stroke="#7c3aed" strokeWidth={1} />
+              {/* Raise pulse when channeling */}
+              {n.state === 'raising' && <circle cx={cx} cy={isoY + 20} r={NECROMANCER_RAISE_RADIUS * TILE_SIZE * 0.5} fill="none" stroke="#a855f7" strokeWidth={1.5} strokeDasharray="5 4" opacity={0.5} />}
+              <text x={cx} y={isoY - 4} textAnchor="middle" fontSize="8" fill="#c4b5fd" fontWeight="bold">NECROMANCER</text>
+              <rect x={cx - 18} y={isoY - 10} width={36} height={4} fill="#1e293b" rx={2} />
+              <rect x={cx - 18} y={isoY - 10} width={36 * hp} height={4} fill="#a855f7" rx={2} />
             </g>;
           })}
 

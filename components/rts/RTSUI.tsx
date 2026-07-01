@@ -14,7 +14,7 @@ export interface WorkerState {
   movingTo: null | { x: number; y: number };
   path: { x: number; y: number }[];
   gathering: null | { type: 'tree' | 'gold' | 'stone'; idx: number };
-  attacking: null | { targetType: 'enemyBarn' } | { targetType: 'grunt'; gruntId: number } | { targetType: 'creep'; creepId: number } | { targetType: 'enemyTower'; towerId: number } | { targetType: 'siege'; siegeId: number } | { targetType: 'shaman'; shamanId: number } | { targetType: 'troll'; trollId: number } | { targetType: 'sapper'; sapperId: number };
+  attacking: null | { targetType: 'enemyBarn' } | { targetType: 'grunt'; gruntId: number } | { targetType: 'creep'; creepId: number } | { targetType: 'enemyTower'; towerId: number } | { targetType: 'siege'; siegeId: number } | { targetType: 'shaman'; shamanId: number } | { targetType: 'troll'; trollId: number } | { targetType: 'sapper'; sapperId: number } | { targetType: 'necromancer'; necromancerId: number };
   repairing: null | { buildingId: number };
   chargeCooldown: number;
   sprintCooldown: number;
