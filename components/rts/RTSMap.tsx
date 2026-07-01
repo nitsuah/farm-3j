@@ -578,6 +578,30 @@ const RTSMap: React.FC = () => {
     return () => { Object.values(watchtowerTimersRef.current).forEach(clearTimeout); watchtowerTimersRef.current = {}; };
   }, [placedBuildings, gameOver, addFloatingText]);
 
+  // Player barn defense fire — barn auto-shoots nearest grunt in 4-tile range every 3s (Town Center mechanic)
+  const barnArrowTimerRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (gameOver) return;
+    const BARN_DEFENSE_RANGE = 4;
+    const BARN_DEFENSE_DAMAGE = 6;
+    const BARN_DEFENSE_MS = 3000;
+    const fireBarnArrow = () => {
+      if (gameOverRef.current) return;
+      const target = enemyGruntsRef.current.reduce<EnemyGrunt | null>((best, g) => {
+        if (tileDist(g.x, g.y, BARN_POS.x, BARN_POS.y) > BARN_DEFENSE_RANGE) return best;
+        if (!best || tileDist(g.x, g.y, BARN_POS.x, BARN_POS.y) < tileDist(best.x, best.y, BARN_POS.x, BARN_POS.y)) return g;
+        return best;
+      }, null);
+      if (target) {
+        setEnemyGrunts(gs => gs.map(g => g.id === target.id ? { ...g, hp: Math.max(0, g.hp - BARN_DEFENSE_DAMAGE) } : g));
+        addFloatingText(Math.round(target.x), Math.round(target.y), `🏰-${BARN_DEFENSE_DAMAGE}`, '#fbbf24');
+      }
+      barnArrowTimerRef.current = window.setTimeout(fireBarnArrow, BARN_DEFENSE_MS);
+    };
+    barnArrowTimerRef.current = window.setTimeout(fireBarnArrow, BARN_DEFENSE_MS);
+    return () => { if (barnArrowTimerRef.current) clearTimeout(barnArrowTimerRef.current); };
+  }, [gameOver, addFloatingText]);
+
   // Windmill passive gold income
   useEffect(() => {
     if (gameOver) return;
@@ -1771,6 +1795,7 @@ const RTSMap: React.FC = () => {
           {/* Player barn */}
           {(() => { const { isoX, isoY } = tileToSvg(BARN_POS.x, BARN_POS.y); const hpPct = playerBarnHp / PLAYER_BARN_MAX_HP;
             const hasGarrison = garrisoned.length > 0;
+            const barnUnderFire = enemyGrunts.some(g => tileDist(g.x, g.y, BARN_POS.x, BARN_POS.y) <= 4);
             return <g style={{ cursor: 'pointer' }}
               onClick={() => { if (!buildMode) { setSelectedType('farmhouse'); setWorkers(ws => ws.map(w => ({ ...w, selected: false }))); } }}
               onContextMenu={e => {
@@ -1778,6 +1803,7 @@ const RTSMap: React.FC = () => {
                 if (anySelected && selectedType === 'worker') { handleGarrison(); return; }
                 if (selectedType === 'farmhouse') { const coords = clientToSvg(e.clientX, e.clientY); if (coords) { const { tx, ty } = svgToTile(coords.x, coords.y); setRallyPoint({ x: tx, y: ty }); } }
               }}>
+              {barnUnderFire && <circle cx={isoX + TILE_SIZE / 2} cy={isoY + TILE_SIZE / 2} r={TILE_SIZE * 0.7} fill="none" stroke="#fbbf24" strokeWidth={2} strokeDasharray="4 3" opacity={0.5} />}
               <rect x={isoX} y={isoY} width={TILE_SIZE} height={TILE_SIZE} fill="#fde68a" stroke={hasGarrison ? '#22d3ee' : '#b45309'} strokeWidth={hasGarrison ? 5 : 6} rx={12} />
               <polygon points={[[isoX, isoY], [isoX + TILE_SIZE / 2, isoY - 32], [isoX + TILE_SIZE, isoY]].map(p => p.join(',')).join(' ')} fill="#b91c1c" stroke="#7f1d1d" strokeWidth={4} />
               <text x={isoX + TILE_SIZE / 2} y={isoY + 44} textAnchor="middle" fontSize="22">🏚️</text>

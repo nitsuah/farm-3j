@@ -238,6 +238,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                   Storage: {farmhouseStorage[farmhouse.level - 1]?.gold ?? '?'}🪙 Pop: {resources.food}/{resources.foodCap}
                 </div>
               )}
+              <div className="mt-0.5 text-xs text-yellow-400/80">🏰 Defense: 6 dmg / 3s (4-tile range)</div>
               {garrisonedCount > 0 && (
                 <div className="mt-0.5 flex items-center gap-2">
                   <span className="text-xs text-sky-300">🏰 {garrisonedCount} garrisoned · healing</span>
