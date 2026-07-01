@@ -10,6 +10,7 @@ export interface WorkerState {
   gathering: null | { type: 'tree' | 'gold' | 'stone'; idx: number };
   attacking: null | { targetType: 'enemyBarn' } | { targetType: 'grunt'; gruntId: number } | { targetType: 'creep'; creepId: number } | { targetType: 'enemyTower'; towerId: number };
   repairing: null | { buildingId: number };
+  chargeCooldown: number;
   attackMove: boolean;
   attackMoveTarget: { x: number; y: number } | null;
   carrying: { gold: number; lumber: number; stone: number };
@@ -91,6 +92,7 @@ interface RTSUIProps {
   towerGarrison: Record<number, WorkerState[]>;
   onTowerDeploy: (towerId: number, tx: number, ty: number) => void;
   placedBuildingsList: PlacedBuilding[];
+  onSwordsmanCharge: () => void;
   onMinimapClick: (tileX: number, tileY: number) => void;
   farmhouse: { built: boolean; level: number };
   farmhouseUpgradeCosts: { gold: number; lumber: number }[];
@@ -168,6 +170,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
   towerGarrison,
   onTowerDeploy,
   placedBuildingsList,
+  onSwordsmanCharge,
   onMinimapClick,
 }) => {
   const isHeroSelected = selectedWorkers.some(w => w.unitType === 'hero');
@@ -338,6 +341,18 @@ export const RTSUI: React.FC<RTSUIProps> = ({
               >
                 🏰 Garrison ({garrisonedCount}/{garrisonCap})
               </button>
+              {selectedWorkers.some(w => w.unitType === 'swordsman') && (() => {
+                const chargeReady = selectedWorkers.some(w => w.unitType === 'swordsman' && w.chargeCooldown <= 0);
+                const maxCd = Math.max(...selectedWorkers.filter(w => w.unitType === 'swordsman').map(w => w.chargeCooldown));
+                return <button
+                  className={`col-span-4 rounded border px-2 py-2 text-xs font-semibold disabled:opacity-40 ${chargeReady ? 'border-red-400 bg-red-500/20 text-red-100 hover:bg-red-500/30' : 'border-red-800/50 bg-red-900/20 text-red-600'}`}
+                  onClick={onSwordsmanCharge}
+                  disabled={!chargeReady}
+                  title="Charge [C] — instant 2× damage to nearest grunt; 12s cooldown"
+                >
+                  {chargeReady ? '⚡ Charge [C] — 2× dmg burst' : `⚡ Charge [C] — ${maxCd}s`}
+                </button>;
+              })()}
               {isHeroSelected && (<>
                 <button
                   className={`col-span-2 rounded border px-2 py-2 text-xs font-semibold disabled:opacity-40 ${heroAbilityCooldown > 0 ? 'border-yellow-700/50 bg-yellow-900/20 text-yellow-600' : 'border-yellow-400 bg-yellow-500/20 text-yellow-200 hover:bg-yellow-500/30'}`}

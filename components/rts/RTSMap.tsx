@@ -151,6 +151,8 @@ const BUILDING_GRUNT_DAMAGE = 8; // damage per hit from grunt to building
 
 const SWORDSMAN_MAX_HP = 80;
 const SWORDSMAN_DAMAGE_BONUS = 10;
+const SWORDSMAN_CHARGE_COOLDOWN_S = 12;
+const SWORDSMAN_CHARGE_DAMAGE_MULT = 2;
 const CAVALRY_MAX_HP = 65;
 const CAVALRY_SPEED = 3.0;
 const CAVALRY_DAMAGE_BONUS = 8;
@@ -289,7 +291,7 @@ function clearSave(): void {
 
 function makeUnit(id: number, x: number, y: number, unitType: 'farmer' | 'swordsman' | 'hero' | 'catapult' | 'cavalry'): WorkerState {
   const maxHp = unitType === 'hero' ? HERO_MAX_HP : unitType === 'swordsman' ? SWORDSMAN_MAX_HP : unitType === 'catapult' ? CATAPULT_MAX_HP : unitType === 'cavalry' ? CAVALRY_MAX_HP : WORKER_MAX_HP;
-  return { id, x, y, selected: false, movingTo: null, path: [], gathering: null, attacking: null, repairing: null, attackMove: false, attackMoveTarget: null, carrying: { gold: 0, lumber: 0, stone: 0 }, state: 'idle', group: null, hp: maxHp, maxHp, patrol: null, unitType, xp: 0, level: 0 };
+  return { id, x, y, selected: false, movingTo: null, path: [], gathering: null, attacking: null, repairing: null, chargeCooldown: 0, attackMove: false, attackMoveTarget: null, carrying: { gold: 0, lumber: 0, stone: 0 }, state: 'idle', group: null, hp: maxHp, maxHp, patrol: null, unitType, xp: 0, level: 0 };
 }
 // ---------------------------------
 
@@ -406,6 +408,18 @@ const RTSMap: React.FC = () => {
     const id = setInterval(() => setHeroAbilityCooldown(c => Math.max(0, c - 1)), 1000);
     return () => clearInterval(id);
   }, [heroAbilityCooldown > 0]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Tick down swordsman charge cooldowns every second
+  useEffect(() => {
+    const id = setInterval(() => {
+      setWorkers(ws => {
+        const hasCooldown = ws.some(w => w.chargeCooldown > 0);
+        if (!hasCooldown) return ws;
+        return ws.map(w => w.chargeCooldown > 0 ? { ...w, chargeCooldown: Math.max(0, w.chargeCooldown - 1) } : w);
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+
   const [harvestBoonCooldown, setHarvestBoonCooldown] = useState(0);
   const [harvestBoonActive, setHarvestBoonActive] = useState(false);
   const harvestBoonRef = useRef(false);
@@ -877,6 +891,22 @@ const RTSMap: React.FC = () => {
     }, 10000);
   }, [harvestBoonCooldown, harvestBoonActive, addFloatingText, workers]);
 
+  const handleSwordsmanCharge = useCallback(() => {
+    const swords = workersRef.current.filter(w => w.selected && w.unitType === 'swordsman' && w.chargeCooldown <= 0);
+    if (swords.length === 0) return;
+    const allGrunts = enemyGruntsRef.current.filter(g => g.hp > 0);
+    if (allGrunts.length === 0) return;
+    swords.forEach(sw => {
+      const nearest = allGrunts.reduce<EnemyGrunt | null>((best, g) => (!best || tileDist(sw.x, sw.y, g.x, g.y) < tileDist(best.x, best.y, sw.x, sw.y) ? g : best), null);
+      if (!nearest) return;
+      const dmg = (ATTACK_DAMAGE + SWORDSMAN_DAMAGE_BONUS + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5) * SWORDSMAN_CHARGE_DAMAGE_MULT;
+      addFloatingText(Math.round(nearest.x), Math.round(nearest.y), `⚔️-${dmg}`, '#ef4444');
+      addFloatingText(Math.round(sw.x), Math.round(sw.y), '⚡ Charge!', '#fbbf24');
+      setEnemyGrunts(gs => gs.map(g => g.id === nearest.id ? { ...g, hp: Math.max(0, g.hp - dmg) } : g));
+    });
+    setWorkers(ws => ws.map(w => swords.some(s => s.id === w.id) ? { ...w, chargeCooldown: SWORDSMAN_CHARGE_COOLDOWN_S } : w));
+  }, [addFloatingText]);
+
   const isTileOccupied = useCallback((x: number, y: number): boolean => {
     if (x < 0 || y < 0 || x >= GRID_SIZE || y >= GRID_SIZE) return true;
     if (tiles[x]?.[y] === 'water') return true;
@@ -1023,6 +1053,7 @@ const RTSMap: React.FC = () => {
         setWorkers(ws => ws.map(w => w.selected ? { ...w, movingTo: null, path: [], gathering: null, attacking: null, repairing: null, attackMove: false, attackMoveTarget: null, patrol: null, state: 'idle' as const } : w));
       }
       if (e.key === 'g' || e.key === 'G') { e.preventDefault(); handleGarrison(); }
+      if (e.key === 'c' || e.key === 'C') { e.preventDefault(); handleSwordsmanCharge(); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -1941,7 +1972,7 @@ const RTSMap: React.FC = () => {
             ⚔️ Attack-Move · Right-click destination · Esc to cancel
           </span>
         ) : (
-          <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 400 }}>WASD pan · scroll zoom · Ctrl+A all · Ctrl+1-9 groups · P patrol · A attack-move · F farmer · Q sword · R cavalry · Del stop · G garrison</span>
+          <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 400 }}>WASD pan · scroll zoom · Ctrl+A all · Ctrl+1-9 groups · P patrol · A attack-move · C charge · F farmer · Q sword · R cavalry · Del stop · G garrison</span>
         )}
         <button onClick={doSave} style={{ background: saveStatus === 'saved' ? 'rgba(74,222,128,0.2)' : 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', color: saveStatus === 'saved' ? '#4ade80' : '#94a3b8', padding: '2px 10px', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>
           {saveStatus === 'saved' ? '✓ Saved' : '💾 Save'}
@@ -2488,6 +2519,7 @@ const RTSMap: React.FC = () => {
         towerGarrison={towerGarrison}
         onTowerDeploy={handleTowerDeploy}
         placedBuildingsList={placedBuildings}
+        onSwordsmanCharge={handleSwordsmanCharge}
         onMinimapClick={(tx, ty) => {
           const { isoX, isoY } = tileToSvg(tx, ty);
           const bounds = { minX: -((GRID_SIZE * TILE_SIZE) / 2), maxX: (GRID_SIZE * TILE_SIZE) / 2, minY: -100, maxY: (GRID_SIZE * TILE_SIZE) / 2 };
