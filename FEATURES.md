@@ -56,6 +56,8 @@
 - **Farm RTS: Enhanced Minimap** — Minimap now shows the full battlefield at a glance: green squares for tree clusters, yellow for the gold mine, gray for stone nodes, amber for all placed player buildings, and purple × marks for uncleared neutral creep camps; color legend below the map; panel height increased for readability; makes strategic decision-making easier without zooming the main view.
 - **Farm RTS: Save / Load** — Complete game state persisted to localStorage (workers, resources, buildings, fog, wave, barn HP, upgrades, rally point); auto-saves every 30 seconds and on browser tab close; 💾 Save button with confirmation flash and 🗑 New Game button to clear and restart; Play Again on end-screen also clears save.
 
+- **Farm RTS: Spike Trap Building** — Buildable 🪤 Spike Trap (30🪙 20🌲 10🪨) that deals 20 damage to any enemy grunt stepping within proximity; each trap has a 30-second rearm cooldown after triggering; visually shows armed state (yellow spikes) vs recharging state (gray spikes + "REARM" label); built from the farmhouse command card; stackable in narrow chokepoints or around the barn perimeter to punish enemy approach routes — WC3/AoE-style terrain hazard that rewards map control and defensive placement strategy.
+
 ## Planned
 
 ### Farm RTS Game (MVP in progress)

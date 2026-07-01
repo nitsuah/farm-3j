@@ -20,7 +20,7 @@ export interface WorkerState {
   level: number;
 }
 
-export type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market' | 'blacksmith' | 'granary' | 'stable';
+export type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market' | 'blacksmith' | 'granary' | 'stable' | 'spikeTrap';
 
 export interface PlacedBuilding {
   id: number;
@@ -471,6 +471,14 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                       {guardTowerResearched ? '🏰 Guard Tower ✓ (active)' : '🏰 Guard Tower 120🪙 80🪨 — upgrade all towers'}
                     </button>
                   )}
+                  <button
+                    className="col-span-2 rounded border border-yellow-700/70 bg-yellow-900/20 px-2 py-2 text-xs text-yellow-200 hover:bg-yellow-800/30 disabled:opacity-40"
+                    onClick={() => onFarmhouseAction('build:spikeTrap')}
+                    disabled={resources.gold < 30 || resources.lumber < 20 || resources.stone < 10}
+                    title="Spike Trap — 30🪙 20🌲 10🪨 | Deals 20 dmg to grunts that step on it; 30s cooldown per trap"
+                  >
+                    🪤 Spike Trap 30🪙 20🌲 10🪨
+                  </button>
                   {(Object.keys(UPGRADE_META) as (keyof Upgrades)[]).map(key => {
                     const level = upgrades[key];
                     const maxed = level >= UPGRADE_MAX;

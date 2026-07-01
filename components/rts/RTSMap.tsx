@@ -69,7 +69,7 @@ const ARCHER_TOWER_ATTACK_MS = 2500;
 
 interface FloatingText { id: number; x: number; y: number; text: string; color: string; createdAt: number }
 type TileType = 'grass' | 'dirt' | 'water' | 'tree' | 'rock';
-type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market' | 'blacksmith' | 'granary' | 'stable';
+type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market' | 'blacksmith' | 'granary' | 'stable' | 'spikeTrap';
 
 interface ResourceNode { x: number; y: number; amount: number }
 interface Resources { gold: number; lumber: number; stone: number; food: number; foodCap: number }
@@ -136,10 +136,11 @@ const BUILDING_COSTS: Record<BuildingType, { gold: number; lumber: number; stone
   blacksmith:    { gold: 100, lumber: 60, stone: 80, label: 'Blacksmith',     foodCapBonus: 0 },
   granary:       { gold: 50,  lumber: 80, stone: 20, label: 'Granary',        foodCapBonus: 8 },
   stable:        { gold: 80,  lumber: 60, stone: 30, label: 'Stable',         foodCapBonus: 0 },
+  spikeTrap:     { gold: 30,  lumber: 20, stone: 10, label: 'Spike Trap',     foodCapBonus: 0 },
 };
 
 const BUILDING_EMOJI: Record<BuildingType, string> = {
-  farmhouse: '🏠', lumberShed: '🪵', watchtower: '🗼', wall: '🧱', windmill: '💨', barracks: '🏯', siegeWorkshop: '⚙️', market: '🏪', blacksmith: '🔨', granary: '🌾', stable: '🐴',
+  farmhouse: '🏠', lumberShed: '🪵', watchtower: '🗼', wall: '🧱', windmill: '💨', barracks: '🏯', siegeWorkshop: '⚙️', market: '🏪', blacksmith: '🔨', granary: '🌾', stable: '🐴', spikeTrap: '🪤',
 };
 
 const SWORDSMAN_MAX_HP = 80;
@@ -504,6 +505,7 @@ const RTSMap: React.FC = () => {
   const repairTimeoutsRef = useRef<Record<number, number>>({});
   const archerTowerTimerRef = useRef<number | null>(null);
   const watchtowerTimersRef = useRef<Record<number, number>>({});
+  const trapTriggeredRef = useRef<Record<number, number>>({}); // buildingId → trigger timestamp
   const animationRef = useRef<number | null>(null);
   const prevTimeRef = useRef<number | null>(null);
 
@@ -679,6 +681,31 @@ const RTSMap: React.FC = () => {
     };
     barnArrowTimerRef.current = window.setTimeout(fireBarnArrow, BARN_DEFENSE_MS);
     return () => { if (barnArrowTimerRef.current) clearTimeout(barnArrowTimerRef.current); };
+  }, [gameOver, addFloatingText]);
+
+  // Spike Trap — deal 20 dmg to any grunt that steps within 0.5 tiles; 30s cooldown per trap
+  useEffect(() => {
+    if (gameOver) return;
+    const TRAP_DAMAGE = 20;
+    const TRAP_COOLDOWN_MS = 30000;
+    const TRAP_RADIUS = 0.8;
+    const checkTraps = () => {
+      if (gameOverRef.current) return;
+      const traps = placedBuildingsRef.current.filter(b => b.type === 'spikeTrap');
+      const now = Date.now();
+      const grunts = enemyGruntsRef.current;
+      traps.forEach(trap => {
+        const lastTrigger = trapTriggeredRef.current[trap.id] ?? 0;
+        if (now - lastTrigger < TRAP_COOLDOWN_MS) return; // still on cooldown
+        const victim = grunts.find(g => g.hp > 0 && tileDist(g.x, g.y, trap.x, trap.y) <= TRAP_RADIUS);
+        if (!victim) return;
+        trapTriggeredRef.current[trap.id] = now;
+        setEnemyGrunts(gs => gs.map(g => g.id === victim.id ? { ...g, hp: Math.max(0, g.hp - TRAP_DAMAGE) } : g));
+        addFloatingText(trap.x, trap.y, `🪤-${TRAP_DAMAGE}`, '#fbbf24');
+      });
+    };
+    const id = window.setInterval(checkTraps, 250);
+    return () => clearInterval(id);
   }, [gameOver, addFloatingText]);
 
   // Windmill passive gold income
@@ -1889,6 +1916,28 @@ const RTSMap: React.FC = () => {
                 <circle cx={isoX + TILE_SIZE * 0.35 + 2} cy={isoY - 28} r={4} fill="#4b5563" opacity={0.5} />
                 <text x={isoX + TILE_SIZE} y={isoY + TILE_SIZE * 0.52} textAnchor="middle" fontSize="22">🔨</text>
                 <text x={isoX + TILE_SIZE} y={isoY + 2} textAnchor="middle" fontSize="9" fill="#fca5a5" fontWeight="bold">BLACKSMITH</text>
+              </g>;
+            }
+            if (b.type === 'spikeTrap') {
+              const lastTrigger = trapTriggeredRef.current[b.id] ?? 0;
+              const isArmed = lastTrigger === 0 || Date.now() - lastTrigger >= 30000;
+              const cx2 = isoX + TILE_SIZE / 2; const cy2 = isoY + TILE_SIZE * 0.5;
+              return <g key={`building-${b.id}`} pointerEvents="none">
+                {/* Base stone plate */}
+                <ellipse cx={cx2} cy={cy2 + 4} rx={28} ry={12} fill={isArmed ? '#78350f' : '#44403c'} stroke={isArmed ? '#451a03' : '#292524'} strokeWidth={2} />
+                {isArmed ? (<>
+                  {/* Spike tips */}
+                  {[-14,-7,0,7,14].map((dx, i) => (
+                    <polygon key={i} points={`${cx2+dx},${cy2-16} ${cx2+dx-5},${cy2+4} ${cx2+dx+5},${cy2+4}`} fill="#fbbf24" stroke="#b45309" strokeWidth={1.5} />
+                  ))}
+                  <text x={cx2} y={cy2 - 20} textAnchor="middle" fontSize="8" fill="#fde68a" fontWeight="bold">ARMED</text>
+                </>) : (<>
+                  {/* Flat exhausted look */}
+                  {[-14,-7,0,7,14].map((dx, i) => (
+                    <polygon key={i} points={`${cx2+dx},${cy2-4} ${cx2+dx-5},${cy2+4} ${cx2+dx+5},${cy2+4}`} fill="#6b7280" stroke="#4b5563" strokeWidth={1} />
+                  ))}
+                  <text x={cx2} y={cy2 - 8} textAnchor="middle" fontSize="8" fill="#9ca3af">REARM</text>
+                </>)}
               </g>;
             }
             const colors: Record<string, { fill: string; stroke: string }> = { farmhouse: { fill: '#fef3c7', stroke: '#92400e' }, lumberShed: { fill: '#a16207', stroke: '#78350f' }, watchtower: { fill: '#64748b', stroke: '#1e293b' } };
