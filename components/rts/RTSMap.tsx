@@ -1107,6 +1107,23 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
     return () => { if (barnArrowTimerRef.current) clearTimeout(barnArrowTimerRef.current); };
   }, [gameOver, addFloatingText]);
 
+  // Barn HP regen from garrison: +2 HP/s per garrisoned unit, capped at max HP
+  useEffect(() => {
+    if (gameOver || garrisoned.length === 0) return;
+    const id = setInterval(() => {
+      if (gameOverRef.current) return;
+      const count = garrisonedRef.current.length;
+      if (count === 0) return;
+      const regen = count * 2;
+      setPlayerBarnHp(hp => {
+        const next = Math.min(PLAYER_BARN_MAX_HP, hp + regen);
+        if (next > hp) addFloatingText(BARN_POS.x, BARN_POS.y, `+${regen}🏰`, '#4ade80');
+        return next;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [gameOver, garrisoned.length, addFloatingText]);
+
   // Training queue drain — tick every 100ms; spawn unit when elapsed >= TRAIN_TIME_MS
   useEffect(() => {
     if (gameOver) return;
