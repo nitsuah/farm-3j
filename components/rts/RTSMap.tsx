@@ -380,7 +380,8 @@ interface SaveData {
   resources: Resources;
   workers: SaveWorker[];
   trees: ResourceNode[];
-  goldMine: ResourceNode;
+  goldMines: ResourceNode[];
+  goldMine?: ResourceNode; // legacy — migrated to goldMines on load
   stoneNodes: ResourceNode[];
   placedBuildings: PlacedBuilding[];
   buildingNextId: number;
@@ -458,8 +459,15 @@ const RTSMap: React.FC = () => {
     { x: 13, y: 8, amount: 60 }, { x: 14, y: 8, amount: 60 },
     { x: 12, y: 2, amount: 60 }, { x: 13, y: 2, amount: 60 },
   ];
+  const DEFAULT_GOLD_MINES: ResourceNode[] = [
+    { x: 1, y: 8, amount: 250 },   // near player base
+    { x: 8, y: 8, amount: 300 },   // contested center — high value, risky
+    { x: 15, y: 8, amount: 250 },  // deep enemy side
+  ];
   const [trees, setTrees] = useState<ResourceNode[]>(() => INITIAL_SAVE?.trees ?? DEFAULT_TREES);
-  const [goldMine, setGoldMine] = useState<ResourceNode>(() => INITIAL_SAVE?.goldMine ?? { x: 1, y: 8, amount: 200 });
+  const [goldMines, setGoldMines] = useState<ResourceNode[]>(() =>
+    INITIAL_SAVE?.goldMines ?? (INITIAL_SAVE?.goldMine ? [INITIAL_SAVE.goldMine] : DEFAULT_GOLD_MINES)
+  );
   const [stoneNodes, setStoneNodes] = useState<ResourceNode[]>(() => INITIAL_SAVE?.stoneNodes ?? [
     { x: 4, y: 1, amount: 150 }, { x: 1, y: 4, amount: 150 },   // player corner
     { x: 9, y: 9, amount: 150 },                                  // center
@@ -467,10 +475,10 @@ const RTSMap: React.FC = () => {
     { x: 15, y: 12, amount: 150 }, { x: 12, y: 15, amount: 150 }, // enemy corner
   ]);
   const treesRef = useRef(trees);
-  const goldMineRef = useRef(goldMine);
+  const goldMinesRef = useRef(goldMines);
   const stoneNodesRef = useRef(stoneNodes);
   useEffect(() => { treesRef.current = trees; }, [trees]);
-  useEffect(() => { goldMineRef.current = goldMine; }, [goldMine]);
+  useEffect(() => { goldMinesRef.current = goldMines; }, [goldMines]);
   useEffect(() => { stoneNodesRef.current = stoneNodes; }, [stoneNodes]);
 
   const makeWorker = (id: number, x: number, y: number) => makeUnit(id, x, y, 'farmer');
@@ -664,7 +672,7 @@ const RTSMap: React.FC = () => {
       resources,
       workers: workersRef.current.map(w => ({ id: w.id, x: Math.round(w.x), y: Math.round(w.y), hp: w.hp, maxHp: w.maxHp, unitType: w.unitType, group: w.group, xp: w.xp, level: w.level })),
       trees: treesRef.current,
-      goldMine: goldMineRef.current,
+      goldMines: goldMinesRef.current,
       stoneNodes: stoneNodesRef.current,
       placedBuildings: placedBuildingsRef.current,
       buildingNextId: buildingIdRef.current,
@@ -1177,11 +1185,11 @@ const RTSMap: React.FC = () => {
     if (x === BARN_POS.x && y === BARN_POS.y) return true;
     if (x === ENEMY_BARN_POS.x && y === ENEMY_BARN_POS.y) return true;
     if (trees.some(t => t.x === x && t.y === y && t.amount > 0)) return true;
-    if (goldMine.x === x && goldMine.y === y && goldMine.amount > 0) return true;
+    if (goldMines.some(m => m.x === x && m.y === y && m.amount > 0)) return true;
     if (stoneNodes.some(s => s.x === x && s.y === y && s.amount > 0)) return true;
     if (placedBuildings.some(b => b.x === x && b.y === y)) return true;
     return false;
-  }, [tiles, trees, goldMine, stoneNodes, placedBuildings]);
+  }, [tiles, trees, goldMines, stoneNodes, placedBuildings]);
 
   const clientToSvg = useCallback((cx: number, cy: number) => {
     const svg = svgRef.current;
@@ -1382,7 +1390,7 @@ const RTSMap: React.FC = () => {
       prevTimeRef.current = timestamp;
 
       const curTrees = treesRef.current;
-      const curGold = goldMineRef.current;
+      const curGoldMines = goldMinesRef.current;
       const curStone = stoneNodesRef.current;
       const gatherT = gatherTimeoutsRef.current;
       const attackT = attackTimeoutsRef.current;
@@ -1467,8 +1475,10 @@ const RTSMap: React.FC = () => {
               if (w.attacking && w.state !== 'returning') return { ...w, x: w.movingTo.x, y: w.movingTo.y, movingTo: null, path: [], state: 'attacking' };
               if (w.repairing && w.state !== 'returning') return { ...w, x: w.movingTo.x, y: w.movingTo.y, movingTo: null, path: [], state: 'repairing' };
               if (w.state === 'returning') {
-                const atBarn = tileDist(w.movingTo.x, w.movingTo.y, BARN_POS.x, BARN_POS.y) < epsilon;
-                if (atBarn) {
+                const movDest = w.movingTo!;
+                const atBarn = tileDist(movDest.x, movDest.y, BARN_POS.x, BARN_POS.y) < epsilon;
+                const atLumberShed = !atBarn && w.carrying.lumber > 0 && placedBuildingsRef.current.some(b => b.type === 'lumberShed' && b.hp > 0 && tileDist(movDest.x, movDest.y, b.x, b.y) < epsilon);
+                if (atBarn || atLumberShed) {
                   setResources(r => ({ ...r, gold: r.gold + w.carrying.gold, lumber: r.lumber + w.carrying.lumber, stone: r.stone + w.carrying.stone }));
                   if (w.carrying.gold > 0) setTotalGold(g => g + w.carrying.gold);
                   if (w.carrying.lumber > 0) setTotalLumber(l => l + w.carrying.lumber);
@@ -1480,9 +1490,22 @@ const RTSMap: React.FC = () => {
                         return { ...w, x: w.movingTo.x, y: w.movingTo.y, movingTo: p[0] ?? { x: t.x, y: t.y }, path: p.slice(1), carrying: { gold: 0, lumber: 0, stone: 0 }, state: 'moving' };
                       }
                     } else if (w.gathering.type === 'gold') {
-                      if (curGold.amount > 0) {
-                        const p = aStar(INITIAL_TILES, { x: Math.round(w.movingTo.x), y: Math.round(w.movingTo.y) }, { x: curGold.x, y: curGold.y });
-                        return { ...w, x: w.movingTo.x, y: w.movingTo.y, movingTo: p[0] ?? curGold, path: p.slice(1), carrying: { gold: 0, lumber: 0, stone: 0 }, state: 'moving' };
+                      const mineIdx = w.gathering.idx;
+                      const mine = curGoldMines[mineIdx];
+                      if (mine && mine.amount > 0) {
+                        const p = aStar(INITIAL_TILES, { x: Math.round(w.movingTo.x), y: Math.round(w.movingTo.y) }, { x: mine.x, y: mine.y });
+                        return { ...w, x: w.movingTo.x, y: w.movingTo.y, movingTo: p[0] ?? mine, path: p.slice(1), carrying: { gold: 0, lumber: 0, stone: 0 }, state: 'moving' };
+                      }
+                      // mine depleted — auto-find nearest non-empty mine
+                      const wx3 = Math.round(w.movingTo.x), wy3 = Math.round(w.movingTo.y);
+                      const altMine = curGoldMines.reduce<{ node: ResourceNode; idx: number; d: number } | null>((best, m, i) => {
+                        if (m.amount <= 0) return best;
+                        const d = tileDist(wx3, wy3, m.x, m.y);
+                        return !best || d < best.d ? { node: m, idx: i, d } : best;
+                      }, null);
+                      if (altMine) {
+                        const p = aStar(INITIAL_TILES, { x: wx3, y: wy3 }, { x: altMine.node.x, y: altMine.node.y });
+                        return { ...w, x: w.movingTo.x, y: w.movingTo.y, movingTo: p[0] ?? altMine.node, path: p.slice(1), carrying: { gold: 0, lumber: 0, stone: 0 }, state: 'moving', gathering: { type: 'gold', idx: altMine.idx } };
                       }
                     } else if (w.gathering.type === 'stone') {
                       const n = curStone[w.gathering.idx];
@@ -1553,8 +1576,13 @@ const RTSMap: React.FC = () => {
             const gType = w.gathering.type;
             if (gType === 'tree') {
               if (w.carrying.lumber >= CARRY_CAP) {
-                const p = aStar(INITIAL_TILES, { x: Math.round(w.x), y: Math.round(w.y) }, BARN_POS);
-                return { ...w, state: 'returning', movingTo: p[0] ?? BARN_POS, path: p.slice(1) };
+                const sheds = placedBuildingsRef.current.filter(b => b.type === 'lumberShed' && b.hp > 0);
+                const dropSite = sheds.reduce<{ x: number; y: number } | null>((best, s) => {
+                  const d = tileDist(w.x, w.y, s.x, s.y);
+                  return !best || d < tileDist(w.x, w.y, best.x, best.y) ? { x: s.x, y: s.y } : best;
+                }, null) ?? BARN_POS;
+                const p = aStar(INITIAL_TILES, { x: Math.round(w.x), y: Math.round(w.y) }, dropSite);
+                return { ...w, state: 'returning', movingTo: p[0] ?? dropSite, path: p.slice(1) };
               }
               if (!gatherT[w.id]) {
                 const lumberShedCount = placedBuildingsRef.current.filter(b => b.type === 'lumberShed').length;
@@ -1567,8 +1595,13 @@ const RTSMap: React.FC = () => {
                     if (w2.id !== w.id || w2.state !== 'gathering' || !w2.gathering) return w2;
                     if ((treesRef.current[idx]?.amount ?? 0) > 0 && w2.carrying.lumber < CARRY_CAP) {
                       setTrees(ts => ts.map((t, i) => i === idx ? { ...t, amount: Math.max(0, t.amount - CARRY_CAP) } : t));
-                      const p = aStar(INITIAL_TILES, { x: Math.round(w2.x), y: Math.round(w2.y) }, BARN_POS);
-                      return { ...w2, carrying: { gold: 0, lumber: w2.carrying.lumber + CARRY_CAP, stone: 0 }, state: 'returning', movingTo: p[0] ?? BARN_POS, path: p.slice(1) };
+                      const sheds2 = placedBuildingsRef.current.filter(b => b.type === 'lumberShed' && b.hp > 0);
+                      const dropSite2 = sheds2.reduce<{ x: number; y: number } | null>((best, s) => {
+                        const d = tileDist(w2.x, w2.y, s.x, s.y);
+                        return !best || d < tileDist(w2.x, w2.y, best.x, best.y) ? { x: s.x, y: s.y } : best;
+                      }, null) ?? BARN_POS;
+                      const p = aStar(INITIAL_TILES, { x: Math.round(w2.x), y: Math.round(w2.y) }, dropSite2);
+                      return { ...w2, carrying: { gold: 0, lumber: w2.carrying.lumber + CARRY_CAP, stone: 0 }, state: 'returning', movingTo: p[0] ?? dropSite2, path: p.slice(1) };
                     }
                     return w2;
                   }));
@@ -1581,12 +1614,14 @@ const RTSMap: React.FC = () => {
               }
               if (!gatherT[w.id]) {
                 const gatherMs = Math.max(400, (GATHER_INTERVAL_MS - upgradesRef.current.swiftHarvest * 200) / (harvestBoonRef.current ? 2 : 1));
+                const mineIdx = w.gathering.idx;
                 gatherT[w.id] = window.setTimeout(() => {
                   delete gatherTimeoutsRef.current[w.id];
                   setWorkers(ws2 => ws2.map(w2 => {
                     if (w2.id !== w.id || w2.state !== 'gathering' || !w2.gathering) return w2;
-                    if (goldMineRef.current.amount > 0 && w2.carrying.gold < CARRY_CAP) {
-                      setGoldMine(gm => ({ ...gm, amount: Math.max(0, gm.amount - CARRY_CAP) }));
+                    const mine = goldMinesRef.current[mineIdx];
+                    if (mine && mine.amount > 0 && w2.carrying.gold < CARRY_CAP) {
+                      setGoldMines(gms => gms.map((gm, i) => i === mineIdx ? { ...gm, amount: Math.max(0, gm.amount - CARRY_CAP) } : gm));
                       const p = aStar(INITIAL_TILES, { x: Math.round(w2.x), y: Math.round(w2.y) }, BARN_POS);
                       return { ...w2, carrying: { gold: w2.carrying.gold + CARRY_CAP, lumber: 0, stone: 0 }, state: 'returning', movingTo: p[0] ?? BARN_POS, path: p.slice(1) };
                     }
@@ -2683,14 +2718,14 @@ const RTSMap: React.FC = () => {
     buildings: placedBuildings.map(b => ({ x: b.x, y: b.y, type: b.type })),
     creepCamps: CREEP_CAMPS.map(c => ({ x: c.x, y: c.y, cleared: clearedCamps.has(c.id) })),
     enemyTowers: enemyTowers.filter(t => t.hp > 0).map(t => ({ x: t.x, y: t.y })),
-    goldNodes: goldMine.amount > 0 ? [{ x: goldMine.x, y: goldMine.y }] : [],
+    goldNodes: goldMines.filter(m => m.amount > 0).map(m => ({ x: m.x, y: m.y })),
     stoneNodes: stoneNodes.filter(n => n.amount > 0).map(n => ({ x: n.x, y: n.y })),
     treeNodes: trees.filter(t => t.amount > 0).map(t => ({ x: t.x, y: t.y })),
     warRams: enemySiege.filter(r => r.hp > 0).map(r => ({ x: r.x, y: r.y })),
     shamans: enemyShamans.filter(s => s.hp > 0).map(s => ({ x: s.x, y: s.y })),
     trolls: enemyTrolls.filter(t => t.hp > 0).map(t => ({ x: t.x, y: t.y })),
     sappers: enemySappers.filter(s => s.hp > 0 && !s.exploded).map(s => ({ x: s.x, y: s.y })),
-  }), [workers, enemyGrunts, enemyBarnHp, placedBuildings, clearedCamps, goldMine, stoneNodes, trees, enemyTowers, enemySiege, enemyShamans, enemyTrolls, enemySappers]);
+  }), [workers, enemyGrunts, enemyBarnHp, placedBuildings, clearedCamps, goldMines, stoneNodes, trees, enemyTowers, enemySiege, enemyShamans, enemyTrolls, enemySappers]);
 
   return (
     <div className="absolute inset-0 bg-black" onContextMenu={e => { if (buildMode) { e.preventDefault(); setBuildMode(null); setGhostTile(null); } }}>
@@ -2893,14 +2928,14 @@ const RTSMap: React.FC = () => {
               <rect x={isoX + TILE_SIZE / 2 - 18} y={isoY - 16} width={36 * (amount / 50)} height={5} fill="#bbf7d0" />
             </g>; })}
 
-          {/* Gold mine */}
-          {goldMine.amount > 0 && (() => { const { x, y, amount } = goldMine; const { isoX, isoY } = tileToSvg(x, y);
-            return <g key="gold-mine" style={{ cursor: 'pointer' }} onContextMenu={e => { e.preventDefault(); if (buildMode) return; commandMove(x, y, { type: 'gold', idx: 0 }); }}>
+          {/* Gold mines */}
+          {goldMines.map((mine, mineIdx) => { if (!mine.amount) return null; const { x, y, amount } = mine; const { isoX, isoY } = tileToSvg(x, y);
+            return <g key={`gold-mine-${mineIdx}`} style={{ cursor: 'pointer' }} onContextMenu={e => { e.preventDefault(); if (buildMode) return; commandMove(x, y, { type: 'gold', idx: mineIdx }); }}>
               <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 24} rx={28} ry={20} fill="#fde68a" stroke="#b45309" strokeWidth={4} />
               <text x={isoX + TILE_SIZE / 2} y={isoY + 32} textAnchor="middle" fontSize="16">⛏️</text>
               <rect x={isoX + TILE_SIZE / 2 - 28} y={isoY + 8} width={56} height={5} fill="#a16207" />
-              <rect x={isoX + TILE_SIZE / 2 - 28} y={isoY + 8} width={56 * (amount / 100)} height={5} fill="#fde68a" />
-            </g>; })()}
+              <rect x={isoX + TILE_SIZE / 2 - 28} y={isoY + 8} width={56 * (amount / 250)} height={5} fill="#fde68a" />
+            </g>; })}
 
           {/* Placed buildings */}
           {placedBuildings.map(b => { const { isoX, isoY } = tileToSvg(b.x, b.y);
