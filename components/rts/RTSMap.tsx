@@ -92,6 +92,14 @@ const TROLL_FIRST_WAVE = 10;
 const TROLL_GOLD_REWARD = 12;
 const TROLL_XP_REWARD = 30;
 
+const SAPPER_MAX_HP = 25;
+const SAPPER_SPEED = 1.3;
+const SAPPER_EXPLODE_RADIUS = 1.5;
+const SAPPER_EXPLODE_DAMAGE = 80;
+const SAPPER_FIRST_WAVE = 12;
+const SAPPER_GOLD_REWARD = 20;
+const SAPPER_XP_REWARD = 45;
+
 const LOOT_CRATE_POSITIONS = [
   { x: 2, y: 6 }, { x: 6, y: 2 }, { x: 3, y: 10 }, { x: 8, y: 4 }, { x: 1, y: 1 }, { x: 5, y: 7 },
 ];
@@ -167,6 +175,19 @@ interface EnemyTroll {
   state: 'moving' | 'attacking' | 'kiting';
   targetType: 'worker' | 'building' | 'barn';
   targetId: number | null;
+}
+
+interface EnemySapper {
+  id: number;
+  x: number;
+  y: number;
+  hp: number;
+  maxHp: number;
+  movingTo: { x: number; y: number } | null;
+  path: { x: number; y: number }[];
+  targetX: number;
+  targetY: number;
+  exploded: boolean;
 }
 
 interface NeutralCreep {
@@ -470,6 +491,10 @@ const RTSMap: React.FC = () => {
   useEffect(() => { enemyTrollsRef.current = enemyTrolls; }, [enemyTrolls]);
   const trollIdRef = useRef(3000);
   const trollAttackTimersRef = useRef<Record<number, number>>({});
+  const [enemySappers, setEnemySappers] = useState<EnemySapper[]>([]);
+  const enemySappersRef = useRef<EnemySapper[]>([]);
+  useEffect(() => { enemySappersRef.current = enemySappers; }, [enemySappers]);
+  const sapperIdRef = useRef(4000);
   const [lootCrates, setLootCrates] = useState<LootCrate[]>([]);
   const lootCratesRef = useRef<LootCrate[]>([]);
   useEffect(() => { lootCratesRef.current = lootCrates; }, [lootCrates]);
@@ -755,6 +780,21 @@ const RTSMap: React.FC = () => {
       setEnemyTrolls(ts => [...ts, troll]);
       setWaveAnnouncement(`🏹 Wave ${newWave} — TROLL ARCHER! Flank with cavalry!`);
       window.setTimeout(() => setWaveAnnouncement(null), 3000);
+    }
+
+    // Sapper spawn: wave 12+ every 6 waves
+    if (newWave >= SAPPER_FIRST_WAVE && newWave % 6 === 0) {
+      const sx2 = Math.max(0, ENEMY_BARN_POS.x - 2);
+      const sy2 = ENEMY_BARN_POS.y;
+      // Target: nearest wall, or barn if no walls
+      const wallSet2 = new Set(placedBuildingsRef.current.filter(b => b.type === 'wall').map(b => `${b.x},${b.y}`));
+      const nearestWall = placedBuildingsRef.current.filter(b => b.type === 'wall' && b.hp > 0).sort((a, b2) => tileDist(sx2, sy2, a.x, a.y) - tileDist(sx2, sy2, b2.x, b2.y))[0];
+      const sapperTarget = nearestWall ?? BARN_POS;
+      const sapperPath = aStar(INITIAL_TILES, { x: sx2, y: sy2 }, { x: sapperTarget.x, y: sapperTarget.y }, true, wallSet2);
+      const sapper: EnemySapper = { id: sapperIdRef.current++, x: sx2, y: sy2, hp: SAPPER_MAX_HP, maxHp: SAPPER_MAX_HP, movingTo: sapperPath[0] ?? { x: sapperTarget.x, y: sapperTarget.y }, path: sapperPath.slice(1), targetX: sapperTarget.x, targetY: sapperTarget.y, exploded: false };
+      setEnemySappers(ss => [...ss, sapper]);
+      setWaveAnnouncement(`💥 Wave ${newWave} — GOBLIN SAPPER! Kill it before it reaches your walls!`);
+      window.setTimeout(() => setWaveAnnouncement(null), 4000);
     }
 
     const nextDelay = Math.max(10000, GRUNT_SPAWN_MS - (newWave - 1) * 1500);
@@ -1316,6 +1356,8 @@ const RTSMap: React.FC = () => {
             if (nearShaman) return { ...w, attacking: { targetType: 'shaman' as const, shamanId: nearShaman.id }, state: 'attacking' as const, movingTo: null, path: [] };
             const nearTroll = enemyTrollsRef.current.find(t => t.hp > 0 && tileDist(w.x, w.y, t.x, t.y) <= AM_SCAN);
             if (nearTroll) return { ...w, attacking: { targetType: 'troll' as const, trollId: nearTroll.id }, state: 'attacking' as const, movingTo: null, path: [] };
+            const nearSapper = enemySappersRef.current.find(s => s.hp > 0 && !s.exploded && tileDist(w.x, w.y, s.x, s.y) <= AM_SCAN);
+            if (nearSapper) return { ...w, attacking: { targetType: 'sapper' as const, sapperId: nearSapper.id }, state: 'attacking' as const, movingTo: null, path: [] };
           }
           // Hold position: stay put, auto-attack nearby enemies without chasing
           if (w.holdPosition) {
@@ -1329,6 +1371,8 @@ const RTSMap: React.FC = () => {
               if (nearShamanH) return { ...w, attacking: { targetType: 'shaman' as const, shamanId: nearShamanH.id }, state: 'attacking' as const };
               const nearTrollH = enemyTrollsRef.current.find(t => t.hp > 0 && tileDist(w.x, w.y, t.x, t.y) <= HP_RANGE);
               if (nearTrollH) return { ...w, attacking: { targetType: 'troll' as const, trollId: nearTrollH.id }, state: 'attacking' as const };
+              const nearSapperH = enemySappersRef.current.find(s => s.hp > 0 && !s.exploded && tileDist(w.x, w.y, s.x, s.y) <= HP_RANGE);
+              if (nearSapperH) return { ...w, attacking: { targetType: 'sapper' as const, sapperId: nearSapperH.id }, state: 'attacking' as const };
             }
             // After killing target, go back to idle (don't chase)
             if (w.state === 'attacking' && w.attacking) {
@@ -1752,6 +1796,28 @@ const RTSMap: React.FC = () => {
                   }
                 }, moraleMs7);
               }
+            } else if (w.attacking.targetType === 'sapper') {
+              const sapperId = (w.attacking as { targetType: 'sapper'; sapperId: number }).sapperId;
+              const sapperTarget = enemySappersRef.current.find(s => s.id === sapperId && s.hp > 0 && !s.exploded);
+              if (!sapperTarget) return { ...w, attacking: null, state: 'idle' };
+              const distToSapper = tileDist(w.x, w.y, sapperTarget.x, sapperTarget.y);
+              if (distToSapper > 1.8) {
+                const p = aStar(INITIAL_TILES, { x: Math.round(w.x), y: Math.round(w.y) }, { x: Math.round(sapperTarget.x), y: Math.round(sapperTarget.y) });
+                return { ...w, movingTo: p[0] ?? { x: sapperTarget.x, y: sapperTarget.y }, path: p.slice(1), state: 'moving' };
+              }
+              if (!attackT[w.id]) {
+                const capturedSpX = Math.round(sapperTarget.x), capturedSpY = Math.round(sapperTarget.y);
+                const capturedSapperId = sapperId;
+                const unitBonusSp = w.unitType === 'hero' ? HERO_DAMAGE_BONUS : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
+                const capturedVetSp = w.level;
+                const moraleMs8 = getMoraleMs(w.x, w.y);
+                attackT[w.id] = window.setTimeout(() => {
+                  delete attackTimeoutsRef.current[w.id];
+                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + unitBonusSp + capturedVetSp * VETERAN_ATK_BONUS;
+                  setEnemySappers(ss => ss.map(s => s.id === capturedSapperId ? { ...s, hp: Math.max(0, s.hp - dmg) } : s));
+                  addFloatingText(capturedSpX, capturedSpY, `-${dmg}`, '#ef4444');
+                }, moraleMs8);
+              }
             } else {
               if (!attackT[w.id]) {
                 const capturedWX = Math.round(w.x), capturedWY = Math.round(w.y);
@@ -2138,6 +2204,69 @@ const RTSMap: React.FC = () => {
         });
       });
 
+      // Update Goblin Sappers
+      setEnemySappers(ss => {
+        const alive = ss.filter(s => !s.exploded && s.hp > 0);
+        const killed = ss.filter(s => !s.exploded && s.hp <= 0);
+        killed.forEach(s => {
+          setResources(r => ({ ...r, gold: r.gold + SAPPER_GOLD_REWARD }));
+          addFloatingText(Math.round(s.x), Math.round(s.y), `+${SAPPER_GOLD_REWARD}🪙 💥Defused!`, '#fbbf24');
+        });
+        return alive.map(s => {
+          const distToTarget = tileDist(s.x, s.y, s.targetX, s.targetY);
+          // Explode on reaching target
+          if (distToTarget < 0.8) {
+            addFloatingText(Math.round(s.x), Math.round(s.y), '💥 BOOM!', '#f97316');
+            // Damage all buildings in radius
+            setPlacedBuildings(bs => bs.map(b => {
+              const d = tileDist(b.x, b.y, s.x, s.y);
+              if (d > SAPPER_EXPLODE_RADIUS) return b;
+              const newHp = Math.max(0, b.hp - SAPPER_EXPLODE_DAMAGE);
+              addFloatingText(b.x, b.y, `-${SAPPER_EXPLODE_DAMAGE}`, '#ef4444');
+              return { ...b, hp: newHp };
+            }));
+            // Damage player barn if in range
+            if (tileDist(s.x, s.y, BARN_POS.x, BARN_POS.y) <= SAPPER_EXPLODE_RADIUS) {
+              setPlayerBarnHp(hp => { const nHp = Math.max(0, hp - SAPPER_EXPLODE_DAMAGE); if (nHp <= 0) setGameOver('defeat'); return nHp; });
+              addFloatingText(BARN_POS.x, BARN_POS.y, `-${SAPPER_EXPLODE_DAMAGE}`, '#ef4444');
+            }
+            // Damage workers in radius
+            setWorkers(ws => ws.map(w => {
+              if (tileDist(w.x, w.y, s.x, s.y) > SAPPER_EXPLODE_RADIUS) return w;
+              addFloatingText(Math.round(w.x), Math.round(w.y), `-${SAPPER_EXPLODE_DAMAGE}`, '#fca5a5');
+              return { ...w, hp: Math.max(0, w.hp - SAPPER_EXPLODE_DAMAGE) };
+            }));
+            // XP reward to nearby attackers
+            setWorkers(ws2 => ws2.map(u => {
+              if (!u.attacking || u.attacking.targetType !== 'sapper') return u;
+              const xpGain = SAPPER_XP_REWARD;
+              const newXp = u.xp + xpGain;
+              const newLevel = newXp >= XP_TO_LEVEL_2 ? 2 : newXp >= XP_TO_LEVEL_1 ? 1 : 0;
+              if (newLevel > u.level) {
+                addFloatingText(Math.round(u.x), Math.round(u.y), `⭐ Level ${newLevel}!`, '#fbbf24');
+                return { ...u, xp: newXp, level: newLevel, maxHp: u.maxHp + VETERAN_HP_BONUS, hp: Math.min(u.hp + VETERAN_HP_BONUS, u.maxHp + VETERAN_HP_BONUS), attacking: null, state: 'idle' as const };
+              }
+              return { ...u, xp: newXp, attacking: null, state: 'idle' as const };
+            }));
+            return { ...s, exploded: true };
+          }
+          // Move toward target
+          if (s.movingTo) {
+            const dx = s.movingTo.x - s.x, dy = s.movingTo.y - s.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 0.1) {
+              const next = s.path[0] ?? null;
+              if (!next) return { ...s, x: s.movingTo.x, y: s.movingTo.y, movingTo: null, path: [] };
+              return { ...s, x: s.movingTo.x, y: s.movingTo.y, movingTo: next, path: s.path.slice(1) };
+            }
+            return { ...s, x: s.x + (dx / dist) * Math.min(SAPPER_SPEED * dt, dist), y: s.y + (dy / dist) * Math.min(SAPPER_SPEED * dt, dist) };
+          }
+          const wallSetSp = new Set(placedBuildingsRef.current.filter(b => b.type === 'wall').map(b => `${b.x},${b.y}`));
+          const p = aStar(INITIAL_TILES, { x: Math.round(s.x), y: Math.round(s.y) }, { x: s.targetX, y: s.targetY }, true, wallSetSp);
+          return { ...s, movingTo: p[0] ?? { x: s.targetX, y: s.targetY }, path: p.slice(1) };
+        }).filter(s => !s.exploded);
+      });
+
       // Update neutral creeps
       setNeutralCreeps(creeps => {
         const alive = creeps.filter(c => c.hp > 0);
@@ -2458,6 +2587,21 @@ const RTSMap: React.FC = () => {
     }));
   }, [anySelected]);
 
+  const handleAttackSapper = useCallback((sapperId: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!anySelected) return;
+    const sapper = enemySappersRef.current.find(s => s.id === sapperId);
+    if (!sapper) return;
+    const tx = Math.round(sapper.x), ty = Math.round(sapper.y);
+    setWorkers(ws => ws.map(w => {
+      if (!w.selected) return w;
+      const path = aStar(INITIAL_TILES, { x: Math.round(w.x), y: Math.round(w.y) }, { x: tx, y: ty });
+      const first = path[0] ?? { x: tx, y: ty };
+      return { ...w, movingTo: first, path: path.slice(1), gathering: null, attacking: { targetType: 'sapper' as const, sapperId }, state: 'moving' };
+    }));
+  }, [anySelected]);
+
   const handleAttackCreep = useCallback((creepId: number, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -2487,7 +2631,8 @@ const RTSMap: React.FC = () => {
     warRams: enemySiege.filter(r => r.hp > 0).map(r => ({ x: r.x, y: r.y })),
     shamans: enemyShamans.filter(s => s.hp > 0).map(s => ({ x: s.x, y: s.y })),
     trolls: enemyTrolls.filter(t => t.hp > 0).map(t => ({ x: t.x, y: t.y })),
-  }), [workers, enemyGrunts, enemyBarnHp, placedBuildings, clearedCamps, goldMine, stoneNodes, trees, enemyTowers, enemySiege, enemyShamans, enemyTrolls]);
+    sappers: enemySappers.filter(s => s.hp > 0 && !s.exploded).map(s => ({ x: s.x, y: s.y })),
+  }), [workers, enemyGrunts, enemyBarnHp, placedBuildings, clearedCamps, goldMine, stoneNodes, trees, enemyTowers, enemySiege, enemyShamans, enemyTrolls, enemySappers]);
 
   return (
     <div className="absolute inset-0 bg-black" onContextMenu={e => { if (buildMode) { e.preventDefault(); setBuildMode(null); setGhostTile(null); } }}>
@@ -3032,6 +3177,35 @@ const RTSMap: React.FC = () => {
               {/* HP bar */}
               <rect x={isoX + TILE_SIZE / 2 - 16} y={isoY - 10} width={32} height={4} fill="#1e293b" rx={2} />
               <rect x={isoX + TILE_SIZE / 2 - 16} y={isoY - 10} width={32 * hp} height={4} fill="#22c55e" rx={2} />
+            </g>;
+          })}
+
+          {/* Goblin Sappers */}
+          {enemySappers.filter(s => s.hp > 0 && !s.exploded).map(s => {
+            const { isoX, isoY } = tileToSvg(s.x, s.y);
+            const hp = s.hp / s.maxHp;
+            const urgency = tileDist(s.x, s.y, s.targetX, s.targetY) < 3;
+            return <g key={`sapper-${s.id}`} style={{ cursor: anySelected ? 'crosshair' : 'default' }} onContextMenu={e => handleAttackSapper(s.id, e)}>
+              {/* Body */}
+              <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 22} rx={8} ry={10} fill={urgency ? '#dc2626' : '#b91c1c'} stroke="#7f1d1d" strokeWidth={2} />
+              {/* Head */}
+              <circle cx={isoX + TILE_SIZE / 2} cy={isoY + 10} r={8} fill={urgency ? '#fbbf24' : '#f59e0b'} stroke="#78350f" strokeWidth={1.5} />
+              {/* Eyes (beady goblin) */}
+              <circle cx={isoX + TILE_SIZE / 2 - 3} cy={isoY + 9} r={2} fill="#1c1917" />
+              <circle cx={isoX + TILE_SIZE / 2 + 3} cy={isoY + 9} r={2} fill="#1c1917" />
+              {/* TNT barrel */}
+              <rect x={isoX + TILE_SIZE / 2 - 6} y={isoY + 28} width={12} height={10} fill="#292524" stroke="#78716c" strokeWidth={1.5} rx={2} />
+              <line x1={isoX + TILE_SIZE / 2 - 4} y1={isoY + 30} x2={isoX + TILE_SIZE / 2 + 4} y2={isoY + 30} stroke="#78716c" strokeWidth={1} />
+              <line x1={isoX + TILE_SIZE / 2 - 4} y1={isoY + 33} x2={isoX + TILE_SIZE / 2 + 4} y2={isoY + 33} stroke="#78716c" strokeWidth={1} />
+              {/* Fuse spark */}
+              <text x={isoX + TILE_SIZE / 2 + 6} y={isoY + 28} fontSize="10">✨</text>
+              {/* Urgency pulse */}
+              {urgency && <circle cx={isoX + TILE_SIZE / 2} cy={isoY + 20} r={22} fill="none" stroke="#dc2626" strokeWidth={2} opacity={0.6} />}
+              {/* Label */}
+              <text x={isoX + TILE_SIZE / 2} y={isoY - 4} textAnchor="middle" fontSize="8" fill="#fca5a5" fontWeight="bold">SAPPER</text>
+              {/* HP bar */}
+              <rect x={isoX + TILE_SIZE / 2 - 14} y={isoY - 10} width={28} height={4} fill="#1e293b" rx={2} />
+              <rect x={isoX + TILE_SIZE / 2 - 14} y={isoY - 10} width={28 * hp} height={4} fill="#dc2626" rx={2} />
             </g>;
           })}
 

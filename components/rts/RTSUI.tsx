@@ -8,7 +8,7 @@ export interface WorkerState {
   movingTo: null | { x: number; y: number };
   path: { x: number; y: number }[];
   gathering: null | { type: 'tree' | 'gold' | 'stone'; idx: number };
-  attacking: null | { targetType: 'enemyBarn' } | { targetType: 'grunt'; gruntId: number } | { targetType: 'creep'; creepId: number } | { targetType: 'enemyTower'; towerId: number } | { targetType: 'siege'; siegeId: number } | { targetType: 'shaman'; shamanId: number } | { targetType: 'troll'; trollId: number };
+  attacking: null | { targetType: 'enemyBarn' } | { targetType: 'grunt'; gruntId: number } | { targetType: 'creep'; creepId: number } | { targetType: 'enemyTower'; towerId: number } | { targetType: 'siege'; siegeId: number } | { targetType: 'shaman'; shamanId: number } | { targetType: 'troll'; trollId: number } | { targetType: 'sapper'; sapperId: number };
   repairing: null | { buildingId: number };
   chargeCooldown: number;
   sprintCooldown: number;
@@ -130,6 +130,7 @@ interface RTSUIProps {
     warRams: { x: number; y: number }[];
     shamans: { x: number; y: number }[];
     trolls: { x: number; y: number }[];
+    sappers: { x: number; y: number }[];
   };
 }
 
@@ -667,6 +668,13 @@ export const RTSUI: React.FC<RTSUIProps> = ({
             {/* Troll Archers */}
             {minimapData.trolls.map((t, i) => (
               <polygon key={`troll${i}`} points={`${t.x},${t.y - 0.8} ${t.x + 0.7},${t.y + 0.5} ${t.x - 0.7},${t.y + 0.5}`} fill="#f97316" stroke="#7c2d12" strokeWidth={0.15} />
+            ))}
+            {/* Goblin Sappers — red X */}
+            {minimapData.sappers.map((s, i) => (
+              <g key={`sapper${i}`}>
+                <line x1={s.x - 0.6} y1={s.y - 0.6} x2={s.x + 0.6} y2={s.y + 0.6} stroke="#dc2626" strokeWidth={0.35} />
+                <line x1={s.x + 0.6} y1={s.y - 0.6} x2={s.x - 0.6} y2={s.y + 0.6} stroke="#dc2626" strokeWidth={0.35} />
+              </g>
             ))}
           </svg>
           <div className="mt-0.5 flex flex-wrap gap-x-2 text-[10px] text-slate-500">
