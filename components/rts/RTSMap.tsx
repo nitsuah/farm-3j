@@ -73,6 +73,15 @@ const WAR_RAM_ATTACK_MS = 3000;
 const WAR_RAM_GOLD_REWARD = 25;
 const WAR_RAM_XP_REWARD = 50;
 const WAR_RAM_FIRST_WAVE = 6;
+const DEMOLISHER_MAX_HP = 120;
+const DEMOLISHER_SPEED = 0.22;
+const DEMOLISHER_DAMAGE = 35;
+const DEMOLISHER_SPLASH_RANGE = 1.5;
+const DEMOLISHER_FIRE_RANGE = 4.0;
+const DEMOLISHER_ATTACK_MS = 4500;
+const DEMOLISHER_GOLD_REWARD = 30;
+const DEMOLISHER_XP_REWARD = 60;
+const DEMOLISHER_FIRST_WAVE = 14;
 const LOOT_CRATE_SPAWN_MS = 45000;
 const SHAMAN_MAX_HP = 45;
 const SHAMAN_SPEED = 0.6;
@@ -167,6 +176,7 @@ interface EnemySiege {
   path: { x: number; y: number }[];
   state: 'moving' | 'attacking';
   targetBuildingId: number | null;
+  siegeType?: 'ram' | 'demolisher';
 }
 
 interface LootCrate {
@@ -864,6 +874,19 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
       setEnemySiege(prev => [...prev, ram]);
       setWaveAnnouncement(`🪵 Wave ${newWave} — WAR RAM INCOMING!`);
       window.setTimeout(() => setWaveAnnouncement(null), 3000);
+    }
+
+    // Demolisher spawn: wave 14+ every 4 waves
+    if (newWave >= DEMOLISHER_FIRST_WAVE && newWave % 4 === 0) {
+      const dx = Math.max(0, ENEMY_BARN_POS.x - 2);
+      const dy = ENEMY_BARN_POS.y + 1;
+      const nearestBuilding2 = placedBuildingsRef.current.filter(b => b.hp > 0).reduce<PlacedBuilding | null>((best, b) => !best || tileDist(dx, dy, b.x, b.y) < tileDist(dx, dy, best.x, best.y) ? b : best, null);
+      const dDest = nearestBuilding2 ?? BARN_POS;
+      const dPath = aStar(INITIAL_TILES, { x: dx, y: dy }, { x: dDest.x, y: dDest.y }, true, wallSet);
+      const demolisher: EnemySiege = { id: siegeIdRef.current++, x: dx, y: dy, hp: DEMOLISHER_MAX_HP, maxHp: DEMOLISHER_MAX_HP, movingTo: dPath[0] ?? { x: dDest.x, y: dDest.y }, path: dPath.slice(1), state: 'moving', targetBuildingId: nearestBuilding2?.id ?? -1, siegeType: 'demolisher' };
+      setEnemySiege(prev => [...prev, demolisher]);
+      setWaveAnnouncement(`💣 Wave ${newWave} — DEMOLISHER! Protect your buildings!`);
+      window.setTimeout(() => setWaveAnnouncement(null), 3500);
     }
 
     // Shaman spawn: wave 8+ every 4 waves
@@ -1897,13 +1920,14 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                   const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + unitBonusS + capturedVetS * VETERAN_ATK_BONUS;
                   setEnemySiege(rs => rs.map(r => r.id === capturedSiegeId ? { ...r, hp: Math.max(0, r.hp - dmg) } : r));
                   addFloatingText(capturedSX, capturedSY, `-${dmg}`, '#ef4444');
-                  // XP for killing a ram
+                  // XP for killing a ram/demolisher
                   const ramCurrent = enemySiegeRef.current.find(r => r.id === capturedSiegeId);
                   if (ramCurrent && ramCurrent.hp - dmg <= 0) {
+                    const siegeXp = ramCurrent.siegeType === 'demolisher' ? DEMOLISHER_XP_REWARD : WAR_RAM_XP_REWARD;
                     setWorkers(ws2 => ws2.map(u => {
                       const isAttacker = u.id === w.id;
                       const isNearby = !isAttacker && u.hp > 0 && tileDist(u.x, u.y, capturedSX, capturedSY) <= 3;
-                      const xpGain = isAttacker ? WAR_RAM_XP_REWARD : isNearby ? Math.round(WAR_RAM_XP_REWARD * 0.25) : 0;
+                      const xpGain = isAttacker ? siegeXp : isNearby ? Math.round(siegeXp * 0.25) : 0;
                       if (xpGain === 0) return u;
                       const newXp = u.xp + xpGain;
                       const newLevel = newXp >= XP_TO_LEVEL_2 ? 2 : newXp >= XP_TO_LEVEL_1 ? 1 : 0;
@@ -2268,25 +2292,59 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
         const killed = rams.filter(r => r.hp <= 0);
         if (killed.length > 0) {
           killed.forEach(r => {
-            setResources(res => ({ ...res, gold: res.gold + WAR_RAM_GOLD_REWARD }));
-            addFloatingText(Math.round(r.x), Math.round(r.y), `+${WAR_RAM_GOLD_REWARD}🪙`, '#fbbf24');
+            const reward = r.siegeType === 'demolisher' ? DEMOLISHER_GOLD_REWARD : WAR_RAM_GOLD_REWARD;
+            setResources(res => ({ ...res, gold: res.gold + reward }));
+            addFloatingText(Math.round(r.x), Math.round(r.y), `+${reward}🪙`, '#fbbf24');
           });
         }
         return survived.map(r => {
+          const speed = r.siegeType === 'demolisher' ? DEMOLISHER_SPEED : WAR_RAM_SPEED;
           // Move toward target building/barn
           if (r.movingTo) {
             const dx = r.movingTo.x - r.x, dy = r.movingTo.y - r.y;
             const d = Math.sqrt(dx * dx + dy * dy);
-            if (d < 0.1) {
+            // Demolisher stops when in fire range; ram stops at melee
+            const stopRange = r.siegeType === 'demolisher' ? DEMOLISHER_FIRE_RANGE - 0.5 : 0.1;
+            if (d < stopRange) {
               const next = r.path[0] ?? null;
+              if (r.siegeType === 'demolisher') return { ...r, x: r.x, y: r.y, movingTo: null, path: [], state: 'attacking' as const };
               return { ...r, x: r.movingTo.x, y: r.movingTo.y, movingTo: next, path: r.path.slice(1), state: next ? 'moving' as const : 'attacking' as const };
             }
-            return { ...r, x: r.x + (dx / d) * Math.min(WAR_RAM_SPEED * dt, d), y: r.y + (dy / d) * Math.min(WAR_RAM_SPEED * dt, d) };
+            return { ...r, x: r.x + (dx / d) * Math.min(speed * dt, d), y: r.y + (dy / d) * Math.min(speed * dt, d) };
           }
-          // Attack nearest building within range
           const nearBuilding = placedBuildingsRef.current.filter(b => b.hp > 0).sort((a, b2) => tileDist(r.x, r.y, a.x, a.y) - tileDist(r.x, r.y, b2.x, b2.y))[0];
           const barnDist = tileDist(r.x, r.y, BARN_POS.x, BARN_POS.y);
           const buildingDist = nearBuilding ? tileDist(r.x, r.y, nearBuilding.x, nearBuilding.y) : Infinity;
+          // Demolisher: ranged AoE attack
+          if (r.siegeType === 'demolisher') {
+            const atkRange = DEMOLISHER_FIRE_RANGE;
+            const target = nearBuilding && buildingDist <= atkRange ? nearBuilding : barnDist <= atkRange ? null : null;
+            const inRange = (nearBuilding && buildingDist <= atkRange) || barnDist <= atkRange;
+            if (inRange) {
+              if (!siegeAttackTimeoutsRef.current[r.id]) {
+                const tx = nearBuilding && buildingDist <= atkRange ? nearBuilding.x : BARN_POS.x;
+                const ty = nearBuilding && buildingDist <= atkRange ? nearBuilding.y : BARN_POS.y;
+                siegeAttackTimeoutsRef.current[r.id] = window.setTimeout(() => {
+                  delete siegeAttackTimeoutsRef.current[r.id];
+                  // AoE splash on buildings
+                  setPlacedBuildings(bs => bs.map(b => tileDist(tx, ty, b.x, b.y) <= DEMOLISHER_SPLASH_RANGE ? { ...b, hp: Math.max(0, b.hp - DEMOLISHER_DAMAGE) } : b));
+                  // Direct barn hit
+                  if (tileDist(tx, ty, BARN_POS.x, BARN_POS.y) <= DEMOLISHER_SPLASH_RANGE) {
+                    setPlayerBarnHp(hp => { const nHp = Math.max(0, hp - DEMOLISHER_DAMAGE); if (nHp <= 0) setGameOver('defeat'); return nHp; });
+                    triggerUnderAttackRef.current();
+                  }
+                  addFloatingText(tx, ty, `💣-${DEMOLISHER_DAMAGE}`, '#f97316');
+                }, DEMOLISHER_ATTACK_MS);
+              }
+              return { ...r, state: 'attacking' as const };
+            }
+            // Move closer
+            const wallSetD = new Set(placedBuildingsRef.current.filter(b => b.type === 'wall').map(b => `${b.x},${b.y}`));
+            const dDest2 = (nearBuilding && buildingDist < barnDist) ? { x: nearBuilding.x, y: nearBuilding.y } : BARN_POS;
+            const dPath2 = aStar(INITIAL_TILES, { x: Math.round(r.x), y: Math.round(r.y) }, dDest2, true, wallSetD);
+            return { ...r, movingTo: dPath2[0] ?? dDest2, path: dPath2.slice(1), state: 'moving' as const };
+          }
+          // War Ram: melee attack
           if (buildingDist <= 1.2 && nearBuilding) {
             if (!siegeAttackTimeoutsRef.current[r.id]) {
               const bid = nearBuilding.id; const bx = nearBuilding.x; const by = nearBuilding.y;
@@ -3409,25 +3467,43 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
             </g>;
           })}
 
-          {/* War Rams (enemy siege units) */}
+          {/* War Rams & Demolishers (enemy siege units) */}
           {enemySiege.filter(r => r.hp > 0).map(r => {
             const { isoX, isoY } = tileToSvg(r.x, r.y);
             const hp = r.hp / r.maxHp;
+            const cx = isoX + TILE_SIZE / 2;
+            const cy = isoY + 18;
+            if (r.siegeType === 'demolisher') {
+              return <g key={`ram-${r.id}`} style={{ cursor: anySelected ? 'crosshair' : 'default' }} onContextMenu={e => handleAttackSiege(r.id, e)}>
+                {/* Orange fire range ring when attacking */}
+                {r.state === 'attacking' && <circle cx={cx} cy={cy} r={DEMOLISHER_FIRE_RANGE * TILE_SIZE * 0.5} fill="none" stroke="#f97316" strokeWidth={1} strokeDasharray="6 4" opacity={0.4} />}
+                {/* Catapult body */}
+                <rect x={cx - 20} y={cy - 12} width={40} height={20} fill="#7f1d1d" stroke="#450a0a" strokeWidth={2} rx={3} />
+                {/* Arm */}
+                <line x1={cx - 4} y1={cy - 12} x2={cx + 12} y2={cy - 28} stroke="#451a03" strokeWidth={4} strokeLinecap="round" />
+                {/* Boulder */}
+                <circle cx={cx + 12} cy={cy - 30} r={5} fill="#374151" stroke="#6b7280" strokeWidth={1.5} />
+                {/* Wheels */}
+                <circle cx={cx - 14} cy={cy + 10} r={6} fill="#292524" stroke="#78716c" strokeWidth={2} />
+                <circle cx={cx + 14} cy={cy + 10} r={6} fill="#292524" stroke="#78716c" strokeWidth={2} />
+                <text x={cx} y={isoY - 4} textAnchor="middle" fontSize="8" fill="#fb923c" fontWeight="bold">DEMOLISHER</text>
+                <rect x={cx - 20} y={isoY - 10} width={40} height={4} fill="#1e293b" rx={2} />
+                <rect x={cx - 20} y={isoY - 10} width={40 * hp} height={4} fill="#f97316" rx={2} />
+              </g>;
+            }
             return <g key={`ram-${r.id}`} style={{ cursor: anySelected ? 'crosshair' : 'default' }} onContextMenu={e => handleAttackSiege(r.id, e)}>
               {/* Ram body — thick wooden log frame */}
-              <rect x={isoX + TILE_SIZE / 2 - 26} y={isoY + 4} width={52} height={22} fill={r.state === 'attacking' ? '#7c2d12' : '#92400e'} stroke="#451a03" strokeWidth={3} rx={4} />
+              <rect x={cx - 26} y={isoY + 4} width={52} height={22} fill={r.state === 'attacking' ? '#7c2d12' : '#92400e'} stroke="#451a03" strokeWidth={3} rx={4} />
               {/* Battering ram log */}
-              <rect x={isoX + TILE_SIZE / 2 - 20} y={isoY + 10} width={40} height={10} fill="#1c1917" stroke="#44403c" strokeWidth={2} rx={5} />
+              <rect x={cx - 20} y={isoY + 10} width={40} height={10} fill="#1c1917" stroke="#44403c" strokeWidth={2} rx={5} />
               {/* Ram head metal tip */}
-              <polygon points={`${isoX + TILE_SIZE / 2 + 20},${isoY + 12} ${isoX + TILE_SIZE / 2 + 30},${isoY + 15} ${isoX + TILE_SIZE / 2 + 20},${isoY + 18}`} fill="#6b7280" stroke="#374151" strokeWidth={1.5} />
+              <polygon points={`${cx + 20},${isoY + 12} ${cx + 30},${isoY + 15} ${cx + 20},${isoY + 18}`} fill="#6b7280" stroke="#374151" strokeWidth={1.5} />
               {/* Wheels */}
-              <circle cx={isoX + TILE_SIZE / 2 - 16} cy={isoY + 30} r={6} fill="#292524" stroke="#78716c" strokeWidth={2} />
-              <circle cx={isoX + TILE_SIZE / 2 + 16} cy={isoY + 30} r={6} fill="#292524" stroke="#78716c" strokeWidth={2} />
-              {/* Label */}
-              <text x={isoX + TILE_SIZE / 2} y={isoY - 4} textAnchor="middle" fontSize="8" fill="#fca5a5" fontWeight="bold">WAR RAM</text>
-              {/* HP bar */}
-              <rect x={isoX + TILE_SIZE / 2 - 20} y={isoY - 10} width={40} height={4} fill="#1e293b" rx={2} />
-              <rect x={isoX + TILE_SIZE / 2 - 20} y={isoY - 10} width={40 * hp} height={4} fill="#dc2626" rx={2} />
+              <circle cx={cx - 16} cy={isoY + 30} r={6} fill="#292524" stroke="#78716c" strokeWidth={2} />
+              <circle cx={cx + 16} cy={isoY + 30} r={6} fill="#292524" stroke="#78716c" strokeWidth={2} />
+              <text x={cx} y={isoY - 4} textAnchor="middle" fontSize="8" fill="#fca5a5" fontWeight="bold">WAR RAM</text>
+              <rect x={cx - 20} y={isoY - 10} width={40} height={4} fill="#1e293b" rx={2} />
+              <rect x={cx - 20} y={isoY - 10} width={40 * hp} height={4} fill="#dc2626" rx={2} />
             </g>;
           })}
 
