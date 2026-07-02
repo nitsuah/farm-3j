@@ -1337,12 +1337,13 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
         const target = inRange.reduce((a, b) => tileDist(a.x, a.y, ARCHER_TOWER_POS.x, ARCHER_TOWER_POS.y) < tileDist(b.x, b.y, ARCHER_TOWER_POS.x, ARCHER_TOWER_POS.y) ? a : b);
         setWorkers(prev => prev.map(w => w.id === target.id ? { ...w, hp: Math.max(0, w.hp - ARCHER_TOWER_DAMAGE) } : w));
         addFloatingText(Math.round(target.x), Math.round(target.y), `🏹-${ARCHER_TOWER_DAMAGE}`, '#fb923c');
+        addProjectile(ARCHER_TOWER_POS.x, ARCHER_TOWER_POS.y, Math.round(target.x), Math.round(target.y), 'arrow', 600);
       }
       archerTowerTimerRef.current = window.setTimeout(fireArrow, ARCHER_TOWER_ATTACK_MS);
     };
     archerTowerTimerRef.current = window.setTimeout(fireArrow, ARCHER_TOWER_ATTACK_MS);
     return () => { if (archerTowerTimerRef.current) { clearTimeout(archerTowerTimerRef.current); archerTowerTimerRef.current = null; } };
-  }, [gameOver, addFloatingText]);
+  }, [gameOver, addFloatingText, addProjectile]);
 
   // Enemy fortress towers fire at workers in range
   useEffect(() => {
@@ -1358,13 +1359,14 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
           const target = inRange.reduce((a, b) => tileDist(a.x, a.y, tx, ty) < tileDist(b.x, b.y, tx, ty) ? a : b);
           setWorkers(prev => prev.map(w => w.id === target.id ? { ...w, hp: Math.max(0, w.hp - dmg) } : w));
           addFloatingText(Math.round(target.x), Math.round(target.y), `🏹-${dmg}`, '#dc2626');
+          addProjectile(tx, ty, Math.round(target.x), Math.round(target.y), 'arrow', 650);
         }
         scheduleShot(towerId, tx, ty);
       }, ENEMY_TOWER_ATTACK_MS);
     };
     enemyTowers.filter(t => t.hp > 0).forEach(t => { if (!enemyTowerTimersRef.current[t.id]) scheduleShot(t.id, t.x, t.y); });
     return () => { Object.values(enemyTowerTimersRef.current).forEach(clearTimeout); enemyTowerTimersRef.current = {}; };
-  }, [enemyTowers, gameOver, addFloatingText]);
+  }, [enemyTowers, gameOver, addFloatingText, addProjectile]);
 
   // Player watchtowers fire arrows at enemy grunts in range
   useEffect(() => {
@@ -2971,6 +2973,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                 siegeAttackTimeoutsRef.current[r.id] = window.setTimeout(() => {
                   delete siegeAttackTimeoutsRef.current[r.id];
                   // AoE splash on buildings
+                  addProjectile(Math.round(r.x), Math.round(r.y), tx, ty, 'rock', 900);
                   setPlacedBuildings(bs => bs.map(b => tileDist(tx, ty, b.x, b.y) <= DEMOLISHER_SPLASH_RANGE ? { ...b, hp: Math.max(0, b.hp - DEMOLISHER_DAMAGE) } : b));
                   // Direct barn hit
                   if (tileDist(tx, ty, BARN_POS.x, BARN_POS.y) <= DEMOLISHER_SPLASH_RANGE) {
@@ -3224,7 +3227,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
               const capturedTX = Math.round(t.x), capturedTY = Math.round(t.y);
               trollAttackTimersRef.current[tid] = window.setTimeout(() => {
                 delete trollAttackTimersRef.current[tid];
-                addFloatingText(capturedTX, capturedTY, '🏹', '#f97316');
+                addProjectile(capturedTX, capturedTY, twx, twy, 'arrow', 600);
                 setWorkers(ws => ws.map(w => {
                   if (w.id !== wid || w.hp <= 0) return w;
                   addFloatingText(twx, twy, `-${TROLL_DAMAGE}`, '#fca5a5');
@@ -3249,8 +3252,10 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
             // Fire at barn if no worker target
             if (!trollAttackTimersRef.current[t.id]) {
               const tid = t.id;
+              const capturedTX2 = Math.round(t.x), capturedTY2 = Math.round(t.y);
               trollAttackTimersRef.current[tid] = window.setTimeout(() => {
                 delete trollAttackTimersRef.current[tid];
+                addProjectile(capturedTX2, capturedTY2, BARN_POS.x, BARN_POS.y, 'arrow', 700);
                 addFloatingText(BARN_POS.x, BARN_POS.y, `🏹-${TROLL_DAMAGE}`, '#fca5a5');
                 setPlayerBarnHp(hp => { const nHp = Math.max(0, hp - TROLL_DAMAGE); if (nHp <= 0) setGameOver('defeat'); return nHp; });
               }, TROLL_ATTACK_MS);

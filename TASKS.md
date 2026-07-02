@@ -1,6 +1,6 @@
 # TASKS
 
-Last Updated: 2026-07-02 (iter86 — hero revive mechanic)
+Last Updated: 2026-07-02 (iter87 — projectile visuals for all missing attackers)
 
 ## Farm RTS MVP (2026 Q2–Q3)
 
@@ -149,3 +149,4 @@ Last Updated: 2026-07-02 (iter86 — hero revive mechanic)
 - [x] Move-target ring — right-click move command flashes an expanding green circle at the destination (WC3-style click confirmation); fades out over 600ms; rendered in SVG coordinate space above terrain (2026-07-02)
 - [x] Cursor-anchored zoom — scroll-wheel zoom now keeps the world point under the cursor fixed (AoE/SC2 zoom behavior); range expanded 0.4×–2.5×; +/- keys zoom to viewport center; HUD shows live % with clickable +/− buttons (2026-07-02)
 - [x] Hero respawn / revive — when Barnabas dies his XP+level are preserved; auto-revives after 20s+2s×wave (max 60s); barn command card shows countdown bar; instant revive costs 80–200🪙 scaling with wave; hero spawns at barn on revive; WC3-style hero death mechanic adding tension and resource decisions (2026-07-02)
+- [x] Projectile visuals for all missing attackers — original archer tower, enemy fortress towers, Demolisher siege (rock arc), and Troll archers now all fire visible projectiles; fixes user-reported issue where these units showed damage numbers but no visual attack (2026-07-02)
