@@ -3053,6 +3053,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
               const barnArmor = Math.min(8, garrisonedRef.current.length * GARRISON_ARMOR_PER_UNIT);
               const rawBarnDmg = g.isBoss ? BOSS_DAMAGE : GRUNT_DAMAGE;
               const barnDmg = Math.max(1, rawBarnDmg - barnArmor);
+              Snd.hit();
               setPlayerBarnHp(hp => { const nHp = Math.max(0, hp - barnDmg); if (nHp <= 0) setGameOver('defeat'); return nHp; });
               addFloatingText(BARN_POS.x, BARN_POS.y, `-${barnDmg}`, g.isBoss ? '#dc2626' : '#ef4444');
               triggerUnderAttackRef.current();
@@ -4224,7 +4225,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
             ⚔️ Attack-Move · Right-click destination · Esc to cancel
           </span>
         ) : (
-          <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 400 }}>WASD pan · scroll zoom · Ctrl+A all · Tab idle · Ctrl+1-9 groups · P patrol · A atk-move · H hold · C charge · S sprint · F farmer · Q sword · R cavalry · Del stop · G garrison</span>
+          <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 400 }}>WASD pan · scroll zoom · Ctrl+click add to sel · Ctrl+A all · Tab idle · Ctrl+1-9 groups · P patrol · A atk-move · H hold · C charge · S sprint · F farmer · Q sword · R cavalry · Del stop · G garrison</span>
         )}
         <button type="button" onClick={toggleMute} title={soundMuted ? 'Unmute sounds' : 'Mute sounds'} style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', color: soundMuted ? '#ef4444' : '#94a3b8', padding: '2px 8px', borderRadius: 6, fontSize: 13, cursor: 'pointer' }}>
           {soundMuted ? '🔇' : '🔊'}
@@ -5028,7 +5029,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
             const heroAlive = workers.find(w => w.unitType === 'hero' && w.hp > 0);
             const hasMoraleAura = heroAlive && worker.unitType !== 'hero' && tileDist(worker.x, worker.y, heroAlive.x, heroAlive.y) <= 3;
             return <g key={`worker-${worker.id}`}
-              onClick={e => { e.stopPropagation(); if (!isDraggingRef.current && !buildMode) { Snd.select(); setSelectedType('worker'); setWorkers(ws => ws.map(w => ({ ...w, selected: w.id === worker.id }))); } }}
+              onClick={e => { e.stopPropagation(); if (!isDraggingRef.current && !buildMode) { Snd.select(); setSelectedType('worker'); if (e.ctrlKey || e.metaKey) { setWorkers(ws => ws.map(w => w.id === worker.id ? { ...w, selected: !w.selected } : w)); } else { setWorkers(ws => ws.map(w => ({ ...w, selected: w.id === worker.id }))); } } }}
               style={{ cursor: 'pointer' }}>
               {hasMoraleAura && <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 32} rx={26} ry={12} fill="none" stroke="#fbbf24" strokeWidth={1.5} strokeDasharray="3 2" opacity={0.6} />}
               {battleShoutUntil > Date.now() && heroAlive && tileDist(worker.x, worker.y, heroAlive.x, heroAlive.y) <= HERO_SHOUT_RADIUS && <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 32} rx={30} ry={14} fill="none" stroke="#fb923c" strokeWidth={2} strokeDasharray="5 3" opacity={0.85} />}
