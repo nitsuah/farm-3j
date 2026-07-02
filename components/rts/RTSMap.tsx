@@ -812,6 +812,8 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
   const [deadGruntPositions, setDeadGruntPositions] = useState<{ x: number; y: number; t: number }[]>([]);
   const deadGruntPositionsRef = useRef<{ x: number; y: number; t: number }[]>([]);
   useEffect(() => { deadGruntPositionsRef.current = deadGruntPositions; }, [deadGruntPositions]);
+  const [deadWorkerPositions, setDeadWorkerPositions] = useState<{ x: number; y: number; t: number; unitType: string }[]>([]);
+  const deadWorkerIdsRef = useRef<Set<number>>(new Set());
   const [enemyTrolls, setEnemyTrolls] = useState<EnemyTroll[]>([]);
   const enemyTrollsRef = useRef<EnemyTroll[]>([]);
   useEffect(() => { enemyTrollsRef.current = enemyTrolls; }, [enemyTrolls]);
@@ -2951,6 +2953,9 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
         });
       });
 
+      // Detect newly dead workers and record corpse positions
+      { const now = Date.now(); const newlyDead = workersRef.current.filter(w => w.hp <= 0 && !deadWorkerIdsRef.current.has(w.id)); if (newlyDead.length > 0) { newlyDead.forEach(w => deadWorkerIdsRef.current.add(w.id)); setDeadWorkerPositions(prev => [...prev.filter(p => now - p.t < 8000), ...newlyDead.map(w => ({ x: Math.round(w.x), y: Math.round(w.y), t: now, unitType: w.unitType }))]); } }
+
       // Update enemy grunts
       const currentWorkers = workersRef.current;
       setEnemyGrunts(gs => {
@@ -5047,6 +5052,17 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
               <text x={cx} y={isoY - 9} textAnchor="middle" fontSize="9" fill="#fbbf24" fontWeight="bold">👑 WARCHIEF</text>
               <rect x={cx - 22} y={isoY - 15} width={44} height={4} fill="#1e293b" rx={2} />
               <rect x={cx - 22} y={isoY - 15} width={44 * hp} height={4} fill="#ef4444" rx={2} />
+            </g>;
+          })}
+
+          {/* Worker corpses — faint grey for 6s */}
+          {deadWorkerPositions.filter(p => Date.now() - p.t < 6000 && fogVisible[p.x]?.[p.y]).map((p, i) => {
+            const { isoX, isoY } = tileToSvg(p.x, p.y);
+            const age = (Date.now() - p.t) / 6000;
+            const icon = p.unitType === 'hero' ? '🦸' : p.unitType === 'swordsman' ? '⚔️' : p.unitType === 'cavalry' ? '🐴' : '💀';
+            return <g key={`wc-${i}`} pointerEvents="none" opacity={0.5 - age * 0.4}>
+              <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 28} rx={14} ry={7} fill="#6b7280" />
+              <text x={isoX + TILE_SIZE / 2} y={isoY + 32} textAnchor="middle" fontSize="10">{icon}</text>
             </g>;
           })}
 
