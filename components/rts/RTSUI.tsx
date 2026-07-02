@@ -85,6 +85,9 @@ interface RTSUIProps {
   heroRecruited: boolean;
   heroAbilityCooldown: number;
   onHeroAbility: () => void;
+  heroShoutCooldown: number;
+  battleShoutActive: boolean;
+  onBattleShout: () => void;
   harvestBoonCooldown: number;
   harvestBoonActive: boolean;
   onHarvestBoon: () => void;
@@ -175,6 +178,9 @@ export const RTSUI: React.FC<RTSUIProps> = ({
   heroRecruited,
   heroAbilityCooldown,
   onHeroAbility,
+  heroShoutCooldown,
+  battleShoutActive,
+  onBattleShout,
   harvestBoonCooldown,
   harvestBoonActive,
   onHarvestBoon,
@@ -202,6 +208,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
   incomeRate,
 }) => {
   const isHeroSelected = selectedWorkers.some(w => w.unitType === 'hero');
+  const heroLevel = selectedWorkers.find(w => w.unitType === 'hero')?.level ?? 0;
   const selectedCount = selectedWorkers.length;
   const firstWorker = selectedWorkers[0] ?? null;
   const anyFarmers = selectedWorkers.some(w => w.unitType === 'farmer');
@@ -428,6 +435,19 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                 >
                   {heroAbilityCooldown > 0 ? `⚡ Cry (${heroAbilityCooldown}s)` : '⚡ Rallying Cry'}
                 </button>
+                {heroLevel >= 2 ? (
+                  <button
+                    type="button"
+                    className={`col-span-2 rounded border px-2 py-2 text-xs font-semibold disabled:opacity-40 ${battleShoutActive ? 'border-orange-400 bg-orange-500/30 text-orange-200' : heroShoutCooldown > 0 ? 'border-orange-700/50 bg-orange-900/20 text-orange-600' : 'border-orange-400 bg-orange-500/20 text-orange-200 hover:bg-orange-500/30'}`}
+                    onClick={onBattleShout}
+                    disabled={heroShoutCooldown > 0 || battleShoutActive}
+                    title="Battle Shout — all nearby allies attack 40% faster for 8s (unlocked at hero level 2)"
+                  >
+                    {battleShoutActive ? '📯 Shouting...' : heroShoutCooldown > 0 ? `📯 Shout (${heroShoutCooldown}s)` : '📯 Battle Shout'}
+                  </button>
+                ) : (
+                  <div className="col-span-2 rounded border border-slate-600/40 px-2 py-2 text-center text-xs text-slate-500" title="Reach hero level 2 to unlock Battle Shout">📯 Battle Shout (Lv2)</div>
+                )}
                 <button
                   type="button"
                   className={`col-span-2 rounded border px-2 py-2 text-xs font-semibold disabled:opacity-40 ${harvestBoonActive ? 'border-green-400 bg-green-500/30 text-green-200' : harvestBoonCooldown > 0 ? 'border-green-700/50 bg-green-900/20 text-green-600' : 'border-green-400 bg-green-500/20 text-green-200 hover:bg-green-500/30'}`}

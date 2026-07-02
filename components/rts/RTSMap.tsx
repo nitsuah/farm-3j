@@ -44,6 +44,10 @@ const HERO_DAMAGE_BONUS = 20;
 const HERO_ABILITY_RADIUS = 3.5;
 const HERO_ABILITY_DAMAGE = 30;
 const HERO_ABILITY_COOLDOWN_S = 25;
+const HERO_SHOUT_RADIUS = 4.0;
+const HERO_SHOUT_DURATION_MS = 8000;
+const HERO_SHOUT_COOLDOWN_S = 30;
+const HERO_SHOUT_ATK_MULT = 0.6; // 40% faster attack (0.6× interval)
 const CATAPULT_MAX_HP = 60;
 const CATAPULT_SPEED = 0.45;
 const CATAPULT_RANGE = 6;
@@ -694,6 +698,15 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
     const id = setInterval(() => setHeroAbilityCooldown(c => Math.max(0, c - 1)), 1000);
     return () => clearInterval(id);
   }, [heroAbilityCooldown > 0]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [heroShoutCooldown, setHeroShoutCooldown] = useState(0);
+  useEffect(() => {
+    if (heroShoutCooldown <= 0) return;
+    const id = setInterval(() => setHeroShoutCooldown(c => Math.max(0, c - 1)), 1000);
+    return () => clearInterval(id);
+  }, [heroShoutCooldown > 0]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [battleShoutUntil, setBattleShoutUntil] = useState(0);
+  const battleShoutUntilRef = useRef(0);
+  useEffect(() => { battleShoutUntilRef.current = battleShoutUntil; }, [battleShoutUntil]);
   // Tick down per-unit cooldowns every second
   useEffect(() => {
     const id = setInterval(() => {
@@ -1410,6 +1423,19 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
     setHeroAbilityCooldown(HERO_ABILITY_COOLDOWN_S);
   }, [heroAbilityCooldown, addFloatingText]);
 
+  const handleBattleShout = useCallback(() => {
+    if (heroShoutCooldown > 0) return;
+    const hero = workersRef.current.find(w => w.unitType === 'hero' && w.hp > 0 && w.level >= 2);
+    if (!hero) return;
+    const until = Date.now() + HERO_SHOUT_DURATION_MS;
+    setBattleShoutUntil(until);
+    addFloatingText(Math.round(hero.x), Math.round(hero.y), '📯 Battle Shout!', '#fb923c');
+    workersRef.current.filter(w => w.hp > 0 && w.id !== hero.id && tileDist(w.x, w.y, hero.x, hero.y) <= HERO_SHOUT_RADIUS).forEach(w => {
+      addFloatingText(Math.round(w.x), Math.round(w.y), '⚡ HASTED!', '#fbbf24');
+    });
+    setHeroShoutCooldown(HERO_SHOUT_COOLDOWN_S);
+  }, [heroShoutCooldown, addFloatingText]);
+
   const handleHarvestBoon = useCallback(() => {
     if (harvestBoonCooldown > 0 || harvestBoonActive) return;
     const hero = workersRef.current.find(w => w.unitType === 'hero');
@@ -1689,10 +1715,14 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
       const attackT = attackTimeoutsRef.current;
 
       // Morale aura: hero within 3 tiles speeds up attack interval by 30%
+      // Battle Shout (level 2 hero ability): all units within 4 tiles get 40% faster attacks for 8s
       const heroUnit = workersRef.current.find(w => w.unitType === 'hero' && w.hp > 0);
+      const shouting = battleShoutUntilRef.current > Date.now();
       const getMoraleMs = (wx: number, wy: number) => {
         if (!heroUnit) return ATTACK_INTERVAL_MS;
-        return tileDist(wx, wy, heroUnit.x, heroUnit.y) <= 3 ? Math.round(ATTACK_INTERVAL_MS * 0.7) : ATTACK_INTERVAL_MS;
+        const moraleMult = tileDist(wx, wy, heroUnit.x, heroUnit.y) <= 3 ? 0.7 : 1;
+        const shoutMult = shouting && tileDist(wx, wy, heroUnit.x, heroUnit.y) <= HERO_SHOUT_RADIUS ? HERO_SHOUT_ATK_MULT : 1;
+        return Math.round(ATTACK_INTERVAL_MS * moraleMult * shoutMult);
       };
 
       // Update workers
@@ -4149,6 +4179,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
               onClick={e => { e.stopPropagation(); if (!isDraggingRef.current && !buildMode) { setSelectedType('worker'); setWorkers(ws => ws.map(w => ({ ...w, selected: w.id === worker.id }))); } }}
               style={{ cursor: 'pointer' }}>
               {hasMoraleAura && <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 32} rx={26} ry={12} fill="none" stroke="#fbbf24" strokeWidth={1.5} strokeDasharray="3 2" opacity={0.6} />}
+              {battleShoutUntil > Date.now() && heroAlive && tileDist(worker.x, worker.y, heroAlive.x, heroAlive.y) <= HERO_SHOUT_RADIUS && <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 32} rx={30} ry={14} fill="none" stroke="#fb923c" strokeWidth={2} strokeDasharray="5 3" opacity={0.85} />}
               {worker.selected && <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 32} rx={worker.unitType === 'hero' ? 26 : worker.unitType === 'catapult' || worker.unitType === 'trebuchet' ? 28 : 22} ry={10} fill="none" stroke={worker.unitType === 'hero' ? '#fbbf24' : worker.unitType === 'catapult' ? '#ea580c' : worker.unitType === 'trebuchet' ? '#92400e' : worker.unitType === 'swordsman' ? '#f87171' : '#38bdf8'} strokeWidth={3} />}
               {worker.holdPosition && <text x={isoX + TILE_SIZE / 2 + 14} y={isoY - 2} textAnchor="middle" fontSize="12">🛡️</text>}
               {worker.unitType === 'cavalry' ? (
@@ -4312,6 +4343,9 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
         heroRecruited={heroRecruited}
         heroAbilityCooldown={heroAbilityCooldown}
         onHeroAbility={handleHeroAbility}
+        heroShoutCooldown={heroShoutCooldown}
+        battleShoutActive={battleShoutUntil > Date.now()}
+        onBattleShout={handleBattleShout}
         harvestBoonCooldown={harvestBoonCooldown}
         harvestBoonActive={harvestBoonActive}
         onHarvestBoon={handleHarvestBoon}
