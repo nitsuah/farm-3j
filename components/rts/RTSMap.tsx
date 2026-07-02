@@ -881,6 +881,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
   const [enemyBarnHp, setEnemyBarnHp] = useState(() => INITIAL_SAVE?.enemyBarnHp ?? ENEMY_BARN_MAX_HP);
   const enemyBarnHpRef = useRef(INITIAL_SAVE?.enemyBarnHp ?? ENEMY_BARN_MAX_HP);
   useEffect(() => { enemyBarnHpRef.current = enemyBarnHp; }, [enemyBarnHp]);
+  const sallyForthThresholdsRef = useRef<Set<number>>(new Set([150, 100, 50])); // barn HP thresholds that trigger sally
   const [playerBarnHp, setPlayerBarnHp] = useState(() => INITIAL_SAVE?.playerBarnHp ?? PLAYER_BARN_MAX_HP);
   const playerBarnHpRef = useRef(INITIAL_SAVE?.playerBarnHp ?? PLAYER_BARN_MAX_HP);
   useEffect(() => { playerBarnHpRef.current = playerBarnHp; }, [playerBarnHp]);
@@ -2907,7 +2908,24 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
                   const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0) + (barracksTechRef.current.warDrums ? 8 : 0) + unitBonus2 + capturedVetLevel * VETERAN_ATK_BONUS;
                   setWorkers(ws2 => ws2.map(w2 => {
                     if (w2.id !== w.id || w2.state !== 'attacking' || !w2.attacking) return w2;
-                    setEnemyBarnHp(hp => { const nHp = Math.max(0, hp - dmg); if (nHp <= 0) setGameOver('victory'); return nHp; });
+                    setEnemyBarnHp(hp => {
+                      const nHp = Math.max(0, hp - dmg);
+                      if (nHp <= 0) { setGameOver('victory'); return nHp; }
+                      const crossed = [...sallyForthThresholdsRef.current].filter(t => hp > t && nHp <= t);
+                      if (crossed.length > 0) {
+                        crossed.forEach(t => sallyForthThresholdsRef.current.delete(t));
+                        const wSet = new Set(placedBuildingsRef.current.filter(b => b.type === 'wall').map(b => `${b.x},${b.y}`));
+                        const gruntHp = Math.round(GRUNT_MAX_HP + (waveRef.current - 1) * 10);
+                        const defenders = [{ ox: -1, oy: 0 }, { ox: 0, oy: 1 }].map(({ ox, oy }) => {
+                          const sx = ENEMY_BARN_POS.x + ox, sy = ENEMY_BARN_POS.y + oy;
+                          const path = aStar(INITIAL_TILES, { x: sx, y: sy }, BARN_POS, true, wSet);
+                          return { id: gruntIdRef.current++, x: sx, y: sy, hp: gruntHp, maxHp: gruntHp, movingTo: path[0] ?? BARN_POS, path: path.slice(1), state: 'moving' as const, isBoss: false };
+                        });
+                        setEnemyGrunts(gs => [...gs, ...defenders]);
+                        addFloatingText(ENEMY_BARN_POS.x, ENEMY_BARN_POS.y, '⚔️ DEFENDERS!', '#ef4444');
+                      }
+                      return nHp;
+                    });
                     addFloatingText(ENEMY_BARN_POS.x, ENEMY_BARN_POS.y, `-${dmg}`, '#ef4444');
                     const counterDmg = Math.max(1, ENEMY_COUNTER_DAMAGE - blacksmithUpgradesRef.current.ironHide * 2);
                     addFloatingText(capturedWX, capturedWY, `-${counterDmg}`, '#fca5a5');
@@ -2964,7 +2982,24 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
                   setEnemyTowers(ts => ts.map(t => t.id === targetPos.towerId ? { ...t, hp: Math.max(0, t.hp - TREBUCHET_DAMAGE) } : t));
                 } else {
                   addFloatingText(ENEMY_BARN_POS.x, ENEMY_BARN_POS.y, `-${TREBUCHET_DAMAGE}`, '#b45309');
-                  setEnemyBarnHp(hp => { const nHp = Math.max(0, hp - TREBUCHET_DAMAGE); if (nHp <= 0) setGameOver('victory'); return nHp; });
+                  setEnemyBarnHp(hp => {
+                    const nHp = Math.max(0, hp - TREBUCHET_DAMAGE);
+                    if (nHp <= 0) { setGameOver('victory'); return nHp; }
+                    const crossed = [...sallyForthThresholdsRef.current].filter(t => hp > t && nHp <= t);
+                    if (crossed.length > 0) {
+                      crossed.forEach(t => sallyForthThresholdsRef.current.delete(t));
+                      const wSet = new Set(placedBuildingsRef.current.filter(b => b.type === 'wall').map(b => `${b.x},${b.y}`));
+                      const gruntHp = Math.round(GRUNT_MAX_HP + (waveRef.current - 1) * 10);
+                      const defenders = [{ ox: -1, oy: 0 }, { ox: 0, oy: 1 }].map(({ ox, oy }) => {
+                        const sx = ENEMY_BARN_POS.x + ox, sy = ENEMY_BARN_POS.y + oy;
+                        const path = aStar(INITIAL_TILES, { x: sx, y: sy }, BARN_POS, true, wSet);
+                        return { id: gruntIdRef.current++, x: sx, y: sy, hp: gruntHp, maxHp: gruntHp, movingTo: path[0] ?? BARN_POS, path: path.slice(1), state: 'moving' as const, isBoss: false };
+                      });
+                      setEnemyGrunts(gs => [...gs, ...defenders]);
+                      addFloatingText(ENEMY_BARN_POS.x, ENEMY_BARN_POS.y, '⚔️ DEFENDERS!', '#ef4444');
+                    }
+                    return nHp;
+                  });
                 }
               }, TREBUCHET_FIRE_MS);
             }
@@ -3038,6 +3073,9 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
 
       // Detect newly dead workers and record corpse positions
       { const now = Date.now(); const newlyDead = workersRef.current.filter(w => w.hp <= 0 && !deadWorkerIdsRef.current.has(w.id)); if (newlyDead.length > 0) { newlyDead.forEach(w => deadWorkerIdsRef.current.add(w.id)); setDeadWorkerPositions(prev => [...prev.filter(p => now - p.t < 8000), ...newlyDead.map(w => ({ x: Math.round(w.x), y: Math.round(w.y), t: now, unitType: w.unitType }))]); } }
+
+      // Detect destroyed enemy walls and award loot
+      { const destroyed = enemyWallsRef.current.filter(ew => ew.hp <= 0); if (destroyed.length > 0) { setEnemyWalls(ews => ews.filter(ew => ew.hp > 0)); destroyed.forEach(ew => { const gold = 15; setResources(r => ({ ...r, gold: r.gold + gold })); addFloatingText(ew.x, ew.y, `🧱 +${gold}🪙`, '#fbbf24'); }); } }
 
       // Update enemy grunts
       const currentWorkers = workersRef.current;
