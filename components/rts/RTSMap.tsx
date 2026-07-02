@@ -573,6 +573,10 @@ function makeUnit(id: number, x: number, y: number, unitType: 'farmer' | 'swords
 
 // Web Audio sound helpers — procedural tones, no audio files required
 let _audioCtx: AudioContext | null = null;
+let _soundMuted = (() => { try { return localStorage.getItem('farm3j_muted') === '1'; } catch { return false; } })();
+let _lastGoldSnd = 0;
+function getSoundMuted() { return _soundMuted; }
+function setSoundMuted(v: boolean) { _soundMuted = v; try { localStorage.setItem('farm3j_muted', v ? '1' : '0'); } catch {} }
 function getAudioCtx(): AudioContext | null {
   if (typeof window === 'undefined') return null;
   if (!_audioCtx || _audioCtx.state === 'closed') _audioCtx = new AudioContext();
@@ -580,6 +584,7 @@ function getAudioCtx(): AudioContext | null {
   return _audioCtx;
 }
 function playTone(freq: number, duration: number, vol = 0.18, type: OscillatorType = 'square', freqEnd?: number): void {
+  if (_soundMuted) return;
   const ctx = getAudioCtx();
   if (!ctx) return;
   const osc = ctx.createOscillator();
@@ -600,7 +605,8 @@ const Snd = {
   hit: () => playTone(140, 0.05, 0.12, 'square', 80),
   death: () => { playTone(300, 0.08, 0.14, 'sawtooth', 100); },
   buildComplete: () => { playTone(523, 0.1, 0.14, 'sine'); playTone(659, 0.14, 0.12, 'sine'); playTone(784, 0.2, 0.10, 'sine'); },
-  gold: () => playTone(1047, 0.12, 0.10, 'sine', 1319),
+  // Throttled to once per 2s so it doesn't spam on every deposit
+  gold: () => { const now = Date.now(); if (now - _lastGoldSnd < 2000) return; _lastGoldSnd = now; playTone(1047, 0.12, 0.10, 'sine', 1319); },
   waveWarning: () => { playTone(220, 0.2, 0.16, 'sawtooth'); playTone(196, 0.3, 0.12, 'sawtooth'); },
   victory: () => { playTone(523, 0.12, 0.15, 'sine'); playTone(659, 0.16, 0.13, 'sine'); playTone(784, 0.2, 0.11, 'sine'); playTone(1047, 0.4, 0.10, 'sine'); },
   defeat: () => { playTone(392, 0.2, 0.14, 'sawtooth', 220); playTone(220, 0.4, 0.12, 'sawtooth', 110); },
@@ -623,6 +629,8 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
   const tiles = useMemo(() => INITIAL_TILES, []);
   const [camera, setCamera] = useState({ x: 0, y: 0 });
   const svgRef = useRef<SVGSVGElement>(null);
+  const [soundMuted, setSoundMutedState] = useState(getSoundMuted);
+  const toggleMute = () => { const next = !soundMuted; setSoundMuted(next); setSoundMutedState(next); };
 
   const [fogExplored, setFogExplored] = useState<boolean[][]>(() => {
     const saved = INITIAL_SAVE?.fogExplored;
@@ -4176,6 +4184,9 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
         ) : (
           <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 400 }}>WASD pan · scroll zoom · Ctrl+A all · Tab idle · Ctrl+1-9 groups · P patrol · A atk-move · H hold · C charge · S sprint · F farmer · Q sword · R cavalry · Del stop · G garrison</span>
         )}
+        <button type="button" onClick={toggleMute} title={soundMuted ? 'Unmute sounds' : 'Mute sounds'} style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', color: soundMuted ? '#ef4444' : '#94a3b8', padding: '2px 8px', borderRadius: 6, fontSize: 13, cursor: 'pointer' }}>
+          {soundMuted ? '🔇' : '🔊'}
+        </button>
         <button onClick={doSave} style={{ background: saveStatus === 'saved' ? 'rgba(74,222,128,0.2)' : 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', color: saveStatus === 'saved' ? '#4ade80' : '#94a3b8', padding: '2px 10px', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>
           {saveStatus === 'saved' ? '✓ Saved' : '💾 Save'}
         </button>
