@@ -4569,7 +4569,18 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
         })()}
         {killCount > 0 && <span style={{ color: '#4ade80', fontSize: 14 }}>☠ {killCount}</span>}
         <span style={{ color: resources.food >= resources.foodCap ? '#ef4444' : '#fca5a5', fontWeight: resources.food >= resources.foodCap ? 700 : 400, marginLeft: 'auto', animation: resources.food >= resources.foodCap ? 'pulse 1s infinite' : 'none' }}>👥 {resources.food}/{resources.foodCap}{resources.food >= resources.foodCap ? ' ⚠' : ''}</span>
-        {enemyGrunts.length > 0 && <span style={{ color: '#f97316', fontSize: 13 }}>⚠ {enemyGrunts.length} grunt{enemyGrunts.length > 1 ? 's' : ''}</span>}
+        {(enemyGrunts.length > 0 || enemyShamans.length > 0 || enemyTrolls.length > 0 || enemySiege.length > 0 || enemyWarchiefs.length > 0 || enemySappers.length > 0) && (
+          <span style={{ color: '#f97316', fontSize: 12, display: 'flex', gap: 3, alignItems: 'center' }}>
+            <span style={{ color: '#ef4444', fontWeight: 700 }}>⚠</span>
+            {enemyGrunts.filter(g => !g.isSkeleton).length > 0 && <span title="Grunts">👹×{enemyGrunts.filter(g => !g.isSkeleton).length}</span>}
+            {enemyGrunts.filter(g => g.isSkeleton).length > 0 && <span title="Skeletons" style={{ color: '#a78bfa' }}>💀×{enemyGrunts.filter(g => g.isSkeleton).length}</span>}
+            {enemyShamans.length > 0 && <span title="Shamans" style={{ color: '#c084fc' }}>🧙×{enemyShamans.length}</span>}
+            {enemyTrolls.length > 0 && <span title="Troll Archers" style={{ color: '#86efac' }}>🏹×{enemyTrolls.length}</span>}
+            {enemySappers.length > 0 && <span title="Sappers" style={{ color: '#fb923c' }}>💣×{enemySappers.length}</span>}
+            {enemySiege.length > 0 && <span title="Siege" style={{ color: '#fcd34d' }}>💥×{enemySiege.length}</span>}
+            {enemyWarchiefs.length > 0 && <span title="Warchiefs" style={{ color: '#fbbf24', fontWeight: 700 }}>👑×{enemyWarchiefs.length}</span>}
+          </span>
+        )}
         <button onClick={() => setGameSpeed(s => s === 0 ? 1 : s === 1 ? 2 : 0)} style={{ background: gameSpeed === 0 ? 'rgba(239,68,68,0.3)' : gameSpeed === 2 ? 'rgba(251,191,36,0.3)' : 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', color: '#fde68a', padding: '2px 12px', borderRadius: 6, fontSize: 13, cursor: 'pointer', fontWeight: 700 }} title="Cycle: Pause / 1× / 2×">
           {gameSpeed === 0 ? '▶ Start' : gameSpeed === 1 ? '⏸ Pause' : '▶▶ 2×'}
         </button>
@@ -4591,7 +4602,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
             ⚔️ Attack-Move · Right-click destination · Esc to cancel
           </span>
         ) : (
-          <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 400 }}>WASD pan · scroll zoom · Ctrl+click add to sel · Ctrl+A all · Tab idle · Ctrl+1-9 groups · P patrol · A atk-move · H hold · C charge · S sprint · F farmer · Q sword · R cavalry · Del stop · G garrison</span>
+          <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 400 }}>WASD pan · scroll zoom · Ctrl+click add to sel · Ctrl+A all · Tab idle · Ctrl+1-9 groups · P patrol · A atk-move · H hold · C charge · S sprint · F farmer · Q sword · R cavalry · Del stop · G garrison · E quake (hero lv3) · click building to select</span>
         )}
         <button type="button" onClick={toggleMute} title={soundMuted ? 'Unmute sounds' : 'Mute sounds'} style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', color: soundMuted ? '#ef4444' : '#94a3b8', padding: '2px 8px', borderRadius: 6, fontSize: 13, cursor: 'pointer' }}>
           {soundMuted ? '🔇' : '🔊'}
