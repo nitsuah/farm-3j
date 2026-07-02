@@ -5590,6 +5590,33 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
             );
           })}
 
+          {/* Queued waypoint path visualization (shift+RMB orders) */}
+          {workers.filter(w => w.selected && w.waypoints && w.waypoints.length > 0).map(w => {
+            const pts: { x: number; y: number }[] = [];
+            if (w.movingTo) pts.push(w.movingTo);
+            pts.push(...(w.waypoints ?? []));
+            if (pts.length === 0) return null;
+            const origin = tileToSvg(w.x, w.y);
+            const ox = origin.isoX + TILE_SIZE / 2, oy = origin.isoY + 18;
+            const mapped = pts.map(p => { const { isoX, isoY } = tileToSvg(p.x, p.y); return { x: isoX + TILE_SIZE / 2, y: isoY + 18 }; });
+            return (
+              <g key={`wp-${w.id}`} pointerEvents="none">
+                {mapped.map((pt, i) => {
+                  const prev = mapped[i - 1];
+                  const px = i === 0 ? ox : (prev?.x ?? ox);
+                  const py = i === 0 ? oy : (prev?.y ?? oy);
+                  return <line key={i} x1={px} y1={py} x2={pt.x} y2={pt.y} stroke="#4ade80" strokeWidth={1.5} strokeDasharray="5 3" opacity={0.55} />;
+                })}
+                {mapped.map((pt, i) => (
+                  <circle key={i} cx={pt.x} cy={pt.y} r={i === mapped.length - 1 ? 6 : 4} fill="none" stroke="#4ade80" strokeWidth={2} opacity={i === mapped.length - 1 ? 0.9 : 0.65} />
+                ))}
+                {mapped.length > 1 && mapped.map((pt, i) => (
+                  <text key={i} x={pt.x} y={pt.y - 10} textAnchor="middle" fontSize="8" fill="#4ade80" opacity={0.8}>{i + 1}</text>
+                ))}
+              </g>
+            );
+          })}
+
           {/* Fog of war */}
           {[...Array(GRID_SIZE)].map((_, i) =>
             [...Array(GRID_SIZE)].map((_, j) => {
