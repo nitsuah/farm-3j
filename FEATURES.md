@@ -105,12 +105,22 @@
 - **Farm RTS: Neutral Map Shrines** — Two capturable objectives: Shrine of War ⚔️ at (4,8) and Shrine of Plenty 🌾 at (12,8); right-click with units selected to send a worker to channel for 6 seconds; Shrine of War grants permanent +5 ATK to all combat units; Shrine of Plenty grants permanent +15% gather speed; channel progress bar shown under shrine; shrine SVG pillar + flame changes color on capture; buff indicators in top-right HUD corner; AoE2/WC3-style neutral objectives rewarding map control.
 - **Farm RTS: Hero Level 2 — Battle Shout** — Barnabas gains a second active ability at level 2 (120 XP): 📯 Battle Shout boosts all friendly units within 4 tiles to attack 40% faster for 8 seconds; stacks with Morale Aura for up to 58% faster attacks; orange dashed ring shown around affected units; 30s cooldown; command card shows a locked placeholder until level 2; WC3-style second hero ability rewarding investment in the hero unit.
 - **Farm RTS: Barracks Research** — Two one-time permanent tech upgrades available in the Barracks command card: 🛡️ Veteran Training (100🪙 60🌲) gives all current and future combat units +20 max HP; 🥁 War Drums (120🪙 40🌲) gives all combat units +8 permanent bonus damage; stacks with Blacksmith upgrades, Shrine of War, and sharper tools; AoE2/WC3-style building-based tech research adding strategic depth to Barracks investment.
+- **Farm RTS: Smooth Camera & Zoom** — WASD/Arrow keys pan at 480 px/s via held-key RAF loop; mouse edge-scroll at 400 px/s within 48px of viewport edge; scroll-wheel zoom (0.4×–2.5×) anchored to cursor position; +/− buttons and live % readout in HUD; WC3/AoE/SC2-style fluid camera control.
+- **Farm RTS: Move-Target Ring** — right-click move command flashes an expanding green circle at the destination; fades over 600ms in SVG space; WC3-style click confirmation feedback.
+- **Farm RTS: Hero Respawn** — when Barnabas dies, XP and level are preserved; auto-revives after 20s+2s×wave (max 60s) with countdown shown in barn command card; instant revive costs 80–200🪙 scaling with wave; WC3-style hero death mechanic adding tension and resource decisions.
+- **Farm RTS: Projectile Visuals (all units)** — flying 🪨 rock (catapult/trebuchet parabola), ❄ ice bolt (frost tower), 🏹 arrow (watchtower/ballista/archer tower/fortress tower/troll), ☠ poison bolt; SVG Date.now() elapsed interpolation; projectiles pruned every 200ms; covers all missing attackers.
+- **Farm RTS: High-Score Leaderboard** — top 5 runs saved to localStorage; shown on game-over screen with wave, kills, gold, result, date; sorted by wave then kills; gold medal for #1; AoE/WC3-style personal best tracking.
+- **Farm RTS: Hit-Flash on Damage** — workers flash red ellipse, grunts flash white circle for 200ms when hit; lightweight timestamp refs (no state); covers grunt melee, archer towers, fortress towers, and watchtower shots.
+- **Farm RTS: Minimap Fog of War** — unexplored tiles shown as dark 0.75-opacity overlay on the minimap; fog state passed through minimapData prop and rendered as per-tile rects.
+- **Farm RTS: Procedural Sound Effects** — Web Audio API synthesized tones (no audio files); sounds for unit select, move, hit, death, build complete, gold deposit, garrison, unit ready, hero ability, swordsman charge, wave warning, victory/defeat; 🔊/🔇 mute button in HUD persists to localStorage; gold deposit throttled to once per 2s.
+- **Farm RTS: Control Group Double-Tap Camera** — double-tapping a control group key (1–9) within 500ms centers camera on group centroid; compact group indicator bar at top-center shows group # and alive unit count for all assigned groups.
+- **Farm RTS: Ambient Chickens** — 5 decorative chickens wander near the barn every 2s; SVG birds with body/head/beak/red comb/legs; flip facing on direction change; hidden in fog-of-war; stop wandering on game over.
+- **Farm RTS: Difficulty Selection** — Easy 🌻 / Normal ⚔️ / Hard 💀 picker before each game; Easy: 300g/160l/60s + 70% enemy HP+dmg + 40% longer waves; Hard: 80g/40l/15s + 150% HP, 140% dmg, 120% speed, 70% wave interval; difficulty badge shown in HUD; New Game returns to picker.
 
 ## Planned
 
 ### Farm RTS Game
 
-- **Animal Units** — Chickens, cows, pigs with grazing AI and food meter
 - **Building Construction Time** — Workers take 6s to construct buildings with scaffold display during build
 
 ### Product & Commerce Surface

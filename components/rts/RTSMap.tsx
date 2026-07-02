@@ -610,6 +610,11 @@ const Snd = {
   waveWarning: () => { playTone(220, 0.2, 0.16, 'sawtooth'); playTone(196, 0.3, 0.12, 'sawtooth'); },
   victory: () => { playTone(523, 0.12, 0.15, 'sine'); playTone(659, 0.16, 0.13, 'sine'); playTone(784, 0.2, 0.11, 'sine'); playTone(1047, 0.4, 0.10, 'sine'); },
   defeat: () => { playTone(392, 0.2, 0.14, 'sawtooth', 220); playTone(220, 0.4, 0.12, 'sawtooth', 110); },
+  unitReady: () => { playTone(587, 0.08, 0.12, 'sine'); playTone(784, 0.14, 0.10, 'sine'); },
+  ability: () => { playTone(440, 0.06, 0.14, 'sine'); playTone(660, 0.12, 0.12, 'sine', 880); },
+  garrison: () => playTone(330, 0.1, 0.11, 'sine', 440),
+  charge: () => { playTone(330, 0.05, 0.16, 'sawtooth'); playTone(494, 0.1, 0.14, 'sawtooth'); },
+  error: () => playTone(220, 0.08, 0.10, 'square', 180),
 };
 
 const Stat: React.FC<{ label: string; value: string | number; color: string }> = ({ label, value, color }) => (
@@ -1635,6 +1640,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
         return [...ws, unit];
       });
       addFloatingText(BARN_POS.x, BARN_POS.y, type === 'swordsman' ? '⚔️ Ready!' : '🐴 Ready!', '#4ade80');
+      Snd.unitReady();
     };
     const id = window.setInterval(tick, 100);
     return () => clearInterval(id);
@@ -1722,6 +1728,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
       if (slots <= 0) return ws;
       const toGarrison = ws.filter(w => w.selected).slice(0, slots);
       if (toGarrison.length === 0) return ws;
+      Snd.garrison();
       const ids = new Set(toGarrison.map(w => w.id));
       setGarrisoned(g => [...g, ...toGarrison.map(w => ({ ...w, selected: false, state: 'idle' as const, movingTo: null, path: [], gathering: null, attacking: null, repairing: null, patrol: null }))]);
       setResources(r => ({ ...r, food: r.food - toGarrison.length }));
@@ -1755,6 +1762,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
       return g;
     }));
     addFloatingText(hx, hy, '⚡ Rallying Cry!', '#fbbf24');
+    Snd.ability();
     setHeroAbilityCooldown(HERO_ABILITY_COOLDOWN_S);
   }, [heroAbilityCooldown, addFloatingText]);
 
@@ -1791,6 +1799,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
     if (swords.length === 0) return;
     const allGrunts = enemyGruntsRef.current.filter(g => g.hp > 0);
     if (allGrunts.length === 0) return;
+    Snd.charge();
     swords.forEach(sw => {
       const nearest = allGrunts.reduce<EnemyGrunt | null>((best, g) => (!best || tileDist(sw.x, sw.y, g.x, g.y) < tileDist(best.x, best.y, sw.x, sw.y) ? g : best), null);
       if (!nearest) return;
