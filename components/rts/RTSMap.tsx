@@ -58,6 +58,11 @@ const CATAPULT_FIRE_MS = 3500;
 const XP_PER_KILL = 40;
 const XP_TO_LEVEL_1 = 40;
 const XP_TO_LEVEL_2 = 120;
+const XP_TO_LEVEL_3 = 280;
+const EARTHQUAKE_RADIUS = 5.0;
+const EARTHQUAKE_DAMAGE = 45;
+const EARTHQUAKE_COOLDOWN_S = 45;
+const EARTHQUAKE_STUN_MS = 2500;
 const VETERAN_HP_BONUS = 10;
 const VETERAN_ATK_BONUS = 5;
 const ARCHER_TOWER_POS = { x: 12, y: 13 };
@@ -939,6 +944,8 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
 
   const [harvestBoonCooldown, setHarvestBoonCooldown] = useState(0);
   const [harvestBoonActive, setHarvestBoonActive] = useState(false);
+  const [earthquakeCooldown, setEarthquakeCooldown] = useState(0);
+  const [earthquakeEffect, setEarthquakeEffect] = useState<{ x: number; y: number; at: number } | null>(null);
   const harvestBoonRef = useRef(false);
   useEffect(() => { harvestBoonRef.current = harvestBoonActive; }, [harvestBoonActive]);
   useEffect(() => {
@@ -946,6 +953,11 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
     const id = setInterval(() => setHarvestBoonCooldown(c => Math.max(0, c - 1)), 1000);
     return () => clearInterval(id);
   }, [harvestBoonCooldown > 0]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (earthquakeCooldown <= 0) return;
+    const id = setInterval(() => setEarthquakeCooldown(c => Math.max(0, c - 1)), 1000);
+    return () => clearInterval(id);
+  }, [earthquakeCooldown > 0]); // eslint-disable-line react-hooks/exhaustive-deps
   const [killCount, setKillCount] = useState(() => INITIAL_SAVE?.killCount ?? 0);
   const [totalGold, setTotalGold] = useState(() => INITIAL_SAVE?.totalGold ?? 0);
   const [totalLumber, setTotalLumber] = useState(() => INITIAL_SAVE?.totalLumber ?? 0);
@@ -1959,6 +1971,24 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
     }, 10000);
   }, [harvestBoonCooldown, harvestBoonActive, addFloatingText, workers]);
 
+  const handleEarthquake = useCallback(() => {
+    if (earthquakeCooldown > 0) return;
+    const hero = workersRef.current.find(w => w.unitType === 'hero' && w.hp > 0 && w.level >= 3);
+    if (!hero) return;
+    const hx = Math.round(hero.x), hy = Math.round(hero.y);
+    const now = Date.now();
+    const stunUntil = now + EARTHQUAKE_STUN_MS;
+    setEnemyGrunts(gs => gs.map(g => tileDist(g.x, g.y, hx, hy) <= EARTHQUAKE_RADIUS ? { ...g, hp: Math.max(0, g.hp - EARTHQUAKE_DAMAGE), frozenUntil: stunUntil } : g));
+    setEnemyShamans(ss => ss.map(s => tileDist(s.x, s.y, hx, hy) <= EARTHQUAKE_RADIUS ? { ...s, hp: Math.max(0, s.hp - EARTHQUAKE_DAMAGE) } : s));
+    setEnemyTrolls(ts => ts.map(t => tileDist(t.x, t.y, hx, hy) <= EARTHQUAKE_RADIUS ? { ...t, hp: Math.max(0, t.hp - EARTHQUAKE_DAMAGE) } : t));
+    setEnemySiege(rs => rs.map(r => tileDist(r.x, r.y, hx, hy) <= EARTHQUAKE_RADIUS ? { ...r, hp: Math.max(0, r.hp - EARTHQUAKE_DAMAGE) } : r));
+    setEnemyWarchiefs(ws2 => ws2.map(wc => tileDist(wc.x, wc.y, hx, hy) <= EARTHQUAKE_RADIUS ? { ...wc, hp: Math.max(0, wc.hp - EARTHQUAKE_DAMAGE) } : wc));
+    addFloatingText(hx, hy, '🌋 EARTHQUAKE!', '#f59e0b');
+    setEarthquakeEffect({ x: hx, y: hy, at: now });
+    Snd.ability();
+    setEarthquakeCooldown(EARTHQUAKE_COOLDOWN_S);
+  }, [earthquakeCooldown, addFloatingText]);
+
   const handleSwordsmanCharge = useCallback(() => {
     const swords = workersRef.current.filter(w => w.selected && w.unitType === 'swordsman' && w.chargeCooldown <= 0);
     if (swords.length === 0) return;
@@ -2195,6 +2225,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
         setWorkers(ws => ws.map(w => w.selected ? { ...w, movingTo: null, path: [], gathering: null, attacking: null, repairing: null, attackMove: false, attackMoveTarget: null, patrol: null, holdPosition: false, waypoints: [], state: 'idle' as const } : w));
       }
       if (e.key === 'g' || e.key === 'G') { e.preventDefault(); handleGarrison(); }
+      if (e.key === 'e' || e.key === 'E') { e.preventDefault(); handleEarthquake(); }
       if (e.key === 'c' || e.key === 'C') { e.preventDefault(); handleSwordsmanCharge(); }
       if (e.key === 's' || e.key === 'S') { e.preventDefault(); handleCavalrySprint(); }
       if (e.key === 'h' || e.key === 'H') {
@@ -2612,7 +2643,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
                       setWorkers(ws3 => ws3.map(u => {
                         if (u.id !== w.id) return u;
                         const newXp = u.xp + XP_PER_KILL;
-                        const newLevel = newXp >= XP_TO_LEVEL_2 ? 2 : newXp >= XP_TO_LEVEL_1 ? 1 : 0;
+                        const newLevel = newXp >= XP_TO_LEVEL_3 ? 3 : newXp >= XP_TO_LEVEL_2 ? 2 : newXp >= XP_TO_LEVEL_1 ? 1 : 0;
                         if (newLevel > u.level) {
                           addFloatingText(capturedWX3, capturedWY3, `⭐ Level ${newLevel}!`, '#fbbf24');
                           return { ...u, xp: newXp, level: newLevel, maxHp: u.maxHp + VETERAN_HP_BONUS, hp: Math.min(u.hp + VETERAN_HP_BONUS, u.maxHp + VETERAN_HP_BONUS) };
@@ -2669,7 +2700,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
                       const xpGain = isAttacker ? baseXp : isNearby ? Math.round(baseXp * 0.25) : 0;
                       if (xpGain === 0) return u;
                       const newXp = u.xp + xpGain;
-                      const newLevel = newXp >= XP_TO_LEVEL_2 ? 2 : newXp >= XP_TO_LEVEL_1 ? 1 : 0;
+                      const newLevel = newXp >= XP_TO_LEVEL_3 ? 3 : newXp >= XP_TO_LEVEL_2 ? 2 : newXp >= XP_TO_LEVEL_1 ? 1 : 0;
                       if (newLevel > u.level) {
                         addFloatingText(Math.round(u.x), Math.round(u.y), `⭐ Level ${newLevel}!`, '#fbbf24');
                         const hpGain = VETERAN_HP_BONUS;
@@ -2751,7 +2782,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
                       const xpGain = isAttacker ? siegeXp : isNearby ? Math.round(siegeXp * 0.25) : 0;
                       if (xpGain === 0) return u;
                       const newXp = u.xp + xpGain;
-                      const newLevel = newXp >= XP_TO_LEVEL_2 ? 2 : newXp >= XP_TO_LEVEL_1 ? 1 : 0;
+                      const newLevel = newXp >= XP_TO_LEVEL_3 ? 3 : newXp >= XP_TO_LEVEL_2 ? 2 : newXp >= XP_TO_LEVEL_1 ? 1 : 0;
                       if (newLevel > u.level) {
                         addFloatingText(Math.round(u.x), Math.round(u.y), `⭐ Level ${newLevel}!`, '#fbbf24');
                         return { ...u, xp: newXp, level: newLevel, maxHp: u.maxHp + VETERAN_HP_BONUS, hp: Math.min(u.hp + VETERAN_HP_BONUS, u.maxHp + VETERAN_HP_BONUS) };
@@ -2791,7 +2822,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
                       const xpGain = isAttacker ? SHAMAN_XP_REWARD : isNearby ? Math.round(SHAMAN_XP_REWARD * 0.25) : 0;
                       if (xpGain === 0) return u;
                       const newXp = u.xp + xpGain;
-                      const newLevel = newXp >= XP_TO_LEVEL_2 ? 2 : newXp >= XP_TO_LEVEL_1 ? 1 : 0;
+                      const newLevel = newXp >= XP_TO_LEVEL_3 ? 3 : newXp >= XP_TO_LEVEL_2 ? 2 : newXp >= XP_TO_LEVEL_1 ? 1 : 0;
                       if (newLevel > u.level) {
                         addFloatingText(Math.round(u.x), Math.round(u.y), `⭐ Level ${newLevel}!`, '#fbbf24');
                         return { ...u, xp: newXp, level: newLevel, maxHp: u.maxHp + VETERAN_HP_BONUS, hp: Math.min(u.hp + VETERAN_HP_BONUS, u.maxHp + VETERAN_HP_BONUS) };
@@ -2829,7 +2860,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
                       const xpGain = isAttacker ? TROLL_XP_REWARD : isNearby ? Math.round(TROLL_XP_REWARD * 0.25) : 0;
                       if (xpGain === 0) return u;
                       const newXp = u.xp + xpGain;
-                      const newLevel = newXp >= XP_TO_LEVEL_2 ? 2 : newXp >= XP_TO_LEVEL_1 ? 1 : 0;
+                      const newLevel = newXp >= XP_TO_LEVEL_3 ? 3 : newXp >= XP_TO_LEVEL_2 ? 2 : newXp >= XP_TO_LEVEL_1 ? 1 : 0;
                       if (newLevel > u.level) {
                         addFloatingText(Math.round(u.x), Math.round(u.y), `⭐ Level ${newLevel}!`, '#fbbf24');
                         return { ...u, xp: newXp, level: newLevel, maxHp: u.maxHp + VETERAN_HP_BONUS, hp: Math.min(u.hp + VETERAN_HP_BONUS, u.maxHp + VETERAN_HP_BONUS) };
@@ -2889,7 +2920,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
                       const xpGain = isAttacker ? NECROMANCER_XP_REWARD : isNearby ? Math.round(NECROMANCER_XP_REWARD * 0.25) : 0;
                       if (xpGain === 0) return u;
                       const newXp = u.xp + xpGain;
-                      const newLevel = newXp >= XP_TO_LEVEL_2 ? 2 : newXp >= XP_TO_LEVEL_1 ? 1 : 0;
+                      const newLevel = newXp >= XP_TO_LEVEL_3 ? 3 : newXp >= XP_TO_LEVEL_2 ? 2 : newXp >= XP_TO_LEVEL_1 ? 1 : 0;
                       if (newLevel > u.level) {
                         addFloatingText(Math.round(u.x), Math.round(u.y), `⭐ Level ${newLevel}!`, '#fbbf24');
                         return { ...u, xp: newXp, level: newLevel, maxHp: u.maxHp + VETERAN_HP_BONUS, hp: Math.min(u.hp + VETERAN_HP_BONUS, u.maxHp + VETERAN_HP_BONUS) };
@@ -2929,7 +2960,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
                       const xpGain = isAttacker ? WITCH_DOCTOR_XP_REWARD : isNearby ? Math.round(WITCH_DOCTOR_XP_REWARD * 0.25) : 0;
                       if (xpGain === 0) return u;
                       const newXp = u.xp + xpGain;
-                      const newLevel = newXp >= XP_TO_LEVEL_2 ? 2 : newXp >= XP_TO_LEVEL_1 ? 1 : 0;
+                      const newLevel = newXp >= XP_TO_LEVEL_3 ? 3 : newXp >= XP_TO_LEVEL_2 ? 2 : newXp >= XP_TO_LEVEL_1 ? 1 : 0;
                       if (newLevel > u.level) {
                         addFloatingText(Math.round(u.x), Math.round(u.y), `⭐ Level ${newLevel}!`, '#fbbf24');
                         return { ...u, xp: newXp, level: newLevel, maxHp: u.maxHp + VETERAN_HP_BONUS, hp: Math.min(u.hp + VETERAN_HP_BONUS, u.maxHp + VETERAN_HP_BONUS) };
@@ -2969,7 +3000,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
                       const xpGain = isAttacker ? WARCHIEF_XP_REWARD : isNearby ? Math.round(WARCHIEF_XP_REWARD * 0.25) : 0;
                       if (xpGain === 0) return u;
                       const newXp = u.xp + xpGain;
-                      const newLevel = newXp >= XP_TO_LEVEL_2 ? 2 : newXp >= XP_TO_LEVEL_1 ? 1 : 0;
+                      const newLevel = newXp >= XP_TO_LEVEL_3 ? 3 : newXp >= XP_TO_LEVEL_2 ? 2 : newXp >= XP_TO_LEVEL_1 ? 1 : 0;
                       if (newLevel > u.level) {
                         addFloatingText(Math.round(u.x), Math.round(u.y), `⭐ Level ${newLevel}!`, '#fbbf24');
                         return { ...u, xp: newXp, level: newLevel, maxHp: u.maxHp + VETERAN_HP_BONUS, hp: Math.min(u.hp + VETERAN_HP_BONUS, u.maxHp + VETERAN_HP_BONUS) };
@@ -3716,7 +3747,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
               if (!u.attacking || u.attacking.targetType !== 'sapper') return u;
               const xpGain = SAPPER_XP_REWARD;
               const newXp = u.xp + xpGain;
-              const newLevel = newXp >= XP_TO_LEVEL_2 ? 2 : newXp >= XP_TO_LEVEL_1 ? 1 : 0;
+              const newLevel = newXp >= XP_TO_LEVEL_3 ? 3 : newXp >= XP_TO_LEVEL_2 ? 2 : newXp >= XP_TO_LEVEL_1 ? 1 : 0;
               if (newLevel > u.level) {
                 addFloatingText(Math.round(u.x), Math.round(u.y), `⭐ Level ${newLevel}!`, '#fbbf24');
                 return { ...u, xp: newXp, level: newLevel, maxHp: u.maxHp + VETERAN_HP_BONUS, hp: Math.min(u.hp + VETERAN_HP_BONUS, u.maxHp + VETERAN_HP_BONUS), attacking: null, state: 'idle' as const };
@@ -5690,6 +5721,25 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
             return <circle cx={moveRing.svgX} cy={moveRing.svgY} r={r} fill="none" stroke="#4ade80" strokeWidth={2} opacity={opacity} pointerEvents="none" />;
           })()}
 
+          {/* Earthquake shockwave visual effect */}
+          {earthquakeEffect && (() => {
+            const age = Date.now() - earthquakeEffect.at;
+            if (age > 1200) return null;
+            const { isoX, isoY } = tileToSvg(earthquakeEffect.x, earthquakeEffect.y);
+            const cx2 = isoX + TILE_SIZE / 2, cy2 = isoY + TILE_SIZE / 4;
+            const t = age / 1200;
+            const rx1 = EARTHQUAKE_RADIUS * TILE_SIZE * t;
+            const ry1 = rx1 / 2;
+            const rx2 = rx1 * 0.6;
+            const ry2 = ry1 * 0.6;
+            const op = 1 - t;
+            return <g pointerEvents="none">
+              <ellipse cx={cx2} cy={cy2} rx={rx1} ry={ry1} fill="none" stroke="#f59e0b" strokeWidth={3} opacity={op * 0.8} />
+              <ellipse cx={cx2} cy={cy2} rx={rx2} ry={ry2} fill="none" stroke="#ef4444" strokeWidth={2} opacity={op * 0.6} />
+              <ellipse cx={cx2} cy={cy2} rx={rx1 * 0.3} ry={ry1 * 0.3} fill="rgba(245,158,11,0.15)" stroke="none" opacity={op} />
+            </g>;
+          })()}
+
           {/* Box selection */}
           {dragBox && Math.abs(dragBox.end.x - dragBox.start.x) > 4 && (
             <rect x={Math.min(dragBox.start.x, dragBox.end.x)} y={Math.min(dragBox.start.y, dragBox.end.y)} width={Math.abs(dragBox.end.x - dragBox.start.x)} height={Math.abs(dragBox.end.y - dragBox.start.y)} fill="rgba(56,189,248,0.08)" stroke="#38bdf8" strokeWidth={2} strokeDasharray="8 4" pointerEvents="none" />
@@ -5796,6 +5846,8 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
         incomeRate={incomeRate}
         barracksTech={barracksTech}
         onBarracksTech={(type) => handleFarmhouseAction(`barracks:${type}`)}
+        earthquakeCooldown={earthquakeCooldown}
+        onEarthquake={handleEarthquake}
       />
     </div>
   );

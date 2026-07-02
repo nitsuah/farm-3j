@@ -138,6 +138,8 @@ interface RTSUIProps {
   incomeRate: { gold: number; lumber: number; stone: number };
   barracksTech: { veteranTraining: boolean; warDrums: boolean };
   onBarracksTech: (type: 'veteranTraining' | 'warDrums') => void;
+  earthquakeCooldown: number;
+  onEarthquake: () => void;
   enemyBarnHp: number;
   enemyBarnMaxHp: number;
   playerBarnHp: number;
@@ -228,6 +230,8 @@ export const RTSUI: React.FC<RTSUIProps> = ({
   incomeRate,
   barracksTech,
   onBarracksTech,
+  earthquakeCooldown,
+  onEarthquake,
 }) => {
   const isHeroSelected = selectedWorkers.some(w => w.unitType === 'hero');
   const heroLevel = selectedWorkers.find(w => w.unitType === 'hero')?.level ?? 0;
@@ -305,9 +309,9 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                   </div>
                   {firstWorker.level > 0 || firstWorker.xp > 0 ? (
                     <div className="mt-0.5 flex items-center gap-1.5">
-                      <span className="text-xs text-yellow-300">{'⭐'.repeat(firstWorker.level)}{firstWorker.level === 0 ? '☆☆' : firstWorker.level === 1 ? '☆' : ''}</span>
+                      <span className="text-xs text-yellow-300">{'⭐'.repeat(firstWorker.level)}{firstWorker.level === 0 ? '☆☆☆' : firstWorker.level === 1 ? '☆☆' : firstWorker.level === 2 ? '☆' : ''}</span>
                       <div className="h-1.5 flex-1 rounded bg-slate-700">
-                        <div className="h-1.5 rounded bg-yellow-400 transition-all" style={{ width: `${Math.min(100, (firstWorker.xp / (firstWorker.level >= 2 ? 120 : firstWorker.level === 1 ? 120 : 40)) * 100)}%` }} />
+                        <div className="h-1.5 rounded bg-yellow-400 transition-all" style={{ width: `${Math.min(100, (firstWorker.xp / (firstWorker.level >= 3 ? 280 : firstWorker.level >= 2 ? 280 : firstWorker.level === 1 ? 120 : 40)) * 100)}%` }} />
                       </div>
                       <span className="text-xs text-yellow-400/70">{firstWorker.xp}xp</span>
                     </div>
@@ -460,6 +464,19 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                 >
                   {harvestBoonActive ? '🌾 Boon! (active)' : harvestBoonCooldown > 0 ? `🌾 Boon ${harvestBoonCooldown}s` : '🌾 Harvest Boon'}
                 </button>
+                {heroLevel >= 3 ? (
+                  <button
+                    type="button"
+                    className={`col-span-3 rounded border py-2.5 text-xs font-semibold disabled:opacity-40 ${earthquakeCooldown > 0 ? 'border-amber-700/50 bg-amber-900/20 text-amber-600' : 'border-amber-400 bg-amber-500/20 text-amber-200 hover:bg-amber-500/30'}`}
+                    onClick={onEarthquake}
+                    disabled={earthquakeCooldown > 0}
+                    title="Earthquake [E] — 45 dmg to all enemies in 5-tile radius + 2.5s stun"
+                  >
+                    {earthquakeCooldown > 0 ? `🌋 Earthquake ${earthquakeCooldown}s` : '🌋 Earthquake [E]'}
+                  </button>
+                ) : (
+                  <div className="col-span-3 rounded border border-slate-600/40 py-2.5 text-center text-xs text-slate-500">🌋 Earthquake (Lv3 — 280xp)</div>
+                )}
               </>)}
             </div>
           )}
