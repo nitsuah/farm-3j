@@ -965,7 +965,8 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
   const farmhouseUpgradeCosts = [{ gold: 50, lumber: 50 }, { gold: 100, lumber: 100 }, { gold: 200, lumber: 200 }];
   const farmhouseStorage = [{ gold: 100, lumber: 100 }, { gold: 200, lumber: 200 }, { gold: 400, lumber: 400 }];
   const maxFarmhouseLevel = farmhouseUpgradeCosts.length - 1;
-  const [selectedType, setSelectedType] = useState<'worker' | 'farmhouse' | null>('worker');
+  const [selectedType, setSelectedType] = useState<'worker' | 'farmhouse' | 'building' | null>('worker');
+  const [selectedBuildingId, setSelectedBuildingId] = useState<number | null>(null);
   const [rallyPoint, setRallyPoint] = useState<{ x: number; y: number } | null>(() => INITIAL_SAVE?.rallyPoint ?? null);
   const rallyPointRef = useRef(rallyPoint);
   useEffect(() => { rallyPointRef.current = rallyPoint; }, [rallyPoint]);
@@ -4988,6 +4989,17 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
             </g>;
           })}
 
+          {/* Building selection rings + click targets */}
+          {placedBuildings.filter(b => b.hp > 0 && !b.constructing && b.type !== 'wall').map(b => {
+            const { isoX, isoY } = tileToSvg(b.x, b.y);
+            const isSel = selectedBuildingId === b.id;
+            return <g key={`bsel-${b.id}`}>
+              {isSel && <rect x={isoX + TILE_SIZE * 0.05} y={isoY - 6} width={TILE_SIZE * 1.9} height={TILE_SIZE * 0.92} fill="none" stroke="#60a5fa" strokeWidth={2} strokeDasharray="5 2" rx={7} opacity={0.9} pointerEvents="none" />}
+              <rect x={isoX + TILE_SIZE * 0.05} y={isoY - 6} width={TILE_SIZE * 1.9} height={TILE_SIZE * 0.92} fill="transparent" style={{ cursor: 'pointer' }}
+                onClick={e => { e.stopPropagation(); setSelectedBuildingId(b.id); setSelectedType('building'); setWorkers(ws => ws.map(w => ({ ...w, selected: false }))); }} />
+            </g>;
+          })}
+
           {/* Fire effects on critically damaged buildings (<25% HP) */}
           {placedBuildings.filter(b => b.hp > 0 && b.hp / b.maxHp < 0.25).map(b => {
             const { isoX, isoY } = tileToSvg(b.x, b.y);
@@ -5110,7 +5122,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
             const bcx = isoX + TILE_SIZE / 2; const bcy = isoY + TILE_SIZE * 0.3;
             const bt = (Date.now() / 600) % (2 * Math.PI);
             return <g style={{ cursor: 'pointer' }}
-              onClick={() => { if (!buildMode) { setSelectedType('farmhouse'); setWorkers(ws => ws.map(w => ({ ...w, selected: false }))); } }}
+              onClick={() => { if (!buildMode) { setSelectedType('farmhouse'); setSelectedBuildingId(null); setWorkers(ws => ws.map(w => ({ ...w, selected: false }))); } }}
               onContextMenu={e => {
                 e.preventDefault();
                 if (anySelected && selectedType === 'worker') { handleGarrison(); return; }
@@ -5466,7 +5478,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
             const heroAlive = workers.find(w => w.unitType === 'hero' && w.hp > 0);
             const hasMoraleAura = heroAlive && worker.unitType !== 'hero' && tileDist(worker.x, worker.y, heroAlive.x, heroAlive.y) <= 3;
             return <g key={`worker-${worker.id}`}
-              onClick={e => { e.stopPropagation(); if (!isDraggingRef.current && !buildMode) { Snd.select(); setSelectedType('worker'); if (e.ctrlKey || e.metaKey) { setWorkers(ws => ws.map(w => w.id === worker.id ? { ...w, selected: !w.selected } : w)); } else { setWorkers(ws => ws.map(w => ({ ...w, selected: w.id === worker.id }))); } } }}
+              onClick={e => { e.stopPropagation(); if (!isDraggingRef.current && !buildMode) { Snd.select(); setSelectedType('worker'); setSelectedBuildingId(null); if (e.ctrlKey || e.metaKey) { setWorkers(ws => ws.map(w => w.id === worker.id ? { ...w, selected: !w.selected } : w)); } else { setWorkers(ws => ws.map(w => ({ ...w, selected: w.id === worker.id }))); } } }}
               style={{ cursor: 'pointer' }}>
               {hasMoraleAura && <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 32} rx={26} ry={12} fill="none" stroke="#fbbf24" strokeWidth={1.5} strokeDasharray="3 2" opacity={0.6} />}
               {battleShoutUntil > Date.now() && heroAlive && tileDist(worker.x, worker.y, heroAlive.x, heroAlive.y) <= HERO_SHOUT_RADIUS && <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 32} rx={30} ry={14} fill="none" stroke="#fb923c" strokeWidth={2} strokeDasharray="5 3" opacity={0.85} />}
@@ -5737,7 +5749,9 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
         trainingQueue={trainingQueue}
         trainingProgress={trainingProgress}
         towerGarrison={towerGarrison}
+        onTowerGarrison={handleTowerGarrison}
         onTowerDeploy={handleTowerDeploy}
+        selectedBuilding={placedBuildings.find(b => b.id === selectedBuildingId) ?? null}
         placedBuildingsList={placedBuildings}
         onSwordsmanCharge={handleSwordsmanCharge}
         onCavalrySprint={handleCavalrySprint}

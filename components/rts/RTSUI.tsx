@@ -79,7 +79,9 @@ const UPGRADE_META: Record<keyof Upgrades, { label: string; icon: string; desc: 
 };
 
 interface RTSUIProps {
-  selectedType: 'worker' | 'farmhouse' | null;
+  selectedType: 'worker' | 'farmhouse' | 'building' | null;
+  selectedBuilding: PlacedBuilding | null;
+  onTowerGarrison: (towerId: number, tx: number, ty: number) => void;
   selectedWorkers: WorkerState[];
   hasBarracks: boolean;
   garrisonedCount: number;
@@ -213,7 +215,9 @@ export const RTSUI: React.FC<RTSUIProps> = ({
   trainingQueue,
   trainingProgress,
   towerGarrison,
+  onTowerGarrison,
   onTowerDeploy,
+  selectedBuilding,
   placedBuildingsList,
   onSwordsmanCharge,
   onCavalrySprint,
@@ -269,7 +273,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
         {/* Unit / building info */}
         <div className="rounded border border-amber-700/60 bg-slate-900/80 p-3 text-amber-100">
           <div className="text-xs tracking-wide text-amber-300/90 uppercase">
-            {selectedType === 'farmhouse' ? 'Building' : 'Selection'}
+            {selectedType === 'farmhouse' ? 'Building' : selectedType === 'building' ? 'Structure' : 'Selection'}
           </div>
           {selectedType === 'worker' && firstWorker ? (
             <>
@@ -347,7 +351,28 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                 </div>
               )}
             </>
-          ) : buildMode ? (
+          ) : selectedType === 'building' && selectedBuilding ? (() => {
+            const b = selectedBuilding;
+            const BUILDING_LABELS: Record<string, string> = { farmhouse: 'Farmhouse', lumberShed: 'Lumber Shed', watchtower: 'Watchtower', windmill: 'Windmill', barracks: 'Barracks', siegeWorkshop: 'Siege Workshop', market: 'Market', blacksmith: 'Blacksmith', granary: 'Granary', stable: 'Stable', spikeTrap: 'Spike Trap', frostTower: 'Frost Tower', ballista: 'Ballista', poisonTower: 'Poison Tower', wall: 'Wall' };
+            const BUILDING_EMOJI_MAP: Record<string, string> = { farmhouse: '🏠', lumberShed: '🪵', watchtower: '🗼', windmill: '💨', barracks: '🏯', siegeWorkshop: '⚙️', market: '🏪', blacksmith: '🔨', granary: '🌾', stable: '🐴', spikeTrap: '🪤', frostTower: '❄️', ballista: '🏹', poisonTower: '☠️', wall: '🧱' };
+            const BUILDING_DESCS: Record<string, string> = { watchtower: 'Ranged attack · garrison 3 units', barracks: 'Trains swordsmen · upgrade to guard', frostTower: 'Slows enemies · 5-tile range', ballista: 'High dmg · long range · single target', poisonTower: 'Poisons AoE · 3-tile range', siegeWorkshop: 'Builds catapults & trebuchets', market: 'Passive gold income +2/5s', blacksmith: 'Upgrade unit attack & armor', stable: 'Trains cavalry units', granary: '+15 food cap', lumberShed: 'Bonus lumber drop-off speed', windmill: '+2🪙 every 5s', spikeTrap: 'Damage grunts that step on it', farmhouse: '+5 food cap per level' };
+            const hpP = b.hp / b.maxHp;
+            const isTower = b.type === 'watchtower' || b.type === 'frostTower' || b.type === 'ballista' || b.type === 'poisonTower';
+            const tgUnits = isTower ? (towerGarrison[b.id] ?? []) : [];
+            return (
+              <>
+                <div className="mt-1 text-sm font-semibold">{BUILDING_EMOJI_MAP[b.type]} {BUILDING_LABELS[b.type] ?? b.type}</div>
+                <div className="mt-1 flex items-center gap-2">
+                  <div className="h-2 flex-1 rounded bg-slate-700">
+                    <div className="h-2 rounded transition-all" style={{ width: `${hpP * 100}%`, background: hpP > 0.5 ? '#4ade80' : hpP > 0.25 ? '#fbbf24' : '#ef4444' }} />
+                  </div>
+                  <span className="text-xs text-slate-300">{b.hp}/{b.maxHp}</span>
+                </div>
+                {BUILDING_DESCS[b.type] && <div className="mt-0.5 text-xs text-slate-400">{BUILDING_DESCS[b.type]}</div>}
+                {isTower && <div className="mt-0.5 text-xs text-sky-300">👥 Garrison: {tgUnits.length}/3</div>}
+              </>
+            );
+          })() : buildMode ? (
             <>
               <div className="mt-1 text-sm font-semibold text-amber-300">Build Mode</div>
               <div className="mt-0.5 text-xs text-slate-300">{buildingCosts[buildMode].label}</div>
@@ -438,6 +463,49 @@ export const RTSUI: React.FC<RTSUIProps> = ({
               </>)}
             </div>
           )}
+
+          {selectedType === 'building' && selectedBuilding && (() => {
+            const b = selectedBuilding;
+            const isTower = b.type === 'watchtower';
+            const tgUnits = towerGarrison[b.id] ?? [];
+            const isAttackTower = b.type === 'frostTower' || b.type === 'ballista' || b.type === 'poisonTower';
+            return (
+              <div className="grid grid-cols-2 gap-1.5">
+                {isTower && (
+                  <>
+                    <button type="button"
+                      className="rounded border border-sky-500/70 bg-sky-500/15 py-2.5 text-xs text-sky-100 hover:bg-sky-500/30 disabled:opacity-40"
+                      onClick={() => onTowerGarrison(b.id, b.x, b.y)}
+                      disabled={tgUnits.length >= 3}
+                      title="Garrison selected units into this tower for bonus dmg [G]">
+                      🏰 Garrison ({tgUnits.length}/3)
+                    </button>
+                    <button type="button"
+                      className="rounded border border-slate-500/70 bg-slate-700/30 py-2.5 text-xs text-slate-200 hover:bg-slate-600/30 disabled:opacity-40"
+                      onClick={() => onTowerDeploy(b.id, b.x, b.y)}
+                      disabled={tgUnits.length === 0}
+                      title="Deploy garrisoned units back to the field">
+                      🚪 Deploy ({tgUnits.length})
+                    </button>
+                  </>
+                )}
+                {(isAttackTower) && (
+                  <div className="col-span-2 text-xs text-slate-400 py-1 text-center">Auto-attacks nearby enemies</div>
+                )}
+                {b.type === 'barracks' && (
+                  <>
+                    <div className="col-span-2 text-xs text-slate-400 py-1 text-center">Train units from Barn → Train tab</div>
+                  </>
+                )}
+                {b.hp < b.maxHp && (
+                  <div className="col-span-2 text-xs text-amber-400/80 py-1 text-center">🔧 Damaged — right-click with workers to repair</div>
+                )}
+                {b.type !== 'watchtower' && !isAttackTower && b.type !== 'barracks' && b.hp >= b.maxHp && (
+                  <div className="col-span-2 text-xs text-slate-500 py-1 text-center">No actions available</div>
+                )}
+              </div>
+            );
+          })()}
 
           {selectedType === 'farmhouse' && (
             <div className="flex flex-col gap-1">
