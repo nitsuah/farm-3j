@@ -89,6 +89,15 @@ const NECROMANCER_RAISE_MS = 4000;
 const NECROMANCER_FIRST_WAVE = 16;
 const NECROMANCER_GOLD_REWARD = 20;
 const NECROMANCER_XP_REWARD = 45;
+const WITCH_DOCTOR_MAX_HP = 40;
+const WITCH_DOCTOR_SPEED = 0.45;
+const WITCH_DOCTOR_BUFF_RADIUS = 3.0;
+const WITCH_DOCTOR_BUFF_MS = 7000;
+const WITCH_DOCTOR_BUFF_DURATION = 6000;
+const WITCH_DOCTOR_FIRST_WAVE = 12;
+const WITCH_DOCTOR_GOLD_REWARD = 18;
+const WITCH_DOCTOR_XP_REWARD = 40;
+const WITCH_DOCTOR_ENRAGE_DMG_BONUS = 8;
 const LOOT_CRATE_SPAWN_MS = 45000;
 const SHAMAN_MAX_HP = 45;
 const SHAMAN_SPEED = 0.6;
@@ -164,6 +173,7 @@ interface EnemyGrunt {
   isBoss?: boolean;
   isSkeleton?: boolean;
   frozenUntil?: number;
+  enragedUntil?: number;
 }
 
 interface EnemyTower {
@@ -216,6 +226,16 @@ interface EnemyNecromancer {
   movingTo: { x: number; y: number } | null;
   path: { x: number; y: number }[];
   state: 'moving' | 'raising';
+}
+interface EnemyWitchDoctor {
+  id: number;
+  x: number;
+  y: number;
+  hp: number;
+  maxHp: number;
+  movingTo: { x: number; y: number } | null;
+  path: { x: number; y: number }[];
+  state: 'moving' | 'casting';
 }
 
 interface EnemyTroll {
@@ -599,6 +619,11 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
   useEffect(() => { enemyNecromancersRef.current = enemyNecromancers; }, [enemyNecromancers]);
   const necromancerIdRef = useRef(7000);
   const necromancerRaiseTimersRef = useRef<Record<number, number>>({});
+  const [enemyWitchDoctors, setEnemyWitchDoctors] = useState<EnemyWitchDoctor[]>([]);
+  const enemyWitchDoctorsRef = useRef<EnemyWitchDoctor[]>([]);
+  useEffect(() => { enemyWitchDoctorsRef.current = enemyWitchDoctors; }, [enemyWitchDoctors]);
+  const witchDoctorIdRef = useRef(8000);
+  const witchDoctorBuffTimersRef = useRef<Record<number, number>>({});
   const [deadGruntPositions, setDeadGruntPositions] = useState<{ x: number; y: number; t: number }[]>([]);
   const deadGruntPositionsRef = useRef<{ x: number; y: number; t: number }[]>([]);
   useEffect(() => { deadGruntPositionsRef.current = deadGruntPositions; }, [deadGruntPositions]);
@@ -960,6 +985,17 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
       const necro: EnemyNecromancer = { id: necromancerIdRef.current++, x: nx, y: ny, hp: NECROMANCER_MAX_HP, maxHp: NECROMANCER_MAX_HP, movingTo: nPath[0] ?? BARN_POS, path: nPath.slice(1), state: 'moving' };
       setEnemyNecromancers(ns => [...ns, necro]);
       setWaveAnnouncement(`💀 Wave ${newWave} — NECROMANCER! Kill it before it raises the dead!`);
+      window.setTimeout(() => setWaveAnnouncement(null), 4000);
+    }
+
+    // Witch Doctor spawn: wave 12+ every 3 waves
+    if (newWave >= WITCH_DOCTOR_FIRST_WAVE && newWave % 3 === 2) {
+      const wdx = Math.max(0, ENEMY_BARN_POS.x - 1);
+      const wdy = Math.max(0, ENEMY_BARN_POS.y - 2);
+      const wdPath = aStar(INITIAL_TILES, { x: wdx, y: wdy }, BARN_POS, true, wallSet);
+      const wd: EnemyWitchDoctor = { id: witchDoctorIdRef.current++, x: wdx, y: wdy, hp: WITCH_DOCTOR_MAX_HP, maxHp: WITCH_DOCTOR_MAX_HP, movingTo: wdPath[0] ?? BARN_POS, path: wdPath.slice(1), state: 'moving' };
+      setEnemyWitchDoctors(prev => [...prev, wd]);
+      setWaveAnnouncement(`🔮 Wave ${newWave} — WITCH DOCTOR! Kill it or grunts go berserk!`);
       window.setTimeout(() => setWaveAnnouncement(null), 4000);
     }
 
@@ -1597,6 +1633,8 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
             if (nearSapper) return { ...w, attacking: { targetType: 'sapper' as const, sapperId: nearSapper.id }, state: 'attacking' as const, movingTo: null, path: [] };
             const nearNecro = enemyNecromancersRef.current.find(n => n.hp > 0 && tileDist(w.x, w.y, n.x, n.y) <= AM_SCAN);
             if (nearNecro) return { ...w, attacking: { targetType: 'necromancer' as const, necromancerId: nearNecro.id }, state: 'attacking' as const, movingTo: null, path: [] };
+            const nearWD = enemyWitchDoctorsRef.current.find(d => d.hp > 0 && tileDist(w.x, w.y, d.x, d.y) <= AM_SCAN);
+            if (nearWD) return { ...w, attacking: { targetType: 'witchDoctor' as const, witchDoctorId: nearWD.id }, state: 'attacking' as const, movingTo: null, path: [] };
           }
           // Hold position: stay put, auto-attack nearby enemies without chasing
           if (w.holdPosition) {
@@ -1614,6 +1652,8 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
               if (nearSapperH) return { ...w, attacking: { targetType: 'sapper' as const, sapperId: nearSapperH.id }, state: 'attacking' as const };
               const nearNecroH = enemyNecromancersRef.current.find(n => n.hp > 0 && tileDist(w.x, w.y, n.x, n.y) <= HP_RANGE);
               if (nearNecroH) return { ...w, attacking: { targetType: 'necromancer' as const, necromancerId: nearNecroH.id }, state: 'attacking' as const };
+              const nearWDH = enemyWitchDoctorsRef.current.find(d => d.hp > 0 && tileDist(w.x, w.y, d.x, d.y) <= HP_RANGE);
+              if (nearWDH) return { ...w, attacking: { targetType: 'witchDoctor' as const, witchDoctorId: nearWDH.id }, state: 'attacking' as const };
             }
             // After killing target, go back to idle (don't chase)
             if (w.state === 'attacking' && w.attacking) {
@@ -1637,6 +1677,8 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
             if (nearSapperA) return { ...w, attacking: { targetType: 'sapper' as const, sapperId: nearSapperA.id }, state: 'attacking' as const };
             const nearNecroA = enemyNecromancersRef.current.find(n => n.hp > 0 && tileDist(w.x, w.y, n.x, n.y) <= AGG_RANGE);
             if (nearNecroA) return { ...w, attacking: { targetType: 'necromancer' as const, necromancerId: nearNecroA.id }, state: 'attacking' as const };
+            const nearWDA = enemyWitchDoctorsRef.current.find(d => d.hp > 0 && tileDist(w.x, w.y, d.x, d.y) <= AGG_RANGE);
+            if (nearWDA) return { ...w, attacking: { targetType: 'witchDoctor' as const, witchDoctorId: nearWDA.id }, state: 'attacking' as const };
           }
           // When attack-move unit finishes its target, resume march to original destination
           if (w.attackMove && w.state === 'idle' && w.attackMoveTarget) {
@@ -2141,6 +2183,46 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                   }
                 }, moraleMs9);
               }
+            } else if (w.attacking.targetType === 'witchDoctor') {
+              const wdId = (w.attacking as { targetType: 'witchDoctor'; witchDoctorId: number }).witchDoctorId;
+              const wdTarget = enemyWitchDoctorsRef.current.find(d => d.id === wdId && d.hp > 0);
+              if (!wdTarget) return { ...w, attacking: null, state: 'idle' };
+              const distToWD = tileDist(w.x, w.y, wdTarget.x, wdTarget.y);
+              if (distToWD > 1.8) {
+                const p = aStar(INITIAL_TILES, { x: Math.round(w.x), y: Math.round(w.y) }, { x: Math.round(wdTarget.x), y: Math.round(wdTarget.y) });
+                return { ...w, movingTo: p[0] ?? { x: wdTarget.x, y: wdTarget.y }, path: p.slice(1), state: 'moving' };
+              }
+              if (!attackT[w.id]) {
+                const capturedWDX = Math.round(wdTarget.x), capturedWDY = Math.round(wdTarget.y);
+                const capturedWDId = wdId;
+                const unitBonusWD = w.unitType === 'hero' ? HERO_DAMAGE_BONUS : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
+                const capturedVetWD = w.level;
+                const moraleWD = getMoraleMs(w.x, w.y);
+                attackT[w.id] = window.setTimeout(() => {
+                  delete attackTimeoutsRef.current[w.id];
+                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + unitBonusWD + capturedVetWD * VETERAN_ATK_BONUS;
+                  setEnemyWitchDoctors(ds => ds.map(d => d.id === capturedWDId ? { ...d, hp: Math.max(0, d.hp - dmg) } : d));
+                  addFloatingText(capturedWDX, capturedWDY, `-${dmg}`, '#ef4444');
+                  const wdCurrent = enemyWitchDoctorsRef.current.find(d => d.id === capturedWDId);
+                  if (wdCurrent && wdCurrent.hp - dmg <= 0) {
+                    setResources(r => ({ ...r, gold: r.gold + WITCH_DOCTOR_GOLD_REWARD }));
+                    addFloatingText(capturedWDX, capturedWDY, `+${WITCH_DOCTOR_GOLD_REWARD}🪙`, '#fbbf24');
+                    setWorkers(ws2 => ws2.map(u => {
+                      const isAttacker = u.id === w.id;
+                      const isNearby = !isAttacker && u.hp > 0 && tileDist(u.x, u.y, capturedWDX, capturedWDY) <= 3;
+                      const xpGain = isAttacker ? WITCH_DOCTOR_XP_REWARD : isNearby ? Math.round(WITCH_DOCTOR_XP_REWARD * 0.25) : 0;
+                      if (xpGain === 0) return u;
+                      const newXp = u.xp + xpGain;
+                      const newLevel = newXp >= XP_TO_LEVEL_2 ? 2 : newXp >= XP_TO_LEVEL_1 ? 1 : 0;
+                      if (newLevel > u.level) {
+                        addFloatingText(Math.round(u.x), Math.round(u.y), `⭐ Level ${newLevel}!`, '#fbbf24');
+                        return { ...u, xp: newXp, level: newLevel, maxHp: u.maxHp + VETERAN_HP_BONUS, hp: Math.min(u.hp + VETERAN_HP_BONUS, u.maxHp + VETERAN_HP_BONUS) };
+                      }
+                      return { ...u, xp: newXp };
+                    }));
+                  }
+                }, moraleWD);
+              }
             } else {
               if (!attackT[w.id]) {
                 const capturedWX = Math.round(w.x), capturedWY = Math.round(w.y);
@@ -2321,7 +2403,8 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
               const capturedWX = Math.round(nearWorker.x), capturedWY = Math.round(nearWorker.y);
               gruntAttackTimeoutsRef.current[g.id] = window.setTimeout(() => {
                 delete gruntAttackTimeoutsRef.current[g.id];
-                const gruntDmg = Math.max(1, GRUNT_DAMAGE - blacksmithUpgradesRef.current.ironHide * 2);
+                const gruntEnraged = (enemyGruntsRef.current.find(gg => gg.id === capturedGruntId)?.enragedUntil ?? 0) > Date.now();
+                const gruntDmg = Math.max(1, GRUNT_DAMAGE + (gruntEnraged ? WITCH_DOCTOR_ENRAGE_DMG_BONUS : 0) - blacksmithUpgradesRef.current.ironHide * 2);
                 setWorkers(ws2 => ws2.map(w2 => {
                   if (w2.id !== wid) return w2;
                   const newHp = Math.max(0, w2.hp - gruntDmg);
@@ -2587,6 +2670,46 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
           const wallSetN2 = new Set(placedBuildingsRef.current.filter(b => b.type === 'wall').map(b => `${b.x},${b.y}`));
           const p2 = aStar(INITIAL_TILES, { x: Math.round(n.x), y: Math.round(n.y) }, moveDest, true, wallSetN2);
           return { ...n, movingTo: p2[0] ?? moveDest, path: p2.slice(1) };
+        });
+      });
+
+      // Update Witch Doctors
+      setEnemyWitchDoctors(wds => {
+        const alive = wds.filter(d => d.hp > 0);
+        alive.forEach(d => {
+          if (!alive.find(dd => dd.id === d.id)) {
+            setResources(r => ({ ...r, gold: r.gold + WITCH_DOCTOR_GOLD_REWARD }));
+          }
+        });
+        return alive.map(wd => {
+          const nearGrunts = enemyGruntsRef.current.filter(g => g.hp > 0 && tileDist(wd.x, wd.y, g.x, g.y) <= WITCH_DOCTOR_BUFF_RADIUS);
+          if (nearGrunts.length > 0) {
+            if (!witchDoctorBuffTimersRef.current[wd.id]) {
+              const wdid = wd.id; const capturedWDX2 = Math.round(wd.x); const capturedWDY2 = Math.round(wd.y);
+              witchDoctorBuffTimersRef.current[wdid] = window.setTimeout(() => {
+                delete witchDoctorBuffTimersRef.current[wdid];
+                const buffUntil = Date.now() + WITCH_DOCTOR_BUFF_DURATION;
+                setEnemyGrunts(gs => gs.map(g => {
+                  if (g.hp <= 0 || tileDist(capturedWDX2, capturedWDY2, g.x, g.y) > WITCH_DOCTOR_BUFF_RADIUS) return g;
+                  addFloatingText(Math.round(g.x), Math.round(g.y), '🔴BERSERK!', '#dc2626');
+                  return { ...g, enragedUntil: buffUntil };
+                }));
+              }, WITCH_DOCTOR_BUFF_MS);
+            }
+            return { ...wd, state: 'casting' as const };
+          }
+          if (wd.movingTo) {
+            const dx = wd.movingTo.x - wd.x, dy = wd.movingTo.y - wd.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 0.1) {
+              const next = wd.path[0] ?? null;
+              return { ...wd, x: wd.movingTo.x, y: wd.movingTo.y, movingTo: next, path: wd.path.slice(1), state: 'moving' as const };
+            }
+            return { ...wd, x: wd.x + (dx / dist) * Math.min(WITCH_DOCTOR_SPEED * dt, dist), y: wd.y + (dy / dist) * Math.min(WITCH_DOCTOR_SPEED * dt, dist), state: 'moving' as const };
+          }
+          const wallSetWD2 = new Set(placedBuildingsRef.current.filter(b => b.type === 'wall').map(b => `${b.x},${b.y}`));
+          const pWD = aStar(INITIAL_TILES, { x: Math.round(wd.x), y: Math.round(wd.y) }, BARN_POS, true, wallSetWD2);
+          return { ...wd, movingTo: pWD[0] ?? BARN_POS, path: pWD.slice(1) };
         });
       });
 
@@ -3065,6 +3188,21 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
     }));
   }, [anySelected]);
 
+  const handleAttackWitchDoctor = useCallback((wdId: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!anySelected) return;
+    const wd = enemyWitchDoctorsRef.current.find(d => d.id === wdId);
+    if (!wd) return;
+    const tx = Math.round(wd.x), ty = Math.round(wd.y);
+    setWorkers(ws => ws.map(w => {
+      if (!w.selected) return w;
+      const path = aStar(INITIAL_TILES, { x: Math.round(w.x), y: Math.round(w.y) }, { x: tx, y: ty });
+      const first = path[0] ?? { x: tx, y: ty };
+      return { ...w, movingTo: first, path: path.slice(1), gathering: null, attacking: { targetType: 'witchDoctor' as const, witchDoctorId: wdId }, state: 'moving' };
+    }));
+  }, [anySelected]);
+
   const handleAttackTroll = useCallback((trollId: number, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -3125,7 +3263,8 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
     shamans: enemyShamans.filter(s => s.hp > 0).map(s => ({ x: s.x, y: s.y })),
     trolls: enemyTrolls.filter(t => t.hp > 0).map(t => ({ x: t.x, y: t.y })),
     sappers: enemySappers.filter(s => s.hp > 0 && !s.exploded).map(s => ({ x: s.x, y: s.y })),
-  }), [workers, enemyGrunts, enemyBarnHp, placedBuildings, clearedCamps, goldMines, stoneNodes, trees, enemyTowers, enemySiege, enemyShamans, enemyTrolls, enemySappers]);
+    witchDoctors: enemyWitchDoctors.filter(d => d.hp > 0).map(d => ({ x: d.x, y: d.y })),
+  }), [workers, enemyGrunts, enemyBarnHp, placedBuildings, clearedCamps, goldMines, stoneNodes, trees, enemyTowers, enemySiege, enemyShamans, enemyTrolls, enemySappers, enemyWitchDoctors]);
 
   return (
     <div className="absolute inset-0 bg-black" onContextMenu={e => { if (buildMode) { e.preventDefault(); setBuildMode(null); setGhostTile(null); } }}>
@@ -3656,8 +3795,10 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                 <rect x={isoX + TILE_SIZE / 2 - 12} y={isoY - 10} width={24} height={4} fill="#1e293b" />
                 <rect x={isoX + TILE_SIZE / 2 - 12} y={isoY - 10} width={24 * hp} height={4} fill="#a855f7" />
               </>) : (<>
-                <circle cx={isoX + TILE_SIZE / 2} cy={isoY + 18} r={16} fill={g.state === 'attacking' ? '#dc2626' : '#f97316'} stroke="#7f1d1d" strokeWidth={3} />
+                {(g.enragedUntil ?? 0) > Date.now() && <circle cx={isoX + TILE_SIZE / 2} cy={isoY + 18} r={20} fill="none" stroke="#dc2626" strokeWidth={3} opacity={0.7} />}
+                <circle cx={isoX + TILE_SIZE / 2} cy={isoY + 18} r={16} fill={(g.enragedUntil ?? 0) > Date.now() ? '#dc2626' : g.state === 'attacking' ? '#dc2626' : '#f97316'} stroke="#7f1d1d" strokeWidth={3} />
                 <text x={isoX + TILE_SIZE / 2} y={isoY + 26} textAnchor="middle" fontSize="14">👹</text>
+                {(g.enragedUntil ?? 0) > Date.now() && <text x={isoX + TILE_SIZE / 2} y={isoY - 5} textAnchor="middle" fontSize="7" fill="#fca5a5" fontWeight="bold">BERSERK!</text>}
                 <rect x={isoX + TILE_SIZE / 2 - 14} y={isoY - 4} width={28} height={4} fill="#1e293b" />
                 <rect x={isoX + TILE_SIZE / 2 - 14} y={isoY - 4} width={28 * hp} height={4} fill="#ef4444" />
               </>)}
@@ -3762,6 +3903,32 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
               <text x={cx} y={isoY - 4} textAnchor="middle" fontSize="8" fill="#c4b5fd" fontWeight="bold">NECROMANCER</text>
               <rect x={cx - 18} y={isoY - 10} width={36} height={4} fill="#1e293b" rx={2} />
               <rect x={cx - 18} y={isoY - 10} width={36 * hp} height={4} fill="#a855f7" rx={2} />
+            </g>;
+          })}
+
+          {/* Witch Doctors */}
+          {enemyWitchDoctors.filter(d => d.hp > 0 && fogVisible[Math.round(d.x)]?.[Math.round(d.y)]).map(wd => {
+            const { isoX, isoY } = tileToSvg(wd.x, wd.y);
+            const hp = wd.hp / wd.maxHp;
+            const cx = isoX + TILE_SIZE / 2;
+            return <g key={`wd-${wd.id}`} style={{ cursor: anySelected ? 'crosshair' : 'default' }} onContextMenu={e => handleAttackWitchDoctor(wd.id, e)}>
+              {/* Dark purple robe */}
+              <ellipse cx={cx} cy={isoY + 26} rx={11} ry={14} fill={wd.state === 'casting' ? '#7e22ce' : '#4c1d95'} stroke="#2e1065" strokeWidth={2} />
+              {/* Head with mask */}
+              <circle cx={cx} cy={isoY + 10} r={7} fill="#fde68a" stroke="#78350f" strokeWidth={1} />
+              {/* Bone mask markings */}
+              <line x1={cx - 4} y1={isoY + 10} x2={cx + 4} y2={isoY + 10} stroke="#1e293b" strokeWidth={1} />
+              {/* Voodoo staff */}
+              <line x1={cx + 11} y1={isoY + 5} x2={cx + 11} y2={isoY + 38} stroke="#7c3aed" strokeWidth={3} strokeLinecap="round" />
+              {/* Skull on staff */}
+              <circle cx={cx + 11} cy={isoY + 3} r={4} fill="#e2e8f0" stroke="#475569" strokeWidth={1} />
+              <circle cx={cx + 9} cy={isoY + 2} r={1} fill="#1e293b" />
+              <circle cx={cx + 13} cy={isoY + 2} r={1} fill="#1e293b" />
+              {/* Casting ring when buffing */}
+              {wd.state === 'casting' && <circle cx={cx} cy={isoY + 20} r={WITCH_DOCTOR_BUFF_RADIUS * TILE_SIZE * 0.5} fill="none" stroke="#dc2626" strokeWidth={2} strokeDasharray="6 3" opacity={0.6} />}
+              <text x={cx} y={isoY - 4} textAnchor="middle" fontSize="7" fill="#e879f9" fontWeight="bold">WITCH DOCTOR</text>
+              <rect x={cx - 18} y={isoY - 10} width={36} height={4} fill="#1e293b" rx={2} />
+              <rect x={cx - 18} y={isoY - 10} width={36 * hp} height={4} fill="#e879f9" rx={2} />
             </g>;
           })}
 
