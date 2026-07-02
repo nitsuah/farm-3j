@@ -3454,15 +3454,35 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
   const handleAssistConstruction = useCallback((buildingId: number, bx: number, by: number, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!anySelected) return;
-    const target = { x: bx, y: by };
-    setWorkers(ws => ws.map(w => {
-      if (!w.selected || w.unitType !== 'farmer') return w;
-      const start = { x: Math.round(w.x), y: Math.round(w.y) };
-      const path = aStar(INITIAL_TILES, start, target);
-      return { ...w, movingTo: path[0] ?? target, path: path.slice(1), gathering: null, attacking: null, repairing: null, assistBuildId: buildingId, patrol: null, state: 'moving' as const };
-    }));
-    addFloatingText(bx, by, '🔨 Assist!', '#fbbf24');
+    if (anySelected) {
+      // Send selected farmers to assist
+      const target = { x: bx, y: by };
+      setWorkers(ws => ws.map(w => {
+        if (!w.selected || w.unitType !== 'farmer') return w;
+        const start = { x: Math.round(w.x), y: Math.round(w.y) };
+        const path = aStar(INITIAL_TILES, start, target);
+        return { ...w, movingTo: path[0] ?? target, path: path.slice(1), gathering: null, attacking: null, repairing: null, assistBuildId: buildingId, patrol: null, state: 'moving' as const };
+      }));
+      addFloatingText(bx, by, '🔨 Assist!', '#fbbf24');
+    } else {
+      // Cancel construction — 50% resource refund
+      setPlacedBuildings(bs => {
+        const b = bs.find(x => x.id === buildingId);
+        if (!b) return bs;
+        const cost = BUILDING_COSTS[b.type];
+        if (cost) {
+          setResources(r => ({
+            ...r,
+            gold: r.gold + Math.floor(cost.gold * 0.5),
+            lumber: r.lumber + Math.floor(cost.lumber * 0.5),
+            stone: r.stone + Math.floor(cost.stone * 0.5),
+          }));
+        }
+        setWorkers(ws => ws.map(w => w.assistBuildId === buildingId ? { ...w, assistBuildId: undefined, state: 'idle' as const } : w));
+        addFloatingText(bx, by, '❌ Cancelled', '#f87171');
+        return bs.filter(x => x.id !== buildingId);
+      });
+    }
   }, [anySelected, addFloatingText]);
 
   const handleRepairBuilding = useCallback((buildingId: number, bx: number, by: number, e: React.MouseEvent) => {
@@ -3911,6 +3931,8 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                 {/* Progress bar — color shifts green→yellow when assisted */}
                 <rect x={isoX + TILE_SIZE * 0.15} y={isoY + TILE_SIZE * 0.8} width={TILE_SIZE * 1.7} height={5} fill="#1e293b" rx={2} />
                 <rect x={isoX + TILE_SIZE * 0.15} y={isoY + TILE_SIZE * 0.8} width={TILE_SIZE * 1.7 * progress} height={5} fill={assistCount > 0 ? '#facc15' : '#4ade80'} rx={2} />
+                {/* Hint */}
+                <text x={isoX + TILE_SIZE} y={isoY + TILE_SIZE * 0.97} textAnchor="middle" fontSize="6" fill="#94a3b8">{anySelected ? 'RMB: assist' : 'RMB: cancel (50% refund)'}</text>
               </g>;
             }
             if (b.type === 'wall') {
