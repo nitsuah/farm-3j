@@ -1538,6 +1538,48 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
     return () => { if (enemyBarnFireTimerRef.current) clearTimeout(enemyBarnFireTimerRef.current); };
   }, [gameOver, addFloatingText, addProjectile]);
 
+  // Enemy AI: auto-builds new towers and walls over time to simulate active enemy base
+  useEffect(() => {
+    if (gameOver) return;
+    const EXTRA_TOWER_SLOTS = [
+      { x: 20, y: 21 }, { x: 21, y: 20 }, { x: 23, y: 20 }, { x: 20, y: 23 },
+    ];
+    const EXTRA_WALL_SLOTS = [
+      { x: 20, y: 24 }, { x: 21, y: 23 }, { x: 23, y: 21 }, { x: 24, y: 20 },
+    ];
+    let nextTowerIdx = 0;
+    let nextWallIdx = 0;
+    const towerBuildTimer = window.setInterval(() => {
+      if (gameOverRef.current || enemyBarnHpRef.current <= 0 || gameSpeedRef.current === 0) return;
+      if (waveRef.current < 5) return;
+      const pos = EXTRA_TOWER_SLOTS[nextTowerIdx];
+      if (pos && nextTowerIdx < EXTRA_TOWER_SLOTS.length) {
+        const alreadyExists = enemyTowersRef.current.find(t => t.x === pos.x && t.y === pos.y);
+        if (!alreadyExists) {
+          const tId = 9000 + nextTowerIdx;
+          setEnemyTowers(ts => [...ts, { id: tId, x: pos.x, y: pos.y, hp: ENEMY_TOWER_MAX_HP, maxHp: ENEMY_TOWER_MAX_HP }]);
+          addFloatingText(pos.x, pos.y, '🏰 Tower Built!', '#ef4444');
+        }
+        nextTowerIdx++;
+      }
+    }, 90000);
+    const wallBuildTimer = window.setInterval(() => {
+      if (gameOverRef.current || enemyBarnHpRef.current <= 0 || gameSpeedRef.current === 0) return;
+      if (waveRef.current < 7) return;
+      const pos = EXTRA_WALL_SLOTS[nextWallIdx];
+      if (pos && nextWallIdx < EXTRA_WALL_SLOTS.length) {
+        const alreadyExists = enemyWallsRef.current.find(w => w.x === pos.x && w.y === pos.y);
+        if (!alreadyExists) {
+          const wId = 8000 + nextWallIdx;
+          setEnemyWalls(ws => [...ws, { id: wId, x: pos.x, y: pos.y, hp: ENEMY_WALL_MAX_HP, maxHp: ENEMY_WALL_MAX_HP }]);
+          addFloatingText(pos.x, pos.y, '🧱 Wall Built!', '#dc2626');
+        }
+        nextWallIdx++;
+      }
+    }, 60000);
+    return () => { clearInterval(towerBuildTimer); clearInterval(wallBuildTimer); };
+  }, [gameOver, addFloatingText]);
+
   // Enemy fortress towers fire at workers in range
   useEffect(() => {
     if (gameOver || enemyTowers.length === 0) return;
@@ -3099,6 +3141,8 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
 
       // Detect destroyed enemy walls and award loot
       { const destroyed = enemyWallsRef.current.filter(ew => ew.hp <= 0); if (destroyed.length > 0) { setEnemyWalls(ews => ews.filter(ew => ew.hp > 0)); destroyed.forEach(ew => { const gold = 15; setResources(r => ({ ...r, gold: r.gold + gold })); addFloatingText(ew.x, ew.y, `🧱 +${gold}🪙`, '#fbbf24'); }); } }
+      // Detect destroyed enemy towers, award loot, clean up dead entries
+      { const destroyed = enemyTowersRef.current.filter(t => t.hp <= 0); if (destroyed.length > 0) { setEnemyTowers(ts => ts.filter(t => t.hp > 0)); destroyed.forEach(t => { const gold = t.id === -1 ? 40 : 25; setResources(r => ({ ...r, gold: r.gold + gold })); addFloatingText(t.x, t.y, `🏰 +${gold}🪙`, '#fbbf24'); }); } }
 
       // Update enemy grunts
       const currentWorkers = workersRef.current;
