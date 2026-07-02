@@ -619,7 +619,9 @@ const Stat: React.FC<{ label: string; value: string | number; color: string }> =
   </div>
 );
 
-const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
+import type { DifficultyConfig } from './RTSGameRoot';
+
+const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }> = ({ onNewGame, difficulty }) => {
   // Load save once per mount (module-level caching caused stale data after New Game)
   const saveRef = useRef<SaveData | null | undefined>(undefined);
   if (saveRef.current === undefined) saveRef.current = loadSave();
@@ -647,7 +649,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
   const placedBuildingsRef = useRef(placedBuildings);
   useEffect(() => { placedBuildingsRef.current = placedBuildings; }, [placedBuildings]);
   const [controlGroups, setControlGroups] = useState<Record<number, number[]>>({});
-  const [resources, setResources] = useState<Resources>(() => INITIAL_SAVE?.resources ?? { gold: 150, lumber: 80, stone: 30, food: 6, foodCap: FOOD_CAP_BASE });
+  const [resources, setResources] = useState<Resources>(() => INITIAL_SAVE?.resources ?? { gold: difficulty?.startGold ?? 150, lumber: difficulty?.startLumber ?? 80, stone: difficulty?.startStone ?? 30, food: 6, foodCap: FOOD_CAP_BASE });
 
   const DEFAULT_TREES: ResourceNode[] = [
     // Starting cluster near barn (2,2)
@@ -1162,7 +1164,8 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
     }
     window.setTimeout(() => setWaveAnnouncement(null), 3000);
 
-    const gruntHp = GRUNT_MAX_HP + (newWave - 1) * 10;
+    const diffHpMult = difficulty?.gruntHpMult ?? 1;
+    const gruntHp = Math.round((GRUNT_MAX_HP + (newWave - 1) * 10) * diffHpMult);
     const wallSet = new Set(placedBuildingsRef.current.filter(b => b.type === 'wall').map(b => `${b.x},${b.y}`));
 
     // Boss spawn on multiples of 10
@@ -1283,7 +1286,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
       window.setTimeout(() => setWaveAnnouncement(null), 5000);
     }
 
-    const nextDelay = Math.max(20000, GRUNT_SPAWN_MS - (newWave - 1) * 800);
+    const nextDelay = Math.max(12000, Math.round((GRUNT_SPAWN_MS - (newWave - 1) * 800) * (difficulty?.waveIntervalMult ?? 1)));
     setNextWaveAt(Date.now() + nextDelay);
     spawnTimerRef.current = window.setTimeout(doSpawnWave, nextDelay);
 
@@ -1311,8 +1314,9 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
 
   useEffect(() => {
     if (gameOver) { if (spawnTimerRef.current) { clearTimeout(spawnTimerRef.current); spawnTimerRef.current = null; } return; }
-    setNextWaveAt(Date.now() + GRUNT_SPAWN_MS);
-    spawnTimerRef.current = window.setTimeout(doSpawnWave, GRUNT_SPAWN_MS);
+    const firstDelay = Math.round(GRUNT_SPAWN_MS * (difficulty?.waveIntervalMult ?? 1));
+    setNextWaveAt(Date.now() + firstDelay);
+    spawnTimerRef.current = window.setTimeout(doSpawnWave, firstDelay);
     return () => { if (spawnTimerRef.current) clearTimeout(spawnTimerRef.current); };
   }, [gameOver, doSpawnWave]);
 
@@ -2953,7 +2957,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
         return { ...b, hp: Math.max(1, b.hp - dt) };
       }));
 
-      const gruntSpeedMult = isNightRef.current ? NIGHT_SPEED_MULT : 1;
+      const gruntSpeedMult = (isNightRef.current ? NIGHT_SPEED_MULT : 1) * (difficulty?.gruntSpeedMult ?? 1);
       const nowPoison = Date.now();
       setEnemyGrunts(gs => gs.map(gIn => {
         let g = gIn;
@@ -2976,7 +2980,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
               gruntAttackTimeoutsRef.current[g.id] = window.setTimeout(() => {
                 delete gruntAttackTimeoutsRef.current[g.id];
                 const gruntEnraged = (enemyGruntsRef.current.find(gg => gg.id === capturedGruntId)?.enragedUntil ?? 0) > Date.now();
-                const gruntDmg = Math.max(1, GRUNT_DAMAGE + (gruntEnraged ? WITCH_DOCTOR_ENRAGE_DMG_BONUS : 0) - blacksmithUpgradesRef.current.ironHide * 2);
+                const gruntDmg = Math.max(1, Math.round((GRUNT_DAMAGE + (gruntEnraged ? WITCH_DOCTOR_ENRAGE_DMG_BONUS : 0)) * (difficulty?.gruntDmgMult ?? 1)) - blacksmithUpgradesRef.current.ironHide * 2);
                 setWorkers(ws2 => ws2.map(w2 => {
                   if (w2.id !== wid) return w2;
                   const newHp = Math.max(0, w2.hp - gruntDmg);
@@ -4182,6 +4186,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
         <span style={{ color: resources.gold < 30 ? '#ef4444' : '#fde68a', fontWeight: resources.gold < 30 ? 700 : 400, animation: resources.gold < 30 ? 'pulse 1s infinite' : 'none' }}>🪙 {resources.gold}{incomeRate.gold > 0 && <span style={{ fontSize: 11, color: '#a3e635', marginLeft: 2 }}>+{incomeRate.gold}/m</span>}{upkeepMult < 1 && <span style={{ fontSize: 10, color: upkeepMult < 0.5 ? '#ef4444' : '#fbbf24', marginLeft: 3 }} title={`Upkeep: gold income at ${Math.round(upkeepMult * 100)}%`}>📉{Math.round(upkeepMult * 100)}%</span>}</span>
         <span style={{ color: resources.lumber < 20 ? '#ef4444' : '#bbf7d0', fontWeight: resources.lumber < 20 ? 700 : 400, animation: resources.lumber < 20 ? 'pulse 1s infinite' : 'none' }}>🌲 {resources.lumber}{incomeRate.lumber > 0 && <span style={{ fontSize: 11, color: '#a3e635', marginLeft: 2 }}>+{incomeRate.lumber}/m</span>}</span>
         <span style={{ color: resources.stone < 10 ? '#ef4444' : '#cbd5e1', fontWeight: resources.stone < 10 ? 700 : 400, animation: resources.stone < 10 ? 'pulse 1s infinite' : 'none' }}>🪨 {resources.stone}{incomeRate.stone > 0 && <span style={{ fontSize: 11, color: '#a3e635', marginLeft: 2 }}>+{incomeRate.stone}/m</span>}</span>
+        {difficulty && <span style={{ fontSize: 12, padding: '1px 7px', borderRadius: 5, background: difficulty.id === 'easy' ? 'rgba(74,222,128,0.12)' : difficulty.id === 'hard' ? 'rgba(248,113,113,0.12)' : 'rgba(96,165,250,0.12)', color: difficulty.id === 'easy' ? '#4ade80' : difficulty.id === 'hard' ? '#f87171' : '#60a5fa' }}>{difficulty.icon} {difficulty.label}</span>}
         {wave > 0 && <span style={{ color: '#f97316', background: 'rgba(249,115,22,0.15)', padding: '1px 10px', borderRadius: 6, fontSize: 14 }}>Wave {wave}</span>}
         {!gameOver && nextWaveAt && (() => { const secsLeft = Math.max(0, Math.ceil((nextWaveAt - Date.now()) / 1000)); const urgent = secsLeft <= 5; return <span style={{ color: urgent ? '#ef4444' : '#94a3b8', fontSize: 13, fontWeight: urgent ? 700 : 400, animation: urgent ? 'pulse 0.6s infinite' : 'none' }}>⏱ {secsLeft}s</span>; })()}
         {killCount > 0 && <span style={{ color: '#4ade80', fontSize: 14 }}>☠ {killCount}</span>}

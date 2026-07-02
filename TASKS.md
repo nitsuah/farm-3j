@@ -1,6 +1,6 @@
 # TASKS
 
-Last Updated: 2026-07-02 (iter94 — ambient farm chickens)
+Last Updated: 2026-07-02 (iter95 — difficulty selection screen)
 
 ## Farm RTS MVP (2026 Q2–Q3)
 
@@ -24,6 +24,7 @@ Last Updated: 2026-07-02 (iter94 — ambient farm chickens)
 - [x] Real unit info panel (state, carrying, multi-select count) (2026-06-26)
 - [x] Population/food cap system (2026-06-26)
 - [x] Add animal units (chickens) with grazing AI — 5 chickens spawn near barn, wander to adjacent tiles every 2s, stay within 5 tiles of barn, respect water/tree tiles, only render in fog-clear tiles; SVG bird with body/head/beak/comb/legs (2026-07-02)
+- [x] Difficulty selection screen — Easy/Normal/Hard picker before game starts; Easy: 300g/160l/60s + 70% grunt HP/dmg + 40% longer wave intervals; Hard: 80g/40l/15s + 150% HP, 140% dmg, 20% faster speed, 30% faster waves; difficulty badge shown in HUD; DifficultyConfig type shared between RTSGameRoot and RTSMap (2026-07-02)
 - [ ] Implement grazing logic and food meter
 - [x] Enable building placement on valid tiles — ghost preview + valid/invalid tile detection (2026-06-26)
 - [ ] Ensure farmers render in front of barn and are always selectable
