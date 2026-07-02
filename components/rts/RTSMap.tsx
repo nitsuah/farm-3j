@@ -1005,6 +1005,9 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
   const buildingRepairTimeoutsRef = useRef<Record<number, number>>({});
   const animationRef = useRef<number | null>(null);
   const prevTimeRef = useRef<number | null>(null);
+  // Hit-flash: tracks timestamp of last damage taken per unit id (workers and grunts)
+  const workerHitRef = useRef<Map<number, number>>(new Map());
+  const gruntHitRef = useRef<Map<number, number>>(new Map());
 
   const [floatingTexts, setFloatingTexts] = useState<FloatingText[]>([]);
   const floatingTextIdRef = useRef(1);
@@ -1355,6 +1358,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
       const inRange = workersRef.current.filter(w => w.hp > 0 && tileDist(w.x, w.y, ARCHER_TOWER_POS.x, ARCHER_TOWER_POS.y) <= ARCHER_TOWER_RANGE);
       if (inRange.length > 0) {
         const target = inRange.reduce((a, b) => tileDist(a.x, a.y, ARCHER_TOWER_POS.x, ARCHER_TOWER_POS.y) < tileDist(b.x, b.y, ARCHER_TOWER_POS.x, ARCHER_TOWER_POS.y) ? a : b);
+        workerHitRef.current.set(target.id, Date.now());
         setWorkers(prev => prev.map(w => w.id === target.id ? { ...w, hp: Math.max(0, w.hp - ARCHER_TOWER_DAMAGE) } : w));
         addFloatingText(Math.round(target.x), Math.round(target.y), `🏹-${ARCHER_TOWER_DAMAGE}`, '#fb923c');
         addProjectile(ARCHER_TOWER_POS.x, ARCHER_TOWER_POS.y, Math.round(target.x), Math.round(target.y), 'arrow', 600);
@@ -1377,6 +1381,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
         const inRange = workersRef.current.filter(w => w.hp > 0 && tileDist(w.x, w.y, tx, ty) <= ENEMY_TOWER_RANGE);
         if (inRange.length > 0) {
           const target = inRange.reduce((a, b) => tileDist(a.x, a.y, tx, ty) < tileDist(b.x, b.y, tx, ty) ? a : b);
+          workerHitRef.current.set(target.id, Date.now());
           setWorkers(prev => prev.map(w => w.id === target.id ? { ...w, hp: Math.max(0, w.hp - dmg) } : w));
           addFloatingText(Math.round(target.x), Math.round(target.y), `🏹-${dmg}`, '#dc2626');
           addProjectile(tx, ty, Math.round(target.x), Math.round(target.y), 'arrow', 650);
@@ -1406,6 +1411,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
           const inRangeT = grunts.filter(g => g.hp > 0 && tileDist(g.x, g.y, tx, ty) <= rangeT);
           const targetT = inRangeT.reduce<EnemyGrunt | null>((best, g) => (!best || tileDist(g.x, g.y, tx, ty) < tileDist(best.x, best.y, tx, ty) ? g : best), null);
           if (targetT) {
+            gruntHitRef.current.set(targetT.id, Date.now());
             setEnemyGrunts(gs => gs.map(g => g.id === targetT.id ? { ...g, hp: Math.max(0, g.hp - dmgT) } : g));
             addFloatingText(Math.round(targetT.x), Math.round(targetT.y), `${isGuard ? '🏰' : '🏹'}-${dmgT}`, '#22d3ee');
             addProjectile(tx, ty, Math.round(targetT.x), Math.round(targetT.y), 'arrow', 600);
@@ -2355,6 +2361,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                     const attacker = ws2.find(u => u.id === capturedWorkerId);
                     const veteranBonus = attacker ? attacker.level * VETERAN_ATK_BONUS : 0;
                     const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0) + (barracksTechRef.current.warDrums ? 8 : 0) + unitBonus + veteranBonus;
+                    gruntHitRef.current.set(gruntId, Date.now());
                     addFloatingText(capturedGX, capturedGY, `-${dmg}`, '#f97316');
                     addFloatingText(capturedWX, capturedWY, `⚔️`, '#fbbf24');
                     setEnemyGrunts(gs => gs.map(g => {
@@ -2885,6 +2892,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                   }
                   return { ...w2, hp: newHp };
                 }));
+                workerHitRef.current.set(wid, Date.now());
                 addFloatingText(capturedWX, capturedWY, `-${gruntDmg}`, '#ef4444');
                 triggerUnderAttackRef.current();
               }, GRUNT_ATTACK_MS);
@@ -4648,6 +4656,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                 <rect x={isoX + TILE_SIZE / 2 - 14} y={isoY - 4} width={28} height={4} fill="#1e293b" />
                 <rect x={isoX + TILE_SIZE / 2 - 14} y={isoY - 4} width={28 * hp} height={4} fill="#ef4444" />
               </>)}
+              {(() => { const hit = gruntHitRef.current.get(g.id); const age = hit ? Date.now() - hit : 999; return age < 200 ? <circle cx={isoX + TILE_SIZE / 2} cy={isoY + 18} r={g.isBoss ? 26 : 18} fill="#fff" opacity={0.35 * (1 - age / 200)} pointerEvents="none" /> : null; })()}
             </g>; })}
 
           {/* Loot Crates */}
@@ -4877,6 +4886,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
               {hasMoraleAura && <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 32} rx={26} ry={12} fill="none" stroke="#fbbf24" strokeWidth={1.5} strokeDasharray="3 2" opacity={0.6} />}
               {battleShoutUntil > Date.now() && heroAlive && tileDist(worker.x, worker.y, heroAlive.x, heroAlive.y) <= HERO_SHOUT_RADIUS && <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 32} rx={30} ry={14} fill="none" stroke="#fb923c" strokeWidth={2} strokeDasharray="5 3" opacity={0.85} />}
               {worker.selected && <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 32} rx={worker.unitType === 'hero' ? 26 : worker.unitType === 'catapult' || worker.unitType === 'trebuchet' ? 28 : 22} ry={10} fill="none" stroke={worker.unitType === 'hero' ? '#fbbf24' : worker.unitType === 'catapult' ? '#ea580c' : worker.unitType === 'trebuchet' ? '#92400e' : worker.unitType === 'swordsman' ? '#f87171' : '#38bdf8'} strokeWidth={3} />}
+              {(() => { const hit = workerHitRef.current.get(worker.id); const age = hit ? Date.now() - hit : 999; return age < 200 ? <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 18} rx={20} ry={14} fill="#ef4444" opacity={0.45 * (1 - age / 200)} pointerEvents="none" /> : null; })()}
               {worker.holdPosition && <text x={isoX + TILE_SIZE / 2 + 14} y={isoY - 2} textAnchor="middle" fontSize="12">🛡️</text>}
               {worker.unitType === 'cavalry' ? (
                 <g>

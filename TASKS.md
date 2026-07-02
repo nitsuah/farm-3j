@@ -1,6 +1,6 @@
 # TASKS
 
-Last Updated: 2026-07-02 (iter88 — high-score leaderboard + stone stat + battle report)
+Last Updated: 2026-07-02 (iter89 — hit-flash on damage)
 
 ## Farm RTS MVP (2026 Q2–Q3)
 
@@ -152,3 +152,4 @@ Last Updated: 2026-07-02 (iter88 — high-score leaderboard + stone stat + battl
 - [x] Projectile visuals for all missing attackers — original archer tower, enemy fortress towers, Demolisher siege (rock arc), and Troll archers now all fire visible projectiles; fixes user-reported issue where these units showed damage numbers but no visual attack (2026-07-02)
 - [x] High-score leaderboard — top 5 runs saved to localStorage; shown on game-over screen with wave, kills, gold, result, date; sorted by wave then kills; gold medal color for #1 entry; AoE/WC3-style personal best tracking (2026-07-02)
 - [x] Battle report improvements — added stone mined🪨, buildings built, survivors count; now 8 stats total on game-over screen (2026-07-02)
+- [x] Hit-flash on damage — workers flash red, grunts flash white for 200ms when hit; uses lightweight per-unit timestamp refs (no state); covers grunt melee, archer tower, enemy fortress towers, and watchtower shots; classic action game damage feedback (2026-07-02)
