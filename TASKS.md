@@ -1,6 +1,6 @@
 # TASKS
 
-Last Updated: 2026-06-26 (Farm RTS MVP focus)
+Last Updated: 2026-07-02 (iter84 — smooth camera pan + edge-scroll + move ring)
 
 ## Farm RTS MVP (2026 Q2–Q3)
 
@@ -144,3 +144,6 @@ Last Updated: 2026-06-26 (Farm RTS MVP focus)
 - [x] Minimap fix for 25×25 map — MINIMAP_GRID 17→25, MINIMAP_ENEMY_BARN (14,14)→(22,22), minimap SVG height h-16→h-24 so the bigger map renders at correct coordinates; resource dots/enemy/building markers all correctly positioned (2026-07-02)
 - [x] Wave scaling for bigger map — grunt count now scales with wave: 1-6 base grunts (floor(wave/5)+1), doubled on every 3rd wave; spread across 3 columns so large waves fan out instead of stacking; wave 20+ sends 6-8 grunts per wave (2026-07-02)
 - [x] Loot crates expanded — positions expanded from 8 to 18 spread across 25×25 map; spawn count scales with wave (1 crate early, 2 from wave 5+, 3 from wave 10+); resource pool enriched with 2 new loot types (mixed gold+lumber+stone); uses ref snapshot instead of stale state for occupied check (2026-07-02)
+- [x] Smooth WASD/Arrow camera pan — replaced step-per-keypress with held-key + RAF loop at 480 px/s; Set<string> tracks all held keys; onBlur clears held set; camera bounds expanded to GRID_SIZE×TILE_SIZE for full 25×25 map traversal; AoE/WC3-style fluid keyboard navigation (2026-07-02)
+- [x] Mouse edge-scroll — cursor within 48px of viewport edge pans camera at 400 px/s via RAF loop; independent of WASD; classic RTS edge-of-screen scrolling for the bigger 25×25 map (2026-07-02)
+- [x] Move-target ring — right-click move command flashes an expanding green circle at the destination (WC3-style click confirmation); fades out over 600ms; rendered in SVG coordinate space above terrain (2026-07-02)

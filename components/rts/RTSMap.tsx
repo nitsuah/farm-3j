@@ -1002,10 +1002,13 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
   interface Projectile { id: number; fx: number; fy: number; tx: number; ty: number; type: 'arrow' | 'bolt' | 'rock' | 'ice' | 'poison'; createdAt: number; duration: number; }
   const [projectiles, setProjectiles] = useState<Projectile[]>([]);
   const projIdRef = useRef(0);
+  // Move-target ring — flashes at right-click destination like WC3/AoE
+  const [moveRing, setMoveRing] = useState<{ svgX: number; svgY: number; born: number } | null>(null);
   useEffect(() => {
     const id = setInterval(() => {
       const now = Date.now();
       setProjectiles(ps => ps.filter(p => now - p.createdAt < p.duration + 100));
+      if (moveRing && now - moveRing.born > 700) setMoveRing(null);
     }, 200);
     return () => clearInterval(id);
   }, []);
@@ -1720,6 +1723,11 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
 
   /** Issue a move command to selected workers using A*; spreads into formation when pure move */
   const commandMove = useCallback((targetX: number, targetY: number, gathering?: WorkerState['gathering'], attacking?: WorkerState['attacking']) => {
+    // Flash move-target ring at destination (only for pure moves, not gather/attack)
+    if (!gathering && !attacking) {
+      const { isoX, isoY } = tileToSvg(targetX, targetY);
+      setMoveRing({ svgX: isoX + TILE_SIZE / 2, svgY: isoY + TILE_SIZE / 4, born: Date.now() });
+    }
     setWorkers(ws => {
       const selected = ws.filter(w => w.selected);
       let idx = 0;
@@ -3386,23 +3394,89 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
     return () => window.removeEventListener('wheel', onWheel);
   }, []);
 
+  // Smooth WASD/Arrow camera pan using held-key tracking + RAF
   useEffect(() => {
-    const bounds = { minX: -((GRID_SIZE * TILE_SIZE) / 2), maxX: (GRID_SIZE * TILE_SIZE) / 2, minY: -100, maxY: (GRID_SIZE * TILE_SIZE) / 2 };
-    const mvKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'W', 'a', 'A', 's', 'S', 'd', 'D'];
-    const onKey = (e: KeyboardEvent) => {
-      if (!mvKeys.includes(e.key)) return;
-      e.preventDefault();
-      setCamera(c => {
-        let { x, y } = c;
-        if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') y += 32;
-        if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') y -= 32;
-        if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') x += 32;
-        if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') x -= 32;
-        return { x: Math.max(bounds.minX, Math.min(bounds.maxX, x)), y: Math.max(bounds.minY, Math.min(bounds.maxY, y)) };
-      });
+    const bounds = { minX: -((GRID_SIZE * TILE_SIZE)), maxX: (GRID_SIZE * TILE_SIZE), minY: -200, maxY: (GRID_SIZE * TILE_SIZE) };
+    const PAN_SPEED = 480; // px/sec
+    const held = new Set<string>();
+    let rafId = 0;
+    let last = 0;
+
+    const tick = (now: number) => {
+      const dt = Math.min((now - last) / 1000, 0.05);
+      last = now;
+      if (held.size > 0) {
+        const up    = held.has('ArrowUp')    || held.has('w') || held.has('W');
+        const down  = held.has('ArrowDown')  || held.has('s') || held.has('S');
+        const left  = held.has('ArrowLeft')  || held.has('a') || held.has('A');
+        const right = held.has('ArrowRight') || held.has('d') || held.has('D');
+        const dx = (left ? 1 : 0) - (right ? 1 : 0);
+        const dy = (up ? 1 : 0) - (down ? 1 : 0);
+        if (dx !== 0 || dy !== 0) {
+          setCamera(c => ({
+            x: Math.max(bounds.minX, Math.min(bounds.maxX, c.x + dx * PAN_SPEED * dt)),
+            y: Math.max(bounds.minY, Math.min(bounds.maxY, c.y + dy * PAN_SPEED * dt)),
+          }));
+        }
+      }
+      rafId = requestAnimationFrame(tick);
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    rafId = requestAnimationFrame((t) => { last = t; rafId = requestAnimationFrame(tick); });
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      const panKeys = ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','W','a','A','s','S','d','D'];
+      if (!panKeys.includes(e.key)) return;
+      if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') return;
+      e.preventDefault();
+      held.add(e.key);
+    };
+    const onKeyUp = (e: KeyboardEvent) => held.delete(e.key);
+    const onBlur = () => held.clear();
+
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', onBlur);
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', onBlur);
+    };
+  }, []);
+
+  // Mouse edge-scroll — pan when cursor is within EDGE_ZONE px of viewport edge
+  useEffect(() => {
+    const EDGE_ZONE = 48;
+    const PAN_SPEED = 400;
+    const bounds = { minX: -((GRID_SIZE * TILE_SIZE)), maxX: (GRID_SIZE * TILE_SIZE), minY: -200, maxY: (GRID_SIZE * TILE_SIZE) };
+    let mx = -1, my = -1, rafId = 0, last = 0;
+
+    const onMouseMove = (e: MouseEvent) => { mx = e.clientX; my = e.clientY; };
+
+    const tick = (now: number) => {
+      const dt = Math.min((now - last) / 1000, 0.05);
+      last = now;
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      let dx = 0, dy = 0;
+      if (mx >= 0) {
+        if (mx < EDGE_ZONE) dx = 1;
+        else if (mx > vw - EDGE_ZONE) dx = -1;
+        if (my < EDGE_ZONE) dy = 1;
+        else if (my > vh - EDGE_ZONE) dy = -1;
+      }
+      if (dx !== 0 || dy !== 0) {
+        setCamera(c => ({
+          x: Math.max(bounds.minX, Math.min(bounds.maxX, c.x + dx * PAN_SPEED * dt)),
+          y: Math.max(bounds.minY, Math.min(bounds.maxY, c.y + dy * PAN_SPEED * dt)),
+        }));
+      }
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame((t) => { last = t; rafId = requestAnimationFrame(tick); });
+
+    window.addEventListener('mousemove', onMouseMove);
+    return () => { cancelAnimationFrame(rafId); window.removeEventListener('mousemove', onMouseMove); };
   }, []);
 
   const selectedWorkers = workers.filter(w => w.selected);
@@ -4790,6 +4864,15 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
             const symbol = p.type === 'rock' ? '🪨' : p.type === 'ice' ? '❄' : p.type === 'poison' ? '☠' : '➤';
             return <text key={p.id} x={cx} y={cy} fontSize={p.type === 'rock' ? 14 : 11} textAnchor="middle" opacity={opacity} pointerEvents="none" fill={color}>{symbol}</text>;
           })}
+
+          {/* Move-target ring — expanding green circle at right-click destination */}
+          {moveRing && (() => {
+            const age = Date.now() - moveRing.born;
+            const t = Math.min(1, age / 600);
+            const r = 6 + t * 20;
+            const opacity = 1 - t;
+            return <circle cx={moveRing.svgX} cy={moveRing.svgY} r={r} fill="none" stroke="#4ade80" strokeWidth={2} opacity={opacity} pointerEvents="none" />;
+          })()}
 
           {/* Box selection */}
           {dragBox && Math.abs(dragBox.end.x - dragBox.start.x) > 4 && (
