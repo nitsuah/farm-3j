@@ -294,6 +294,11 @@ const CREEP_CAMPS: { id: number; x: number; y: number; goldReward: number }[] = 
 
 const BARN_POS = { x: 2, y: 2 };
 
+const SHRINES: { id: number; x: number; y: number; type: 'war' | 'plenty'; label: string; captureMs: number }[] = [
+  { id: 1, x: 4,  y: 8, type: 'war',    label: 'Shrine of War',    captureMs: 6000 },
+  { id: 2, x: 12, y: 8, type: 'plenty', label: 'Shrine of Plenty', captureMs: 6000 },
+];
+
 const BUILDING_COSTS: Record<BuildingType, { gold: number; lumber: number; stone: number; label: string; foodCapBonus: number }> = {
   farmhouse: { gold: 60, lumber: 30, stone: 0, label: 'Farmhouse', foodCapBonus: 5 },
   lumberShed: { gold: 40, lumber: 60, stone: 0, label: 'Lumber Shed', foodCapBonus: 0 },
@@ -647,6 +652,19 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
   const spawnTimerRef = useRef<number | null>(null);
   const [nextWaveAt, setNextWaveAt] = useState<number | null>(null);
   const idleWorkerIndexRef = useRef(0);
+  const [capturedShrines, setCapturedShrines] = useState<Set<number>>(new Set());
+  const capturedShrinesRef = useRef<Set<number>>(new Set());
+  useEffect(() => { capturedShrinesRef.current = capturedShrines; }, [capturedShrines]);
+  // shrineCapturing: which shrine a worker is channeling and since when
+  const [shrineCapturing, setShrineCapturing] = useState<{ shrineId: number; workerId: number; startedAt: number } | null>(null);
+  const shrineCapturingRef = useRef<{ shrineId: number; workerId: number; startedAt: number } | null>(null);
+  useEffect(() => { shrineCapturingRef.current = shrineCapturing; }, [shrineCapturing]);
+  const [shrineWarBuff, setShrineWarBuff] = useState(false);
+  const shrineWarBuffRef = useRef(false);
+  useEffect(() => { shrineWarBuffRef.current = shrineWarBuff; }, [shrineWarBuff]);
+  const [shrinePlentyBuff, setShrinePlentyBuff] = useState(false);
+  const shrinePlentyBuffRef = useRef(false);
+  useEffect(() => { shrinePlentyBuffRef.current = shrinePlentyBuff; }, [shrinePlentyBuff]);
   const [gameSpeed, setGameSpeed] = useState(1);
   const gameSpeedRef = useRef(1);
   useEffect(() => { gameSpeedRef.current = gameSpeed; }, [gameSpeed]);
@@ -1058,6 +1076,30 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
     return () => clearTimeout(t);
   }, [gameOver]);
 
+  // Shrine capture polling — check every 200ms if channeling worker is still on shrine tile
+  useEffect(() => {
+    if (gameOver) return;
+    const interval = window.setInterval(() => {
+      if (gameOverRef.current) return;
+      const cap = shrineCapturingRef.current;
+      if (!cap) return;
+      const shrine = SHRINES.find(s => s.id === cap.shrineId);
+      if (!shrine || capturedShrinesRef.current.has(shrine.id)) { setShrineCapturing(null); return; }
+      const worker = workersRef.current.find(w => w.id === cap.workerId && w.hp > 0);
+      if (!worker || Math.round(worker.x) !== shrine.x || Math.round(worker.y) !== shrine.y || worker.movingTo !== null) {
+        setShrineCapturing(null);
+        return;
+      }
+      if (Date.now() - cap.startedAt >= shrine.captureMs) {
+        setCapturedShrines(s => { const ns = new Set(s); ns.add(shrine.id); return ns; });
+        setShrineCapturing(null);
+        if (shrine.type === 'war') { setShrineWarBuff(true); addFloatingText(shrine.x, shrine.y, '⚔️ WAR SHRINE!', '#f97316'); }
+        else { setShrinePlentyBuff(true); addFloatingText(shrine.x, shrine.y, '🌾 PLENTY SHRINE!', '#4ade80'); }
+      }
+    }, 200);
+    return () => clearInterval(interval);
+  }, [gameOver]);
+
   // Archer tower attack loop
   useEffect(() => {
     if (gameOver) {
@@ -1391,7 +1433,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
     swords.forEach(sw => {
       const nearest = allGrunts.reduce<EnemyGrunt | null>((best, g) => (!best || tileDist(sw.x, sw.y, g.x, g.y) < tileDist(best.x, best.y, sw.x, sw.y) ? g : best), null);
       if (!nearest) return;
-      const dmg = (ATTACK_DAMAGE + SWORDSMAN_DAMAGE_BONUS + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5) * SWORDSMAN_CHARGE_DAMAGE_MULT;
+      const dmg = (ATTACK_DAMAGE + SWORDSMAN_DAMAGE_BONUS + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0)) * SWORDSMAN_CHARGE_DAMAGE_MULT;
       addFloatingText(Math.round(nearest.x), Math.round(nearest.y), `⚔️-${dmg}`, '#ef4444');
       addFloatingText(Math.round(sw.x), Math.round(sw.y), '⚡ Charge!', '#fbbf24');
       setEnemyGrunts(gs => gs.map(g => g.id === nearest.id ? { ...g, hp: Math.max(0, g.hp - dmg) } : g));
@@ -1864,7 +1906,8 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
               if (!gatherT[w.id]) {
                 const lumberShedCount = placedBuildingsRef.current.filter(b => b.type === 'lumberShed').length;
                 const boonDiv = harvestBoonRef.current ? 2 : 1;
-                const gatherMs = Math.max(400, (GATHER_INTERVAL_MS - upgradesRef.current.swiftHarvest * 200 - lumberShedCount * LUMBER_SHED_BONUS_MS) / boonDiv);
+                const plentyDiv = shrinePlentyBuffRef.current ? 1.15 : 1;
+                const gatherMs = Math.max(400, (GATHER_INTERVAL_MS - upgradesRef.current.swiftHarvest * 200 - lumberShedCount * LUMBER_SHED_BONUS_MS) / boonDiv / plentyDiv);
                 gatherT[w.id] = window.setTimeout(() => {
                   delete gatherTimeoutsRef.current[w.id];
                   const idx = w.gathering!.idx;
@@ -1890,7 +1933,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                 return { ...w, state: 'returning', movingTo: p[0] ?? BARN_POS, path: p.slice(1) };
               }
               if (!gatherT[w.id]) {
-                const gatherMs = Math.max(400, (GATHER_INTERVAL_MS - upgradesRef.current.swiftHarvest * 200) / (harvestBoonRef.current ? 2 : 1));
+                const gatherMs = Math.max(400, (GATHER_INTERVAL_MS - upgradesRef.current.swiftHarvest * 200) / (harvestBoonRef.current ? 2 : 1) / (shrinePlentyBuffRef.current ? 1.15 : 1));
                 const mineIdx = w.gathering.idx;
                 gatherT[w.id] = window.setTimeout(() => {
                   delete gatherTimeoutsRef.current[w.id];
@@ -1913,7 +1956,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
               }
               if (!gatherT[w.id]) {
                 const idx = w.gathering.idx;
-                const gatherMs = Math.max(400, (GATHER_INTERVAL_MS - upgradesRef.current.swiftHarvest * 200) / (harvestBoonRef.current ? 2 : 1));
+                const gatherMs = Math.max(400, (GATHER_INTERVAL_MS - upgradesRef.current.swiftHarvest * 200) / (harvestBoonRef.current ? 2 : 1) / (shrinePlentyBuffRef.current ? 1.15 : 1));
                 gatherT[w.id] = window.setTimeout(() => {
                   delete gatherTimeoutsRef.current[w.id];
                   setWorkers(ws2 => ws2.map(w2 => {
@@ -1948,7 +1991,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                 const moraleMs1 = getMoraleMs(w.x, w.y);
                 attackT[w.id] = window.setTimeout(() => {
                   delete attackTimeoutsRef.current[w.id];
-                  const dmgC = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + unitBonusC + capturedVetC * VETERAN_ATK_BONUS;
+                  const dmgC = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0) + unitBonusC + capturedVetC * VETERAN_ATK_BONUS;
                   addFloatingText(capturedCX, capturedCY, `-${dmgC}`, '#a855f7');
                   addFloatingText(capturedWX3, capturedWY3, `⚔️`, '#fbbf24');
                   // Award XP if creep dies
@@ -1991,7 +2034,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                   setWorkers(ws2 => {
                     const attacker = ws2.find(u => u.id === capturedWorkerId);
                     const veteranBonus = attacker ? attacker.level * VETERAN_ATK_BONUS : 0;
-                    const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + unitBonus + veteranBonus;
+                    const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0) + unitBonus + veteranBonus;
                     addFloatingText(capturedGX, capturedGY, `-${dmg}`, '#f97316');
                     addFloatingText(capturedWX, capturedWY, `⚔️`, '#fbbf24');
                     setEnemyGrunts(gs => gs.map(g => {
@@ -2006,7 +2049,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                     // Award XP to attacker + 25% shared XP to nearby allies within 3 tiles
                     return ws2.map(u => {
                       const gruntCurrent = enemyGruntsRef.current.find(g => g.id === gruntId);
-                      const veteranDmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + unitBonus + u.level * VETERAN_ATK_BONUS;
+                      const veteranDmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0) + unitBonus + u.level * VETERAN_ATK_BONUS;
                       const gruntDies = gruntCurrent && gruntCurrent.hp - veteranDmg <= 0;
                       if (!gruntDies) return u;
                       const isAttacker = u.id === capturedWorkerId;
@@ -2043,7 +2086,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                 const moraleMs3 = getMoraleMs(w.x, w.y);
                 attackT[w.id] = window.setTimeout(() => {
                   delete attackTimeoutsRef.current[w.id];
-                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + unitBonusT + capturedVetT * VETERAN_ATK_BONUS;
+                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0) + unitBonusT + capturedVetT * VETERAN_ATK_BONUS;
                   setEnemyTowers(ts => ts.map(t => t.id === capturedTId ? { ...t, hp: Math.max(0, t.hp - dmg) } : t));
                   addFloatingText(capturedTX, capturedTY, `-${dmg}`, '#ef4444');
                 }, moraleMs3);
@@ -2065,7 +2108,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                 const moraleMs5 = getMoraleMs(w.x, w.y);
                 attackT[w.id] = window.setTimeout(() => {
                   delete attackTimeoutsRef.current[w.id];
-                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + unitBonusS + capturedVetS * VETERAN_ATK_BONUS;
+                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0) + unitBonusS + capturedVetS * VETERAN_ATK_BONUS;
                   setEnemySiege(rs => rs.map(r => r.id === capturedSiegeId ? { ...r, hp: Math.max(0, r.hp - dmg) } : r));
                   addFloatingText(capturedSX, capturedSY, `-${dmg}`, '#ef4444');
                   // XP for killing a ram/demolisher
@@ -2105,7 +2148,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                 const moraleMs6 = getMoraleMs(w.x, w.y);
                 attackT[w.id] = window.setTimeout(() => {
                   delete attackTimeoutsRef.current[w.id];
-                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + unitBonusSh + capturedVetSh * VETERAN_ATK_BONUS;
+                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0) + unitBonusSh + capturedVetSh * VETERAN_ATK_BONUS;
                   setEnemyShamans(ss => ss.map(s => s.id === capturedShamanId ? { ...s, hp: Math.max(0, s.hp - dmg) } : s));
                   addFloatingText(capturedShX, capturedShY, `-${dmg}`, '#ef4444');
                   const shamCurrent = enemyShamansRef.current.find(s => s.id === capturedShamanId);
@@ -2145,7 +2188,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                 const moraleMs7 = getMoraleMs(w.x, w.y);
                 attackT[w.id] = window.setTimeout(() => {
                   delete attackTimeoutsRef.current[w.id];
-                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + unitBonusTr + capturedVetTr * VETERAN_ATK_BONUS;
+                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0) + unitBonusTr + capturedVetTr * VETERAN_ATK_BONUS;
                   setEnemyTrolls(ts => ts.map(t => t.id === capturedTrollId ? { ...t, hp: Math.max(0, t.hp - dmg) } : t));
                   addFloatingText(capturedTrX, capturedTrY, `-${dmg}`, '#ef4444');
                   const trCurrent = enemyTrollsRef.current.find(t => t.id === capturedTrollId);
@@ -2183,7 +2226,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                 const moraleMs8 = getMoraleMs(w.x, w.y);
                 attackT[w.id] = window.setTimeout(() => {
                   delete attackTimeoutsRef.current[w.id];
-                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + unitBonusSp + capturedVetSp * VETERAN_ATK_BONUS;
+                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0) + unitBonusSp + capturedVetSp * VETERAN_ATK_BONUS;
                   setEnemySappers(ss => ss.map(s => s.id === capturedSapperId ? { ...s, hp: Math.max(0, s.hp - dmg) } : s));
                   addFloatingText(capturedSpX, capturedSpY, `-${dmg}`, '#ef4444');
                 }, moraleMs8);
@@ -2205,7 +2248,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                 const moraleMs9 = getMoraleMs(w.x, w.y);
                 attackT[w.id] = window.setTimeout(() => {
                   delete attackTimeoutsRef.current[w.id];
-                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + unitBonusNc + capturedVetNc * VETERAN_ATK_BONUS;
+                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0) + unitBonusNc + capturedVetNc * VETERAN_ATK_BONUS;
                   setEnemyNecromancers(ns => ns.map(n => n.id === capturedNecroId ? { ...n, hp: Math.max(0, n.hp - dmg) } : n));
                   addFloatingText(capturedNcX, capturedNcY, `-${dmg}`, '#ef4444');
                   const necroCurrent = enemyNecromancersRef.current.find(n => n.id === capturedNecroId);
@@ -2243,7 +2286,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                 const moraleWD = getMoraleMs(w.x, w.y);
                 attackT[w.id] = window.setTimeout(() => {
                   delete attackTimeoutsRef.current[w.id];
-                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + unitBonusWD + capturedVetWD * VETERAN_ATK_BONUS;
+                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0) + unitBonusWD + capturedVetWD * VETERAN_ATK_BONUS;
                   setEnemyWitchDoctors(ds => ds.map(d => d.id === capturedWDId ? { ...d, hp: Math.max(0, d.hp - dmg) } : d));
                   addFloatingText(capturedWDX, capturedWDY, `-${dmg}`, '#ef4444');
                   const wdCurrent = enemyWitchDoctorsRef.current.find(d => d.id === capturedWDId);
@@ -2274,7 +2317,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                 const moraleMs4 = getMoraleMs(w.x, w.y);
                 attackT[w.id] = window.setTimeout(() => {
                   delete attackTimeoutsRef.current[w.id];
-                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + unitBonus2 + capturedVetLevel * VETERAN_ATK_BONUS;
+                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0) + unitBonus2 + capturedVetLevel * VETERAN_ATK_BONUS;
                   setWorkers(ws2 => ws2.map(w2 => {
                     if (w2.id !== w.id || w2.state !== 'attacking' || !w2.attacking) return w2;
                     setEnemyBarnHp(hp => { const nHp = Math.max(0, hp - dmg); if (nHp <= 0) setGameOver('victory'); return nHp; });
@@ -3378,6 +3421,14 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
         </div>
       )}
 
+      {/* Shrine buff indicators */}
+      {(shrineWarBuff || shrinePlentyBuff) && (
+        <div style={{ position: 'absolute', top: 56, right: 12, display: 'flex', flexDirection: 'column', gap: 4, zIndex: 22, pointerEvents: 'none' }}>
+          {shrineWarBuff && <div style={{ background: 'rgba(124,58,237,0.85)', color: '#fef3c7', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 6, border: '1px solid #f97316' }}>⚔️ War Shrine: +5 ATK</div>}
+          {shrinePlentyBuff && <div style={{ background: 'rgba(6,78,59,0.85)', color: '#d1fae5', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 6, border: '1px solid #4ade80' }}>🌾 Plenty Shrine: +15% Gather</div>}
+        </div>
+      )}
+
       {phaseAnnouncement && (
         <div style={{ position: 'absolute', top: '30%', left: '50%', transform: 'translateX(-50%)', background: dayPhase === 'night' ? 'rgba(15,10,40,0.95)' : 'rgba(120,80,0,0.92)', color: dayPhase === 'night' ? '#a5b4fc' : '#fde68a', fontSize: 24, fontWeight: 800, padding: '10px 28px', borderRadius: 12, zIndex: 24, pointerEvents: 'none', border: `2px solid ${dayPhase === 'night' ? '#6366f1' : '#fbbf24'}`, letterSpacing: 1 }}>
           {phaseAnnouncement}
@@ -3494,6 +3545,18 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                     // Loot crate: right-click to send farmers to collect
                     const crateOnTile = lootCrates.find(c => Math.round(c.x) === i && Math.round(c.y) === j);
                     if (crateOnTile && anySelected) { commandMove(i, j); return; }
+                    // Shrine: right-click to send one worker to channel
+                    const shrineOnTile = SHRINES.find(s => s.x === i && s.y === j && !capturedShrines.has(s.id));
+                    if (shrineOnTile && anySelected) {
+                      const selectedWorkers = workers.filter(w => w.selected && w.hp > 0 && (w.unitType === 'farmer' || w.unitType === 'swordsman' || w.unitType === 'hero'));
+                      if (selectedWorkers.length > 0) {
+                        const channeler = selectedWorkers[0]!;
+                        commandMove(i, j);
+                        setShrineCapturing({ shrineId: shrineOnTile.id, workerId: channeler.id, startedAt: Date.now() });
+                        addFloatingText(i, j, '⏳ Capturing...', '#a78bfa');
+                      }
+                      return;
+                    }
                     commandMove(i, j);
                   }}
                   style={{ cursor: buildMode ? 'crosshair' : patrolMode ? 'crosshair' : attackMoveMode ? 'crosshair' : (anySelected || selectedType === 'farmhouse' ? 'pointer' : undefined) }}
@@ -3816,6 +3879,34 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                 <text x={isoX + TILE_SIZE - 6} y={isoY + 14} textAnchor="middle" fontSize="10" fill="#7dd3fc" fontWeight="bold">{garrisoned.length}</text>
               </>}
             </g>; })()}
+
+          {/* Neutral shrines */}
+          {SHRINES.map(shrine => {
+            const { isoX, isoY } = tileToSvg(shrine.x, shrine.y);
+            const captured = capturedShrines.has(shrine.id);
+            const channeling = shrineCapturing?.shrineId === shrine.id;
+            const progress = channeling ? Math.min(1, (Date.now() - (shrineCapturing?.startedAt ?? 0)) / shrine.captureMs) : 0;
+            const isWar = shrine.type === 'war';
+            const color = isWar ? '#f97316' : '#4ade80';
+            const glow = captured ? (isWar ? '#7c3aed' : '#065f46') : '#1e293b';
+            return <g key={`shrine-${shrine.id}`} pointerEvents="none">
+              {/* Base platform */}
+              <polygon points={`${isoX + TILE_SIZE},${isoY + 4} ${isoX + TILE_SIZE * 1.7},${isoY + TILE_SIZE * 0.4} ${isoX + TILE_SIZE},${isoY + TILE_SIZE * 0.75} ${isoX + TILE_SIZE * 0.3},${isoY + TILE_SIZE * 0.4}`} fill={captured ? glow : '#334155'} stroke={color} strokeWidth={captured ? 3 : 1.5} opacity={0.9} />
+              {/* Pillar */}
+              <rect x={isoX + TILE_SIZE - 8} y={isoY + 2} width={16} height={28} fill={captured ? color : '#64748b'} stroke={captured ? '#fef3c7' : '#1e293b'} strokeWidth={1.5} rx={2} />
+              {/* Flame / glow */}
+              <circle cx={isoX + TILE_SIZE} cy={isoY - 2} r={captured ? 10 : 7} fill={captured ? color : '#94a3b8'} opacity={captured ? 0.9 : 0.5} />
+              {/* Icon */}
+              <text x={isoX + TILE_SIZE} y={isoY + 3} textAnchor="middle" fontSize="12">{isWar ? '⚔️' : '🌾'}</text>
+              {/* Label */}
+              <text x={isoX + TILE_SIZE} y={isoY - 14} textAnchor="middle" fontSize="8" fill={captured ? color : '#94a3b8'} fontWeight="bold">{captured ? '✓ ' : ''}{shrine.label}</text>
+              {/* Channel progress bar */}
+              {channeling && <>
+                <rect x={isoX + TILE_SIZE * 0.3} y={isoY + TILE_SIZE * 0.8} width={TILE_SIZE * 1.4} height={6} fill="#0f172a" stroke="#334155" strokeWidth={1} rx={3} />
+                <rect x={isoX + TILE_SIZE * 0.3} y={isoY + TILE_SIZE * 0.8} width={TILE_SIZE * 1.4 * progress} height={6} fill={color} rx={3} />
+              </>}
+            </g>;
+          })}
 
           {/* Neutral creep camps */}
           {CREEP_CAMPS.filter(camp => !clearedCamps.has(camp.id)).map(camp => {
