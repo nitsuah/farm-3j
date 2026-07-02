@@ -1010,10 +1010,12 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
   const incomeAccRef = useRef({ gold: 0, lumber: 0, stone: 0 });
   const [underAttack, setUnderAttack] = useState(false);
   const underAttackTimerRef = useRef<number | null>(null);
-  const triggerUnderAttack = useCallback(() => {
+  const [minimapPings, setMinimapPings] = useState<{ x: number; y: number; t: number }[]>([]);
+  const triggerUnderAttack = useCallback((pos?: { x: number; y: number }) => {
     setUnderAttack(true);
     if (underAttackTimerRef.current) clearTimeout(underAttackTimerRef.current);
     underAttackTimerRef.current = window.setTimeout(() => setUnderAttack(false), 4000);
+    if (pos) setMinimapPings(prev => [...prev.filter(p => Date.now() - p.t < 3000), { x: pos.x, y: pos.y, t: Date.now() }]);
   }, []);
   const triggerUnderAttackRef = useRef(triggerUnderAttack);
   useEffect(() => { triggerUnderAttackRef.current = triggerUnderAttack; }, [triggerUnderAttack]);
@@ -3036,7 +3038,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
                 workerHitRef.current.set(wid, Date.now());
                 addFloatingText(capturedWX, capturedWY, `-${gruntDmg}`, '#ef4444');
                 Snd.hit();
-                triggerUnderAttackRef.current();
+                triggerUnderAttackRef.current({ x: capturedWX, y: capturedWY });
               }, GRUNT_ATTACK_MS);
             }
             return { ...g, movingTo: null, path: [], state: 'attacking' };
@@ -3087,7 +3089,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
               Snd.hit();
               setPlayerBarnHp(hp => { const nHp = Math.max(0, hp - barnDmg); if (nHp <= 0) setGameOver('defeat'); return nHp; });
               addFloatingText(BARN_POS.x, BARN_POS.y, `-${barnDmg}`, g.isBoss ? '#dc2626' : '#ef4444');
-              triggerUnderAttackRef.current();
+              triggerUnderAttackRef.current({ x: BARN_POS.x, y: BARN_POS.y });
             }, GRUNT_ATTACK_MS);
           }
         }
@@ -3150,7 +3152,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
                   // Direct barn hit
                   if (tileDist(tx, ty, BARN_POS.x, BARN_POS.y) <= DEMOLISHER_SPLASH_RANGE) {
                     setPlayerBarnHp(hp => { const nHp = Math.max(0, hp - DEMOLISHER_DAMAGE); if (nHp <= 0) setGameOver('defeat'); return nHp; });
-                    triggerUnderAttackRef.current();
+                    triggerUnderAttackRef.current({ x: BARN_POS.x, y: BARN_POS.y });
                   }
                   addFloatingText(tx, ty, `💣-${DEMOLISHER_DAMAGE}`, '#f97316');
                 }, DEMOLISHER_ATTACK_MS);
@@ -4124,7 +4126,8 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
     witchDoctors: enemyWitchDoctors.filter(d => d.hp > 0).map(d => ({ x: d.x, y: d.y })),
     warchiefs: enemyWarchiefs.filter(wc2 => wc2.hp > 0).map(wc2 => ({ x: wc2.x, y: wc2.y })),
     fogExplored,
-  }), [workers, enemyGrunts, enemyBarnHp, placedBuildings, clearedCamps, goldMines, stoneNodes, trees, enemyTowers, enemySiege, enemyShamans, enemyTrolls, enemySappers, enemyWitchDoctors, enemyWarchiefs, fogExplored]);
+    attackPings: minimapPings.filter(p => Date.now() - p.t < 2500),
+  }), [workers, enemyGrunts, enemyBarnHp, placedBuildings, clearedCamps, goldMines, stoneNodes, trees, enemyTowers, enemySiege, enemyShamans, enemyTrolls, enemySappers, enemyWitchDoctors, enemyWarchiefs, fogExplored, minimapPings]);
 
   return (
     <div className="absolute inset-0 bg-black" onContextMenu={e => { if (buildMode) { e.preventDefault(); setBuildMode(null); setGhostTile(null); } }}>

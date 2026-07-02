@@ -157,6 +157,7 @@ interface RTSUIProps {
     witchDoctors: { x: number; y: number }[];
     warchiefs: { x: number; y: number }[];
     fogExplored: boolean[][];
+    attackPings: { x: number; y: number; t: number }[];
   };
 }
 
@@ -862,6 +863,11 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                 explored ? null : <rect key={`fog-${x}-${y}`} x={x - 0.5} y={y - 0.5} width={1} height={1} fill="#0f172a" opacity={0.75} />
               )
             )}
+            {/* Attack pings — expanding red rings */}
+            {minimapData.attackPings.map((p, i) => {
+              const age = (Date.now() - p.t) / 2500;
+              return <circle key={`ping-${i}`} cx={p.x} cy={p.y} r={0.5 + age * 2.5} fill="none" stroke="#ef4444" strokeWidth={0.4} opacity={0.9 - age * 0.9} />;
+            })}
           </svg>
           <div className="mt-0.5 flex flex-wrap gap-x-2 text-[10px] text-slate-500">
             <span><span className="inline-block h-1.5 w-1.5 rounded-full bg-green-600 align-middle" /> trees</span>
