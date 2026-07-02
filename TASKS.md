@@ -1,6 +1,6 @@
 # TASKS
 
-Last Updated: 2026-07-02 (iter99 — Ctrl+click multi-select + barn attack sound)
+Last Updated: 2026-07-02 (iter100 — unit voice lines + README update)
 
 ## Farm RTS MVP (2026 Q2–Q3)
 
@@ -29,7 +29,8 @@ Last Updated: 2026-07-02 (iter99 — Ctrl+click multi-select + barn attack sound
 - [x] Resource depletion alerts + more sounds — 🌲 Depleted! / 🪙 Mine Depleted! / 🪨 Quarry Depleted! floating text when node hits zero; cavalry sprint + hero Battle Shout sounds wired (2026-07-02)
 - [x] Tower range rings — faint dashed ellipses show attack radius for all built defensive towers (watchtower grey, frost blue, ballista gold, poison green); range ellipse also shown during build-mode ghost placement (2026-07-02)
 - [x] Ctrl+click add/remove from selection — holding Ctrl while clicking a unit toggles it in/out of the current selection; standard WC3/AoE micro mechanic; hint added to HUD tooltip bar (2026-07-02)
-- [x] Barn attack sound — Snd.hit() plays when grunts deal damage to player barn (2026-07-02) (watchtower grey, frost blue, ballista gold, poison green); range ellipse also shown during build-mode ghost placement so players can preview coverage before committing (2026-07-02); Easy: 300g/160l/60s + 70% grunt HP/dmg + 40% longer wave intervals; Hard: 80g/40l/15s + 150% HP, 140% dmg, 20% faster speed, 30% faster waves; difficulty badge shown in HUD; DifficultyConfig type shared between RTSGameRoot and RTSMap (2026-07-02)
+- [x] Barn attack sound — Snd.hit() plays when grunts deal damage to player barn (2026-07-02)
+- [x] Unit voice acknowledgements (iter100) — WC3-style text on move/attack commands; per-unit-type lines (farmer/swordsman/cavalry/hero/siege); random pick from pool; shown as gold floating text above speaker unit; README updated to reflect 25×25 map, audio, all new features (2026-07-02) (watchtower grey, frost blue, ballista gold, poison green); range ellipse also shown during build-mode ghost placement so players can preview coverage before committing (2026-07-02); Easy: 300g/160l/60s + 70% grunt HP/dmg + 40% longer wave intervals; Hard: 80g/40l/15s + 150% HP, 140% dmg, 20% faster speed, 30% faster waves; difficulty badge shown in HUD; DifficultyConfig type shared between RTSGameRoot and RTSMap (2026-07-02)
 - [ ] Implement grazing logic and food meter
 - [x] Enable building placement on valid tiles — ghost preview + valid/invalid tile detection (2026-06-26)
 - [ ] Ensure farmers render in front of barn and are always selectable

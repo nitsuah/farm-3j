@@ -66,23 +66,36 @@ Farm 3J is an interactive farm website with a full-featured isometric **Real-Tim
 - **Neutral Shrines** — capture Shrine of War (+5 ATK) or Shrine of Plenty (+15% gather speed)
 - **Unit Veterancy** — XP → Level 1 (+10 HP, +5 ATK) → Level 2 (+10 HP, +5 ATK)
 - **Tech Research** — Barracks (Veteran Training, War Drums), Blacksmith (Steel Edge, Iron Hide), Barn (Sharper Tools, Swift Harvest, Iron Will), Guard Tower upgrade
-- **Control Groups** — Ctrl+1-9 assign; press number to recall; badge shown on units
+- **Control Groups** — Ctrl+1-9 assign; double-tap to center camera; group bar in HUD
 - **Attack-Move [A]**, **Hold Position [H]**, **Patrol [P]**, **Sprint [S]**, **Charge [C]**
-- **Tab** cycles idle workers; **Ctrl+A** selects all units
-- **Shift+right-click** queues waypoints
-- **Box selection** drag to select multiple units
+- **Tab** cycles idle workers; **Ctrl+A** selects all; **Ctrl+click** add/remove unit from selection
+- **Shift+right-click** queues waypoints; **Box selection** drag-lasso
 - **Garrison** — units in barn or watchtower for HP regen / tower buff
 - **Save/Load** — full game state auto-saved to localStorage every 30s
+- **Upkeep System** — WC3-style gold income penalty at 41+ and 81+ food
+- **Wave Preview** — composition shown 6s before each wave arrives
+
+### Polish & Feel
+- **Difficulty Selection** — Easy 🌻 / Normal ⚔️ / Hard 💀 picker before each game; scales resources, enemy HP/damage/speed, and wave interval
+- **Procedural Sounds** — Web Audio API tones for select, move, attack, death, build, ability, garrison, wave warning, victory/defeat; 🔊/🔇 mute toggle
+- **Unit Voice Lines** — WC3-style acknowledgement text on move/attack commands ("Moving out!", "Charge!", "For glory!")
+- **Tower Range Rings** — faint dashed ellipses show attack radius for all defensive towers; also shown in build-mode ghost preview
+- **Ambient Chickens** — 5 decorative farm chickens wander near the barn
+- **Hit-Flash** — workers flash red, grunts flash white on damage
+- **Move-Target Ring** — expanding green circle confirms move destination
+- **Minimap Fog of War** — dark overlay on unexplored minimap tiles
+- **Resource Depletion Alerts** — "Depleted!" floating text when nodes run dry
+- **High-Score Leaderboard** — top 5 runs saved to localStorage; shown on game-over screen
 
 ## Tech Stack
 
 - **Framework**: Next.js 15 with App Router
 - **Language**: TypeScript (strict mode)
 - **Styling**: Tailwind CSS v4
-- **Rendering**: SVG-based isometric grid (17×17 tiles, 64px tile size)
+- **Rendering**: SVG-based isometric grid (25×25 tiles, 64px tile size)
 - **Pathfinding**: 8-directional A* with wall avoidance
+- **Audio**: Web Audio API procedural tone synthesis (no audio files)
 - **State**: React useState/useRef + requestAnimationFrame animation loop
-- **Animation**: CSS + requestAnimationFrame
 
 This repository will stay in sync with your deployed chats on [v0.dev](https://v0.dev).
 Any changes you make to your deployed app will be automatically pushed to this repository from [v0.dev](https://v0.dev).

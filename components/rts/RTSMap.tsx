@@ -617,6 +617,25 @@ const Snd = {
   error: () => playTone(220, 0.08, 0.10, 'square', 180),
 };
 
+// Unit acknowledgement voice lines — WC3-style responses on command
+const ACK_MOVE: Record<string, string[]> = {
+  farmer:    ['On my way!', 'Right away!', 'Yes sir!', 'Moving out!', 'As you wish!'],
+  swordsman: ['For the farm!', 'Moving out!', 'At once!', 'Aye!', 'Steel ready!'],
+  cavalry:   ['Ride out!', 'Full gallop!', 'On it!', 'Charging!', 'To battle!'],
+  hero:      ['Barnabas rides!', 'Lead the way!', 'For glory!', 'With honour!'],
+  catapult:  ['Repositioning!', 'Loading up!', 'Moving!'],
+  trebuchet: ['Advancing!', 'New position!', 'Moving range!'],
+};
+const ACK_ATTACK: Record<string, string[]> = {
+  farmer:    ['I\'ll try!', 'For the farm!', 'Defending!'],
+  swordsman: ['Attack!', 'Charging!', 'They\'ll pay!', 'Engage!'],
+  cavalry:   ['Trample them!', 'Charge!!', 'Crush them!'],
+  hero:      ['Taste steel!', 'You dare?!', 'For glory!'],
+  catapult:  ['Fire!', 'Launching!', 'Boulders away!'],
+  trebuchet: ['Incoming!', 'Fire for effect!'],
+};
+function pickAck(lines: string[]): string { return lines[Math.floor(Math.random() * lines.length)] ?? ''; }
+
 const Stat: React.FC<{ label: string; value: string | number; color: string }> = ({ label, value, color }) => (
   <div>
     <div style={{ color: '#64748b', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 }}>{label}</div>
@@ -1883,6 +1902,13 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
     }
     setWorkers(ws => {
       const selected = ws.filter(w => w.selected);
+      // Voice acknowledgement — pick one speaker from selected units
+      const speaker = selected[Math.floor(Math.random() * selected.length)];
+      if (speaker) {
+        const lines = attacking ? (ACK_ATTACK[speaker.unitType] ?? ACK_ATTACK.farmer) : (ACK_MOVE[speaker.unitType] ?? ACK_MOVE.farmer);
+        const ack = pickAck(lines ?? []);
+        if (ack) addFloatingText(Math.round(speaker.x), Math.round(speaker.y), ack, '#fde68a');
+      }
       let idx = 0;
       return ws.map(w => {
         if (!w.selected) return w;
@@ -1898,7 +1924,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
         return { ...w, movingTo: first, path: rawPath.slice(1), gathering: gathering ?? null, attacking: attacking ?? null, repairing: null, attackMove: false, attackMoveTarget: null, patrol: null, holdPosition: false, waypoints: [], state: 'moving' };
       });
     });
-  }, []);
+  }, [addFloatingText]);
 
   // Shift+right-click: append waypoint to queue
   const commandQueueMove = useCallback((targetX: number, targetY: number) => {
