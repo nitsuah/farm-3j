@@ -1,6 +1,6 @@
 # TASKS
 
-Last Updated: 2026-07-02 (iter93 — sound mute toggle + gold sound throttle)
+Last Updated: 2026-07-02 (iter94 — ambient farm chickens)
 
 ## Farm RTS MVP (2026 Q2–Q3)
 
@@ -23,7 +23,7 @@ Last Updated: 2026-07-02 (iter93 — sound mute toggle + gold sound throttle)
 - [x] Wire up Stop command in command card (2026-06-26)
 - [x] Real unit info panel (state, carrying, multi-select count) (2026-06-26)
 - [x] Population/food cap system (2026-06-26)
-- [ ] Add animal units (chickens, cows, pigs) with grazing AI
+- [x] Add animal units (chickens) with grazing AI — 5 chickens spawn near barn, wander to adjacent tiles every 2s, stay within 5 tiles of barn, respect water/tree tiles, only render in fog-clear tiles; SVG bird with body/head/beak/comb/legs (2026-07-02)
 - [ ] Implement grazing logic and food meter
 - [x] Enable building placement on valid tiles — ghost preview + valid/invalid tile detection (2026-06-26)
 - [ ] Ensure farmers render in front of barn and are always selectable

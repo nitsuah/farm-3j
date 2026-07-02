@@ -807,6 +807,10 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
   const [nextWaveAt, setNextWaveAt] = useState<number | null>(null);
   const idleWorkerIndexRef = useRef(0);
   const lastGroupKeyRef = useRef<{ num: number; t: number } | null>(null);
+  // Ambient chickens — decorative only, wander near barn
+  const [chickens, setChickens] = useState<{ id: number; x: number; y: number; facing: 1 | -1 }[]>(() =>
+    Array.from({ length: 5 }, (_, i) => ({ id: i, x: BARN_POS.x + (i % 3) - 1, y: BARN_POS.y + Math.floor(i / 3) + 1, facing: 1 as const }))
+  );
   const [capturedShrines, setCapturedShrines] = useState<Set<number>>(new Set());
   const capturedShrinesRef = useRef<Set<number>>(new Set());
   useEffect(() => { capturedShrinesRef.current = capturedShrines; }, [capturedShrines]);
@@ -1804,6 +1808,28 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
       setWorkers(ws => ws.map(w => ids.has(w.id) ? { ...w, sprinting: false } : w));
     }, CAVALRY_SPRINT_DURATION_MS);
   }, [addFloatingText]);
+
+  // Chicken wander — move each chicken to an adjacent clear tile every ~2s
+  useEffect(() => {
+    if (gameOver) return;
+    const id = setInterval(() => {
+      setChickens(cs => cs.map(c => {
+        const dirs = [{ dx: 1, dy: 0 }, { dx: -1, dy: 0 }, { dx: 0, dy: 1 }, { dx: 0, dy: -1 }, { dx: 0, dy: 0 }];
+        const shuffled = dirs.sort(() => Math.random() - 0.5);
+        for (const d of shuffled) {
+          const nx = c.x + d.dx, ny = c.y + d.dy;
+          if (nx < 0 || ny < 0 || nx >= GRID_SIZE || ny >= GRID_SIZE) continue;
+          if (INITIAL_TILES[nx]?.[ny] === 'water' || INITIAL_TILES[nx]?.[ny] === 'tree') continue;
+          // Stay within 5 tiles of barn
+          if (Math.abs(nx - BARN_POS.x) > 5 || Math.abs(ny - BARN_POS.y) > 5) continue;
+          const facing = d.dx === -1 ? -1 as const : d.dx === 1 ? 1 as const : c.facing;
+          return { ...c, x: nx, y: ny, facing };
+        }
+        return c;
+      }));
+    }, 2000);
+    return () => clearInterval(id);
+  }, [gameOver]);
 
   const isTileOccupied = useCallback((x: number, y: number): boolean => {
     if (x < 0 || y < 0 || x >= GRID_SIZE || y >= GRID_SIZE) return true;
@@ -5080,6 +5106,33 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
           {dayPhase === 'night' && (
             <rect x={0} y={0} width={viewBoxW} height={viewBoxH} fill="rgba(15,10,40,0.35)" pointerEvents="none" />
           )}
+
+          {/* Ambient chickens — decorative farm animals near barn */}
+          {chickens.map(c => {
+            if (!fogExplored[c.x]?.[c.y]) return null;
+            const { isoX, isoY } = tileToSvg(c.x, c.y);
+            const cx = isoX + TILE_SIZE / 2, cy = isoY + TILE_SIZE * 0.65;
+            const f = c.facing;
+            return (
+              <g key={`chicken-${c.id}`} transform={`translate(${cx},${cy}) scale(${f},1)`} pointerEvents="none">
+                {/* body */}
+                <ellipse cx={0} cy={0} rx={7} ry={5} fill="#f5f5dc" />
+                {/* head */}
+                <circle cx={8} cy={-4} r={4} fill="#f5f5dc" />
+                {/* beak */}
+                <polygon points="12,-4 14,-3 12,-2" fill="#f59e0b" />
+                {/* comb */}
+                <polygon points="8,-8 7,-6 9,-6 8,-8" fill="#ef4444" />
+                {/* eye */}
+                <circle cx={9} cy={-5} r={1} fill="#1e293b" />
+                {/* tail feathers */}
+                <polygon points="-7,-1 -11,-4 -9,0" fill="#e2e8f0" />
+                {/* legs */}
+                <line x1={-2} y1={4} x2={-2} y2={8} stroke="#f59e0b" strokeWidth={1.5} />
+                <line x1={3} y1={4} x2={3} y2={8} stroke="#f59e0b" strokeWidth={1.5} />
+              </g>
+            );
+          })}
 
           {/* Floating damage / heal texts */}
           {floatingTexts.map(ft => {
