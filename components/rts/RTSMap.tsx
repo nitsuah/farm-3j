@@ -1773,6 +1773,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
     const until = Date.now() + HERO_SHOUT_DURATION_MS;
     setBattleShoutUntil(until);
     addFloatingText(Math.round(hero.x), Math.round(hero.y), '📯 Battle Shout!', '#fb923c');
+    Snd.ability();
     workersRef.current.filter(w => w.hp > 0 && w.id !== hero.id && tileDist(w.x, w.y, hero.x, hero.y) <= HERO_SHOUT_RADIUS).forEach(w => {
       addFloatingText(Math.round(w.x), Math.round(w.y), '⚡ HASTED!', '#fbbf24');
     });
@@ -1814,6 +1815,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
   const handleCavalrySprint = useCallback(() => {
     const cav = workersRef.current.filter(w => w.selected && w.unitType === 'cavalry' && w.sprintCooldown <= 0);
     if (cav.length === 0) return;
+    Snd.charge();
     const ids = new Set(cav.map(w => w.id));
     setWorkers(ws => ws.map(w => ids.has(w.id) ? { ...w, sprinting: true, sprintCooldown: CAVALRY_SPRINT_COOLDOWN_S } : w));
     cav.forEach(c => addFloatingText(Math.round(c.x), Math.round(c.y), '🐴 Sprint!', '#f59e0b'));
@@ -2347,7 +2349,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
                   setWorkers(ws2 => ws2.map(w2 => {
                     if (w2.id !== w.id || w2.state !== 'gathering' || !w2.gathering) return w2;
                     if ((treesRef.current[idx]?.amount ?? 0) > 0 && w2.carrying.lumber < CARRY_CAP) {
-                      setTrees(ts => ts.map((t, i) => i === idx ? { ...t, amount: Math.max(0, t.amount - CARRY_CAP) } : t));
+                      setTrees(ts => ts.map((t, i) => { if (i !== idx) return t; const next = Math.max(0, t.amount - CARRY_CAP); if (next === 0) addFloatingText(t.x, t.y, '🌲 Depleted!', '#92400e'); return { ...t, amount: next }; }));
                       const sheds2 = placedBuildingsRef.current.filter(b => b.type === 'lumberShed' && b.hp > 0);
                       const dropSite2 = sheds2.reduce<{ x: number; y: number } | null>((best, s) => {
                         const d = tileDist(w2.x, w2.y, s.x, s.y);
@@ -2374,7 +2376,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
                     if (w2.id !== w.id || w2.state !== 'gathering' || !w2.gathering) return w2;
                     const mine = goldMinesRef.current[mineIdx];
                     if (mine && mine.amount > 0 && w2.carrying.gold < CARRY_CAP) {
-                      setGoldMines(gms => gms.map((gm, i) => i === mineIdx ? { ...gm, amount: Math.max(0, gm.amount - CARRY_CAP) } : gm));
+                      setGoldMines(gms => gms.map((gm, i) => { if (i !== mineIdx) return gm; const next = Math.max(0, gm.amount - CARRY_CAP); if (next === 0) addFloatingText(gm.x, gm.y, '🪙 Mine Depleted!', '#92400e'); return { ...gm, amount: next }; }));
                       const p = aStar(INITIAL_TILES, { x: Math.round(w2.x), y: Math.round(w2.y) }, BARN_POS);
                       return { ...w2, carrying: { gold: w2.carrying.gold + CARRY_CAP, lumber: 0, stone: 0 }, state: 'returning', movingTo: p[0] ?? BARN_POS, path: p.slice(1) };
                     }
@@ -2395,7 +2397,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
                   setWorkers(ws2 => ws2.map(w2 => {
                     if (w2.id !== w.id || w2.state !== 'gathering' || !w2.gathering) return w2;
                     if ((stoneNodesRef.current[idx]?.amount ?? 0) > 0 && w2.carrying.stone < CARRY_CAP) {
-                      setStoneNodes(ns => ns.map((n, i) => i === idx ? { ...n, amount: Math.max(0, n.amount - CARRY_CAP) } : n));
+                      setStoneNodes(ns => ns.map((n, i) => { if (i !== idx) return n; const next = Math.max(0, n.amount - CARRY_CAP); if (next === 0) addFloatingText(n.x, n.y, '🪨 Quarry Depleted!', '#92400e'); return { ...n, amount: next }; }));
                       const p = aStar(INITIAL_TILES, { x: Math.round(w2.x), y: Math.round(w2.y) }, BARN_POS);
                       return { ...w2, carrying: { gold: 0, lumber: 0, stone: w2.carrying.stone + CARRY_CAP }, state: 'returning', movingTo: p[0] ?? BARN_POS, path: p.slice(1) };
                     }
