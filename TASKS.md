@@ -1,6 +1,6 @@
 # TASKS
 
-Last Updated: 2026-07-02 (iter100 — unit voice lines + README update)
+Last Updated: 2026-07-02 (iter108 — barn damage visuals, spacebar pause, ghost-shot fix, enemy AI, combat log)
 
 ## Farm RTS MVP (2026 Q2–Q3)
 
@@ -30,7 +30,19 @@ Last Updated: 2026-07-02 (iter100 — unit voice lines + README update)
 - [x] Tower range rings — faint dashed ellipses show attack radius for all built defensive towers (watchtower grey, frost blue, ballista gold, poison green); range ellipse also shown during build-mode ghost placement (2026-07-02)
 - [x] Ctrl+click add/remove from selection — holding Ctrl while clicking a unit toggles it in/out of the current selection; standard WC3/AoE micro mechanic; hint added to HUD tooltip bar (2026-07-02)
 - [x] Barn attack sound — Snd.hit() plays when grunts deal damage to player barn (2026-07-02)
-- [x] Unit voice acknowledgements (iter100) — WC3-style text on move/attack commands; per-unit-type lines (farmer/swordsman/cavalry/hero/siege); random pick from pool; shown as gold floating text above speaker unit; README updated to reflect 25×25 map, audio, all new features (2026-07-02) (watchtower grey, frost blue, ballista gold, poison green); range ellipse also shown during build-mode ghost placement so players can preview coverage before committing (2026-07-02); Easy: 300g/160l/60s + 70% grunt HP/dmg + 40% longer wave intervals; Hard: 80g/40l/15s + 150% HP, 140% dmg, 20% faster speed, 30% faster waves; difficulty badge shown in HUD; DifficultyConfig type shared between RTSGameRoot and RTSMap (2026-07-02)
+- [x] Unit voice acknowledgements (iter100) — WC3-style text on move/attack commands; per-unit-type lines; random pick from pool
+- [x] Ghost-shot fix (iter101) — troll archer and demolisher setTimeout callbacks check alive status before dealing damage; eliminates barn damage from dead units
+- [x] Combat damage log (iter102) — 📋 panel logs every hit to player barn with source + timestamp; last 20 entries; clear button
+- [x] Game starts paused (iter103) — speed starts at 0; ⏸ PAUSED overlay; ▶ Start / ⏸ Pause / ▶▶ 2× button label cycle
+- [x] Wave timer pause/resume (iter103) — remaining time saved on pause; timer restarted from remaining ms on unpause
+- [x] Spacebar pause toggle (iter108) — Space key toggles pause/unpause
+- [x] Enemy spawn distance (iter104) — grunts spawn at far map edges (x=24/y=24); flanking grunts spawn from east/south edges
+- [x] Passive barn regen (iter105) — +1 HP/5s when no grunts on map
+- [x] Enemy last-stand enrage (iter105) — grunts enraged at ≤50% enemy barn HP; 💢 LAST STAND! banner
+- [x] Destructible archer tower (iter101) — purple Archer Tower converted to EnemyTower (id=-1, 120 HP); 40🪙 loot on death
+- [x] Enemy AI auto-build (iter106) — tower every 90s + wall every 60s from wave 5 onward
+- [x] Enemy flanking (iter107) — wave 8+, every 4th wave: 2 grunts from east+south edges; ⚠ FLANKING! text
+- [x] Barn damage visual states (iter108) — smoke at <50% HP, fire at <25% HP on both barns; ☠ COLLAPSING! on enemy barn; per-unit-type lines (farmer/swordsman/cavalry/hero/siege); random pick from pool; shown as gold floating text above speaker unit; README updated to reflect 25×25 map, audio, all new features (2026-07-02) (watchtower grey, frost blue, ballista gold, poison green); range ellipse also shown during build-mode ghost placement so players can preview coverage before committing (2026-07-02); Easy: 300g/160l/60s + 70% grunt HP/dmg + 40% longer wave intervals; Hard: 80g/40l/15s + 150% HP, 140% dmg, 20% faster speed, 30% faster waves; difficulty badge shown in HUD; DifficultyConfig type shared between RTSGameRoot and RTSMap (2026-07-02)
 - [ ] Implement grazing logic and food meter
 - [x] Enable building placement on valid tiles — ghost preview + valid/invalid tile detection (2026-06-26)
 - [ ] Ensure farmers render in front of barn and are always selectable

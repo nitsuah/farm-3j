@@ -2153,6 +2153,10 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') { setBuildMode(null); setGhostTile(null); setPatrolMode(false); setAttackMoveMode(false); }
+      if (e.key === ' ' && !e.ctrlKey && !e.metaKey && (e.target as HTMLElement).tagName !== 'INPUT') {
+        e.preventDefault();
+        if (!gameOverRef.current) setGameSpeed(s => s === 0 ? 1 : 0);
+      }
       if ((e.key === 'p' || e.key === 'P') && !e.ctrlKey && !e.metaKey) {
         setWorkers(ws => { if (ws.some(w => w.selected)) { setPatrolMode(m => !m); } return ws; });
       }
@@ -4970,13 +4974,29 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
 
           {/* Enemy barn */}
           {enemyBarnHp > 0 && (() => { const { isoX, isoY } = tileToSvg(ENEMY_BARN_POS.x, ENEMY_BARN_POS.y); const hpPct = enemyBarnHp / ENEMY_BARN_MAX_HP;
+            const cx = isoX + TILE_SIZE / 2; const cy = isoY + TILE_SIZE * 0.3;
+            const t = (Date.now() / 600) % (2 * Math.PI);
+            const damaged = hpPct < 0.5; const critical = hpPct < 0.25;
             return <g style={{ cursor: 'crosshair' }} onContextMenu={handleAttackEnemyBarn}>
-              <rect x={isoX} y={isoY} width={TILE_SIZE} height={TILE_SIZE} fill="#7f1d1d" stroke="#ef4444" strokeWidth={6} rx={12} />
+              <rect x={isoX} y={isoY} width={TILE_SIZE} height={TILE_SIZE} fill="#7f1d1d" stroke={critical ? '#fbbf24' : '#ef4444'} strokeWidth={critical ? 8 : 6} rx={12} />
               <polygon points={[[isoX, isoY], [isoX + TILE_SIZE / 2, isoY - 32], [isoX + TILE_SIZE, isoY]].map(p => p.join(',')).join(' ')} fill="#991b1b" stroke="#dc2626" strokeWidth={4} />
-              <text x={isoX + TILE_SIZE / 2} y={isoY + 44} textAnchor="middle" fontSize="22">🏴‍☠️</text>
+              <text x={cx} y={isoY + 44} textAnchor="middle" fontSize="22">🏴‍☠️</text>
+              {damaged && <g pointerEvents="none">
+                <circle cx={cx - 8} cy={cy - 18 - Math.sin(t) * 4} r={6} fill="#374151" opacity={0.6} />
+                <circle cx={cx + 6} cy={cy - 28 - Math.sin(t + 1) * 5} r={5} fill="#4b5563" opacity={0.45} />
+                <circle cx={cx} cy={cy - 38 - Math.sin(t + 2) * 3} r={4} fill="#1f2937" opacity={0.3} />
+              </g>}
+              {critical && <g pointerEvents="none">
+                <ellipse cx={cx} cy={cy - 4} rx={9} ry={6} fill="#f97316" opacity={0.85} />
+                <ellipse cx={cx - 5} cy={cy - 2} rx={5} ry={4} fill="#dc2626" opacity={0.75} />
+                <ellipse cx={cx + 5} cy={cy - 2} rx={5} ry={4} fill="#ef4444" opacity={0.7} />
+                <ellipse cx={cx} cy={cy - 14} rx={5} ry={10} fill="#fbbf24" opacity={0.9} />
+                <ellipse cx={cx} cy={cy - 18} rx={3} ry={6} fill="#fef08a" opacity={0.8} />
+                <text x={cx} y={isoY - 20} textAnchor="middle" fontSize="11" fill="#fbbf24" fontWeight="bold">☠ COLLAPSING!</text>
+              </g>}
               <rect x={isoX - 8} y={isoY - 14} width={TILE_SIZE + 16} height={8} fill="#1e293b" rx={4} />
               <rect x={isoX - 8} y={isoY - 14} width={(TILE_SIZE + 16) * hpPct} height={8} fill={hpPct > 0.5 ? '#4ade80' : hpPct > 0.25 ? '#fbbf24' : '#ef4444'} rx={4} />
-              <text x={isoX + TILE_SIZE / 2} y={isoY - 18} textAnchor="middle" fontSize="11" fill="#fca5a5" fontWeight="bold">ENEMY</text>
+              <text x={cx} y={isoY - 18} textAnchor="middle" fontSize="11" fill="#fca5a5" fontWeight="bold">ENEMY</text>
             </g>; })()}
 
           {/* Archer Tower now rendered by the shared enemy tower loop below (id -1) */}
@@ -5049,6 +5069,9 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
             const hasGarrison = garrisoned.length > 0;
             const barnUnderFire = enemyGrunts.some(g => tileDist(g.x, g.y, BARN_POS.x, BARN_POS.y) <= 4);
             const lastStand = hpPct < 0.25;
+            const barnDamaged = hpPct < 0.5;
+            const bcx = isoX + TILE_SIZE / 2; const bcy = isoY + TILE_SIZE * 0.3;
+            const bt = (Date.now() / 600) % (2 * Math.PI);
             return <g style={{ cursor: 'pointer' }}
               onClick={() => { if (!buildMode) { setSelectedType('farmhouse'); setWorkers(ws => ws.map(w => ({ ...w, selected: false }))); } }}
               onContextMenu={e => {
@@ -5061,7 +5084,20 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
               <rect x={isoX} y={isoY} width={TILE_SIZE} height={TILE_SIZE} fill="#fde68a" stroke={lastStand ? '#ef4444' : hasGarrison ? '#22d3ee' : '#b45309'} strokeWidth={lastStand ? 7 : hasGarrison ? 5 : 6} rx={12} />
               <polygon points={[[isoX, isoY], [isoX + TILE_SIZE / 2, isoY - 32], [isoX + TILE_SIZE, isoY]].map(p => p.join(',')).join(' ')} fill="#b91c1c" stroke="#7f1d1d" strokeWidth={4} />
               <text x={isoX + TILE_SIZE / 2} y={isoY + 44} textAnchor="middle" fontSize="22">🏚️</text>
-              {lastStand && <text x={isoX + TILE_SIZE / 2} y={isoY - 20} textAnchor="middle" fontSize="11" fill="#ef4444" fontWeight="bold">⚔ LAST STAND!</text>}
+              {!lastStand && <text x={isoX + TILE_SIZE / 2} y={isoY - 20} textAnchor="middle" fontSize="11" fill="#ef4444" fontWeight="bold" />}
+              {barnDamaged && !lastStand && <g pointerEvents="none">
+                <circle cx={bcx - 8} cy={bcy - 18 - Math.sin(bt) * 4} r={6} fill="#374151" opacity={0.55} />
+                <circle cx={bcx + 6} cy={bcy - 28 - Math.sin(bt + 1) * 5} r={5} fill="#6b7280" opacity={0.4} />
+                <circle cx={bcx} cy={bcy - 38 - Math.sin(bt + 2) * 3} r={4} fill="#9ca3af" opacity={0.25} />
+              </g>}
+              {lastStand && <g pointerEvents="none">
+                <ellipse cx={bcx} cy={bcy - 4} rx={9} ry={6} fill="#f97316" opacity={0.85} />
+                <ellipse cx={bcx - 5} cy={bcy - 2} rx={5} ry={4} fill="#dc2626" opacity={0.75} />
+                <ellipse cx={bcx + 5} cy={bcy - 2} rx={5} ry={4} fill="#ef4444" opacity={0.7} />
+                <ellipse cx={bcx} cy={bcy - 14} rx={5} ry={10} fill="#fbbf24" opacity={0.9} />
+                <ellipse cx={bcx} cy={bcy - 18} rx={3} ry={6} fill="#fef08a" opacity={0.8} />
+                <text x={bcx} y={isoY - 20} textAnchor="middle" fontSize="11" fill="#ef4444" fontWeight="bold">⚔ LAST STAND!</text>
+              </g>}
               <rect x={isoX - 8} y={isoY - 14} width={TILE_SIZE + 16} height={8} fill="#1e293b" rx={4} />
               <rect x={isoX - 8} y={isoY - 14} width={(TILE_SIZE + 16) * hpPct} height={8} fill={hpPct > 0.5 ? '#4ade80' : hpPct > 0.25 ? '#fbbf24' : '#ef4444'} rx={4} />
               {hasGarrison && <>
