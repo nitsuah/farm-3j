@@ -161,6 +161,12 @@ const BALLISTA_PIERCE_RANGE = 1.5;
 const BALLISTA_PIERCE_DAMAGE = 9;
 const BALLISTA_ATTACK_MS = 4000;
 const BALLISTA_HP = 150;
+const POISON_TOWER_RANGE = 5.0;
+const POISON_TOWER_DAMAGE = 8;
+const POISON_TOWER_DPS = 3;
+const POISON_TOWER_DURATION_MS = 4000;
+const POISON_TOWER_ATTACK_MS = 3000;
+const POISON_TOWER_HP = 130;
 
 const LOOT_CRATE_POSITIONS = [
   { x: 3, y: 10 }, { x: 10, y: 3 }, { x: 5, y: 15 }, { x: 15, y: 5 }, { x: 1, y: 1 }, { x: 7, y: 8 }, { x: 8, y: 7 }, { x: 13, y: 13 },
@@ -168,7 +174,7 @@ const LOOT_CRATE_POSITIONS = [
 
 interface FloatingText { id: number; x: number; y: number; text: string; color: string; createdAt: number }
 type TileType = 'grass' | 'dirt' | 'water' | 'tree' | 'rock';
-type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market' | 'blacksmith' | 'granary' | 'stable' | 'spikeTrap' | 'frostTower' | 'ballista';
+type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market' | 'blacksmith' | 'granary' | 'stable' | 'spikeTrap' | 'frostTower' | 'ballista' | 'poisonTower';
 
 interface ResourceNode { x: number; y: number; amount: number }
 interface Resources { gold: number; lumber: number; stone: number; food: number; foodCap: number }
@@ -187,6 +193,8 @@ interface EnemyGrunt {
   isSkeleton?: boolean;
   frozenUntil?: number;
   enragedUntil?: number;
+  poisonedUntil?: number;
+  poisonDps?: number;
 }
 
 interface EnemyTower {
@@ -339,15 +347,16 @@ const BUILDING_COSTS: Record<BuildingType, { gold: number; lumber: number; stone
   spikeTrap:     { gold: 30,  lumber: 20, stone: 10, label: 'Spike Trap',     foodCapBonus: 0 },
   frostTower:    { gold: FROST_TOWER_GOLD_COST, lumber: FROST_TOWER_LUMBER_COST, stone: FROST_TOWER_STONE_COST, label: 'Frost Tower', foodCapBonus: 0 },
   ballista:      { gold: 100, lumber: 60, stone: 80, label: 'Ballista Tower', foodCapBonus: 0 },
+  poisonTower:   { gold: 70,  lumber: 40, stone: 50, label: 'Poison Tower',   foodCapBonus: 0 },
 };
 
 const BUILDING_EMOJI: Record<BuildingType, string> = {
-  farmhouse: '🏠', lumberShed: '🪵', watchtower: '🗼', wall: '🧱', windmill: '💨', barracks: '🏯', siegeWorkshop: '⚙️', market: '🏪', blacksmith: '🔨', granary: '🌾', stable: '🐴', spikeTrap: '🪤', frostTower: '❄️', ballista: '🏹',
+  farmhouse: '🏠', lumberShed: '🪵', watchtower: '🗼', wall: '🧱', windmill: '💨', barracks: '🏯', siegeWorkshop: '⚙️', market: '🏪', blacksmith: '🔨', granary: '🌾', stable: '🐴', spikeTrap: '🪤', frostTower: '❄️', ballista: '🏹', poisonTower: '☠️',
 };
 
 const BUILDING_MAX_HP: Record<BuildingType, number> = {
   farmhouse: 200, lumberShed: 150, watchtower: 180, wall: 120, windmill: 100,
-  barracks: 250, siegeWorkshop: 220, market: 160, blacksmith: 200, granary: 140, stable: 200, spikeTrap: 60, frostTower: FROST_TOWER_HP, ballista: BALLISTA_HP,
+  barracks: 250, siegeWorkshop: 220, market: 160, blacksmith: 200, granary: 140, stable: 200, spikeTrap: 60, frostTower: FROST_TOWER_HP, ballista: BALLISTA_HP, poisonTower: POISON_TOWER_HP,
 };
 const BUILDING_GRUNT_DAMAGE = 8; // damage per hit from grunt to building
 const CONSTRUCTION_MS = 6000; // time to construct a building
@@ -1291,6 +1300,29 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
     };
     ballistaTowers.forEach(t => { if (!ballistaTimersRef.current[t.id]) scheduleBallista(t.id, t.x, t.y); });
     return () => { Object.values(ballistaTimersRef.current).forEach(clearTimeout); ballistaTimersRef.current = {}; };
+  }, [placedBuildings, gameOver, addFloatingText]);
+
+  // Poison Tower auto-fire — deals initial dmg + DoT to nearest grunt in range
+  const poisonTowerTimersRef = useRef<Record<number, number>>({});
+  useEffect(() => {
+    if (gameOver) return;
+    const poisonTowers = placedBuildings.filter(b => b.type === 'poisonTower' && b.hp > 0 && !b.constructing);
+    const schedulePoison = (towerId: number, tx: number, ty: number) => {
+      poisonTowerTimersRef.current[towerId] = window.setTimeout(() => {
+        delete poisonTowerTimersRef.current[towerId];
+        if (gameOverRef.current) return;
+        const grunts = enemyGruntsRef.current.filter(g => g.hp > 0);
+        const target = grunts.reduce<EnemyGrunt | null>((best, g) => (!best || tileDist(g.x, g.y, tx, ty) < tileDist(best.x, best.y, tx, ty) ? g : best), null);
+        if (target && tileDist(target.x, target.y, tx, ty) <= POISON_TOWER_RANGE) {
+          const poisonUntil = Date.now() + POISON_TOWER_DURATION_MS;
+          setEnemyGrunts(gs => gs.map(g => g.id === target.id ? { ...g, hp: Math.max(0, g.hp - POISON_TOWER_DAMAGE), poisonedUntil: poisonUntil, poisonDps: POISON_TOWER_DPS } : g));
+          addFloatingText(Math.round(target.x), Math.round(target.y), `☠️-${POISON_TOWER_DAMAGE}`, '#4ade80');
+        }
+        schedulePoison(towerId, tx, ty);
+      }, POISON_TOWER_ATTACK_MS);
+    };
+    poisonTowers.forEach(t => { if (!poisonTowerTimersRef.current[t.id]) schedulePoison(t.id, t.x, t.y); });
+    return () => { Object.values(poisonTowerTimersRef.current).forEach(clearTimeout); poisonTowerTimersRef.current = {}; };
   }, [placedBuildings, gameOver, addFloatingText]);
 
   // Player barn defense fire — scales with wave and garrison count; Last Stand at <25% HP
@@ -2634,8 +2666,15 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
       }));
 
       const gruntSpeedMult = isNightRef.current ? NIGHT_SPEED_MULT : 1;
-      setEnemyGrunts(gs => gs.map(g => {
-        const frostMult = g.frozenUntil && Date.now() < g.frozenUntil ? FROST_TOWER_SLOW_FACTOR : 1;
+      const nowPoison = Date.now();
+      setEnemyGrunts(gs => gs.map(gIn => {
+        let g = gIn;
+        // Poison DoT tick — apply before other processing
+        const poisoned = g.poisonedUntil && nowPoison < g.poisonedUntil;
+        if (poisoned && g.poisonDps && g.poisonDps * dt > 0) {
+          g = { ...g, hp: Math.max(0, g.hp - g.poisonDps * dt) };
+        }
+        const frostMult = g.frozenUntil && nowPoison < g.frozenUntil ? FROST_TOWER_SLOW_FACTOR : 1;
         // Proximity aggro: switch to attack nearest worker within 2 tiles
         const nearWorker = currentWorkers.find(w => w.hp > 0 && tileDist(g.x, g.y, w.x, w.y) <= 2);
         if (nearWorker) {
@@ -3989,6 +4028,25 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                 <text x={cx2} y={isoY + 4} textAnchor="middle" fontSize="7" fill="#94a3b8">{BALLISTA_RANGE}🎯 pierce</text>
               </g>;
             }
+            if (b.type === 'poisonTower') {
+              const cx2 = isoX + TILE_SIZE / 2; const cy2 = isoY + TILE_SIZE * 0.4;
+              return <g key={`building-${b.id}`} pointerEvents="none">
+                {/* Stone base */}
+                <rect x={isoX + TILE_SIZE * 0.25} y={cy2 + 4} width={TILE_SIZE * 1.5} height={12} fill="#374151" stroke="#1e293b" strokeWidth={2} rx={3} />
+                {/* Vat body */}
+                <ellipse cx={cx2} cy={cy2} rx={18} ry={14} fill="#166534" stroke="#14532d" strokeWidth={2.5} />
+                {/* Poison bubbles */}
+                <circle cx={cx2 - 6} cy={cy2 - 4} r={3} fill="#4ade80" opacity={0.8} />
+                <circle cx={cx2 + 5} cy={cy2 - 7} r={2} fill="#22c55e" opacity={0.7} />
+                <circle cx={cx2 + 2} cy={cy2 + 2} r={4} fill="#86efac" opacity={0.6} />
+                {/* Pipe/spout */}
+                <line x1={cx2 + 16} y1={cy2 - 6} x2={cx2 + 28} y2={cy2 - 16} stroke="#15803d" strokeWidth={4} strokeLinecap="round" />
+                <circle cx={cx2 + 28} cy={cy2 - 17} r={4} fill="#4ade80" stroke="#166534" strokeWidth={1.5} />
+                {/* Range ring hint */}
+                <circle cx={cx2} cy={cy2} r={POISON_TOWER_RANGE * TILE_SIZE * 0.18} fill="none" stroke="#4ade80" strokeWidth={0.8} strokeDasharray="4 4" opacity={0.2} />
+                <text x={cx2} y={isoY - 4} textAnchor="middle" fontSize="9" fill="#4ade80" fontWeight="bold">☠️ POISON</text>
+              </g>;
+            }
             const colors: Record<string, { fill: string; stroke: string }> = { farmhouse: { fill: '#fef3c7', stroke: '#92400e' }, lumberShed: { fill: '#a16207', stroke: '#78350f' }, watchtower: { fill: '#64748b', stroke: '#1e293b' } };
             const c = colors[b.type] ?? { fill: '#374151', stroke: '#1f2937' };
             const isDamaged = b.hp < b.maxHp;
@@ -4196,6 +4254,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                 <rect x={isoX + TILE_SIZE / 2 - 12} y={isoY - 10} width={24 * hp} height={4} fill="#a855f7" />
               </>) : (<>
                 {(g.enragedUntil ?? 0) > Date.now() && <circle cx={isoX + TILE_SIZE / 2} cy={isoY + 18} r={20} fill="none" stroke="#dc2626" strokeWidth={3} opacity={0.7} />}
+                {(g.poisonedUntil ?? 0) > Date.now() && <circle cx={isoX + TILE_SIZE / 2} cy={isoY + 18} r={19} fill="none" stroke="#4ade80" strokeWidth={2.5} opacity={0.65} strokeDasharray="4 3" />}
                 <circle cx={isoX + TILE_SIZE / 2} cy={isoY + 18} r={16} fill={(g.enragedUntil ?? 0) > Date.now() ? '#dc2626' : g.state === 'attacking' ? '#dc2626' : '#f97316'} stroke="#7f1d1d" strokeWidth={3} />
                 <text x={isoX + TILE_SIZE / 2} y={isoY + 26} textAnchor="middle" fontSize="14">👹</text>
                 {(g.enragedUntil ?? 0) > Date.now() && <text x={isoX + TILE_SIZE / 2} y={isoY - 5} textAnchor="middle" fontSize="7" fill="#fca5a5" fontWeight="bold">BERSERK!</text>}

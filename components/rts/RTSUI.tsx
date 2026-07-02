@@ -35,7 +35,7 @@ export interface WorkerState {
   level: number;
 }
 
-export type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market' | 'blacksmith' | 'granary' | 'stable' | 'spikeTrap' | 'frostTower' | 'ballista';
+export type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market' | 'blacksmith' | 'granary' | 'stable' | 'spikeTrap' | 'frostTower' | 'ballista' | 'poisonTower';
 
 export interface PlacedBuilding {
   id: number;
@@ -711,6 +711,15 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                     title={`Ballista Tower — ${buildingCosts.ballista.gold}🪙 ${buildingCosts.ballista.lumber}🌲 ${buildingCosts.ballista.stone}🪨 | Piercing bolt: ${buildingCosts.ballista.gold ? '18' : '18'} dmg in 6.5-tile range, pierce nearby for 9 dmg every 4s`}
                   >
                     🏹 Ballista {buildingCosts.ballista.gold}🪙
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded border border-green-500/70 bg-green-500/15 px-1 py-2 text-xs text-green-100 hover:bg-green-500/30 disabled:opacity-40"
+                    onClick={() => onFarmhouseAction('build:poisonTower')}
+                    disabled={!canAfford(buildingCosts.poisonTower)}
+                    title={`Poison Tower — ${buildingCosts.poisonTower.gold}🪙 ${buildingCosts.poisonTower.lumber}🌲 ${buildingCosts.poisonTower.stone}🪨 | Fires poison arrow: 8 dmg + 3 dmg/s for 4s; 5-tile range every 3s`}
+                  >
+                    ☠️ Poison {buildingCosts.poisonTower.gold}🪙
                   </button>
                   {(Object.keys(UPGRADE_META) as (keyof Upgrades)[]).map(key => {
                     const level = upgrades[key];
