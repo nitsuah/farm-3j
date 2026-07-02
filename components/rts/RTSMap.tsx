@@ -3980,7 +3980,8 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
     sappers: enemySappers.filter(s => s.hp > 0 && !s.exploded).map(s => ({ x: s.x, y: s.y })),
     witchDoctors: enemyWitchDoctors.filter(d => d.hp > 0).map(d => ({ x: d.x, y: d.y })),
     warchiefs: enemyWarchiefs.filter(wc2 => wc2.hp > 0).map(wc2 => ({ x: wc2.x, y: wc2.y })),
-  }), [workers, enemyGrunts, enemyBarnHp, placedBuildings, clearedCamps, goldMines, stoneNodes, trees, enemyTowers, enemySiege, enemyShamans, enemyTrolls, enemySappers, enemyWitchDoctors, enemyWarchiefs]);
+    fogExplored,
+  }), [workers, enemyGrunts, enemyBarnHp, placedBuildings, clearedCamps, goldMines, stoneNodes, trees, enemyTowers, enemySiege, enemyShamans, enemyTrolls, enemySappers, enemyWitchDoctors, enemyWarchiefs, fogExplored]);
 
   return (
     <div className="absolute inset-0 bg-black" onContextMenu={e => { if (buildMode) { e.preventDefault(); setBuildMode(null); setGhostTile(null); } }}>

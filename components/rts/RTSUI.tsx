@@ -156,6 +156,7 @@ interface RTSUIProps {
     sappers: { x: number; y: number }[];
     witchDoctors: { x: number; y: number }[];
     warchiefs: { x: number; y: number }[];
+    fogExplored: boolean[][];
   };
 }
 
@@ -855,6 +856,12 @@ export const RTSUI: React.FC<RTSUIProps> = ({
             {minimapData.warchiefs.map((wc2, i) => (
               <polygon key={`warchief${i}`} points={`${wc2.x},${wc2.y - 1} ${wc2.x + 0.35},${wc2.y - 0.3} ${wc2.x + 1},${wc2.y - 0.3} ${wc2.x + 0.5},${wc2.y + 0.2} ${wc2.x + 0.65},${wc2.y + 1} ${wc2.x},${wc2.y + 0.6} ${wc2.x - 0.65},${wc2.y + 1} ${wc2.x - 0.5},${wc2.y + 0.2} ${wc2.x - 1},${wc2.y - 0.3} ${wc2.x - 0.35},${wc2.y - 0.3}`} fill="#f59e0b" stroke="#d97706" strokeWidth={0.1} />
             ))}
+            {/* Fog of war overlay — unexplored tiles darkened on minimap */}
+            {minimapData.fogExplored.flatMap((col, x) =>
+              col.map((explored, y) =>
+                explored ? null : <rect key={`fog-${x}-${y}`} x={x - 0.5} y={y - 0.5} width={1} height={1} fill="#0f172a" opacity={0.75} />
+              )
+            )}
           </svg>
           <div className="mt-0.5 flex flex-wrap gap-x-2 text-[10px] text-slate-500">
             <span><span className="inline-block h-1.5 w-1.5 rounded-full bg-green-600 align-middle" /> trees</span>

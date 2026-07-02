@@ -1,6 +1,6 @@
 # TASKS
 
-Last Updated: 2026-07-02 (iter89 — hit-flash on damage)
+Last Updated: 2026-07-02 (iter90 — minimap fog of war)
 
 ## Farm RTS MVP (2026 Q2–Q3)
 
