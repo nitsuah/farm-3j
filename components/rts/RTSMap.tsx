@@ -571,6 +571,41 @@ function makeUnit(id: number, x: number, y: number, unitType: 'farmer' | 'swords
 }
 // ---------------------------------
 
+// Web Audio sound helpers — procedural tones, no audio files required
+let _audioCtx: AudioContext | null = null;
+function getAudioCtx(): AudioContext | null {
+  if (typeof window === 'undefined') return null;
+  if (!_audioCtx || _audioCtx.state === 'closed') _audioCtx = new AudioContext();
+  if (_audioCtx.state === 'suspended') _audioCtx.resume();
+  return _audioCtx;
+}
+function playTone(freq: number, duration: number, vol = 0.18, type: OscillatorType = 'square', freqEnd?: number): void {
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, ctx.currentTime);
+  if (freqEnd !== undefined) osc.frequency.linearRampToValueAtTime(freqEnd, ctx.currentTime + duration);
+  gain.gain.setValueAtTime(vol, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+  osc.start(ctx.currentTime);
+  osc.stop(ctx.currentTime + duration);
+}
+const Snd = {
+  select: () => playTone(880, 0.08, 0.12, 'sine'),
+  move: () => playTone(660, 0.1, 0.10, 'sine', 720),
+  attack: () => { playTone(220, 0.06, 0.15, 'sawtooth'); playTone(180, 0.1, 0.08, 'square'); },
+  hit: () => playTone(140, 0.05, 0.12, 'square', 80),
+  death: () => { playTone(300, 0.08, 0.14, 'sawtooth', 100); },
+  buildComplete: () => { playTone(523, 0.1, 0.14, 'sine'); playTone(659, 0.14, 0.12, 'sine'); playTone(784, 0.2, 0.10, 'sine'); },
+  gold: () => playTone(1047, 0.12, 0.10, 'sine', 1319),
+  waveWarning: () => { playTone(220, 0.2, 0.16, 'sawtooth'); playTone(196, 0.3, 0.12, 'sawtooth'); },
+  victory: () => { playTone(523, 0.12, 0.15, 'sine'); playTone(659, 0.16, 0.13, 'sine'); playTone(784, 0.2, 0.11, 'sine'); playTone(1047, 0.4, 0.10, 'sine'); },
+  defeat: () => { playTone(392, 0.2, 0.14, 'sawtooth', 220); playTone(220, 0.4, 0.12, 'sawtooth', 110); },
+};
+
 const Stat: React.FC<{ label: string; value: string | number; color: string }> = ({ label, value, color }) => (
   <div>
     <div style={{ color: '#64748b', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 }}>{label}</div>
@@ -849,6 +884,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
       const endTime = Date.now();
       setGameEndTime(endTime);
       saveHighScore({ wave, kills: killCount, result: gameOver, gold: totalGold, time: Math.floor((endTime - startTimeRef.current) / 1000), date: new Date().toLocaleDateString() });
+      if (gameOver === 'victory') Snd.victory(); else Snd.defeat();
     }
   }, [gameOver, gameEndTime, wave, killCount, totalGold]);
 
@@ -1098,6 +1134,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
     const newWave = waveRef.current + 1;
     waveRef.current = newWave;
     setWave(newWave);
+    Snd.waveWarning();
     const towerIdx = ENEMY_TOWER_SPAWN_WAVES.indexOf(newWave as typeof ENEMY_TOWER_SPAWN_WAVES[number]);
     const isBossWave = newWave % 10 === 0;
     if (towerIdx >= 0 && !isBossWave) {
@@ -1335,6 +1372,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
           const speedMult = 1 + assistCount * 0.4;
           if ((now - (b.constructedAt ?? now)) * speedMult < CONSTRUCTION_MS) return b;
           addFloatingText(b.x, b.y, '✅ Built!', '#4ade80');
+          Snd.buildComplete();
           const bonus = BUILDING_COSTS[b.type]?.foodCapBonus ?? 0;
           if (bonus > 0) setResources(r => ({ ...r, foodCap: r.foodCap + bonus }));
           // Release assisting workers
@@ -1791,6 +1829,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
     if (!gathering && !attacking) {
       const { isoX, isoY } = tileToSvg(targetX, targetY);
       setMoveRing({ svgX: isoX + TILE_SIZE / 2, svgY: isoY + TILE_SIZE / 4, born: Date.now() });
+      Snd.move();
     }
     setWorkers(ws => {
       const selected = ws.filter(w => w.selected);
@@ -2120,6 +2159,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                 const atLumberShed = !atBarn && w.carrying.lumber > 0 && placedBuildingsRef.current.some(b => b.type === 'lumberShed' && b.hp > 0 && tileDist(movDest.x, movDest.y, b.x, b.y) < epsilon);
                 if (atBarn || atLumberShed) {
                   const goldDeposit = Math.round(w.carrying.gold * upkeepMultRef.current);
+                  if (goldDeposit > 0 || w.carrying.lumber > 0 || w.carrying.stone > 0) Snd.gold();
                   setResources(r => ({ ...r, gold: r.gold + goldDeposit, lumber: r.lumber + w.carrying.lumber, stone: r.stone + w.carrying.stone }));
                   incomeAccRef.current.gold += goldDeposit;
                   incomeAccRef.current.lumber += w.carrying.lumber;
@@ -2825,6 +2865,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
           setKillCount(k => k + killed.length);
           const goldDrop = killed.reduce((sum, g) => sum + (g.isBoss ? BOSS_GOLD_REWARD : 5), 0);
           setResources(r => ({ ...r, gold: r.gold + goldDrop }));
+          Snd.death();
           killed.forEach(g => addFloatingText(Math.round(g.x), Math.round(g.y), g.isBoss ? `💀+${BOSS_GOLD_REWARD}🪙` : `+5🪙`, '#fbbf24'));
           // Record positions for necromancer to raise
           const now = Date.now();
@@ -2894,6 +2935,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                 }));
                 workerHitRef.current.set(wid, Date.now());
                 addFloatingText(capturedWX, capturedWY, `-${gruntDmg}`, '#ef4444');
+                Snd.hit();
                 triggerUnderAttackRef.current();
               }, GRUNT_ATTACK_MS);
             }
@@ -4882,7 +4924,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
             const heroAlive = workers.find(w => w.unitType === 'hero' && w.hp > 0);
             const hasMoraleAura = heroAlive && worker.unitType !== 'hero' && tileDist(worker.x, worker.y, heroAlive.x, heroAlive.y) <= 3;
             return <g key={`worker-${worker.id}`}
-              onClick={e => { e.stopPropagation(); if (!isDraggingRef.current && !buildMode) { setSelectedType('worker'); setWorkers(ws => ws.map(w => ({ ...w, selected: w.id === worker.id }))); } }}
+              onClick={e => { e.stopPropagation(); if (!isDraggingRef.current && !buildMode) { Snd.select(); setSelectedType('worker'); setWorkers(ws => ws.map(w => ({ ...w, selected: w.id === worker.id }))); } }}
               style={{ cursor: 'pointer' }}>
               {hasMoraleAura && <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 32} rx={26} ry={12} fill="none" stroke="#fbbf24" strokeWidth={1.5} strokeDasharray="3 2" opacity={0.6} />}
               {battleShoutUntil > Date.now() && heroAlive && tileDist(worker.x, worker.y, heroAlive.x, heroAlive.y) <= HERO_SHOUT_RADIUS && <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 32} rx={30} ry={14} fill="none" stroke="#fb923c" strokeWidth={2} strokeDasharray="5 3" opacity={0.85} />}

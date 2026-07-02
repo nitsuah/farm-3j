@@ -1,6 +1,6 @@
 # TASKS
 
-Last Updated: 2026-07-02 (iter90 — minimap fog of war)
+Last Updated: 2026-07-02 (iter91 — procedural sound effects)
 
 ## Farm RTS MVP (2026 Q2–Q3)
 
@@ -153,3 +153,4 @@ Last Updated: 2026-07-02 (iter90 — minimap fog of war)
 - [x] High-score leaderboard — top 5 runs saved to localStorage; shown on game-over screen with wave, kills, gold, result, date; sorted by wave then kills; gold medal color for #1 entry; AoE/WC3-style personal best tracking (2026-07-02)
 - [x] Battle report improvements — added stone mined🪨, buildings built, survivors count; now 8 stats total on game-over screen (2026-07-02)
 - [x] Hit-flash on damage — workers flash red, grunts flash white for 200ms when hit; uses lightweight per-unit timestamp refs (no state); covers grunt melee, archer tower, enemy fortress towers, and watchtower shots; classic action game damage feedback (2026-07-02)
+- [x] Procedural sound effects — Web Audio API synthesized sounds (no audio files); unit select, move, hit, death, build complete, gold deposit, wave warning, victory/defeat tones; lazy AudioContext init; Snd helper module at module scope (2026-07-02)
