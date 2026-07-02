@@ -3304,6 +3304,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
               delete buildingAttackTimeoutsRef.current[g.id];
               setPlacedBuildings(bs => bs.map(b => b.id === bid ? { ...b, hp: Math.max(0, b.hp - BUILDING_GRUNT_DAMAGE) } : b));
               addFloatingText(bx, by, `-${BUILDING_GRUNT_DAMAGE}`, '#f97316');
+              triggerUnderAttackRef.current({ x: bx, y: by });
             }, GRUNT_ATTACK_MS);
           }
           return { ...g, movingTo: null, path: [], state: 'attacking' };
@@ -4568,6 +4569,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
           return <span style={{ color: gameSpeed === 0 ? '#64748b' : urgent ? '#ef4444' : '#94a3b8', fontSize: 13, fontWeight: urgent ? 700 : 400, animation: urgent ? 'pulse 0.6s infinite' : 'none' }}>⏱ {secsLeft}s{gameSpeed === 0 ? ' ⏸' : ''}</span>;
         })()}
         {killCount > 0 && <span style={{ color: '#4ade80', fontSize: 14 }}>☠ {killCount}</span>}
+        {!gameOver && (() => { const elapsedMs = Date.now() - startTimeRef.current; const m = Math.floor(elapsedMs / 60000); const s = Math.floor((elapsedMs % 60000) / 1000); return <span style={{ color: '#475569', fontSize: 11 }} title="Game time">🕐 {m}:{String(s).padStart(2,'0')}</span>; })()}
         <span style={{ color: resources.food >= resources.foodCap ? '#ef4444' : '#fca5a5', fontWeight: resources.food >= resources.foodCap ? 700 : 400, marginLeft: 'auto', animation: resources.food >= resources.foodCap ? 'pulse 1s infinite' : 'none' }}>👥 {resources.food}/{resources.foodCap}{resources.food >= resources.foodCap ? ' ⚠' : ''}</span>
         {(enemyGrunts.length > 0 || enemyShamans.length > 0 || enemyTrolls.length > 0 || enemySiege.length > 0 || enemyWarchiefs.length > 0 || enemySappers.length > 0) && (
           <span style={{ color: '#f97316', fontSize: 12, display: 'flex', gap: 3, alignItems: 'center' }}>
