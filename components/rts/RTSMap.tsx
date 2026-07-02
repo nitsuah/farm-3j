@@ -169,7 +169,15 @@ const POISON_TOWER_ATTACK_MS = 3000;
 const POISON_TOWER_HP = 130;
 
 const LOOT_CRATE_POSITIONS = [
-  { x: 3, y: 10 }, { x: 10, y: 3 }, { x: 5, y: 15 }, { x: 15, y: 5 }, { x: 1, y: 1 }, { x: 7, y: 8 }, { x: 8, y: 7 }, { x: 13, y: 13 },
+  // Near player base
+  { x: 3, y: 10 }, { x: 10, y: 3 }, { x: 1, y: 6 }, { x: 6, y: 1 },
+  // Mid map
+  { x: 7, y: 9 }, { x: 9, y: 7 }, { x: 13, y: 5 }, { x: 5, y: 13 },
+  // Contested center
+  { x: 12, y: 12 }, { x: 10, y: 16 }, { x: 16, y: 10 },
+  // Deep map
+  { x: 18, y: 7 }, { x: 7, y: 18 }, { x: 20, y: 13 }, { x: 13, y: 20 },
+  { x: 22, y: 5 }, { x: 5, y: 22 }, { x: 17, y: 17 },
 ];
 
 interface FloatingText { id: number; x: number; y: number; text: string; color: string; createdAt: number }
@@ -1055,11 +1063,14 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
       setEnemyGrunts(gs => [...gs, boss]);
     }
 
-    const count = newWave % 3 === 0 ? 2 : 1;
+    // Scale count: 1-2 early, up to 4-6 by wave 20+; double on every 3rd wave
+    const baseCount = Math.min(6, 1 + Math.floor(newWave / 5));
+    const count = newWave % 3 === 0 ? baseCount + 2 : baseCount;
     for (let i = 0; i < count; i++) {
-      const ox = i === 0 ? 1 : -1;
+      const ox = (i % 3) - 1; // spread: -1, 0, +1
+      const oy = Math.floor(i / 3) % 2 === 0 ? 1 : -1;
       const cx = Math.max(0, Math.min(GRID_SIZE - 1, ENEMY_BARN_POS.x + ox));
-      const cy = Math.max(0, Math.min(GRID_SIZE - 1, ENEMY_BARN_POS.y + (Math.random() > 0.5 ? 1 : -1)));
+      const cy = Math.max(0, Math.min(GRID_SIZE - 1, ENEMY_BARN_POS.y + oy));
       const path = aStar(INITIAL_TILES, { x: cx, y: cy }, BARN_POS, true, wallSet);
       const grunt: EnemyGrunt = { id: gruntIdRef.current++, x: cx, y: cy, hp: gruntHp, maxHp: gruntHp, movingTo: path[0] ?? BARN_POS, path: path.slice(1), state: 'moving' };
       setEnemyGrunts(gs => [...gs, grunt]);
@@ -1193,24 +1204,25 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
     return () => { if (spawnTimerRef.current) clearTimeout(spawnTimerRef.current); };
   }, [gameOver, doSpawnWave]);
 
-  // Loot crate spawner — a random crate appears every 45s on a safe tile
+  // Loot crate spawner — 1-3 crates appear every 35s; more on later waves
   useEffect(() => {
     if (gameOver) return;
     const spawnCrate = () => {
       if (gameOverRef.current) return;
       const RESOURCES = [
-        { gold: 30, lumber: 0, stone: 0 }, { gold: 0, lumber: 25, stone: 0 }, { gold: 0, lumber: 0, stone: 20 },
-        { gold: 15, lumber: 10, stone: 0 }, { gold: 20, lumber: 0, stone: 15 },
+        { gold: 40, lumber: 0, stone: 0 }, { gold: 0, lumber: 30, stone: 0 }, { gold: 0, lumber: 0, stone: 25 },
+        { gold: 20, lumber: 15, stone: 0 }, { gold: 25, lumber: 0, stone: 20 }, { gold: 15, lumber: 15, stone: 10 },
       ];
-      const res = RESOURCES[Math.floor(Math.random() * RESOURCES.length)] ?? { gold: 30, lumber: 0, stone: 0 };
-      const candidates = LOOT_CRATE_POSITIONS.filter(p => {
-        const occupied = lootCrates.some(c => c.x === p.x && c.y === p.y);
-        return !occupied;
-      });
-      if (candidates.length === 0) { window.setTimeout(spawnCrate, LOOT_CRATE_SPAWN_MS); return; }
-      const pos = candidates[Math.floor(Math.random() * candidates.length)];
-      if (!pos) { window.setTimeout(spawnCrate, LOOT_CRATE_SPAWN_MS); return; }
-      setLootCrates(cs => [...cs, { id: lootCrateIdRef.current++, x: pos.x, y: pos.y, gold: res.gold, lumber: res.lumber, stone: res.stone }]);
+      const spawnCount = waveRef.current >= 10 ? 3 : waveRef.current >= 5 ? 2 : 1;
+      const occupied = new Set(lootCratesRef.current.map(c => `${c.x},${c.y}`));
+      const candidates = LOOT_CRATE_POSITIONS.filter(p => !occupied.has(`${p.x},${p.y}`));
+      for (let s = 0; s < spawnCount && candidates.length > 0; s++) {
+        const idx = Math.floor(Math.random() * candidates.length);
+        const pos = candidates.splice(idx, 1)[0];
+        if (!pos) break;
+        const res = RESOURCES[Math.floor(Math.random() * RESOURCES.length)] ?? { gold: 30, lumber: 0, stone: 0 };
+        setLootCrates(cs => [...cs, { id: lootCrateIdRef.current++, x: pos.x, y: pos.y, gold: res.gold, lumber: res.lumber, stone: res.stone }]);
+      }
       window.setTimeout(spawnCrate, LOOT_CRATE_SPAWN_MS);
     };
     const t = window.setTimeout(spawnCrate, LOOT_CRATE_SPAWN_MS);

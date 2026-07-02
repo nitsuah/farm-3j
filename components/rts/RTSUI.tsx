@@ -2,9 +2,9 @@ import React from 'react';
 
 // Keep in sync with RTSMap.tsx constants
 const LUMBER_SHED_BONUS_MS = 200;
-const MINIMAP_GRID = 17;
+const MINIMAP_GRID = 25;
 const MINIMAP_BARN = { x: 2, y: 2 };
-const MINIMAP_ENEMY_BARN = { x: 14, y: 14 };
+const MINIMAP_ENEMY_BARN = { x: 22, y: 22 };
 
 export interface WorkerState {
   id: number;
@@ -767,7 +767,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
             </div>
             <span className="text-xs text-red-300">{enemyBarnHp}/{enemyBarnMaxHp}</span>
           </div>
-          <svg className="mt-1.5 h-16 w-full cursor-crosshair rounded border border-slate-700 bg-slate-800/80" viewBox={`0 0 ${MINIMAP_GRID} ${MINIMAP_GRID}`} preserveAspectRatio="xMidYMid meet" onClick={e => { const rect = e.currentTarget.getBoundingClientRect(); const tx = Math.round(((e.clientX - rect.left) / rect.width) * MINIMAP_GRID); const ty = Math.round(((e.clientY - rect.top) / rect.height) * MINIMAP_GRID); onMinimapClick(tx, ty); }}>
+          <svg className="mt-1.5 h-24 w-full cursor-crosshair rounded border border-slate-700 bg-slate-800/80" viewBox={`0 0 ${MINIMAP_GRID} ${MINIMAP_GRID}`} preserveAspectRatio="xMidYMid meet" onClick={e => { const rect = e.currentTarget.getBoundingClientRect(); const tx = Math.round(((e.clientX - rect.left) / rect.width) * MINIMAP_GRID); const ty = Math.round(((e.clientY - rect.top) / rect.height) * MINIMAP_GRID); onMinimapClick(tx, ty); }}>
             {/* Resource nodes */}
             {minimapData.treeNodes.map((n, i) => (
               <rect key={`t${i}`} x={n.x - 0.35} y={n.y - 0.35} width={0.7} height={0.7} fill="#15803d" opacity={0.7} />
