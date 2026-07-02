@@ -4661,6 +4661,35 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
           )}
 
           {/* Build ghost */}
+          {/* Enemy unit range rings — troll archers, demolishers, enemy towers */}
+          {enemyTrolls.filter(t => t.hp > 0 && fogVisible[t.x]?.[t.y]).map(t => {
+            const { isoX, isoY } = tileToSvg(t.x, t.y);
+            return <ellipse key={`troll-range-${t.id}`} cx={isoX + TILE_SIZE / 2} cy={isoY + TILE_SIZE / 4}
+              rx={TROLL_ATTACK_RANGE * TILE_SIZE} ry={TROLL_ATTACK_RANGE * TILE_SIZE / 2}
+              fill="none" stroke="#f97316" strokeWidth={1} strokeDasharray="5 3" opacity={0.3} pointerEvents="none" />;
+          })}
+          {enemySiege.filter(r => r.hp > 0 && fogVisible[r.x]?.[r.y]).map(r => {
+            const { isoX, isoY } = tileToSvg(r.x, r.y);
+            return <ellipse key={`demo-range-${r.id}`} cx={isoX + TILE_SIZE / 2} cy={isoY + TILE_SIZE / 4}
+              rx={DEMOLISHER_FIRE_RANGE * TILE_SIZE} ry={DEMOLISHER_FIRE_RANGE * TILE_SIZE / 2}
+              fill="none" stroke="#ef4444" strokeWidth={1} strokeDasharray="5 3" opacity={0.3} pointerEvents="none" />;
+          })}
+          {enemyTowers.filter(t => t.hp > 0 && fogVisible[t.x]?.[t.y]).map(t => {
+            const { isoX, isoY } = tileToSvg(t.x, t.y);
+            const r = t.id === -1 ? ARCHER_TOWER_RANGE : ENEMY_TOWER_RANGE;
+            return <ellipse key={`etower-range-${t.id}`} cx={isoX + TILE_SIZE / 2} cy={isoY + TILE_SIZE / 4}
+              rx={r * TILE_SIZE} ry={r * TILE_SIZE / 2}
+              fill="none" stroke="#a855f7" strokeWidth={1} strokeDasharray="5 3" opacity={0.25} pointerEvents="none" />;
+          })}
+          {/* Player barn defense range ring */}
+          {(() => {
+            const { isoX, isoY } = tileToSvg(BARN_POS.x, BARN_POS.y);
+            const BARN_DEFENSE_DISPLAY_RANGE = 4;
+            return <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + TILE_SIZE / 4}
+              rx={BARN_DEFENSE_DISPLAY_RANGE * TILE_SIZE} ry={BARN_DEFENSE_DISPLAY_RANGE * TILE_SIZE / 2}
+              fill="none" stroke="#fbbf24" strokeWidth={1} strokeDasharray="5 3" opacity={0.2} pointerEvents="none" />;
+          })()}
+
           {/* Tower range rings — faint ellipses for all built defensive towers */}
           {(() => {
             const TOWER_RANGES: Partial<Record<BuildingType, number>> = {
