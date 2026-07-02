@@ -787,6 +787,9 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
   useEffect(() => { towerGarrisonRef.current = towerGarrison; }, [towerGarrison]);
 
   const [heroRecruited, setHeroRecruited] = useState(false);
+  const [heroReviveAt, setHeroReviveAt] = useState<number | null>(null); // timestamp when auto-revive completes
+  const [heroReviveCountdown, setHeroReviveCountdown] = useState(0);
+  const heroXpRef = useRef<{ xp: number; level: number } | null>(null); // preserve XP/level across death
   const [heroAbilityCooldown, setHeroAbilityCooldown] = useState(0);
   useEffect(() => {
     if (heroAbilityCooldown <= 0) return;
@@ -997,6 +1000,39 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
     const { isoX, isoY } = tileToSvg(tileX, tileY);
     setFloatingTexts(ts => [...ts, { id: floatingTextIdRef.current++, x: isoX + TILE_SIZE / 2 + (Math.random() * 20 - 10), y: isoY + 10, text, color, createdAt: Date.now() }]);
   }, []);
+
+  // Hero revive timer — ticks down, spawns hero on completion
+  useEffect(() => {
+    if (heroReviveAt === null) { setHeroReviveCountdown(0); return; }
+    const id = setInterval(() => {
+      const remaining = Math.max(0, Math.ceil((heroReviveAt - Date.now()) / 1000));
+      setHeroReviveCountdown(remaining);
+      if (remaining <= 0) {
+        clearInterval(id);
+        setHeroReviveAt(null);
+        setWorkers(ws => {
+          const newId = Math.max(...ws.map(w => w.id), 0) + 1;
+          const hero = makeUnit(newId, BARN_POS.x, BARN_POS.y, 'hero');
+          const saved = heroXpRef.current;
+          return [...ws, saved ? { ...hero, xp: saved.xp, level: saved.level, maxHp: HERO_MAX_HP + saved.level * 10, hp: HERO_MAX_HP + saved.level * 10 } : hero];
+        });
+        addFloatingText(BARN_POS.x, BARN_POS.y, '🦸 Barnabas Returns!', '#fbbf24');
+      }
+    }, 500);
+    return () => clearInterval(id);
+  }, [heroReviveAt, addFloatingText]);
+
+  // Detect hero death → start auto-revive timer
+  useEffect(() => {
+    if (!heroRecruited || heroReviveAt !== null || gameOver) return;
+    const hero = workers.find(w => w.unitType === 'hero');
+    if (!hero || hero.hp > 0) return;
+    heroXpRef.current = { xp: hero.xp, level: hero.level };
+    const reviveDelay = Math.min(60000, 20000 + waveRef.current * 2000);
+    setHeroReviveAt(Date.now() + reviveDelay);
+    setWorkers(ws => ws.filter(w => w.unitType !== 'hero'));
+    addFloatingText(hero.x, hero.y, '🦸 Barnabas Fallen!', '#f97316');
+  }, [workers, heroRecruited, heroReviveAt, gameOver, addFloatingText]);
 
   // Projectile system — flying arrows/rocks/ice bolts
   interface Projectile { id: number; fx: number; fy: number; tx: number; ty: number; type: 'arrow' | 'bolt' | 'rock' | 'ice' | 'poison'; createdAt: number; duration: number; }
@@ -4974,6 +5010,21 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
         onGarrison={handleGarrison}
         onUngarrison={handleUngarrison}
         heroRecruited={heroRecruited}
+        heroReviveCountdown={heroReviveCountdown}
+        heroReviveCost={Math.min(200, 80 + wave * 5)}
+        onInstantRevive={() => {
+          const cost = Math.min(200, 80 + wave * 5);
+          if (resources.gold < cost) return;
+          setResources(r => ({ ...r, gold: r.gold - cost }));
+          setHeroReviveAt(null);
+          const saved = heroXpRef.current;
+          setWorkers(ws => {
+            const newId = Math.max(...ws.map(w => w.id), 0) + 1;
+            const hero = makeUnit(newId, BARN_POS.x, BARN_POS.y, 'hero');
+            return [...ws, saved ? { ...hero, xp: saved.xp, level: saved.level, maxHp: HERO_MAX_HP + saved.level * 10, hp: HERO_MAX_HP + saved.level * 10 } : hero];
+          });
+          addFloatingText(BARN_POS.x, BARN_POS.y, '🦸 Revived!', '#fbbf24');
+        }}
         heroAbilityCooldown={heroAbilityCooldown}
         onHeroAbility={handleHeroAbility}
         heroShoutCooldown={heroShoutCooldown}

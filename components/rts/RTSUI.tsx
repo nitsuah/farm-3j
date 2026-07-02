@@ -87,6 +87,9 @@ interface RTSUIProps {
   onGarrison: () => void;
   onUngarrison: () => void;
   heroRecruited: boolean;
+  heroReviveCountdown: number;
+  heroReviveCost: number;
+  onInstantRevive: () => void;
   heroAbilityCooldown: number;
   onHeroAbility: () => void;
   heroShoutCooldown: number;
@@ -183,6 +186,9 @@ export const RTSUI: React.FC<RTSUIProps> = ({
   onGarrison,
   onUngarrison,
   heroRecruited,
+  heroReviveCountdown,
+  heroReviveCost,
+  onInstantRevive,
   heroAbilityCooldown,
   onHeroAbility,
   heroShoutCooldown,
@@ -578,15 +584,32 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                     </button>
                   )}
                   {hasBarracks && (
-                    <button
-                      type="button"
-                      className="col-span-2 rounded border border-yellow-400/70 bg-yellow-500/15 px-2 py-2 text-xs text-yellow-100 hover:bg-yellow-500/30 disabled:opacity-40"
-                      onClick={onRecruitHero}
-                      disabled={heroRecruited || resources.gold < 150 || resources.food >= resources.foodCap}
-                      title={heroRecruited ? 'Barnabas already recruited (one hero per game)' : 'Recruit Barnabas — 150🪙, 150HP, +20 dmg, ⚡ Rallying Cry ability'}
-                    >
-                      {heroRecruited ? '🦸 Hero Recruited' : '🦸 Recruit Hero 150🪙'}
-                    </button>
+                    heroReviveCountdown > 0 ? (
+                      <div className="col-span-2 flex flex-col gap-1">
+                        <div className="rounded border border-orange-400/50 bg-orange-500/10 px-2 py-1 text-xs text-orange-200 text-center">
+                          ⏳ Barnabas reviving in {heroReviveCountdown}s…
+                        </div>
+                        <button
+                          type="button"
+                          className="rounded border border-yellow-400/70 bg-yellow-500/20 px-2 py-1 text-xs text-yellow-100 hover:bg-yellow-500/40 disabled:opacity-40"
+                          onClick={onInstantRevive}
+                          disabled={resources.gold < heroReviveCost}
+                          title={`Instantly revive Barnabas — ${heroReviveCost}🪙`}
+                        >
+                          ⚡ Revive Now ({heroReviveCost}🪙)
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        className="col-span-2 rounded border border-yellow-400/70 bg-yellow-500/15 px-2 py-2 text-xs text-yellow-100 hover:bg-yellow-500/30 disabled:opacity-40"
+                        onClick={onRecruitHero}
+                        disabled={heroRecruited || resources.gold < 150 || resources.food >= resources.foodCap}
+                        title={heroRecruited ? 'Barnabas already recruited (one hero per game)' : 'Recruit Barnabas — 150🪙, 150HP, +20 dmg, ⚡ Rallying Cry ability'}
+                      >
+                        {heroRecruited ? '🦸 Hero Active' : '🦸 Recruit Hero 150🪙'}
+                      </button>
+                    )
                   )}
                   {hasStable && (
                     <button
