@@ -4203,6 +4203,33 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
           ⚠ UNDER ATTACK ⚠
         </div>
       )}
+      {(() => {
+        const idleCount = workers.filter(w => w.hp > 0 && w.unitType === 'farmer' && w.state === 'idle' && !w.gathering && !w.attacking && !w.repairing).length;
+        if (idleCount === 0) return null;
+        return (
+          <button
+            type="button"
+            onClick={() => {
+              setWorkers(ws => {
+                const idleWorkers = ws.filter(w => w.hp > 0 && w.state === 'idle' && !w.gathering && !w.attacking && !w.repairing);
+                if (idleWorkers.length === 0) return ws;
+                const idx = idleWorkerIndexRef.current % idleWorkers.length;
+                idleWorkerIndexRef.current = (idx + 1) % idleWorkers.length;
+                const target = idleWorkers[idx] ?? idleWorkers[0];
+                if (!target) return ws;
+                const { isoX, isoY } = tileToSvg(target.x, target.y);
+                const svgEl = svgRef.current;
+                if (svgEl) { const rect = svgEl.getBoundingClientRect(); setCamera({ x: rect.width / 2 - isoX - TILE_SIZE / 2, y: rect.height / 2 - isoY - 18 }); }
+                return ws.map(w => ({ ...w, selected: w.id === target.id }));
+              });
+              setSelectedType('worker');
+            }}
+            style={{ position: 'absolute', top: underAttack ? 90 : 56, left: '50%', transform: 'translateX(-50%)', background: 'rgba(124,45,18,0.92)', color: '#fed7aa', fontSize: 13, fontWeight: 700, padding: '5px 18px', borderRadius: 8, zIndex: 24, border: '1.5px solid #f97316', cursor: 'pointer', letterSpacing: 0.5 }}
+          >
+            🧑‍🌾 {idleCount} idle worker{idleCount > 1 ? 's' : ''} — click to select
+          </button>
+        );
+      })()}
 
       {/* Shrine buff indicators */}
       {(shrineWarBuff || shrinePlentyBuff) && (
@@ -5076,6 +5103,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
               {hasMoraleAura && <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 32} rx={26} ry={12} fill="none" stroke="#fbbf24" strokeWidth={1.5} strokeDasharray="3 2" opacity={0.6} />}
               {battleShoutUntil > Date.now() && heroAlive && tileDist(worker.x, worker.y, heroAlive.x, heroAlive.y) <= HERO_SHOUT_RADIUS && <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 32} rx={30} ry={14} fill="none" stroke="#fb923c" strokeWidth={2} strokeDasharray="5 3" opacity={0.85} />}
               {worker.selected && <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 32} rx={worker.unitType === 'hero' ? 26 : worker.unitType === 'catapult' || worker.unitType === 'trebuchet' ? 28 : 22} ry={10} fill="none" stroke={worker.unitType === 'hero' ? '#fbbf24' : worker.unitType === 'catapult' ? '#ea580c' : worker.unitType === 'trebuchet' ? '#92400e' : worker.unitType === 'swordsman' ? '#f87171' : '#38bdf8'} strokeWidth={3} />}
+              {!worker.selected && worker.hp > 0 && worker.unitType === 'farmer' && worker.state === 'idle' && !worker.gathering && !worker.attacking && !worker.repairing && <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 32} rx={20} ry={9} fill="none" stroke="#f97316" strokeWidth={1.5} strokeDasharray="3 2" opacity={0.7} pointerEvents="none" />}
               {(() => { const hit = workerHitRef.current.get(worker.id); const age = hit ? Date.now() - hit : 999; return age < 200 ? <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 18} rx={20} ry={14} fill="#ef4444" opacity={0.45 * (1 - age / 200)} pointerEvents="none" /> : null; })()}
               {worker.holdPosition && <text x={isoX + TILE_SIZE / 2 + 14} y={isoY - 2} textAnchor="middle" fontSize="12">🛡️</text>}
               {worker.unitType === 'cavalry' ? (
