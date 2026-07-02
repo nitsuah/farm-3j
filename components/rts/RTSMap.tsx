@@ -876,6 +876,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
   const [gameSpeed, setGameSpeed] = useState(1);
   const gameSpeedRef = useRef(1);
   useEffect(() => { gameSpeedRef.current = gameSpeed; }, [gameSpeed]);
+  const barnDmgThisWaveRef = useRef(0); // tracks barn HP lost this wave for clear-bonus
 
   const [enemyBarnHp, setEnemyBarnHp] = useState(() => INITIAL_SAVE?.enemyBarnHp ?? ENEMY_BARN_MAX_HP);
   const enemyBarnHpRef = useRef(INITIAL_SAVE?.enemyBarnHp ?? ENEMY_BARN_MAX_HP);
@@ -1196,6 +1197,13 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
   const doSpawnWave = useCallback(() => {
     if (gameOverRef.current) return;
     const newWave = waveRef.current + 1;
+    // Wave clear bonus: if barn took no damage last wave, award bonus gold
+    if (newWave > 1 && barnDmgThisWaveRef.current === 0) {
+      const bonus = 20 + newWave * 3;
+      setResources(r => ({ ...r, gold: r.gold + bonus }));
+      addFloatingText(BARN_POS.x, BARN_POS.y, `✨ Flawless! +${bonus}🪙`, '#fbbf24');
+    }
+    barnDmgThisWaveRef.current = 0;
     waveRef.current = newWave;
     setWave(newWave);
     Snd.waveWarning();
@@ -1481,6 +1489,29 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
     };
     archerTowerTimerRef.current = window.setTimeout(fireArrow, ARCHER_TOWER_ATTACK_MS);
     return () => { if (archerTowerTimerRef.current) { clearTimeout(archerTowerTimerRef.current); archerTowerTimerRef.current = null; } };
+  }, [gameOver, addFloatingText, addProjectile]);
+
+  // Enemy barn counterfire: shoots at player units within 5 tiles
+  const enemyBarnFireTimerRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (gameOver) return;
+    const BARN_COUNTER_RANGE = 5;
+    const BARN_COUNTER_DMG = 7;
+    const BARN_COUNTER_MS = 3000;
+    const fire = () => {
+      if (gameOverRef.current || enemyBarnHpRef.current <= 0) return;
+      const inRange = workersRef.current.filter(w => w.hp > 0 && tileDist(w.x, w.y, ENEMY_BARN_POS.x, ENEMY_BARN_POS.y) <= BARN_COUNTER_RANGE);
+      if (inRange.length > 0) {
+        const target = inRange.reduce((a, b) => tileDist(a.x, a.y, ENEMY_BARN_POS.x, ENEMY_BARN_POS.y) < tileDist(b.x, b.y, ENEMY_BARN_POS.x, ENEMY_BARN_POS.y) ? a : b);
+        workerHitRef.current.set(target.id, Date.now());
+        setWorkers(prev => prev.map(w => w.id === target.id ? { ...w, hp: Math.max(0, w.hp - BARN_COUNTER_DMG) } : w));
+        addFloatingText(Math.round(target.x), Math.round(target.y), `🏴‍☠️-${BARN_COUNTER_DMG}`, '#ef4444');
+        addProjectile(ENEMY_BARN_POS.x, ENEMY_BARN_POS.y, Math.round(target.x), Math.round(target.y), 'arrow', 650);
+      }
+      enemyBarnFireTimerRef.current = window.setTimeout(fire, BARN_COUNTER_MS);
+    };
+    enemyBarnFireTimerRef.current = window.setTimeout(fire, BARN_COUNTER_MS);
+    return () => { if (enemyBarnFireTimerRef.current) clearTimeout(enemyBarnFireTimerRef.current); };
   }, [gameOver, addFloatingText, addProjectile]);
 
   // Enemy fortress towers fire at workers in range
@@ -3137,6 +3168,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
               const rawBarnDmg = g.isBoss ? BOSS_DAMAGE : GRUNT_DAMAGE;
               const barnDmg = Math.max(1, rawBarnDmg - barnArmor);
               Snd.hit();
+              barnDmgThisWaveRef.current += barnDmg;
               setPlayerBarnHp(hp => { const nHp = Math.max(0, hp - barnDmg); if (nHp <= 0) setGameOver('defeat'); return nHp; });
               addFloatingText(BARN_POS.x, BARN_POS.y, `-${barnDmg}`, g.isBoss ? '#dc2626' : '#ef4444');
               triggerUnderAttackRef.current({ x: BARN_POS.x, y: BARN_POS.y });
@@ -3202,6 +3234,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
                   setPlacedBuildings(bs => bs.map(b => tileDist(tx, ty, b.x, b.y) <= DEMOLISHER_SPLASH_RANGE ? { ...b, hp: Math.max(0, b.hp - DEMOLISHER_DAMAGE) } : b));
                   // Direct barn hit
                   if (tileDist(tx, ty, BARN_POS.x, BARN_POS.y) <= DEMOLISHER_SPLASH_RANGE) {
+                    barnDmgThisWaveRef.current += DEMOLISHER_DAMAGE;
                     setPlayerBarnHp(hp => { const nHp = Math.max(0, hp - DEMOLISHER_DAMAGE); if (nHp <= 0) setGameOver('defeat'); return nHp; });
                     triggerUnderAttackRef.current({ x: BARN_POS.x, y: BARN_POS.y });
                     triggerShakeRef.current(1.5);
