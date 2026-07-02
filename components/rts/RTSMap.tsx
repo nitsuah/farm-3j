@@ -4661,6 +4661,14 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
           )}
 
           {/* Build ghost */}
+          {/* Warchief stomp radius — always shown as threat indicator */}
+          {enemyWarchiefs.filter(wc => wc.hp > 0 && fogVisible[Math.round(wc.x)]?.[Math.round(wc.y)]).map(wc => {
+            const { isoX, isoY } = tileToSvg(wc.x, wc.y);
+            return <ellipse key={`warchief-range-${wc.id}`} cx={isoX + TILE_SIZE / 2} cy={isoY + TILE_SIZE / 4}
+              rx={WARCHIEF_STOMP_RADIUS * TILE_SIZE} ry={WARCHIEF_STOMP_RADIUS * TILE_SIZE / 2}
+              fill="none" stroke="#f59e0b" strokeWidth={1.5} strokeDasharray="6 3" opacity={0.35} pointerEvents="none" />;
+          })}
+
           {/* Enemy unit range rings — troll archers, demolishers, enemy towers */}
           {enemyTrolls.filter(t => t.hp > 0 && fogVisible[t.x]?.[t.y]).map(t => {
             const { isoX, isoY } = tileToSvg(t.x, t.y);

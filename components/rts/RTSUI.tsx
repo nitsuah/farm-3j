@@ -253,6 +253,9 @@ export const RTSUI: React.FC<RTSUIProps> = ({
   type FhTab = 'base' | 'build' | 'train' | 'tech';
   const [fhTab, setFhTab] = useState<FhTab>('base');
 
+  const fmtCost = (c: { gold: number; lumber: number; stone: number }) =>
+    [c.gold > 0 && `${c.gold}🪙`, c.lumber > 0 && `${c.lumber}🌲`, c.stone > 0 && `${c.stone}🪨`].filter(Boolean).join(' ');
+
   const tabBtn = (tab: FhTab, label: string) => (
     <button type="button" onClick={() => setFhTab(tab)}
       className={`flex-1 rounded-t px-2 py-1 text-xs font-semibold transition-colors ${fhTab === tab ? 'bg-amber-700/60 text-amber-100' : 'bg-slate-800/60 text-slate-400 hover:bg-slate-700/60'}`}>
@@ -510,37 +513,45 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                         </div>
                       )}
                       <div className="grid grid-cols-2 gap-1.5">
-                        {hasBarracks && (
+                        {hasBarracks ? (
                           <button type="button"
-                            className="rounded border border-rose-500/70 bg-rose-500/15 py-2.5 text-xs text-rose-100 hover:bg-rose-500/30 disabled:opacity-40"
+                            className="flex flex-col items-center rounded border border-rose-500/70 bg-rose-500/15 py-1.5 text-xs text-rose-100 hover:bg-rose-500/30 disabled:opacity-40"
                             onClick={() => onFarmhouseAction('trainSwordsman')}
                             disabled={resources.gold < 50 || resources.food >= resources.foodCap || trainingQueue.length >= 5}
                             title="Train Swordsman — 50🪙, 80HP, +10 dmg"
-                          >⚔️ Sword 50🪙 <span className="opacity-50">[Q]</span></button>
+                          ><span>⚔️ Swordsman <span className="opacity-50">[Q]</span></span><span className="text-[10px] text-amber-300/80 mt-0.5">50🪙</span></button>
+                        ) : (
+                          <div className="flex flex-col items-center rounded border border-slate-600/40 bg-slate-800/30 py-1.5 text-xs text-slate-500" title="Build Barracks first">⚔️ Swordsman<span className="text-[10px] mt-0.5">🔒 Barracks</span></div>
                         )}
-                        {hasStable && (
+                        {hasStable ? (
                           <button type="button"
-                            className="rounded border border-amber-500/70 bg-amber-500/15 py-2.5 text-xs text-amber-100 hover:bg-amber-500/30 disabled:opacity-40"
+                            className="flex flex-col items-center rounded border border-amber-500/70 bg-amber-500/15 py-1.5 text-xs text-amber-100 hover:bg-amber-500/30 disabled:opacity-40"
                             onClick={() => onFarmhouseAction('trainCavalry')}
                             disabled={resources.gold < 60 || resources.food >= resources.foodCap || trainingQueue.length >= 5}
                             title="Train Cavalry — 60🪙, 2× speed"
-                          >🐴 Cavalry 60🪙 <span className="opacity-50">[R]</span></button>
+                          ><span>🐴 Cavalry <span className="opacity-50">[R]</span></span><span className="text-[10px] text-amber-300/80 mt-0.5">60🪙</span></button>
+                        ) : (
+                          <div className="flex flex-col items-center rounded border border-slate-600/40 bg-slate-800/30 py-1.5 text-xs text-slate-500" title="Build Stable first">🐴 Cavalry<span className="text-[10px] mt-0.5">🔒 Stable</span></div>
                         )}
-                        {hasSiegeWorkshop && (
+                        {hasSiegeWorkshop ? (
                           <button type="button"
-                            className="rounded border border-orange-500/70 bg-orange-500/15 py-2.5 text-xs text-orange-100 hover:bg-orange-500/30 disabled:opacity-40"
+                            className="flex flex-col items-center rounded border border-orange-500/70 bg-orange-500/15 py-1.5 text-xs text-orange-100 hover:bg-orange-500/30 disabled:opacity-40"
                             onClick={() => onFarmhouseAction('trainCatapult')}
                             disabled={resources.gold < 150 || resources.lumber < 80 || resources.food >= resources.foodCap}
                             title="Train Catapult — 150🪙 80🌲, AoE 6-tile range"
-                          >🪨 Catapult 150🪙</button>
+                          ><span>🪨 Catapult</span><span className="text-[10px] text-amber-300/80 mt-0.5">150🪙 80🌲</span></button>
+                        ) : (
+                          <div className="flex flex-col items-center rounded border border-slate-600/40 bg-slate-800/30 py-1.5 text-xs text-slate-500" title="Build Siege Workshop first">🪨 Catapult<span className="text-[10px] mt-0.5">🔒 Siege Wksp</span></div>
                         )}
-                        {hasSiegeWorkshop && (
+                        {hasSiegeWorkshop ? (
                           <button type="button"
-                            className="rounded border border-yellow-700/70 bg-yellow-900/20 py-2.5 text-xs text-yellow-100 hover:bg-yellow-900/40 disabled:opacity-40"
+                            className="flex flex-col items-center rounded border border-yellow-700/70 bg-yellow-900/20 py-1.5 text-xs text-yellow-100 hover:bg-yellow-900/40 disabled:opacity-40"
                             onClick={() => onFarmhouseAction('trainTrebuchet')}
                             disabled={resources.gold < 200 || resources.lumber < 80 || resources.stone < 60 || resources.food >= resources.foodCap}
                             title="Train Trebuchet — long-range siege"
-                          >🏰 Trebuchet 200🪙</button>
+                          ><span>🏰 Trebuchet</span><span className="text-[10px] text-amber-300/80 mt-0.5">200🪙 80🌲 60🪨</span></button>
+                        ) : (
+                          <div className="flex flex-col items-center rounded border border-slate-600/40 bg-slate-800/30 py-1.5 text-xs text-slate-500" title="Build Siege Workshop first">🏰 Trebuchet<span className="text-[10px] mt-0.5">🔒 Siege Wksp</span></div>
                         )}
                       </div>
                       {hasBarracks && (
@@ -564,26 +575,46 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                     </div>
                   )}
 
-                  {/* BUILD tab — all buildings */}
-                  {fhTab === 'build' && (
-                    <div className="grid grid-cols-3 gap-1.5 pt-1">
-                      <button type="button" className="rounded border border-green-500/70 bg-green-500/15 py-2.5 text-xs text-green-100 hover:bg-green-500/30 disabled:opacity-40" onClick={() => onFarmhouseAction('build:farmhouse')} disabled={!canAfford(buildingCosts.farmhouse)} title="+5 food cap">🏠 Farm</button>
-                      <button type="button" className="rounded border border-slate-500/70 bg-slate-500/15 py-2.5 text-xs text-slate-100 hover:bg-slate-500/30 disabled:opacity-40" onClick={() => onFarmhouseAction('build:watchtower')} disabled={!canAfford(buildingCosts.watchtower)} title="Watchtower — vision + arrows">🗼 Tower</button>
-                      <button type="button" className="rounded border border-yellow-700/70 bg-yellow-900/20 py-2.5 text-xs text-yellow-100 hover:bg-yellow-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:lumberShed')} disabled={!canAfford(buildingCosts.lumberShed)} title={`Lumber Shed -${LUMBER_SHED_BONUS_MS}ms gather`}>🪵 Shed</button>
-                      <button type="button" className="rounded border border-amber-700/70 bg-amber-900/20 py-2.5 text-xs text-amber-100 hover:bg-amber-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:wall')} disabled={!canAfford(buildingCosts.wall)} title="Palisade Wall">🧱 Wall</button>
-                      <button type="button" className="rounded border border-lime-600/70 bg-lime-900/20 py-2.5 text-xs text-lime-100 hover:bg-lime-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:windmill')} disabled={!canAfford(buildingCosts.windmill)} title="+2🪙/5s">💨 Mill</button>
-                      <button type="button" className="rounded border border-red-700/70 bg-red-900/20 py-2.5 text-xs text-red-100 hover:bg-red-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:barracks')} disabled={!canAfford(buildingCosts.barracks)} title="Train Swordsmen">🏯 Barracks</button>
-                      <button type="button" className="rounded border border-orange-600/70 bg-orange-900/20 py-2.5 text-xs text-orange-100 hover:bg-orange-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:siegeWorkshop')} disabled={!canAfford(buildingCosts.siegeWorkshop)} title="Train Catapults">⚙️ Siege</button>
-                      <button type="button" className="rounded border border-emerald-600/70 bg-emerald-900/20 py-2.5 text-xs text-emerald-100 hover:bg-emerald-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:market')} disabled={!canAfford(buildingCosts.market)} title="Trade resources">🏪 Market</button>
-                      <button type="button" className="rounded border border-red-800/70 bg-red-950/30 py-2.5 text-xs text-red-100 hover:bg-red-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:blacksmith')} disabled={!canAfford(buildingCosts.blacksmith)} title="Upgrade attack + armor">🔨 Smith</button>
-                      <button type="button" className="rounded border border-yellow-600/70 bg-yellow-900/20 py-2.5 text-xs text-yellow-100 hover:bg-yellow-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:granary')} disabled={!canAfford(buildingCosts.granary)} title={`+${buildingCosts.granary.foodCapBonus} pop cap`}>🌾 Granary</button>
-                      <button type="button" className="rounded border border-amber-500/70 bg-amber-900/20 py-2.5 text-xs text-amber-100 hover:bg-amber-900/40 disabled:opacity-40" onClick={() => onFarmhouseAction('build:stable')} disabled={!canAfford(buildingCosts.stable)} title="Train Cavalry">🐴 Stable</button>
-                      <button type="button" className="rounded border border-yellow-700/70 bg-yellow-900/20 py-2.5 text-xs text-yellow-200 hover:bg-yellow-800/30 disabled:opacity-40" onClick={() => onFarmhouseAction('build:spikeTrap')} disabled={!canAfford(buildingCosts.spikeTrap)} title="20 dmg on step, 30s cooldown">🪤 Trap</button>
-                      <button type="button" className="rounded border border-cyan-700/70 bg-cyan-900/20 py-2.5 text-xs text-cyan-200 hover:bg-cyan-800/30 disabled:opacity-40" onClick={() => onFarmhouseAction('build:frostTower')} disabled={!canAfford(buildingCosts.frostTower)} title="Slow + 5 dmg, 4.5-tile range">❄️ Frost</button>
-                      <button type="button" className="rounded border border-yellow-700/70 bg-yellow-900/20 py-2.5 text-xs text-yellow-200 hover:bg-yellow-800/30 disabled:opacity-40" onClick={() => onFarmhouseAction('build:ballista')} disabled={!canAfford(buildingCosts.ballista)} title="18 dmg pierce, 6.5-tile range">🏹 Ballista</button>
-                      <button type="button" className="rounded border border-green-500/70 bg-green-500/15 py-2.5 text-xs text-green-100 hover:bg-green-500/30 disabled:opacity-40" onClick={() => onFarmhouseAction('build:poisonTower')} disabled={!canAfford(buildingCosts.poisonTower)} title="8 dmg + 3/s poison, 5-tile">☠️ Poison</button>
-                    </div>
-                  )}
+                  {/* BUILD tab — all buildings with inline costs */}
+                  {fhTab === 'build' && (() => {
+                    type BEntry = { key: BuildingType; icon: string; label: string; border: string; bg: string; hover: string; text: string; desc: string };
+                    const buildings: BEntry[] = [
+                      { key: 'farmhouse',    icon: '🏠', label: 'Farmhouse',  border: 'border-green-500/70',  bg: 'bg-green-500/15',  hover: 'hover:bg-green-500/30',  text: 'text-green-100',  desc: '+5 food cap' },
+                      { key: 'watchtower',   icon: '🗼', label: 'Watchtower', border: 'border-slate-500/70',  bg: 'bg-slate-500/15',  hover: 'hover:bg-slate-500/30',  text: 'text-slate-100',  desc: 'Vision + arrows' },
+                      { key: 'lumberShed',   icon: '🪵', label: 'Lumber Shed',border: 'border-yellow-700/70', bg: 'bg-yellow-900/20', hover: 'hover:bg-yellow-900/40', text: 'text-yellow-100', desc: `-${LUMBER_SHED_BONUS_MS}ms gather` },
+                      { key: 'wall',         icon: '🧱', label: 'Wall',       border: 'border-amber-700/70',  bg: 'bg-amber-900/20',  hover: 'hover:bg-amber-900/40',  text: 'text-amber-100',  desc: 'Blocks grunts' },
+                      { key: 'windmill',     icon: '💨', label: 'Windmill',   border: 'border-lime-600/70',   bg: 'bg-lime-900/20',   hover: 'hover:bg-lime-900/40',   text: 'text-lime-100',   desc: '+2🪙/5s' },
+                      { key: 'granary',      icon: '🌾', label: 'Granary',    border: 'border-yellow-600/70', bg: 'bg-yellow-900/20', hover: 'hover:bg-yellow-900/40', text: 'text-yellow-100', desc: `+${buildingCosts.granary.foodCapBonus} pop` },
+                      { key: 'barracks',     icon: '🏯', label: 'Barracks',   border: 'border-red-700/70',    bg: 'bg-red-900/20',    hover: 'hover:bg-red-900/40',    text: 'text-red-100',    desc: 'Unlocks ⚔️ Sword' },
+                      { key: 'stable',       icon: '🐴', label: 'Stable',     border: 'border-amber-500/70',  bg: 'bg-amber-900/20',  hover: 'hover:bg-amber-900/40',  text: 'text-amber-100',  desc: 'Unlocks 🐴 Cav' },
+                      { key: 'siegeWorkshop',icon: '⚙️', label: 'Siege Wksp', border: 'border-orange-600/70', bg: 'bg-orange-900/20', hover: 'hover:bg-orange-900/40', text: 'text-orange-100', desc: 'Unlocks 🪨 Catapult' },
+                      { key: 'market',       icon: '🏪', label: 'Market',     border: 'border-emerald-600/70',bg: 'bg-emerald-900/20',hover: 'hover:bg-emerald-900/40',text: 'text-emerald-100',desc: 'Trade resources' },
+                      { key: 'blacksmith',   icon: '🔨', label: 'Blacksmith', border: 'border-red-800/70',    bg: 'bg-red-950/30',    hover: 'hover:bg-red-900/40',    text: 'text-red-100',    desc: 'Atk + armor upgrades' },
+                      { key: 'spikeTrap',    icon: '🪤', label: 'Spike Trap', border: 'border-yellow-700/70', bg: 'bg-yellow-900/20', hover: 'hover:bg-yellow-800/30', text: 'text-yellow-200', desc: '20 dmg on step' },
+                      { key: 'frostTower',   icon: '❄️', label: 'Frost Tower',border: 'border-cyan-700/70',   bg: 'bg-cyan-900/20',   hover: 'hover:bg-cyan-800/30',   text: 'text-cyan-200',   desc: 'Slow + 5 dmg' },
+                      { key: 'ballista',     icon: '🏹', label: 'Ballista',   border: 'border-yellow-700/70', bg: 'bg-yellow-900/20', hover: 'hover:bg-yellow-800/30', text: 'text-yellow-200', desc: '18 pierce, 6.5 range' },
+                      { key: 'poisonTower',  icon: '☠️', label: 'Poison Twr', border: 'border-green-500/70',  bg: 'bg-green-500/15',  hover: 'hover:bg-green-500/30',  text: 'text-green-100',  desc: '8+3/s, 5-tile' },
+                    ];
+                    return (
+                      <div className="grid grid-cols-3 gap-1.5 pt-1">
+                        {buildings.map(b => {
+                          const cost = buildingCosts[b.key];
+                          const affordable = canAfford(cost);
+                          return (
+                            <button key={b.key} type="button"
+                              className={`flex flex-col items-center rounded border ${b.border} ${b.bg} ${b.hover} ${b.text} py-1.5 text-xs disabled:opacity-40`}
+                              onClick={() => onFarmhouseAction(`build:${b.key}`)}
+                              disabled={!affordable}
+                              title={b.desc}
+                            >
+                              <span>{b.icon} {b.label}</span>
+                              <span className={`text-[10px] mt-0.5 ${affordable ? 'text-amber-300/80' : 'text-slate-500'}`}>{fmtCost(cost)}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
 
                   {/* TECH tab — research + upgrades */}
                   {fhTab === 'tech' && (
