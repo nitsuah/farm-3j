@@ -16,6 +16,7 @@ export interface WorkerState {
   gathering: null | { type: 'tree' | 'gold' | 'stone'; idx: number };
   attacking: null | { targetType: 'enemyBarn' } | { targetType: 'grunt'; gruntId: number } | { targetType: 'creep'; creepId: number } | { targetType: 'enemyTower'; towerId: number } | { targetType: 'siege'; siegeId: number } | { targetType: 'shaman'; shamanId: number } | { targetType: 'troll'; trollId: number } | { targetType: 'sapper'; sapperId: number } | { targetType: 'necromancer'; necromancerId: number } | { targetType: 'witchDoctor'; witchDoctorId: number } | { targetType: 'warchief'; warchiefId: number };
   stunUntil?: number;
+  assistBuildId?: number;
   repairing: null | { buildingId: number };
   chargeCooldown: number;
   sprintCooldown: number;

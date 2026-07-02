@@ -1170,13 +1170,23 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
       if (gameOverRef.current) return;
       const now = Date.now();
       setPlacedBuildings(bs => {
-        const hasReady = bs.some(b => b.constructing && (now - (b.constructedAt ?? now)) >= CONSTRUCTION_MS);
+        const hasReady = bs.some(b => {
+          if (!b.constructing) return false;
+          const assistCount = workersRef.current.filter(w => w.assistBuildId === b.id && w.hp > 0).length;
+          const speedMult = 1 + assistCount * 0.4;
+          return (now - (b.constructedAt ?? now)) * speedMult >= CONSTRUCTION_MS;
+        });
         if (!hasReady) return bs;
         const nextBs = bs.map(b => {
-          if (!b.constructing || (now - (b.constructedAt ?? now)) < CONSTRUCTION_MS) return b;
+          if (!b.constructing) return b;
+          const assistCount = workersRef.current.filter(w => w.assistBuildId === b.id && w.hp > 0).length;
+          const speedMult = 1 + assistCount * 0.4;
+          if ((now - (b.constructedAt ?? now)) * speedMult < CONSTRUCTION_MS) return b;
           addFloatingText(b.x, b.y, '✅ Built!', '#4ade80');
           const bonus = BUILDING_COSTS[b.type]?.foodCapBonus ?? 0;
           if (bonus > 0) setResources(r => ({ ...r, foodCap: r.foodCap + bonus }));
+          // Release assisting workers
+          setWorkers(ws => ws.map(w => w.assistBuildId === b.id ? { ...w, assistBuildId: undefined, state: 'idle' as const } : w));
           return { ...b, constructing: false, constructedAt: undefined, hp: b.maxHp };
         });
         return nextBs;
@@ -3441,6 +3451,20 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
     }
   };
 
+  const handleAssistConstruction = useCallback((buildingId: number, bx: number, by: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!anySelected) return;
+    const target = { x: bx, y: by };
+    setWorkers(ws => ws.map(w => {
+      if (!w.selected || w.unitType !== 'farmer') return w;
+      const start = { x: Math.round(w.x), y: Math.round(w.y) };
+      const path = aStar(INITIAL_TILES, start, target);
+      return { ...w, movingTo: path[0] ?? target, path: path.slice(1), gathering: null, attacking: null, repairing: null, assistBuildId: buildingId, patrol: null, state: 'moving' as const };
+    }));
+    addFloatingText(bx, by, '🔨 Assist!', '#fbbf24');
+  }, [anySelected, addFloatingText]);
+
   const handleRepairBuilding = useCallback((buildingId: number, bx: number, by: number, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -3867,9 +3891,13 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
           {placedBuildings.map(b => { const { isoX, isoY } = tileToSvg(b.x, b.y);
             // Show scaffold during construction
             if (b.constructing) {
-              const elapsed = Date.now() - (b.constructedAt ?? Date.now());
-              const progress = Math.min(1, elapsed / CONSTRUCTION_MS);
-              return <g key={`building-${b.id}`} pointerEvents="none">
+              const now2 = Date.now();
+              const elapsed = now2 - (b.constructedAt ?? now2);
+              const assistCount = workers.filter(w => w.assistBuildId === b.id && w.hp > 0).length;
+              const speedMult = 1 + assistCount * 0.4;
+              const progress = Math.min(1, elapsed * speedMult / CONSTRUCTION_MS);
+              return <g key={`building-${b.id}`} style={{ cursor: anySelected ? 'pointer' : 'default' }}
+                onContextMenu={(e) => handleAssistConstruction(b.id, b.x, b.y, e)}>
                 {/* Scaffold base */}
                 <rect x={isoX + TILE_SIZE * 0.15} y={isoY + 2} width={TILE_SIZE * 1.7} height={TILE_SIZE * 0.75} fill="#78350f" stroke="#92400e" strokeWidth={2} rx={3} opacity={0.6} strokeDasharray="6 3" />
                 {/* Vertical poles */}
@@ -3878,11 +3906,11 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                 {[0.3, 0.6].map(f => <line key={f} x1={isoX + TILE_SIZE * 0.15} y1={isoY + TILE_SIZE * f} x2={isoX + TILE_SIZE * 1.85} y2={isoY + TILE_SIZE * f} stroke="#d97706" strokeWidth={2} strokeDasharray="4 3" />)}
                 {/* Building icon faint */}
                 <text x={isoX + TILE_SIZE} y={isoY + TILE_SIZE * 0.5} textAnchor="middle" fontSize="18" opacity={0.4}>{BUILDING_EMOJI[b.type]}</text>
-                {/* Label */}
-                <text x={isoX + TILE_SIZE} y={isoY - 6} textAnchor="middle" fontSize="8" fill="#fbbf24" fontWeight="bold">🔨 Building…</text>
-                {/* Progress bar */}
+                {/* Label + worker badge */}
+                <text x={isoX + TILE_SIZE} y={isoY - 6} textAnchor="middle" fontSize="8" fill="#fbbf24" fontWeight="bold">🔨 Building…{assistCount > 0 ? ` ×${assistCount + 1}` : ''}</text>
+                {/* Progress bar — color shifts green→yellow when assisted */}
                 <rect x={isoX + TILE_SIZE * 0.15} y={isoY + TILE_SIZE * 0.8} width={TILE_SIZE * 1.7} height={5} fill="#1e293b" rx={2} />
-                <rect x={isoX + TILE_SIZE * 0.15} y={isoY + TILE_SIZE * 0.8} width={TILE_SIZE * 1.7 * progress} height={5} fill="#4ade80" rx={2} />
+                <rect x={isoX + TILE_SIZE * 0.15} y={isoY + TILE_SIZE * 0.8} width={TILE_SIZE * 1.7 * progress} height={5} fill={assistCount > 0 ? '#facc15' : '#4ade80'} rx={2} />
               </g>;
             }
             if (b.type === 'wall') {
