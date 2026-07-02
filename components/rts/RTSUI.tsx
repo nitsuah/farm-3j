@@ -14,7 +14,8 @@ export interface WorkerState {
   movingTo: null | { x: number; y: number };
   path: { x: number; y: number }[];
   gathering: null | { type: 'tree' | 'gold' | 'stone'; idx: number };
-  attacking: null | { targetType: 'enemyBarn' } | { targetType: 'grunt'; gruntId: number } | { targetType: 'creep'; creepId: number } | { targetType: 'enemyTower'; towerId: number } | { targetType: 'siege'; siegeId: number } | { targetType: 'shaman'; shamanId: number } | { targetType: 'troll'; trollId: number } | { targetType: 'sapper'; sapperId: number } | { targetType: 'necromancer'; necromancerId: number } | { targetType: 'witchDoctor'; witchDoctorId: number };
+  attacking: null | { targetType: 'enemyBarn' } | { targetType: 'grunt'; gruntId: number } | { targetType: 'creep'; creepId: number } | { targetType: 'enemyTower'; towerId: number } | { targetType: 'siege'; siegeId: number } | { targetType: 'shaman'; shamanId: number } | { targetType: 'troll'; trollId: number } | { targetType: 'sapper'; sapperId: number } | { targetType: 'necromancer'; necromancerId: number } | { targetType: 'witchDoctor'; witchDoctorId: number } | { targetType: 'warchief'; warchiefId: number };
+  stunUntil?: number;
   repairing: null | { buildingId: number };
   chargeCooldown: number;
   sprintCooldown: number;
@@ -150,6 +151,7 @@ interface RTSUIProps {
     trolls: { x: number; y: number }[];
     sappers: { x: number; y: number }[];
     witchDoctors: { x: number; y: number }[];
+    warchiefs: { x: number; y: number }[];
   };
 }
 
@@ -815,6 +817,10 @@ export const RTSUI: React.FC<RTSUIProps> = ({
             {/* Witch Doctors — magenta diamond */}
             {minimapData.witchDoctors.map((d, i) => (
               <polygon key={`wd${i}`} points={`${d.x},${d.y - 0.8} ${d.x + 0.7},${d.y} ${d.x},${d.y + 0.8} ${d.x - 0.7},${d.y}`} fill="#e879f9" stroke="#7e22ce" strokeWidth={0.15} />
+            ))}
+            {/* Warchief — gold star */}
+            {minimapData.warchiefs.map((wc2, i) => (
+              <polygon key={`warchief${i}`} points={`${wc2.x},${wc2.y - 1} ${wc2.x + 0.35},${wc2.y - 0.3} ${wc2.x + 1},${wc2.y - 0.3} ${wc2.x + 0.5},${wc2.y + 0.2} ${wc2.x + 0.65},${wc2.y + 1} ${wc2.x},${wc2.y + 0.6} ${wc2.x - 0.65},${wc2.y + 1} ${wc2.x - 0.5},${wc2.y + 0.2} ${wc2.x - 1},${wc2.y - 0.3} ${wc2.x - 0.35},${wc2.y - 0.3}`} fill="#f59e0b" stroke="#d97706" strokeWidth={0.1} />
             ))}
           </svg>
           <div className="mt-0.5 flex flex-wrap gap-x-2 text-[10px] text-slate-500">

@@ -102,6 +102,15 @@ const WITCH_DOCTOR_FIRST_WAVE = 12;
 const WITCH_DOCTOR_GOLD_REWARD = 18;
 const WITCH_DOCTOR_XP_REWARD = 40;
 const WITCH_DOCTOR_ENRAGE_DMG_BONUS = 8;
+const WARCHIEF_MAX_HP = 300;
+const WARCHIEF_SPEED = 0.55;
+const WARCHIEF_DMG = 30;
+const WARCHIEF_FIRST_WAVE = 18;
+const WARCHIEF_STOMP_RADIUS = 3.0;
+const WARCHIEF_STOMP_SLOW_MS = 2500;
+const WARCHIEF_STOMP_COOLDOWN_MS = 12000;
+const WARCHIEF_GOLD_REWARD = 50;
+const WARCHIEF_XP_REWARD = 120;
 const LOOT_CRATE_SPAWN_MS = 45000;
 const SHAMAN_MAX_HP = 45;
 const SHAMAN_SPEED = 0.6;
@@ -266,6 +275,18 @@ interface EnemySapper {
   targetX: number;
   targetY: number;
   exploded: boolean;
+}
+
+interface EnemyWarchief {
+  id: number;
+  x: number;
+  y: number;
+  hp: number;
+  maxHp: number;
+  movingTo: { x: number; y: number } | null;
+  path: { x: number; y: number }[];
+  state: 'moving' | 'attacking' | 'stomping';
+  lastStompAt: number;
 }
 
 interface NeutralCreep {
@@ -634,6 +655,10 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
   useEffect(() => { enemyWitchDoctorsRef.current = enemyWitchDoctors; }, [enemyWitchDoctors]);
   const witchDoctorIdRef = useRef(8000);
   const witchDoctorBuffTimersRef = useRef<Record<number, number>>({});
+  const [enemyWarchiefs, setEnemyWarchiefs] = useState<EnemyWarchief[]>([]);
+  const enemyWarchiefssRef = useRef<EnemyWarchief[]>([]);
+  useEffect(() => { enemyWarchiefssRef.current = enemyWarchiefs; }, [enemyWarchiefs]);
+  const warchiefIdRef = useRef(9000);
   const [deadGruntPositions, setDeadGruntPositions] = useState<{ x: number; y: number; t: number }[]>([]);
   const deadGruntPositionsRef = useRef<{ x: number; y: number; t: number }[]>([]);
   useEffect(() => { deadGruntPositionsRef.current = deadGruntPositions; }, [deadGruntPositions]);
@@ -1037,6 +1062,17 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
       window.setTimeout(() => setWaveAnnouncement(null), 4000);
     }
 
+    // Warchief spawn: wave 18+ every 8 waves
+    if (newWave >= WARCHIEF_FIRST_WAVE && newWave % 8 === 2) {
+      const wx2 = Math.max(0, ENEMY_BARN_POS.x - 1);
+      const wy2 = ENEMY_BARN_POS.y + 1;
+      const wPath = aStar(INITIAL_TILES, { x: wx2, y: wy2 }, BARN_POS, true, wallSet);
+      const warchief: EnemyWarchief = { id: warchiefIdRef.current++, x: wx2, y: wy2, hp: WARCHIEF_MAX_HP, maxHp: WARCHIEF_MAX_HP, movingTo: wPath[0] ?? BARN_POS, path: wPath.slice(1), state: 'moving', lastStompAt: 0 };
+      setEnemyWarchiefs(ws2 => [...ws2, warchief]);
+      setWaveAnnouncement(`👑 Wave ${newWave} — WARCHIEF! Dangerous — he stomps and stuns your units!`);
+      window.setTimeout(() => setWaveAnnouncement(null), 5000);
+    }
+
     const nextDelay = Math.max(20000, GRUNT_SPAWN_MS - (newWave - 1) * 800);
     setNextWaveAt(Date.now() + nextDelay);
     spawnTimerRef.current = window.setTimeout(doSpawnWave, nextDelay);
@@ -1056,6 +1092,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
       if (previewWave >= 12 && previewWave % 6 === 0) parts.push('1 Sapper 💥');
       if (previewWave >= 14 && previewWave % 4 === 0) parts.push('1 Demolisher 💣');
       if (previewWave >= 16 && previewWave % 5 === 0) parts.push('1 Necromancer 💀');
+      if (previewWave >= WARCHIEF_FIRST_WAVE && previewWave % 8 === 2) parts.push('1 WARCHIEF 👑');
       if (previewWave >= 6 && previewWave % 3 === 0) parts.push('1 War Ram 🪵');
       setWavePreview(`⚠ INCOMING Wave ${previewWave}: ${parts.join(', ')}`);
       window.setTimeout(() => setWavePreview(null), 5500);
@@ -1759,6 +1796,9 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
         if (alive.length < ws.length) setResources(r => ({ ...r, food: Math.max(0, r.food - (ws.length - alive.length)) }));
 
         return alive.map(w => {
+          // Stun check: War Stomp from Warchief freezes unit in place
+          if (w.stunUntil && Date.now() < w.stunUntil) return w;
+
           // Attack-move: scan for nearby enemies while marching
           if (w.attackMove && w.state === 'moving' && !w.attacking) {
             const AM_SCAN = 2.5;
@@ -1778,6 +1818,8 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
             if (nearNecro) return { ...w, attacking: { targetType: 'necromancer' as const, necromancerId: nearNecro.id }, state: 'attacking' as const, movingTo: null, path: [] };
             const nearWD = enemyWitchDoctorsRef.current.find(d => d.hp > 0 && tileDist(w.x, w.y, d.x, d.y) <= AM_SCAN);
             if (nearWD) return { ...w, attacking: { targetType: 'witchDoctor' as const, witchDoctorId: nearWD.id }, state: 'attacking' as const, movingTo: null, path: [] };
+            const nearWC = enemyWarchiefssRef.current.find(wc2 => wc2.hp > 0 && tileDist(w.x, w.y, wc2.x, wc2.y) <= AM_SCAN);
+            if (nearWC) return { ...w, attacking: { targetType: 'warchief' as const, warchiefId: nearWC.id }, state: 'attacking' as const, movingTo: null, path: [] };
           }
           // Hold position: stay put, auto-attack nearby enemies without chasing
           if (w.holdPosition) {
@@ -1797,6 +1839,8 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
               if (nearNecroH) return { ...w, attacking: { targetType: 'necromancer' as const, necromancerId: nearNecroH.id }, state: 'attacking' as const };
               const nearWDH = enemyWitchDoctorsRef.current.find(d => d.hp > 0 && tileDist(w.x, w.y, d.x, d.y) <= HP_RANGE);
               if (nearWDH) return { ...w, attacking: { targetType: 'witchDoctor' as const, witchDoctorId: nearWDH.id }, state: 'attacking' as const };
+              const nearWCH = enemyWarchiefssRef.current.find(wc2 => wc2.hp > 0 && tileDist(w.x, w.y, wc2.x, wc2.y) <= HP_RANGE);
+              if (nearWCH) return { ...w, attacking: { targetType: 'warchief' as const, warchiefId: nearWCH.id }, state: 'attacking' as const };
             }
             // After killing target, go back to idle (don't chase)
             if (w.state === 'attacking' && w.attacking) {
@@ -1822,6 +1866,8 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
             if (nearNecroA) return { ...w, attacking: { targetType: 'necromancer' as const, necromancerId: nearNecroA.id }, state: 'attacking' as const };
             const nearWDA = enemyWitchDoctorsRef.current.find(d => d.hp > 0 && tileDist(w.x, w.y, d.x, d.y) <= AGG_RANGE);
             if (nearWDA) return { ...w, attacking: { targetType: 'witchDoctor' as const, witchDoctorId: nearWDA.id }, state: 'attacking' as const };
+            const nearWCA = enemyWarchiefssRef.current.find(wc2 => wc2.hp > 0 && tileDist(w.x, w.y, wc2.x, wc2.y) <= AGG_RANGE);
+            if (nearWCA) return { ...w, attacking: { targetType: 'warchief' as const, warchiefId: nearWCA.id }, state: 'attacking' as const };
           }
           // When attack-move unit finishes its target, resume march to original destination
           if (w.attackMove && w.state === 'idle' && w.attackMoveTarget) {
@@ -2367,6 +2413,46 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                   }
                 }, moraleWD);
               }
+            } else if (w.attacking.targetType === 'warchief') {
+              const wcId = (w.attacking as { targetType: 'warchief'; warchiefId: number }).warchiefId;
+              const wcTarget = enemyWarchiefssRef.current.find(wc2 => wc2.id === wcId && wc2.hp > 0);
+              if (!wcTarget) return { ...w, attacking: null, state: 'idle' };
+              const distToWC = tileDist(w.x, w.y, wcTarget.x, wcTarget.y);
+              if (distToWC > 1.8) {
+                const p = aStar(INITIAL_TILES, { x: Math.round(w.x), y: Math.round(w.y) }, { x: Math.round(wcTarget.x), y: Math.round(wcTarget.y) });
+                return { ...w, movingTo: p[0] ?? { x: wcTarget.x, y: wcTarget.y }, path: p.slice(1), state: 'moving' };
+              }
+              if (!attackT[w.id]) {
+                const capturedWCX = Math.round(wcTarget.x), capturedWCY = Math.round(wcTarget.y);
+                const capturedWCId = wcId;
+                const unitBonusWC = w.unitType === 'hero' ? HERO_DAMAGE_BONUS : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
+                const capturedVetWC = w.level;
+                const moraleWC = getMoraleMs(w.x, w.y);
+                attackT[w.id] = window.setTimeout(() => {
+                  delete attackTimeoutsRef.current[w.id];
+                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0) + (barracksTechRef.current.warDrums ? 8 : 0) + unitBonusWC + capturedVetWC * VETERAN_ATK_BONUS;
+                  setEnemyWarchiefs(wcs => wcs.map(wc2 => wc2.id === capturedWCId ? { ...wc2, hp: Math.max(0, wc2.hp - dmg) } : wc2));
+                  addFloatingText(capturedWCX, capturedWCY, `-${dmg}`, '#ef4444');
+                  const wcCurrent = enemyWarchiefssRef.current.find(wc2 => wc2.id === capturedWCId);
+                  if (wcCurrent && wcCurrent.hp - dmg <= 0) {
+                    setResources(r => ({ ...r, gold: r.gold + WARCHIEF_GOLD_REWARD }));
+                    addFloatingText(capturedWCX, capturedWCY, `👑 +${WARCHIEF_GOLD_REWARD}🪙`, '#fbbf24');
+                    setWorkers(ws2 => ws2.map(u => {
+                      const isAttacker = u.id === w.id;
+                      const isNearby = !isAttacker && u.hp > 0 && tileDist(u.x, u.y, capturedWCX, capturedWCY) <= 3;
+                      const xpGain = isAttacker ? WARCHIEF_XP_REWARD : isNearby ? Math.round(WARCHIEF_XP_REWARD * 0.25) : 0;
+                      if (xpGain === 0) return u;
+                      const newXp = u.xp + xpGain;
+                      const newLevel = newXp >= XP_TO_LEVEL_2 ? 2 : newXp >= XP_TO_LEVEL_1 ? 1 : 0;
+                      if (newLevel > u.level) {
+                        addFloatingText(Math.round(u.x), Math.round(u.y), `⭐ Level ${newLevel}!`, '#fbbf24');
+                        return { ...u, xp: newXp, level: newLevel, maxHp: u.maxHp + VETERAN_HP_BONUS, hp: Math.min(u.hp + VETERAN_HP_BONUS, u.maxHp + VETERAN_HP_BONUS) };
+                      }
+                      return { ...u, xp: newXp };
+                    }));
+                  }
+                }, moraleWC);
+              }
             } else {
               if (!attackT[w.id]) {
                 const capturedWX = Math.round(w.x), capturedWY = Math.round(w.y);
@@ -2872,6 +2958,50 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
         });
       });
 
+      // Update Enemy Warchiefs (War Stomp + march to barn)
+      setEnemyWarchiefs(wcs => {
+        const alive = wcs.filter(wc2 => wc2.hp > 0);
+        const killed = wcs.filter(wc2 => wc2.hp <= 0);
+        killed.forEach(wc2 => {
+          setResources(r => ({ ...r, gold: r.gold + WARCHIEF_GOLD_REWARD }));
+          addFloatingText(Math.round(wc2.x), Math.round(wc2.y), `👑 +${WARCHIEF_GOLD_REWARD}🪙`, '#fbbf24');
+        });
+        const now = Date.now();
+        return alive.map(wc2 => {
+          // War Stomp: every WARCHIEF_STOMP_COOLDOWN_MS stun all workers within radius
+          if (now - wc2.lastStompAt >= WARCHIEF_STOMP_COOLDOWN_MS) {
+            const stunUntil = now + WARCHIEF_STOMP_SLOW_MS;
+            setWorkers(ws => ws.map(w => {
+              if (w.hp <= 0 || tileDist(w.x, w.y, wc2.x, wc2.y) > WARCHIEF_STOMP_RADIUS) return w;
+              addFloatingText(Math.round(w.x), Math.round(w.y), '💫STUNNED!', '#fbbf24');
+              return { ...w, stunUntil };
+            }));
+            addFloatingText(Math.round(wc2.x), Math.round(wc2.y), '👊 WAR STOMP!', '#ef4444');
+            return { ...wc2, state: 'stomping' as const, lastStompAt: now };
+          }
+          // Attack barn when adjacent
+          const distToBarn = tileDist(wc2.x, wc2.y, BARN_POS.x, BARN_POS.y);
+          if (distToBarn <= 1.2) {
+            setPlayerBarnHp(hp => Math.max(0, hp - WARCHIEF_DMG));
+            addFloatingText(BARN_POS.x, BARN_POS.y, `-${WARCHIEF_DMG}🏰`, '#fca5a5');
+            return { ...wc2, state: 'attacking' as const };
+          }
+          // March toward barn
+          if (wc2.movingTo) {
+            const dx = wc2.movingTo.x - wc2.x, dy = wc2.movingTo.y - wc2.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 0.1) {
+              const next = wc2.path[0] ?? null;
+              return { ...wc2, x: wc2.movingTo.x, y: wc2.movingTo.y, movingTo: next, path: wc2.path.slice(1), state: 'moving' as const };
+            }
+            return { ...wc2, x: wc2.x + (dx / dist) * Math.min(WARCHIEF_SPEED * dt, dist), y: wc2.y + (dy / dist) * Math.min(WARCHIEF_SPEED * dt, dist), state: 'moving' as const };
+          }
+          const wallSetWC2 = new Set(placedBuildingsRef.current.filter(b => b.type === 'wall').map(b => `${b.x},${b.y}`));
+          const pWC = aStar(INITIAL_TILES, { x: Math.round(wc2.x), y: Math.round(wc2.y) }, BARN_POS, true, wallSetWC2);
+          return { ...wc2, movingTo: pWC[0] ?? BARN_POS, path: pWC.slice(1) };
+        });
+      });
+
       // Update enemy Troll Archers
       setEnemyTrolls(ts => {
         const alive = ts.filter(t => t.hp > 0);
@@ -3374,6 +3504,21 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
     }));
   }, [anySelected]);
 
+  const handleAttackWarchief = useCallback((warchiefId: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!anySelected) return;
+    const wc = enemyWarchiefssRef.current.find(w2 => w2.id === warchiefId);
+    if (!wc) return;
+    const tx = Math.round(wc.x), ty = Math.round(wc.y);
+    setWorkers(ws => ws.map(w => {
+      if (!w.selected) return w;
+      const path = aStar(INITIAL_TILES, { x: Math.round(w.x), y: Math.round(w.y) }, { x: tx, y: ty });
+      const first = path[0] ?? { x: tx, y: ty };
+      return { ...w, movingTo: first, path: path.slice(1), gathering: null, attacking: { targetType: 'warchief' as const, warchiefId }, state: 'moving' };
+    }));
+  }, [anySelected]);
+
   const handleAttackTroll = useCallback((trollId: number, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -3435,7 +3580,8 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
     trolls: enemyTrolls.filter(t => t.hp > 0).map(t => ({ x: t.x, y: t.y })),
     sappers: enemySappers.filter(s => s.hp > 0 && !s.exploded).map(s => ({ x: s.x, y: s.y })),
     witchDoctors: enemyWitchDoctors.filter(d => d.hp > 0).map(d => ({ x: d.x, y: d.y })),
-  }), [workers, enemyGrunts, enemyBarnHp, placedBuildings, clearedCamps, goldMines, stoneNodes, trees, enemyTowers, enemySiege, enemyShamans, enemyTrolls, enemySappers, enemyWitchDoctors]);
+    warchiefs: enemyWarchiefs.filter(wc2 => wc2.hp > 0).map(wc2 => ({ x: wc2.x, y: wc2.y })),
+  }), [workers, enemyGrunts, enemyBarnHp, placedBuildings, clearedCamps, goldMines, stoneNodes, trees, enemyTowers, enemySiege, enemyShamans, enemyTrolls, enemySappers, enemyWitchDoctors, enemyWarchiefs]);
 
   return (
     <div className="absolute inset-0 bg-black" onContextMenu={e => { if (buildMode) { e.preventDefault(); setBuildMode(null); setGhostTile(null); } }}>
@@ -4238,6 +4384,40 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
               {/* HP bar */}
               <rect x={isoX + TILE_SIZE / 2 - 16} y={isoY - 10} width={32} height={4} fill="#1e293b" rx={2} />
               <rect x={isoX + TILE_SIZE / 2 - 16} y={isoY - 10} width={32 * hp} height={4} fill="#22c55e" rx={2} />
+            </g>;
+          })}
+
+          {/* Enemy Warchiefs */}
+          {enemyWarchiefs.filter(wc2 => wc2.hp > 0 && fogVisible[Math.round(wc2.x)]?.[Math.round(wc2.y)]).map(wc2 => {
+            const { isoX, isoY } = tileToSvg(wc2.x, wc2.y);
+            const hp = wc2.hp / wc2.maxHp;
+            const cx = isoX + TILE_SIZE / 2;
+            const stomping = wc2.state === 'stomping';
+            return <g key={`warchief-${wc2.id}`} style={{ cursor: anySelected ? 'crosshair' : 'default' }} onContextMenu={e => handleAttackWarchief(wc2.id, e)}>
+              {/* Stomp shockwave ring */}
+              {stomping && <circle cx={cx} cy={isoY + 22} r={WARCHIEF_STOMP_RADIUS * TILE_SIZE * 0.5} fill="none" stroke="#f59e0b" strokeWidth={2.5} strokeDasharray="7 3" opacity={0.65} />}
+              {/* Heavy armored body */}
+              <ellipse cx={cx} cy={isoY + 27} rx={14} ry={16} fill={stomping ? '#b91c1c' : '#7f1d1d'} stroke="#450a0a" strokeWidth={2.5} />
+              {/* Shoulder armor plates */}
+              <ellipse cx={cx - 14} cy={isoY + 18} rx={7} ry={5} fill="#374151" stroke="#1f2937" strokeWidth={1.5} />
+              <ellipse cx={cx + 14} cy={isoY + 18} rx={7} ry={5} fill="#374151" stroke="#1f2937" strokeWidth={1.5} />
+              {/* Head */}
+              <circle cx={cx} cy={isoY + 10} r={9} fill="#fbbf24" stroke="#78350f" strokeWidth={2} />
+              {/* Crown */}
+              <polygon points={`${cx - 9},${isoY + 3} ${cx - 6},${isoY - 3} ${cx},${isoY + 1} ${cx + 6},${isoY - 3} ${cx + 9},${isoY + 3}`} fill="#f59e0b" stroke="#d97706" strokeWidth={1.5} />
+              {/* Crown gems */}
+              <circle cx={cx - 6} cy={isoY - 3} r={2} fill="#ef4444" />
+              <circle cx={cx} cy={isoY + 1} r={2} fill="#22d3ee" />
+              <circle cx={cx + 6} cy={isoY - 3} r={2} fill="#ef4444" />
+              {/* Eyes */}
+              <circle cx={cx - 3} cy={isoY + 10} r={2} fill="#1c1917" />
+              <circle cx={cx + 3} cy={isoY + 10} r={2} fill="#1c1917" />
+              {/* Battle axe */}
+              <line x1={cx + 14} y1={isoY + 6} x2={cx + 14} y2={isoY + 40} stroke="#6b7280" strokeWidth={4} strokeLinecap="round" />
+              <ellipse cx={cx + 20} cy={isoY + 10} rx={8} ry={6} fill="#9ca3af" stroke="#374151" strokeWidth={1.5} />
+              <text x={cx} y={isoY - 9} textAnchor="middle" fontSize="9" fill="#fbbf24" fontWeight="bold">👑 WARCHIEF</text>
+              <rect x={cx - 22} y={isoY - 15} width={44} height={4} fill="#1e293b" rx={2} />
+              <rect x={cx - 22} y={isoY - 15} width={44 * hp} height={4} fill="#ef4444" rx={2} />
             </g>;
           })}
 
