@@ -890,6 +890,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
   const enemyBarnHpRef = useRef(INITIAL_SAVE?.enemyBarnHp ?? ENEMY_BARN_MAX_HP);
   useEffect(() => { enemyBarnHpRef.current = enemyBarnHp; }, [enemyBarnHp]);
   const sallyForthThresholdsRef = useRef<Set<number>>(new Set([150, 100, 50])); // barn HP thresholds that trigger sally
+  const lastStandEnrageRef = useRef(false); // one-shot: enrage all grunts when enemy barn hits 50%
   const [playerBarnHp, setPlayerBarnHp] = useState(() => INITIAL_SAVE?.playerBarnHp ?? PLAYER_BARN_MAX_HP);
   const playerBarnHpRef = useRef(INITIAL_SAVE?.playerBarnHp ?? PLAYER_BARN_MAX_HP);
   useEffect(() => { playerBarnHpRef.current = playerBarnHp; }, [playerBarnHp]);
@@ -1747,6 +1748,17 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
     barnArrowTimerRef.current = window.setTimeout(fireBarnArrow, BARN_DEFENSE_MS);
     return () => { if (barnArrowTimerRef.current) clearTimeout(barnArrowTimerRef.current); };
   }, [gameOver, addFloatingText]);
+
+  // Passive barn regen: +1 HP every 5s when no grunts are active and barn < max
+  useEffect(() => {
+    if (gameOver) return;
+    const id = setInterval(() => {
+      if (gameOverRef.current || gameSpeedRef.current === 0) return;
+      if (enemyGruntsRef.current.length > 0) return;
+      setPlayerBarnHp(hp => hp < PLAYER_BARN_MAX_HP ? Math.min(PLAYER_BARN_MAX_HP, hp + 1) : hp);
+    }, 5000);
+    return () => clearInterval(id);
+  }, [gameOver]);
 
   // Barn HP regen from garrison: +2 HP/s per garrisoned unit, capped at max HP
   useEffect(() => {
@@ -2988,6 +3000,15 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
                         });
                         setEnemyGrunts(gs => [...gs, ...defenders]);
                         addFloatingText(ENEMY_BARN_POS.x, ENEMY_BARN_POS.y, '⚔️ DEFENDERS!', '#ef4444');
+                      }
+                      // Last-stand enrage: enemy barn below 50% → all grunts go berserk
+                      if (!lastStandEnrageRef.current && nHp <= ENEMY_BARN_MAX_HP * 0.5) {
+                        lastStandEnrageRef.current = true;
+                        const enrageUntil = Date.now() + 60000;
+                        setEnemyGrunts(gs => gs.map(g => g.hp > 0 ? { ...g, enragedUntil: enrageUntil } : g));
+                        addFloatingText(ENEMY_BARN_POS.x, ENEMY_BARN_POS.y, '💢 LAST STAND!', '#dc2626');
+                        setWaveAnnouncement('💢 ENEMY LAST STAND — ALL GRUNTS ENRAGED!');
+                        window.setTimeout(() => setWaveAnnouncement(null), 4000);
                       }
                       return nHp;
                     });
@@ -4503,7 +4524,13 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
         <span style={{ color: resources.stone < 10 ? '#ef4444' : '#cbd5e1', fontWeight: resources.stone < 10 ? 700 : 400, animation: resources.stone < 10 ? 'pulse 1s infinite' : 'none' }}>🪨 {resources.stone}{incomeRate.stone > 0 && <span style={{ fontSize: 11, color: '#a3e635', marginLeft: 2 }}>+{incomeRate.stone}/m</span>}</span>
         {difficulty && <span style={{ fontSize: 12, padding: '1px 7px', borderRadius: 5, background: difficulty.id === 'easy' ? 'rgba(74,222,128,0.12)' : difficulty.id === 'hard' ? 'rgba(248,113,113,0.12)' : 'rgba(96,165,250,0.12)', color: difficulty.id === 'easy' ? '#4ade80' : difficulty.id === 'hard' ? '#f87171' : '#60a5fa' }}>{difficulty.icon} {difficulty.label}</span>}
         {wave > 0 && <span style={{ color: '#f97316', background: 'rgba(249,115,22,0.15)', padding: '1px 10px', borderRadius: 6, fontSize: 14 }}>Wave {wave}</span>}
-        {!gameOver && nextWaveAt && (() => { const secsLeft = Math.max(0, Math.ceil((nextWaveAt - Date.now()) / 1000)); const urgent = secsLeft <= 5; return <span style={{ color: urgent ? '#ef4444' : '#94a3b8', fontSize: 13, fontWeight: urgent ? 700 : 400, animation: urgent ? 'pulse 0.6s infinite' : 'none' }}>⏱ {secsLeft}s</span>; })()}
+        {!gameOver && (nextWaveAt || waveTimerRemainingRef.current !== null) && (() => {
+          const secsLeft = gameSpeed === 0
+            ? Math.max(0, Math.ceil((waveTimerRemainingRef.current ?? 0) / 1000))
+            : Math.max(0, Math.ceil((nextWaveAt! - Date.now()) / 1000));
+          const urgent = secsLeft <= 5 && gameSpeed > 0;
+          return <span style={{ color: gameSpeed === 0 ? '#64748b' : urgent ? '#ef4444' : '#94a3b8', fontSize: 13, fontWeight: urgent ? 700 : 400, animation: urgent ? 'pulse 0.6s infinite' : 'none' }}>⏱ {secsLeft}s{gameSpeed === 0 ? ' ⏸' : ''}</span>;
+        })()}
         {killCount > 0 && <span style={{ color: '#4ade80', fontSize: 14 }}>☠ {killCount}</span>}
         <span style={{ color: resources.food >= resources.foodCap ? '#ef4444' : '#fca5a5', fontWeight: resources.food >= resources.foodCap ? 700 : 400, marginLeft: 'auto', animation: resources.food >= resources.foodCap ? 'pulse 1s infinite' : 'none' }}>👥 {resources.food}/{resources.foodCap}{resources.food >= resources.foodCap ? ' ⚠' : ''}</span>
         {enemyGrunts.length > 0 && <span style={{ color: '#f97316', fontSize: 13 }}>⚠ {enemyGrunts.length} grunt{enemyGrunts.length > 1 ? 's' : ''}</span>}
