@@ -127,6 +127,8 @@ interface RTSUIProps {
   onToggleStance: () => void;
   underAttack: boolean;
   incomeRate: { gold: number; lumber: number; stone: number };
+  barracksTech: { veteranTraining: boolean; warDrums: boolean };
+  onBarracksTech: (type: 'veteranTraining' | 'warDrums') => void;
   enemyBarnHp: number;
   enemyBarnMaxHp: number;
   playerBarnHp: number;
@@ -206,6 +208,8 @@ export const RTSUI: React.FC<RTSUIProps> = ({
   onToggleStance,
   underAttack,
   incomeRate,
+  barracksTech,
+  onBarracksTech,
 }) => {
   const isHeroSelected = selectedWorkers.some(w => w.unitType === 'hero');
   const heroLevel = selectedWorkers.find(w => w.unitType === 'hero')?.level ?? 0;
@@ -589,6 +593,31 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                     >
                       🐴 Train Cavalry 60🪙 <span className="opacity-50">[R]</span>
                     </button>
+                  )}
+                  {hasBarracks && (
+                    <div className="col-span-4 border-t border-slate-700/50 pt-2">
+                      <div className="mb-1.5 text-xs font-semibold text-slate-400">⚗️ Barracks Research</div>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <button
+                          type="button"
+                          className={`rounded border px-2 py-1.5 text-xs font-semibold disabled:opacity-40 ${barracksTech.veteranTraining ? 'border-red-500/40 bg-red-900/20 text-red-400 cursor-default' : 'border-red-400/70 bg-red-500/15 text-red-100 hover:bg-red-500/30'}`}
+                          onClick={() => onBarracksTech('veteranTraining')}
+                          disabled={barracksTech.veteranTraining || resources.gold < 100 || resources.lumber < 60}
+                          title="Veteran Training — all combat units gain +20 max HP permanently (100🪙 60🌲)"
+                        >
+                          {barracksTech.veteranTraining ? '🛡️ Veteran ✓' : `🛡️ Vet. Train 100🪙60🌲`}
+                        </button>
+                        <button
+                          type="button"
+                          className={`rounded border px-2 py-1.5 text-xs font-semibold disabled:opacity-40 ${barracksTech.warDrums ? 'border-orange-500/40 bg-orange-900/20 text-orange-400 cursor-default' : 'border-orange-400/70 bg-orange-500/15 text-orange-100 hover:bg-orange-500/30'}`}
+                          onClick={() => onBarracksTech('warDrums')}
+                          disabled={barracksTech.warDrums || resources.gold < 120 || resources.lumber < 40}
+                          title="War Drums — all friendly combat units deal +8 damage permanently (120🪙 40🌲)"
+                        >
+                          {barracksTech.warDrums ? '🥁 War Drums ✓' : `🥁 War Drums 120🪙40🌲`}
+                        </button>
+                      </div>
+                    </div>
                   )}
                   {(hasBarracks || hasStable) && trainingQueue.length > 0 && (
                     <div className="col-span-4 rounded border border-slate-600/60 bg-slate-800/40 px-2 py-1.5">

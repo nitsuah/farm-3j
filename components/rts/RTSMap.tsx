@@ -762,6 +762,9 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
   const [guardTowerResearched, setGuardTowerResearched] = useState(false);
   const guardTowerRef = useRef(false);
   useEffect(() => { guardTowerRef.current = guardTowerResearched; }, [guardTowerResearched]);
+  const [barracksTech, setBarracksTech] = useState({ veteranTraining: false, warDrums: false });
+  const barracksTechRef = useRef(barracksTech);
+  useEffect(() => { barracksTechRef.current = barracksTech; }, [barracksTech]);
 
   // Unit training queue (barracks + stable)
   const TRAIN_TIME_MS = 8000;
@@ -1295,7 +1298,9 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
       setWorkers(ws => {
         const newId = Math.max(...ws.map(w => w.id), 0) + 1;
         const rp = rallyPointRef.current;
-        const unit = makeUnit(newId, BARN_POS.x, BARN_POS.y, type);
+        const vetBonus = barracksTechRef.current.veteranTraining ? 20 : 0;
+        const baseUnit = makeUnit(newId, BARN_POS.x, BARN_POS.y, type);
+        const unit = vetBonus > 0 ? { ...baseUnit, maxHp: baseUnit.maxHp + vetBonus, hp: baseUnit.maxHp + vetBonus } : baseUnit;
         if (rp) { const path = aStar(INITIAL_TILES, BARN_POS, rp); return [...ws, { ...unit, movingTo: path[0] ?? rp, path: path.slice(1), state: 'moving' as const }]; }
         return [...ws, unit];
       });
@@ -2021,7 +2026,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                 const moraleMs1 = getMoraleMs(w.x, w.y);
                 attackT[w.id] = window.setTimeout(() => {
                   delete attackTimeoutsRef.current[w.id];
-                  const dmgC = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0) + unitBonusC + capturedVetC * VETERAN_ATK_BONUS;
+                  const dmgC = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0) + (barracksTechRef.current.warDrums ? 8 : 0) + unitBonusC + capturedVetC * VETERAN_ATK_BONUS;
                   addFloatingText(capturedCX, capturedCY, `-${dmgC}`, '#a855f7');
                   addFloatingText(capturedWX3, capturedWY3, `⚔️`, '#fbbf24');
                   // Award XP if creep dies
@@ -2064,7 +2069,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                   setWorkers(ws2 => {
                     const attacker = ws2.find(u => u.id === capturedWorkerId);
                     const veteranBonus = attacker ? attacker.level * VETERAN_ATK_BONUS : 0;
-                    const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0) + unitBonus + veteranBonus;
+                    const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0) + (barracksTechRef.current.warDrums ? 8 : 0) + unitBonus + veteranBonus;
                     addFloatingText(capturedGX, capturedGY, `-${dmg}`, '#f97316');
                     addFloatingText(capturedWX, capturedWY, `⚔️`, '#fbbf24');
                     setEnemyGrunts(gs => gs.map(g => {
@@ -2079,7 +2084,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                     // Award XP to attacker + 25% shared XP to nearby allies within 3 tiles
                     return ws2.map(u => {
                       const gruntCurrent = enemyGruntsRef.current.find(g => g.id === gruntId);
-                      const veteranDmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0) + unitBonus + u.level * VETERAN_ATK_BONUS;
+                      const veteranDmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0) + (barracksTechRef.current.warDrums ? 8 : 0) + unitBonus + u.level * VETERAN_ATK_BONUS;
                       const gruntDies = gruntCurrent && gruntCurrent.hp - veteranDmg <= 0;
                       if (!gruntDies) return u;
                       const isAttacker = u.id === capturedWorkerId;
@@ -2116,7 +2121,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                 const moraleMs3 = getMoraleMs(w.x, w.y);
                 attackT[w.id] = window.setTimeout(() => {
                   delete attackTimeoutsRef.current[w.id];
-                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0) + unitBonusT + capturedVetT * VETERAN_ATK_BONUS;
+                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0) + (barracksTechRef.current.warDrums ? 8 : 0) + unitBonusT + capturedVetT * VETERAN_ATK_BONUS;
                   setEnemyTowers(ts => ts.map(t => t.id === capturedTId ? { ...t, hp: Math.max(0, t.hp - dmg) } : t));
                   addFloatingText(capturedTX, capturedTY, `-${dmg}`, '#ef4444');
                 }, moraleMs3);
@@ -2138,7 +2143,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                 const moraleMs5 = getMoraleMs(w.x, w.y);
                 attackT[w.id] = window.setTimeout(() => {
                   delete attackTimeoutsRef.current[w.id];
-                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0) + unitBonusS + capturedVetS * VETERAN_ATK_BONUS;
+                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0) + (barracksTechRef.current.warDrums ? 8 : 0) + unitBonusS + capturedVetS * VETERAN_ATK_BONUS;
                   setEnemySiege(rs => rs.map(r => r.id === capturedSiegeId ? { ...r, hp: Math.max(0, r.hp - dmg) } : r));
                   addFloatingText(capturedSX, capturedSY, `-${dmg}`, '#ef4444');
                   // XP for killing a ram/demolisher
@@ -2178,7 +2183,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                 const moraleMs6 = getMoraleMs(w.x, w.y);
                 attackT[w.id] = window.setTimeout(() => {
                   delete attackTimeoutsRef.current[w.id];
-                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0) + unitBonusSh + capturedVetSh * VETERAN_ATK_BONUS;
+                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0) + (barracksTechRef.current.warDrums ? 8 : 0) + unitBonusSh + capturedVetSh * VETERAN_ATK_BONUS;
                   setEnemyShamans(ss => ss.map(s => s.id === capturedShamanId ? { ...s, hp: Math.max(0, s.hp - dmg) } : s));
                   addFloatingText(capturedShX, capturedShY, `-${dmg}`, '#ef4444');
                   const shamCurrent = enemyShamansRef.current.find(s => s.id === capturedShamanId);
@@ -2218,7 +2223,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                 const moraleMs7 = getMoraleMs(w.x, w.y);
                 attackT[w.id] = window.setTimeout(() => {
                   delete attackTimeoutsRef.current[w.id];
-                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0) + unitBonusTr + capturedVetTr * VETERAN_ATK_BONUS;
+                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0) + (barracksTechRef.current.warDrums ? 8 : 0) + unitBonusTr + capturedVetTr * VETERAN_ATK_BONUS;
                   setEnemyTrolls(ts => ts.map(t => t.id === capturedTrollId ? { ...t, hp: Math.max(0, t.hp - dmg) } : t));
                   addFloatingText(capturedTrX, capturedTrY, `-${dmg}`, '#ef4444');
                   const trCurrent = enemyTrollsRef.current.find(t => t.id === capturedTrollId);
@@ -2256,7 +2261,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                 const moraleMs8 = getMoraleMs(w.x, w.y);
                 attackT[w.id] = window.setTimeout(() => {
                   delete attackTimeoutsRef.current[w.id];
-                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0) + unitBonusSp + capturedVetSp * VETERAN_ATK_BONUS;
+                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0) + (barracksTechRef.current.warDrums ? 8 : 0) + unitBonusSp + capturedVetSp * VETERAN_ATK_BONUS;
                   setEnemySappers(ss => ss.map(s => s.id === capturedSapperId ? { ...s, hp: Math.max(0, s.hp - dmg) } : s));
                   addFloatingText(capturedSpX, capturedSpY, `-${dmg}`, '#ef4444');
                 }, moraleMs8);
@@ -2278,7 +2283,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                 const moraleMs9 = getMoraleMs(w.x, w.y);
                 attackT[w.id] = window.setTimeout(() => {
                   delete attackTimeoutsRef.current[w.id];
-                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0) + unitBonusNc + capturedVetNc * VETERAN_ATK_BONUS;
+                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0) + (barracksTechRef.current.warDrums ? 8 : 0) + unitBonusNc + capturedVetNc * VETERAN_ATK_BONUS;
                   setEnemyNecromancers(ns => ns.map(n => n.id === capturedNecroId ? { ...n, hp: Math.max(0, n.hp - dmg) } : n));
                   addFloatingText(capturedNcX, capturedNcY, `-${dmg}`, '#ef4444');
                   const necroCurrent = enemyNecromancersRef.current.find(n => n.id === capturedNecroId);
@@ -2316,7 +2321,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                 const moraleWD = getMoraleMs(w.x, w.y);
                 attackT[w.id] = window.setTimeout(() => {
                   delete attackTimeoutsRef.current[w.id];
-                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0) + unitBonusWD + capturedVetWD * VETERAN_ATK_BONUS;
+                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0) + (barracksTechRef.current.warDrums ? 8 : 0) + unitBonusWD + capturedVetWD * VETERAN_ATK_BONUS;
                   setEnemyWitchDoctors(ds => ds.map(d => d.id === capturedWDId ? { ...d, hp: Math.max(0, d.hp - dmg) } : d));
                   addFloatingText(capturedWDX, capturedWDY, `-${dmg}`, '#ef4444');
                   const wdCurrent = enemyWitchDoctorsRef.current.find(d => d.id === capturedWDId);
@@ -2347,7 +2352,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                 const moraleMs4 = getMoraleMs(w.x, w.y);
                 attackT[w.id] = window.setTimeout(() => {
                   delete attackTimeoutsRef.current[w.id];
-                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0) + unitBonus2 + capturedVetLevel * VETERAN_ATK_BONUS;
+                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0) + (barracksTechRef.current.warDrums ? 8 : 0) + unitBonus2 + capturedVetLevel * VETERAN_ATK_BONUS;
                   setWorkers(ws2 => ws2.map(w2 => {
                     if (w2.id !== w.id || w2.state !== 'attacking' || !w2.attacking) return w2;
                     setEnemyBarnHp(hp => { const nHp = Math.max(0, hp - dmg); if (nHp <= 0) setGameOver('victory'); return nHp; });
@@ -3194,6 +3199,18 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
       setResources(r => ({ ...r, gold: r.gold - 120, stone: r.stone - 80 }));
       setGuardTowerResearched(true);
       addFloatingText(BARN_POS.x, BARN_POS.y, '🏰 Guard Tower!', '#22d3ee');
+    } else if (action === 'barracks:veteranTraining') {
+      if (barracksTech.veteranTraining || resources.gold < 100 || resources.lumber < 60) return;
+      setResources(r => ({ ...r, gold: r.gold - 100, lumber: r.lumber - 60 }));
+      setBarracksTech(t => ({ ...t, veteranTraining: true }));
+      // Apply +20 maxHp to all existing combat units
+      setWorkers(ws => ws.map(w => (w.unitType === 'swordsman' || w.unitType === 'cavalry' || w.unitType === 'hero') ? { ...w, maxHp: w.maxHp + 20, hp: w.hp + 20 } : w));
+      addFloatingText(BARN_POS.x, BARN_POS.y, '🛡️ Veteran Training!', '#f87171');
+    } else if (action === 'barracks:warDrums') {
+      if (barracksTech.warDrums || resources.gold < 120 || resources.lumber < 40) return;
+      setResources(r => ({ ...r, gold: r.gold - 120, lumber: r.lumber - 40 }));
+      setBarracksTech(t => ({ ...t, warDrums: true }));
+      addFloatingText(BARN_POS.x, BARN_POS.y, '🥁 War Drums!', '#fb923c');
     } else if (action.startsWith('upgradeWall:')) {
       const bid = parseInt(action.split(':')[1] ?? '0');
       const wall = placedBuildings.find(b => b.id === bid && b.type === 'wall' && !b.upgraded);
@@ -4378,6 +4395,8 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
         playerBarnMaxHp={PLAYER_BARN_MAX_HP}
         underAttack={underAttack}
         incomeRate={incomeRate}
+        barracksTech={barracksTech}
+        onBarracksTech={(type) => handleFarmhouseAction(`barracks:${type}`)}
       />
     </div>
   );
