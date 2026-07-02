@@ -44,6 +44,8 @@ export interface PlacedBuilding {
   hp: number;
   maxHp: number;
   upgraded?: boolean;
+  constructing?: boolean;
+  constructedAt?: number;
 }
 
 interface BuildingCost {

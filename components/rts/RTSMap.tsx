@@ -163,7 +163,7 @@ type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmi
 
 interface ResourceNode { x: number; y: number; amount: number }
 interface Resources { gold: number; lumber: number; stone: number; food: number; foodCap: number }
-interface PlacedBuilding { id: number; type: BuildingType; x: number; y: number; hp: number; maxHp: number; upgraded?: boolean }
+interface PlacedBuilding { id: number; type: BuildingType; x: number; y: number; hp: number; maxHp: number; upgraded?: boolean; constructing?: boolean; constructedAt?: number }
 
 interface EnemyGrunt {
   id: number;
@@ -329,6 +329,7 @@ const BUILDING_MAX_HP: Record<BuildingType, number> = {
   barracks: 250, siegeWorkshop: 220, market: 160, blacksmith: 200, granary: 140, stable: 200, spikeTrap: 60, frostTower: FROST_TOWER_HP, ballista: BALLISTA_HP,
 };
 const BUILDING_GRUNT_DAMAGE = 8; // damage per hit from grunt to building
+const CONSTRUCTION_MS = 6000; // time to construct a building
 
 const SWORDSMAN_MAX_HP = 80;
 const SWORDSMAN_DAMAGE_BONUS = 10;
@@ -1116,6 +1117,28 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
     return () => clearInterval(interval);
   }, [gameOver]);
 
+  // Building construction completion — poll every 500ms and complete any that have finished
+  useEffect(() => {
+    if (gameOver) return;
+    const id = window.setInterval(() => {
+      if (gameOverRef.current) return;
+      const now = Date.now();
+      setPlacedBuildings(bs => {
+        const hasReady = bs.some(b => b.constructing && (now - (b.constructedAt ?? now)) >= CONSTRUCTION_MS);
+        if (!hasReady) return bs;
+        const nextBs = bs.map(b => {
+          if (!b.constructing || (now - (b.constructedAt ?? now)) < CONSTRUCTION_MS) return b;
+          addFloatingText(b.x, b.y, '✅ Built!', '#4ade80');
+          const bonus = BUILDING_COSTS[b.type]?.foodCapBonus ?? 0;
+          if (bonus > 0) setResources(r => ({ ...r, foodCap: r.foodCap + bonus }));
+          return { ...b, constructing: false, constructedAt: undefined, hp: b.maxHp };
+        });
+        return nextBs;
+      });
+    }, 500);
+    return () => clearInterval(id);
+  }, [gameOver, addFloatingText]);
+
   // Archer tower attack loop
   useEffect(() => {
     if (gameOver) {
@@ -1188,7 +1211,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
   const frostTowerTimersRef = useRef<Record<number, number>>({});
   useEffect(() => {
     if (gameOver) return;
-    const frostTowers = placedBuildings.filter(b => b.type === 'frostTower' && b.hp > 0);
+    const frostTowers = placedBuildings.filter(b => b.type === 'frostTower' && b.hp > 0 && !b.constructing);
     const scheduleFrost = (towerId: number, tx: number, ty: number) => {
       frostTowerTimersRef.current[towerId] = window.setTimeout(() => {
         delete frostTowerTimersRef.current[towerId];
@@ -1211,7 +1234,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
   const ballistaTimersRef = useRef<Record<number, number>>({});
   useEffect(() => {
     if (gameOver) return;
-    const ballistaTowers = placedBuildings.filter(b => b.type === 'ballista' && b.hp > 0);
+    const ballistaTowers = placedBuildings.filter(b => b.type === 'ballista' && b.hp > 0 && !b.constructing);
     const scheduleBallista = (towerId: number, tx: number, ty: number) => {
       ballistaTimersRef.current[towerId] = window.setTimeout(() => {
         delete ballistaTimersRef.current[towerId];
@@ -1582,8 +1605,8 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
           const cost = BUILDING_COSTS[buildMode];
           setResources(r => {
             if (r.gold < cost.gold || r.lumber < cost.lumber || r.stone < cost.stone) return r;
-            setPlacedBuildings(bs => { const maxHp = BUILDING_MAX_HP[buildMode]; return [...bs, { id: buildingIdRef.current++, type: buildMode, x: tx, y: ty, hp: maxHp, maxHp }]; });
-            return { ...r, gold: r.gold - cost.gold, lumber: r.lumber - cost.lumber, stone: r.stone - cost.stone, foodCap: cost.foodCapBonus > 0 ? r.foodCap + cost.foodCapBonus : r.foodCap };
+            setPlacedBuildings(bs => { const maxHp = BUILDING_MAX_HP[buildMode]; return [...bs, { id: buildingIdRef.current++, type: buildMode, x: tx, y: ty, hp: 1, maxHp, constructing: true, constructedAt: Date.now() }]; });
+            return { ...r, gold: r.gold - cost.gold, lumber: r.lumber - cost.lumber, stone: r.stone - cost.stone };
           });
           setBuildMode(null); setGhostTile(null);
         }
@@ -2566,7 +2589,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
 
         // Building aggro: prioritize military buildings over economic ones (AoE-style target AI)
         const BUILDING_PRIORITY: Partial<Record<BuildingType, number>> = { barracks: 5, siegeWorkshop: 4, stable: 4, watchtower: 3, blacksmith: 2, farmhouse: 1 };
-        const nearBuildingCandidates = placedBuildingsRef.current.filter(b => b.type !== 'wall' && b.hp > 0 && tileDist(g.x, g.y, b.x, b.y) <= 1.2);
+        const nearBuildingCandidates = placedBuildingsRef.current.filter(b => b.type !== 'wall' && b.hp > 0 && !b.constructing && tileDist(g.x, g.y, b.x, b.y) <= 1.2);
         const nearBuilding = nearBuildingCandidates.sort((a, b2) => (BUILDING_PRIORITY[b2.type] ?? 0) - (BUILDING_PRIORITY[a.type] ?? 0))[0] ?? null;
         if (nearBuilding) {
           if (!buildingAttackTimeoutsRef.current[g.id]) {
@@ -3657,6 +3680,26 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
 
           {/* Placed buildings */}
           {placedBuildings.map(b => { const { isoX, isoY } = tileToSvg(b.x, b.y);
+            // Show scaffold during construction
+            if (b.constructing) {
+              const elapsed = Date.now() - (b.constructedAt ?? Date.now());
+              const progress = Math.min(1, elapsed / CONSTRUCTION_MS);
+              return <g key={`building-${b.id}`} pointerEvents="none">
+                {/* Scaffold base */}
+                <rect x={isoX + TILE_SIZE * 0.15} y={isoY + 2} width={TILE_SIZE * 1.7} height={TILE_SIZE * 0.75} fill="#78350f" stroke="#92400e" strokeWidth={2} rx={3} opacity={0.6} strokeDasharray="6 3" />
+                {/* Vertical poles */}
+                {[0.2, 0.5, 0.8].map(f => <line key={f} x1={isoX + TILE_SIZE * (0.15 + f * 1.7)} y1={isoY + 2} x2={isoX + TILE_SIZE * (0.15 + f * 1.7)} y2={isoY + TILE_SIZE * 0.77} stroke="#d97706" strokeWidth={3} strokeLinecap="round" />)}
+                {/* Horizontal planks */}
+                {[0.3, 0.6].map(f => <line key={f} x1={isoX + TILE_SIZE * 0.15} y1={isoY + TILE_SIZE * f} x2={isoX + TILE_SIZE * 1.85} y2={isoY + TILE_SIZE * f} stroke="#d97706" strokeWidth={2} strokeDasharray="4 3" />)}
+                {/* Building icon faint */}
+                <text x={isoX + TILE_SIZE} y={isoY + TILE_SIZE * 0.5} textAnchor="middle" fontSize="18" opacity={0.4}>{BUILDING_EMOJI[b.type]}</text>
+                {/* Label */}
+                <text x={isoX + TILE_SIZE} y={isoY - 6} textAnchor="middle" fontSize="8" fill="#fbbf24" fontWeight="bold">🔨 Building…</text>
+                {/* Progress bar */}
+                <rect x={isoX + TILE_SIZE * 0.15} y={isoY + TILE_SIZE * 0.8} width={TILE_SIZE * 1.7} height={5} fill="#1e293b" rx={2} />
+                <rect x={isoX + TILE_SIZE * 0.15} y={isoY + TILE_SIZE * 0.8} width={TILE_SIZE * 1.7 * progress} height={5} fill="#4ade80" rx={2} />
+              </g>;
+            }
             if (b.type === 'wall') {
               const wallIsDamaged = b.hp < b.maxHp;
               const canUpgradeThisWall = !b.upgraded && resources.gold >= 50 && resources.stone >= 20;
@@ -4362,7 +4405,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
         onResearch={handleResearch}
         stance={stance}
         onToggleStance={() => setStance(s => s === 'aggressive' ? 'passive' : 'aggressive')}
-        hasBarracks={placedBuildings.some(b => b.type === 'barracks')}
+        hasBarracks={placedBuildings.some(b => b.type === 'barracks' && !b.constructing)}
         garrisonedCount={garrisoned.length}
         garrisonCap={GARRISON_CAP}
         onGarrison={handleGarrison}
@@ -4377,13 +4420,13 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
         harvestBoonActive={harvestBoonActive}
         onHarvestBoon={handleHarvestBoon}
         onRecruitHero={() => handleFarmhouseAction('recruitHero')}
-        hasSiegeWorkshop={placedBuildings.some(b => b.type === 'siegeWorkshop')}
-        hasMarket={placedBuildings.some(b => b.type === 'market')}
-        hasBlacksmith={placedBuildings.some(b => b.type === 'blacksmith')}
+        hasSiegeWorkshop={placedBuildings.some(b => b.type === 'siegeWorkshop' && !b.constructing)}
+        hasMarket={placedBuildings.some(b => b.type === 'market' && !b.constructing)}
+        hasBlacksmith={placedBuildings.some(b => b.type === 'blacksmith' && !b.constructing)}
         blacksmithUpgrades={blacksmithUpgrades}
         onBlacksmithUpgrade={(type) => handleFarmhouseAction(`blacksmith:${type}`)}
-        hasStable={placedBuildings.some(b => b.type === 'stable')}
-        hasWatchtower={placedBuildings.some(b => b.type === 'watchtower')}
+        hasStable={placedBuildings.some(b => b.type === 'stable' && !b.constructing)}
+        hasWatchtower={placedBuildings.some(b => b.type === 'watchtower' && !b.constructing)}
         guardTowerResearched={guardTowerResearched}
         onGuardTower={() => handleFarmhouseAction('guardTower')}
         trainingQueue={trainingQueue}
