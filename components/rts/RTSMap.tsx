@@ -654,6 +654,15 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
   const [zoom, setZoom] = useState(1);
   const tiles = useMemo(() => INITIAL_TILES, []);
   const [camera, setCamera] = useState({ x: 0, y: 0 });
+  const [screenShake, setScreenShake] = useState(0);
+  const screenShakeTimerRef = useRef<number | null>(null);
+  const triggerShake = useCallback((magnitude = 1) => {
+    setScreenShake(magnitude);
+    if (screenShakeTimerRef.current) clearTimeout(screenShakeTimerRef.current);
+    screenShakeTimerRef.current = window.setTimeout(() => setScreenShake(0), 350);
+  }, []);
+  const triggerShakeRef = useRef(triggerShake);
+  useEffect(() => { triggerShakeRef.current = triggerShake; }, [triggerShake]);
   const svgRef = useRef<SVGSVGElement>(null);
   const [soundMuted, setSoundMutedState] = useState(getSoundMuted);
   const toggleMute = () => { const next = !soundMuted; setSoundMuted(next); setSoundMutedState(next); };
@@ -3090,6 +3099,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
               setPlayerBarnHp(hp => { const nHp = Math.max(0, hp - barnDmg); if (nHp <= 0) setGameOver('defeat'); return nHp; });
               addFloatingText(BARN_POS.x, BARN_POS.y, `-${barnDmg}`, g.isBoss ? '#dc2626' : '#ef4444');
               triggerUnderAttackRef.current({ x: BARN_POS.x, y: BARN_POS.y });
+              if (g.isBoss) triggerShakeRef.current(2);
             }, GRUNT_ATTACK_MS);
           }
         }
@@ -3153,6 +3163,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
                   if (tileDist(tx, ty, BARN_POS.x, BARN_POS.y) <= DEMOLISHER_SPLASH_RANGE) {
                     setPlayerBarnHp(hp => { const nHp = Math.max(0, hp - DEMOLISHER_DAMAGE); if (nHp <= 0) setGameOver('defeat'); return nHp; });
                     triggerUnderAttackRef.current({ x: BARN_POS.x, y: BARN_POS.y });
+                    triggerShakeRef.current(1.5);
                   }
                   addFloatingText(tx, ty, `💣-${DEMOLISHER_DAMAGE}`, '#f97316');
                 }, DEMOLISHER_ATTACK_MS);
@@ -4130,7 +4141,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
   }), [workers, enemyGrunts, enemyBarnHp, placedBuildings, clearedCamps, goldMines, stoneNodes, trees, enemyTowers, enemySiege, enemyShamans, enemyTrolls, enemySappers, enemyWitchDoctors, enemyWarchiefs, fogExplored, minimapPings]);
 
   return (
-    <div className="absolute inset-0 bg-black" onContextMenu={e => { if (buildMode) { e.preventDefault(); setBuildMode(null); setGhostTile(null); } }}>
+    <div className="absolute inset-0 bg-black" style={screenShake > 0 ? { transform: `translate(${(Math.random() - 0.5) * 6 * screenShake}px, ${(Math.random() - 0.5) * 6 * screenShake}px)` } : undefined} onContextMenu={e => { if (buildMode) { e.preventDefault(); setBuildMode(null); setGhostTile(null); } }}>
       {/* Victory / Defeat overlay */}
       {gameOver && (() => {
         const elapsed = Math.floor(((gameEndTime ?? Date.now()) - startTimeRef.current) / 1000);
@@ -4195,6 +4206,11 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
           {wavePreview}
         </div>
       )}
+      {/* Critical HP vignette — red pulse at screen edges when barn < 25% */}
+      {!gameOver && playerBarnHp / PLAYER_BARN_MAX_HP < 0.25 && (
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 30, background: 'radial-gradient(ellipse at center, transparent 60%, rgba(220,38,38,0.35) 100%)', animation: 'pulse 1.2s infinite' }} />
+      )}
+
       {waveAnnouncement && (
         <div style={{ position: 'absolute', top: '22%', left: '50%', transform: 'translateX(-50%)', background: 'rgba(127,29,29,0.92)', color: '#fca5a5', fontSize: 28, fontWeight: 800, padding: '10px 32px', borderRadius: 12, zIndex: 25, pointerEvents: 'none', border: '2px solid #ef4444', letterSpacing: 1 }}>
           {waveAnnouncement}
