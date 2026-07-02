@@ -140,6 +140,9 @@ interface RTSUIProps {
   onBarracksTech: (type: 'veteranTraining' | 'warDrums') => void;
   earthquakeCooldown: number;
   onEarthquake: () => void;
+  heroItems: { id: number; itemId: string }[];
+  onDropItem: (slotId: number) => void;
+  onUsePotion: () => void;
   enemyBarnHp: number;
   enemyBarnMaxHp: number;
   playerBarnHp: number;
@@ -232,7 +235,17 @@ export const RTSUI: React.FC<RTSUIProps> = ({
   onBarracksTech,
   earthquakeCooldown,
   onEarthquake,
+  heroItems,
+  onDropItem,
+  onUsePotion,
 }) => {
+  const HERO_ITEM_DATA_UI: Record<string, { name: string; emoji: string; desc: string; consumable?: boolean }> = {
+    boots_speed:    { name: 'Boots of Swiftness', emoji: '👟', desc: '+0.4 move speed' },
+    battle_sword:   { name: 'Battle Blade',        emoji: '🗡️', desc: '+20 hero damage' },
+    shield_pendant: { name: 'Shield Pendant',      emoji: '🛡️', desc: '-6 damage taken' },
+    healing_potion: { name: 'Healing Potion',      emoji: '🧪', desc: 'Restore 75 HP', consumable: true },
+    tome_xp:        { name: 'Tome of Knowledge',   emoji: '📖', desc: '+80 XP (instant)', consumable: true },
+  };
   const isHeroSelected = selectedWorkers.some(w => w.unitType === 'hero');
   const heroLevel = selectedWorkers.find(w => w.unitType === 'hero')?.level ?? 0;
   const selectedCount = selectedWorkers.length;
@@ -478,6 +491,37 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                   <div className="col-span-3 rounded border border-slate-600/40 py-2.5 text-center text-xs text-slate-500">🌋 Earthquake (Lv3 — 280xp)</div>
                 )}
               </>)}
+            </div>
+          )}
+
+          {/* Hero Item Slots — shown when hero is selected */}
+          {isHeroSelected && heroItems.length > 0 && (
+            <div className="mt-2 border-t border-slate-700/50 pt-2">
+              <div className="mb-1 text-xs font-semibold text-violet-300">🎒 Items ({heroItems.length}/3)</div>
+              <div className="grid grid-cols-3 gap-1">
+                {heroItems.map(item => {
+                  const data = HERO_ITEM_DATA_UI[item.itemId];
+                  if (!data) return null;
+                  return (
+                    <div key={item.id} className="group relative flex flex-col items-center rounded border border-violet-500/40 bg-violet-900/20 p-1.5 text-center" title={`${data.name}\n${data.desc}\n${data.consumable ? 'Click to use' : 'Right-click to drop'}`}>
+                      <span className="text-lg leading-none">{data.emoji}</span>
+                      <span className="mt-0.5 text-[9px] text-violet-200 leading-tight">{data.name}</span>
+                      {data.consumable ? (
+                        <button onClick={item.itemId === 'healing_potion' ? onUsePotion : undefined} className="mt-1 w-full rounded bg-violet-600/40 py-0.5 text-[9px] text-violet-100 hover:bg-violet-600/60 disabled:opacity-40">
+                          Use
+                        </button>
+                      ) : (
+                        <button onClick={() => onDropItem(item.id)} className="mt-1 w-full rounded bg-slate-600/40 py-0.5 text-[9px] text-slate-300 hover:bg-slate-600/60">
+                          Drop
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+                {Array.from({ length: 3 - heroItems.length }).map((_, i) => (
+                  <div key={`empty-${i}`} className="flex h-16 items-center justify-center rounded border border-dashed border-slate-700/50 text-xs text-slate-600">—</div>
+                ))}
+              </div>
             </div>
           )}
 

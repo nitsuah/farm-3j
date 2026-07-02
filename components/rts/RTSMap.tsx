@@ -195,6 +195,18 @@ const LOOT_CRATE_POSITIONS = [
 
 interface FloatingText { id: number; x: number; y: number; text: string; color: string; createdAt: number }
 type TileType = 'grass' | 'dirt' | 'water' | 'tree' | 'rock';
+
+type HeroItemId = 'boots_speed' | 'battle_sword' | 'shield_pendant' | 'healing_potion' | 'tome_xp';
+interface HeroItem { id: number; itemId: HeroItemId }
+interface DroppedItem { id: number; itemId: HeroItemId; x: number; y: number }
+const HERO_ITEM_DATA: Record<HeroItemId, { name: string; emoji: string; desc: string; speedBonus?: number; dmgBonus?: number; armorBonus?: number; consumable?: boolean }> = {
+  boots_speed:    { name: 'Boots of Swiftness', emoji: '👟', desc: '+0.4 move speed', speedBonus: 0.4 },
+  battle_sword:   { name: 'Battle Blade',        emoji: '🗡️', desc: '+20 hero damage', dmgBonus: 20 },
+  shield_pendant: { name: 'Shield Pendant',      emoji: '🛡️', desc: '-6 damage taken',  armorBonus: 6 },
+  healing_potion: { name: 'Healing Potion',      emoji: '🧪', desc: 'Restore 75 HP',    consumable: true },
+  tome_xp:        { name: 'Tome of Knowledge',   emoji: '📖', desc: '+80 XP (instant)', consumable: true },
+};
+const HERO_MAX_ITEMS = 3;
 type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market' | 'blacksmith' | 'granary' | 'stable' | 'spikeTrap' | 'frostTower' | 'ballista' | 'poisonTower';
 
 interface ResourceNode { x: number; y: number; amount: number }
@@ -853,6 +865,13 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
   const lootCratesRef = useRef<LootCrate[]>([]);
   useEffect(() => { lootCratesRef.current = lootCrates; }, [lootCrates]);
   const lootCrateIdRef = useRef(5000);
+  const [heroItems, setHeroItems] = useState<HeroItem[]>([]);
+  const heroItemsRef = useRef<HeroItem[]>([]);
+  useEffect(() => { heroItemsRef.current = heroItems; }, [heroItems]);
+  const [droppedItems, setDroppedItems] = useState<DroppedItem[]>([]);
+  const droppedItemsRef = useRef<DroppedItem[]>([]);
+  useEffect(() => { droppedItemsRef.current = droppedItems; }, [droppedItems]);
+  const dropItemIdRef = useRef(9000);
   const [waveAnnouncement, setWaveAnnouncement] = useState<string | null>(null);
   const [wavePreview, setWavePreview] = useState<string | null>(null);
   const previewTimerRef = useRef<number | null>(null);
@@ -1971,6 +1990,27 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
     }, 10000);
   }, [harvestBoonCooldown, harvestBoonActive, addFloatingText, workers]);
 
+  const handleDropItem = useCallback((itemSlotId: number) => {
+    const item = heroItems.find(it => it.id === itemSlotId);
+    if (!item) return;
+    const hero = workersRef.current.find(w => w.unitType === 'hero' && w.hp > 0);
+    if (!hero) return;
+    setDroppedItems(ds => [...ds, { id: dropItemIdRef.current++, itemId: item.itemId, x: Math.round(hero.x), y: Math.round(hero.y) + 1 }]);
+    setHeroItems(hi => hi.filter(it => it.id !== itemSlotId));
+  }, [heroItems]);
+
+  const handleUsePotion = useCallback(() => {
+    const potionIdx = heroItems.findIndex(it => it.itemId === 'healing_potion');
+    if (potionIdx < 0) return;
+    const hero = workersRef.current.find(w => w.unitType === 'hero' && w.hp > 0);
+    if (!hero) return;
+    const healAmt = 75;
+    setWorkers(ws => ws.map(w => w.unitType === 'hero' ? { ...w, hp: Math.min(w.maxHp, w.hp + healAmt) } : w));
+    setHeroItems(hi => { const next = [...hi]; next.splice(potionIdx, 1); return next; });
+    addFloatingText(Math.round(hero.x), Math.round(hero.y), `🧪 +${healAmt} HP`, '#4ade80');
+    Snd.ability();
+  }, [heroItems, addFloatingText]);
+
   const handleEarthquake = useCallback(() => {
     if (earthquakeCooldown > 0) return;
     const hero = workersRef.current.find(w => w.unitType === 'hero' && w.hp > 0 && w.level >= 3);
@@ -2527,8 +2567,34 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
                 }
               });
             }
+            // Hero item auto-pickup: pick up dropped items within 1 tile
+            if (w.unitType === 'hero' && w.hp > 0) {
+              const nearItem = droppedItemsRef.current.find(d => tileDist(d.x, d.y, w.x, w.y) <= 1.0);
+              if (nearItem) {
+                const items = heroItemsRef.current;
+                const data = HERO_ITEM_DATA[nearItem.itemId];
+                if (data.consumable) {
+                  if (nearItem.itemId === 'tome_xp') {
+                    setWorkers(ws2 => ws2.map(u => {
+                      if (u.unitType !== 'hero') return u;
+                      const newXp = u.xp + 80;
+                      const newLevel = newXp >= XP_TO_LEVEL_3 ? 3 : newXp >= XP_TO_LEVEL_2 ? 2 : newXp >= XP_TO_LEVEL_1 ? 1 : 0;
+                      if (newLevel > u.level) { addFloatingText(Math.round(u.x), Math.round(u.y), `⭐ Level ${newLevel}!`, '#fbbf24'); return { ...u, xp: newXp, level: newLevel, maxHp: u.maxHp + VETERAN_HP_BONUS, hp: Math.min(u.hp + VETERAN_HP_BONUS, u.maxHp + VETERAN_HP_BONUS) }; }
+                      return { ...u, xp: newXp };
+                    }));
+                    addFloatingText(Math.round(w.x), Math.round(w.y), `📖 +80 XP!`, '#c084fc');
+                  }
+                  setDroppedItems(ds => ds.filter(d => d.id !== nearItem.id));
+                } else if (items.length < HERO_MAX_ITEMS) {
+                  setHeroItems(hi => [...hi, { id: nearItem.id, itemId: nearItem.itemId }]);
+                  setDroppedItems(ds => ds.filter(d => d.id !== nearItem.id));
+                  addFloatingText(Math.round(w.x), Math.round(w.y), `${data.emoji} ${data.name}!`, '#c084fc');
+                }
+              }
+            }
             const sprintMult = w.sprinting ? CAVALRY_SPRINT_SPEED_MULT : 1;
-            const moveSpeed = (w.unitType === 'catapult' ? CATAPULT_SPEED : w.unitType === 'trebuchet' ? TREBUCHET_SPEED : w.unitType === 'cavalry' ? CAVALRY_SPEED : WORKER_SPEED) * sprintMult;
+            const itemSpeedBonus = w.unitType === 'hero' ? heroItemsRef.current.reduce((s, it) => s + (HERO_ITEM_DATA[it.itemId].speedBonus ?? 0), 0) : 0;
+            const moveSpeed = (w.unitType === 'catapult' ? CATAPULT_SPEED : w.unitType === 'trebuchet' ? TREBUCHET_SPEED : w.unitType === 'cavalry' ? CAVALRY_SPEED : WORKER_SPEED + itemSpeedBonus) * sprintMult;
             return { ...w, x: w.x + (dx / d) * Math.min(moveSpeed * dt, d), y: w.y + (dy / d) * Math.min(moveSpeed * dt, d) };
           }
 
@@ -2627,7 +2693,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
               if (!attackT[w.id]) {
                 const capturedCX = Math.round(creepTarget.x), capturedCY = Math.round(creepTarget.y);
                 const capturedWX3 = Math.round(w.x), capturedWY3 = Math.round(w.y);
-                const unitBonusC = w.unitType === 'hero' ? HERO_DAMAGE_BONUS : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
+                const unitBonusC = w.unitType === 'hero' ? (HERO_DAMAGE_BONUS + heroItemsRef.current.reduce((s, it) => s + (HERO_ITEM_DATA[it.itemId].dmgBonus ?? 0), 0)) : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
                 const capturedVetC = w.level;
                 const moraleMs1 = getMoraleMs(w.x, w.y);
                 attackT[w.id] = window.setTimeout(() => {
@@ -2668,7 +2734,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
                 const capturedGX = Math.round(target.x), capturedGY = Math.round(target.y);
                 const capturedWX = Math.round(w.x), capturedWY = Math.round(w.y);
                 const capturedWorkerId = w.id;
-                const unitBonus = w.unitType === 'hero' ? HERO_DAMAGE_BONUS : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
+                const unitBonus = w.unitType === 'hero' ? (HERO_DAMAGE_BONUS + heroItemsRef.current.reduce((s, it) => s + (HERO_ITEM_DATA[it.itemId].dmgBonus ?? 0), 0)) : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
                 const moraleMs2 = getMoraleMs(w.x, w.y);
                 attackT[w.id] = window.setTimeout(() => {
                   delete attackTimeoutsRef.current[capturedWorkerId];
@@ -2723,7 +2789,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
               if (!attackT[w.id]) {
                 const capturedTX = towerTarget.x, capturedTY = towerTarget.y;
                 const capturedTId = towerId;
-                const unitBonusT = w.unitType === 'hero' ? HERO_DAMAGE_BONUS : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
+                const unitBonusT = w.unitType === 'hero' ? (HERO_DAMAGE_BONUS + heroItemsRef.current.reduce((s, it) => s + (HERO_ITEM_DATA[it.itemId].dmgBonus ?? 0), 0)) : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
                 const capturedVetT = w.level;
                 const moraleMs3 = getMoraleMs(w.x, w.y);
                 attackT[w.id] = window.setTimeout(() => {
@@ -2743,7 +2809,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
               }
               if (!attackT[w.id]) {
                 const capturedWallId = wallId; const capturedWX2 = wallTarget.x, capturedWY2 = wallTarget.y;
-                const unitBonusW = w.unitType === 'hero' ? HERO_DAMAGE_BONUS : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
+                const unitBonusW = w.unitType === 'hero' ? (HERO_DAMAGE_BONUS + heroItemsRef.current.reduce((s, it) => s + (HERO_ITEM_DATA[it.itemId].dmgBonus ?? 0), 0)) : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
                 const capturedVetW = w.level;
                 attackT[w.id] = window.setTimeout(() => {
                   delete attackTimeoutsRef.current[w.id];
@@ -2764,7 +2830,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
               if (!attackT[w.id]) {
                 const capturedSX = Math.round(siegeTarget.x), capturedSY = Math.round(siegeTarget.y);
                 const capturedSiegeId = siegeId;
-                const unitBonusS = w.unitType === 'hero' ? HERO_DAMAGE_BONUS : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
+                const unitBonusS = w.unitType === 'hero' ? (HERO_DAMAGE_BONUS + heroItemsRef.current.reduce((s, it) => s + (HERO_ITEM_DATA[it.itemId].dmgBonus ?? 0), 0)) : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
                 const capturedVetS = w.level;
                 const moraleMs5 = getMoraleMs(w.x, w.y);
                 attackT[w.id] = window.setTimeout(() => {
@@ -2804,7 +2870,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
               if (!attackT[w.id]) {
                 const capturedShX = Math.round(shamanTarget.x), capturedShY = Math.round(shamanTarget.y);
                 const capturedShamanId = shamanId;
-                const unitBonusSh = w.unitType === 'hero' ? HERO_DAMAGE_BONUS : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
+                const unitBonusSh = w.unitType === 'hero' ? (HERO_DAMAGE_BONUS + heroItemsRef.current.reduce((s, it) => s + (HERO_ITEM_DATA[it.itemId].dmgBonus ?? 0), 0)) : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
                 const capturedVetSh = w.level;
                 const moraleMs6 = getMoraleMs(w.x, w.y);
                 attackT[w.id] = window.setTimeout(() => {
@@ -2844,7 +2910,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
               if (!attackT[w.id]) {
                 const capturedTrX = Math.round(trollTarget.x), capturedTrY = Math.round(trollTarget.y);
                 const capturedTrollId = trollId;
-                const unitBonusTr = w.unitType === 'hero' ? HERO_DAMAGE_BONUS : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
+                const unitBonusTr = w.unitType === 'hero' ? (HERO_DAMAGE_BONUS + heroItemsRef.current.reduce((s, it) => s + (HERO_ITEM_DATA[it.itemId].dmgBonus ?? 0), 0)) : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
                 const capturedVetTr = w.level;
                 const moraleMs7 = getMoraleMs(w.x, w.y);
                 attackT[w.id] = window.setTimeout(() => {
@@ -2882,7 +2948,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
               if (!attackT[w.id]) {
                 const capturedSpX = Math.round(sapperTarget.x), capturedSpY = Math.round(sapperTarget.y);
                 const capturedSapperId = sapperId;
-                const unitBonusSp = w.unitType === 'hero' ? HERO_DAMAGE_BONUS : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
+                const unitBonusSp = w.unitType === 'hero' ? (HERO_DAMAGE_BONUS + heroItemsRef.current.reduce((s, it) => s + (HERO_ITEM_DATA[it.itemId].dmgBonus ?? 0), 0)) : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
                 const capturedVetSp = w.level;
                 const moraleMs8 = getMoraleMs(w.x, w.y);
                 attackT[w.id] = window.setTimeout(() => {
@@ -2904,7 +2970,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
               if (!attackT[w.id]) {
                 const capturedNcX = Math.round(necroTarget.x), capturedNcY = Math.round(necroTarget.y);
                 const capturedNecroId = necroId;
-                const unitBonusNc = w.unitType === 'hero' ? HERO_DAMAGE_BONUS : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
+                const unitBonusNc = w.unitType === 'hero' ? (HERO_DAMAGE_BONUS + heroItemsRef.current.reduce((s, it) => s + (HERO_ITEM_DATA[it.itemId].dmgBonus ?? 0), 0)) : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
                 const capturedVetNc = w.level;
                 const moraleMs9 = getMoraleMs(w.x, w.y);
                 attackT[w.id] = window.setTimeout(() => {
@@ -2942,7 +3008,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
               if (!attackT[w.id]) {
                 const capturedWDX = Math.round(wdTarget.x), capturedWDY = Math.round(wdTarget.y);
                 const capturedWDId = wdId;
-                const unitBonusWD = w.unitType === 'hero' ? HERO_DAMAGE_BONUS : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
+                const unitBonusWD = w.unitType === 'hero' ? (HERO_DAMAGE_BONUS + heroItemsRef.current.reduce((s, it) => s + (HERO_ITEM_DATA[it.itemId].dmgBonus ?? 0), 0)) : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
                 const capturedVetWD = w.level;
                 const moraleWD = getMoraleMs(w.x, w.y);
                 attackT[w.id] = window.setTimeout(() => {
@@ -2982,7 +3048,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
               if (!attackT[w.id]) {
                 const capturedWCX = Math.round(wcTarget.x), capturedWCY = Math.round(wcTarget.y);
                 const capturedWCId = wcId;
-                const unitBonusWC = w.unitType === 'hero' ? HERO_DAMAGE_BONUS : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
+                const unitBonusWC = w.unitType === 'hero' ? (HERO_DAMAGE_BONUS + heroItemsRef.current.reduce((s, it) => s + (HERO_ITEM_DATA[it.itemId].dmgBonus ?? 0), 0)) : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
                 const capturedVetWC = w.level;
                 const moraleWC = getMoraleMs(w.x, w.y);
                 attackT[w.id] = window.setTimeout(() => {
@@ -2994,6 +3060,10 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
                   if (wcCurrent && wcCurrent.hp - dmg <= 0) {
                     setResources(r => ({ ...r, gold: r.gold + WARCHIEF_GOLD_REWARD }));
                     addFloatingText(capturedWCX, capturedWCY, `👑 +${WARCHIEF_GOLD_REWARD}🪙`, '#fbbf24');
+                    const wcPool: HeroItemId[] = ['battle_sword', 'shield_pendant', 'tome_xp', 'healing_potion'];
+                    const wcDrop = wcPool[Math.floor(Math.random() * wcPool.length)]!;
+                    setDroppedItems(ds => [...ds, { id: dropItemIdRef.current++, itemId: wcDrop, x: capturedWCX, y: capturedWCY }]);
+                    addFloatingText(capturedWCX, capturedWCY, `👑 ${HERO_ITEM_DATA[wcDrop].emoji} Dropped!`, '#c084fc');
                     setWorkers(ws2 => ws2.map(u => {
                       const isAttacker = u.id === w.id;
                       const isNearby = !isAttacker && u.hp > 0 && tileDist(u.x, u.y, capturedWCX, capturedWCY) <= 3;
@@ -3013,7 +3083,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
             } else {
               if (!attackT[w.id]) {
                 const capturedWX = Math.round(w.x), capturedWY = Math.round(w.y);
-                const unitBonus2 = w.unitType === 'hero' ? HERO_DAMAGE_BONUS : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
+                const unitBonus2 = w.unitType === 'hero' ? (HERO_DAMAGE_BONUS + heroItemsRef.current.reduce((s, it) => s + (HERO_ITEM_DATA[it.itemId].dmgBonus ?? 0), 0)) : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
                 const capturedVetLevel = w.level;
                 const moraleMs4 = getMoraleMs(w.x, w.y);
                 attackT[w.id] = window.setTimeout(() => {
@@ -3049,7 +3119,8 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
                       return nHp;
                     });
                     addFloatingText(ENEMY_BARN_POS.x, ENEMY_BARN_POS.y, `-${dmg}`, '#ef4444');
-                    const counterDmg = Math.max(1, ENEMY_COUNTER_DAMAGE - blacksmithUpgradesRef.current.ironHide * 2);
+                    const heroArmorBonus = w2.unitType === 'hero' ? heroItemsRef.current.reduce((s, it) => s + (HERO_ITEM_DATA[it.itemId].armorBonus ?? 0), 0) : 0;
+                    const counterDmg = Math.max(1, ENEMY_COUNTER_DAMAGE - blacksmithUpgradesRef.current.ironHide * 2 - heroArmorBonus);
                     addFloatingText(capturedWX, capturedWY, `-${counterDmg}`, '#fca5a5');
                     return { ...w2, hp: Math.max(0, w2.hp - counterDmg) };
                   }));
@@ -3267,7 +3338,8 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
               gruntAttackTimeoutsRef.current[g.id] = window.setTimeout(() => {
                 delete gruntAttackTimeoutsRef.current[g.id];
                 const gruntEnraged = (enemyGruntsRef.current.find(gg => gg.id === capturedGruntId)?.enragedUntil ?? 0) > Date.now();
-                const gruntDmg = Math.max(1, Math.round((GRUNT_DAMAGE + (gruntEnraged ? WITCH_DOCTOR_ENRAGE_DMG_BONUS : 0)) * (difficulty?.gruntDmgMult ?? 1)) - blacksmithUpgradesRef.current.ironHide * 2);
+                const targetHeroArmor = workersRef.current.find(w2 => w2.id === wid)?.unitType === 'hero' ? heroItemsRef.current.reduce((s, it) => s + (HERO_ITEM_DATA[it.itemId].armorBonus ?? 0), 0) : 0;
+                const gruntDmg = Math.max(1, Math.round((GRUNT_DAMAGE + (gruntEnraged ? WITCH_DOCTOR_ENRAGE_DMG_BONUS : 0)) * (difficulty?.gruntDmgMult ?? 1)) - blacksmithUpgradesRef.current.ironHide * 2 - targetHeroArmor);
                 setWorkers(ws2 => ws2.map(w2 => {
                   if (w2.id !== wid) return w2;
                   const newHp = Math.max(0, w2.hp - gruntDmg);
@@ -3598,6 +3670,10 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
         killed.forEach(wc2 => {
           setResources(r => ({ ...r, gold: r.gold + WARCHIEF_GOLD_REWARD }));
           addFloatingText(Math.round(wc2.x), Math.round(wc2.y), `👑 +${WARCHIEF_GOLD_REWARD}🪙`, '#fbbf24');
+          const wcPool2: HeroItemId[] = ['battle_sword', 'shield_pendant', 'tome_xp', 'healing_potion'];
+          const wcDrop2 = wcPool2[Math.floor(Math.random() * wcPool2.length)]!;
+          setDroppedItems(ds => [...ds, { id: dropItemIdRef.current++, itemId: wcDrop2, x: Math.round(wc2.x), y: Math.round(wc2.y) }]);
+          addFloatingText(Math.round(wc2.x), Math.round(wc2.y), `👑 ${HERO_ITEM_DATA[wcDrop2].emoji} Dropped!`, '#c084fc');
         });
         const now = Date.now();
         return alive.map(wc2 => {
@@ -3786,6 +3862,12 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
               setClearedCamps(s => { if (s.has(camp.id)) return s; const n = new Set(s); n.add(camp.id); return n; });
               setResources(r => ({ ...r, gold: r.gold + camp.goldReward }));
               addFloatingText(camp.x, camp.y, `+${camp.goldReward}🪙 Camp!`, '#fbbf24');
+              if (Math.random() < 0.65) {
+                const pool: HeroItemId[] = ['boots_speed', 'battle_sword', 'shield_pendant', 'healing_potion'];
+                const pick = pool[Math.floor(Math.random() * pool.length)]!;
+                setDroppedItems(ds => [...ds, { id: dropItemIdRef.current++, itemId: pick, x: camp.x, y: camp.y + 1 }]);
+                addFloatingText(camp.x, camp.y, `📦 ${HERO_ITEM_DATA[pick].emoji} Item!`, '#c084fc');
+              }
             }
           });
           killed.forEach(c => { if (creepAttackTimeoutsRef.current[c.id]) { clearTimeout(creepAttackTimeoutsRef.current[c.id]); delete creepAttackTimeoutsRef.current[c.id]; } });
@@ -5306,6 +5388,19 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
             </g>;
           })}
 
+          {/* Dropped hero items */}
+          {droppedItems.map(item => {
+            const { isoX, isoY } = tileToSvg(item.x, item.y);
+            const data = HERO_ITEM_DATA[item.itemId];
+            const cx = isoX + TILE_SIZE / 2;
+            const cy = isoY + 16;
+            return <g key={`drop-${item.id}`} pointerEvents="none">
+              <ellipse cx={cx} cy={cy + 4} rx={12} ry={6} fill="#7c3aed" opacity={0.35} />
+              <text x={cx} y={cy + 2} textAnchor="middle" fontSize="14">{data.emoji}</text>
+              <text x={cx} y={cy - 10} textAnchor="middle" fontSize="8" fill="#c084fc" fontWeight="bold">{data.name}</text>
+            </g>;
+          })}
+
           {/* War Rams & Demolishers (enemy siege units) */}
           {enemySiege.filter(r => r.hp > 0 && fogVisible[Math.round(r.x)]?.[Math.round(r.y)]).map(r => {
             const { isoX, isoY } = tileToSvg(r.x, r.y);
@@ -5861,6 +5956,9 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
         onBarracksTech={(type) => handleFarmhouseAction(`barracks:${type}`)}
         earthquakeCooldown={earthquakeCooldown}
         onEarthquake={handleEarthquake}
+        heroItems={heroItems}
+        onDropItem={handleDropItem}
+        onUsePotion={handleUsePotion}
       />
     </div>
   );
