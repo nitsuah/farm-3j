@@ -854,6 +854,9 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
   const gameOverRef = useRef<'victory' | 'defeat' | null>(null);
   const spawnTimerRef = useRef<number | null>(null);
   const [nextWaveAt, setNextWaveAt] = useState<number | null>(null);
+  const nextWaveAtRef = useRef<number | null>(null);
+  useEffect(() => { nextWaveAtRef.current = nextWaveAt; }, [nextWaveAt]);
+  const waveTimerRemainingRef = useRef<number | null>(null);
   const idleWorkerIndexRef = useRef(0);
   const lastGroupKeyRef = useRef<{ num: number; t: number } | null>(null);
   // Ambient chickens — decorative only, wander near barn
@@ -874,7 +877,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
   const shrinePlentyBuffRef = useRef(false);
   useEffect(() => { shrinePlentyBuffRef.current = shrinePlentyBuff; }, [shrinePlentyBuff]);
   const [gameSpeed, setGameSpeed] = useState(0);
-  const gameSpeedRef = useRef(1);
+  const gameSpeedRef = useRef(0);
   useEffect(() => { gameSpeedRef.current = gameSpeed; }, [gameSpeed]);
   const barnDmgThisWaveRef = useRef(0); // tracks barn HP lost this wave for clear-bonus
   const [damageLog, setDamageLog] = useState<{ source: string; amount: number; t: number }[]>([]);
@@ -1263,6 +1266,16 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
       const grunt: EnemyGrunt = { id: gruntIdRef.current++, x: cx, y: cy, hp: gruntHp, maxHp: gruntHp, movingTo: path[0] ?? BARN_POS, path: path.slice(1), state: 'moving' };
       setEnemyGrunts(gs => [...gs, grunt]);
     }
+    // Flanking attack: wave 8+ every 4 waves — 2 grunts from east/south corner
+    if (newWave >= 8 && newWave % 4 === 0) {
+      const FLANK_POSITIONS = [{ x: 24, y: 12 }, { x: 12, y: 24 }];
+      FLANK_POSITIONS.forEach(fp => {
+        const fPath = aStar(INITIAL_TILES, fp, BARN_POS, true, wallSet);
+        const flankGrunt: EnemyGrunt = { id: gruntIdRef.current++, x: fp.x, y: fp.y, hp: gruntHp, maxHp: gruntHp, movingTo: fPath[0] ?? BARN_POS, path: fPath.slice(1), state: 'moving' };
+        setEnemyGrunts(gs => [...gs, flankGrunt]);
+      });
+      addFloatingText(BARN_POS.x, BARN_POS.y, '⚠ FLANKING!', '#f97316');
+    }
 
     // War Ram spawn: wave 6+ every 3 waves
     if (newWave >= WAR_RAM_FIRST_WAVE && newWave % 3 === 0) {
@@ -1387,11 +1400,36 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
 
   useEffect(() => {
     if (gameOver) { if (spawnTimerRef.current) { clearTimeout(spawnTimerRef.current); spawnTimerRef.current = null; } return; }
+    // Don't start wave timer while paused — pause/resume effect handles it
+    if (gameSpeed === 0) return;
     const firstDelay = Math.round(GRUNT_SPAWN_MS * (difficulty?.waveIntervalMult ?? 1));
     setNextWaveAt(Date.now() + firstDelay);
     spawnTimerRef.current = window.setTimeout(doSpawnWave, firstDelay);
     return () => { if (spawnTimerRef.current) clearTimeout(spawnTimerRef.current); };
-  }, [gameOver, doSpawnWave]);
+  }, [gameOver, doSpawnWave, gameSpeed]);
+
+  // Pause / resume wave spawn timer when gameSpeed toggles between 0 and running
+  const doSpawnWaveRef = useRef(doSpawnWave);
+  useEffect(() => { doSpawnWaveRef.current = doSpawnWave; }, [doSpawnWave]);
+  useEffect(() => {
+    if (gameOver) return;
+    if (gameSpeed === 0) {
+      // Pausing: cancel timer and save remaining time
+      if (spawnTimerRef.current !== null && nextWaveAtRef.current !== null) {
+        clearTimeout(spawnTimerRef.current);
+        spawnTimerRef.current = null;
+        waveTimerRemainingRef.current = Math.max(1000, nextWaveAtRef.current - Date.now());
+      }
+    } else {
+      // Unpausing: restart timer if we saved remaining time
+      if (waveTimerRemainingRef.current !== null && spawnTimerRef.current === null) {
+        const remaining = waveTimerRemainingRef.current;
+        waveTimerRemainingRef.current = null;
+        setNextWaveAt(Date.now() + remaining);
+        spawnTimerRef.current = window.setTimeout(() => doSpawnWaveRef.current(), remaining);
+      }
+    }
+  }, [gameSpeed, gameOver]);
 
   // Loot crate spawner — 1-3 crates appear every 35s; more on later waves
   useEffect(() => {
@@ -4330,6 +4368,11 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 30, background: 'radial-gradient(ellipse at center, transparent 60%, rgba(220,38,38,0.35) 100%)', animation: 'pulse 1.2s infinite' }} />
       )}
 
+      {!gameOver && gameSpeed === 0 && (
+        <div style={{ position: 'absolute', top: '38%', left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.75)', color: '#fde68a', fontSize: 20, fontWeight: 800, padding: '12px 36px', borderRadius: 14, zIndex: 35, pointerEvents: 'none', border: '2px solid rgba(251,191,36,0.5)', letterSpacing: 1, textAlign: 'center' }}>
+          ⏸ PAUSED<br /><span style={{ fontSize: 12, fontWeight: 400, color: '#94a3b8' }}>Click ▶ Start to begin</span>
+        </div>
+      )}
       {waveAnnouncement && (
         <div style={{ position: 'absolute', top: '22%', left: '50%', transform: 'translateX(-50%)', background: 'rgba(127,29,29,0.92)', color: '#fca5a5', fontSize: 28, fontWeight: 800, padding: '10px 32px', borderRadius: 12, zIndex: 25, pointerEvents: 'none', border: '2px solid #ef4444', letterSpacing: 1 }}>
           {waveAnnouncement}
@@ -4421,7 +4464,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
         <span style={{ color: resources.food >= resources.foodCap ? '#ef4444' : '#fca5a5', fontWeight: resources.food >= resources.foodCap ? 700 : 400, marginLeft: 'auto', animation: resources.food >= resources.foodCap ? 'pulse 1s infinite' : 'none' }}>👥 {resources.food}/{resources.foodCap}{resources.food >= resources.foodCap ? ' ⚠' : ''}</span>
         {enemyGrunts.length > 0 && <span style={{ color: '#f97316', fontSize: 13 }}>⚠ {enemyGrunts.length} grunt{enemyGrunts.length > 1 ? 's' : ''}</span>}
         <button onClick={() => setGameSpeed(s => s === 0 ? 1 : s === 1 ? 2 : 0)} style={{ background: gameSpeed === 0 ? 'rgba(239,68,68,0.3)' : gameSpeed === 2 ? 'rgba(251,191,36,0.3)' : 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', color: '#fde68a', padding: '2px 12px', borderRadius: 6, fontSize: 13, cursor: 'pointer', fontWeight: 700 }} title="Cycle: Pause / 1× / 2×">
-          {gameSpeed === 0 ? '⏸ Pause' : gameSpeed === 1 ? '▶ 1×' : '▶▶ 2×'}
+          {gameSpeed === 0 ? '▶ Start' : gameSpeed === 1 ? '⏸ Pause' : '▶▶ 2×'}
         </button>
         <span style={{ color: '#94a3b8', fontSize: 12, display: 'flex', alignItems: 'center', gap: 3 }} title="Scroll wheel or +/- to zoom">
           <button type="button" onClick={() => setZoom(z => Math.max(0.4, z - 0.15))} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.15)', color: '#94a3b8', borderRadius: 4, width: 18, height: 18, cursor: 'pointer', fontSize: 13, lineHeight: '16px', padding: 0, textAlign: 'center' }}>−</button>
