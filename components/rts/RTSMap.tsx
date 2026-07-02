@@ -65,6 +65,14 @@ const ARCHER_TOWER_RANGE = 4;
 const ARCHER_TOWER_DAMAGE = 10;
 const ENEMY_TOWER_SPAWN_WAVES = [5, 10, 15] as const;
 const ENEMY_TOWER_POSITIONS = [{ x: 18, y: 16 }, { x: 16, y: 18 }, { x: 20, y: 18 }];
+const ENEMY_WALL_MAX_HP = 80;
+// Wall rings spawn incrementally: wave 3 = south, wave 6 = west, wave 9 = north, wave 12 = east
+const ENEMY_WALL_SPAWN: Record<number, { x: number; y: number }[]> = {
+  3:  [{ x: 21, y: 24 }, { x: 22, y: 24 }, { x: 23, y: 24 }],
+  6:  [{ x: 19, y: 22 }, { x: 19, y: 23 }],
+  9:  [{ x: 21, y: 20 }, { x: 22, y: 20 }, { x: 23, y: 20 }],
+  12: [{ x: 24, y: 21 }, { x: 24, y: 22 }, { x: 24, y: 23 }],
+};
 const ENEMY_TOWER_MAX_HP = 60;
 const ENEMY_TOWER_DAMAGE = 9;
 const ENEMY_TOWER_RANGE = 4.5;
@@ -795,6 +803,10 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
   const enemyTowersRef = useRef<EnemyTower[]>([]);
   useEffect(() => { enemyTowersRef.current = enemyTowers; }, [enemyTowers]);
   const enemyTowerTimersRef = useRef<Record<number, number>>({});
+  const [enemyWalls, setEnemyWalls] = useState<EnemyTower[]>([]);
+  const enemyWallsRef = useRef<EnemyTower[]>([]);
+  useEffect(() => { enemyWallsRef.current = enemyWalls; }, [enemyWalls]);
+  const enemyWallIdRef = useRef(7000);
   const [enemySiege, setEnemySiege] = useState<EnemySiege[]>([]);
   const enemySiegeRef = useRef<EnemySiege[]>([]);
   useEffect(() => { enemySiegeRef.current = enemySiege; }, [enemySiege]);
@@ -1200,6 +1212,16 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
       setWaveAnnouncement(`⚔️ Wave ${newWave}${newWave % 3 === 0 ? ' — DOUBLE ASSAULT!' : '!'}`);
     }
     window.setTimeout(() => setWaveAnnouncement(null), 3000);
+
+    // Enemy fortification walls build up progressively around their base
+    const wallPositions = ENEMY_WALL_SPAWN[newWave];
+    if (wallPositions) {
+      setEnemyWalls(ws => {
+        const newWalls = wallPositions.filter(pos => !ws.some(w => w.x === pos.x && w.y === pos.y))
+          .map(pos => ({ id: enemyWallIdRef.current++, x: pos.x, y: pos.y, hp: ENEMY_WALL_MAX_HP, maxHp: ENEMY_WALL_MAX_HP }));
+        return [...ws, ...newWalls];
+      });
+    }
 
     const diffHpMult = difficulty?.gruntHpMult ?? 1;
     const gruntHp = Math.round((GRUNT_MAX_HP + (newWave - 1) * 10) * diffHpMult);
@@ -2565,6 +2587,25 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
                   setEnemyTowers(ts => ts.map(t => t.id === capturedTId ? { ...t, hp: Math.max(0, t.hp - dmg) } : t));
                   addFloatingText(capturedTX, capturedTY, `-${dmg}`, '#ef4444');
                 }, moraleMs3);
+              }
+            } else if (w.attacking.targetType === 'enemyWall') {
+              const wallId = (w.attacking as { targetType: 'enemyWall'; wallId: number }).wallId;
+              const wallTarget = enemyWallsRef.current.find(ew => ew.id === wallId && ew.hp > 0);
+              if (!wallTarget) return { ...w, attacking: null, state: 'idle' };
+              if (tileDist(w.x, w.y, wallTarget.x, wallTarget.y) > 1.5) {
+                const p = aStar(INITIAL_TILES, { x: Math.round(w.x), y: Math.round(w.y) }, { x: wallTarget.x, y: wallTarget.y });
+                return { ...w, movingTo: p[0] ?? { x: wallTarget.x, y: wallTarget.y }, path: p.slice(1), state: 'moving' };
+              }
+              if (!attackT[w.id]) {
+                const capturedWallId = wallId; const capturedWX2 = wallTarget.x, capturedWY2 = wallTarget.y;
+                const unitBonusW = w.unitType === 'hero' ? HERO_DAMAGE_BONUS : w.unitType === 'swordsman' ? SWORDSMAN_DAMAGE_BONUS : w.unitType === 'cavalry' ? CAVALRY_DAMAGE_BONUS : 0;
+                const capturedVetW = w.level;
+                attackT[w.id] = window.setTimeout(() => {
+                  delete attackTimeoutsRef.current[w.id];
+                  const dmg = ATTACK_DAMAGE + upgradesRef.current.sharperTools * 5 + blacksmithUpgradesRef.current.steelEdge * 5 + (shrineWarBuffRef.current ? 5 : 0) + (barracksTechRef.current.warDrums ? 8 : 0) + unitBonusW + capturedVetW * VETERAN_ATK_BONUS;
+                  setEnemyWalls(ews => ews.map(ew => ew.id === capturedWallId ? { ...ew, hp: Math.max(0, ew.hp - dmg) } : ew));
+                  addFloatingText(capturedWX2, capturedWY2, `-${dmg}`, '#ef4444');
+                }, 1200);
               }
             } else if (w.attacking.targetType === 'siege') {
               const siegeId = (w.attacking as { targetType: 'siege'; siegeId: number }).siegeId;
@@ -3984,6 +4025,16 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
     commandMove(adj.x, adj.y, null, { targetType: 'enemyTower', towerId });
   };
 
+  const handleAttackEnemyWall = (wallId: number, tx: number, ty: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!anySelected) return;
+    setWorkers(ws => ws.map(w => {
+      if (!w.selected) return w;
+      const path = aStar(INITIAL_TILES, { x: Math.round(w.x), y: Math.round(w.y) }, { x: tx, y: ty });
+      return { ...w, movingTo: path[0] ?? { x: tx, y: ty }, path: path.slice(1), gathering: null, attacking: { targetType: 'enemyWall' as const, wallId }, state: 'moving' as const };
+    }));
+  };
+
   const handleAttackGrunt = useCallback((gruntId: number, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -4138,7 +4189,8 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
     warchiefs: enemyWarchiefs.filter(wc2 => wc2.hp > 0).map(wc2 => ({ x: wc2.x, y: wc2.y })),
     fogExplored,
     attackPings: minimapPings.filter(p => Date.now() - p.t < 2500),
-  }), [workers, enemyGrunts, enemyBarnHp, placedBuildings, clearedCamps, goldMines, stoneNodes, trees, enemyTowers, enemySiege, enemyShamans, enemyTrolls, enemySappers, enemyWitchDoctors, enemyWarchiefs, fogExplored, minimapPings]);
+    enemyWalls: enemyWalls.filter(ew => ew.hp > 0).map(ew => ({ x: ew.x, y: ew.y })),
+  }), [workers, enemyGrunts, enemyBarnHp, placedBuildings, clearedCamps, goldMines, stoneNodes, trees, enemyTowers, enemySiege, enemyShamans, enemyTrolls, enemySappers, enemyWitchDoctors, enemyWarchiefs, fogExplored, minimapPings, enemyWalls]);
 
   return (
     <div className="absolute inset-0 bg-black" style={screenShake > 0 ? { transform: `translate(${(Math.random() - 0.5) * 6 * screenShake}px, ${(Math.random() - 0.5) * 6 * screenShake}px)` } : undefined} onContextMenu={e => { if (buildMode) { e.preventDefault(); setBuildMode(null); setGhostTile(null); } }}>
@@ -4755,6 +4807,22 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
                 <text x={isoX + TILE_SIZE / 2} y={isoY - 26} textAnchor="middle" fontSize="8" fill="#fca5a5" fontWeight="bold">TOWER</text>
                 <rect x={isoX + TILE_SIZE / 4} y={isoY - 38} width={TILE_SIZE / 2} height={5} fill="#1e293b" rx={2} />
                 <rect x={isoX + TILE_SIZE / 4} y={isoY - 38} width={(TILE_SIZE / 2) * hpPct} height={5} fill="#ef4444" rx={2} />
+              </g>
+            );
+          })}
+
+          {/* Enemy fortification walls */}
+          {enemyWalls.filter(ew => ew.hp > 0 && fogVisible[ew.x]?.[ew.y]).map(ew => {
+            const { isoX, isoY } = tileToSvg(ew.x, ew.y);
+            const hpPct = ew.hp / ew.maxHp;
+            return (
+              <g key={`ewall-${ew.id}`} style={{ cursor: anySelected ? 'crosshair' : 'default' }} onContextMenu={e => handleAttackEnemyWall(ew.id, ew.x, ew.y, e)}>
+                <rect x={isoX + 8} y={isoY + 10} width={TILE_SIZE - 16} height={TILE_SIZE * 0.6} fill="#450a0a" stroke="#7f1d1d" strokeWidth={3} rx={2} />
+                {[0.25, 0.5, 0.75].map(f => (
+                  <rect key={f} x={isoX + 8 + f * (TILE_SIZE - 16) - 4} y={isoY + 4} width={8} height={12} fill="#7f1d1d" stroke="#991b1b" strokeWidth={1.5} rx={1} />
+                ))}
+                <rect x={isoX + 8} y={isoY - 2} width={TILE_SIZE - 16} height={5} fill="#1e293b" rx={2} />
+                <rect x={isoX + 8} y={isoY - 2} width={(TILE_SIZE - 16) * hpPct} height={5} fill="#ef4444" rx={2} />
               </g>
             );
           })}

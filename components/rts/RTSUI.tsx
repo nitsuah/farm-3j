@@ -14,7 +14,7 @@ export interface WorkerState {
   movingTo: null | { x: number; y: number };
   path: { x: number; y: number }[];
   gathering: null | { type: 'tree' | 'gold' | 'stone'; idx: number };
-  attacking: null | { targetType: 'enemyBarn' } | { targetType: 'grunt'; gruntId: number } | { targetType: 'creep'; creepId: number } | { targetType: 'enemyTower'; towerId: number } | { targetType: 'siege'; siegeId: number } | { targetType: 'shaman'; shamanId: number } | { targetType: 'troll'; trollId: number } | { targetType: 'sapper'; sapperId: number } | { targetType: 'necromancer'; necromancerId: number } | { targetType: 'witchDoctor'; witchDoctorId: number } | { targetType: 'warchief'; warchiefId: number };
+  attacking: null | { targetType: 'enemyBarn' } | { targetType: 'grunt'; gruntId: number } | { targetType: 'creep'; creepId: number } | { targetType: 'enemyTower'; towerId: number } | { targetType: 'enemyWall'; wallId: number } | { targetType: 'siege'; siegeId: number } | { targetType: 'shaman'; shamanId: number } | { targetType: 'troll'; trollId: number } | { targetType: 'sapper'; sapperId: number } | { targetType: 'necromancer'; necromancerId: number } | { targetType: 'witchDoctor'; witchDoctorId: number } | { targetType: 'warchief'; warchiefId: number };
   stunUntil?: number;
   assistBuildId?: number;
   repairing: null | { buildingId: number };
@@ -158,6 +158,7 @@ interface RTSUIProps {
     warchiefs: { x: number; y: number }[];
     fogExplored: boolean[][];
     attackPings: { x: number; y: number; t: number }[];
+    enemyWalls: { x: number; y: number }[];
   };
 }
 
@@ -863,6 +864,10 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                 explored ? null : <rect key={`fog-${x}-${y}`} x={x - 0.5} y={y - 0.5} width={1} height={1} fill="#0f172a" opacity={0.75} />
               )
             )}
+            {/* Enemy fortification walls */}
+            {minimapData.enemyWalls.map((ew, i) => (
+              <rect key={`ew${i}`} x={ew.x - 0.4} y={ew.y - 0.25} width={0.8} height={0.5} fill="#7f1d1d" stroke="#dc2626" strokeWidth={0.1} rx={0.05} />
+            ))}
             {/* Attack pings — expanding red rings */}
             {minimapData.attackPings.map((p, i) => {
               const age = (Date.now() - p.t) / 2500;
