@@ -799,7 +799,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
   const waveRef = useRef(INITIAL_SAVE?.wave ?? 0);
   const [, setTick] = useState(0);
   useEffect(() => { const id = window.setInterval(() => setTick(t => t + 1), 1000); return () => clearInterval(id); }, []);
-  const [enemyTowers, setEnemyTowers] = useState<EnemyTower[]>([]);
+  const [enemyTowers, setEnemyTowers] = useState<EnemyTower[]>(() => [{ id: -1, x: ARCHER_TOWER_POS.x, y: ARCHER_TOWER_POS.y, hp: 120, maxHp: 120 }]);
   const enemyTowersRef = useRef<EnemyTower[]>([]);
   useEffect(() => { enemyTowersRef.current = enemyTowers; }, [enemyTowers]);
   const enemyTowerTimersRef = useRef<Record<number, number>>({});
@@ -873,10 +873,15 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
   const [shrinePlentyBuff, setShrinePlentyBuff] = useState(false);
   const shrinePlentyBuffRef = useRef(false);
   useEffect(() => { shrinePlentyBuffRef.current = shrinePlentyBuff; }, [shrinePlentyBuff]);
-  const [gameSpeed, setGameSpeed] = useState(1);
+  const [gameSpeed, setGameSpeed] = useState(0);
   const gameSpeedRef = useRef(1);
   useEffect(() => { gameSpeedRef.current = gameSpeed; }, [gameSpeed]);
   const barnDmgThisWaveRef = useRef(0); // tracks barn HP lost this wave for clear-bonus
+  const [damageLog, setDamageLog] = useState<{ source: string; amount: number; t: number }[]>([]);
+  const [damageLogOpen, setDamageLogOpen] = useState(false);
+  const addDmgLog = useCallback((source: string, amount: number) => {
+    setDamageLog(prev => [...prev.slice(-49), { source, amount, t: Date.now() }]);
+  }, []);
 
   const [enemyBarnHp, setEnemyBarnHp] = useState(() => INITIAL_SAVE?.enemyBarnHp ?? ENEMY_BARN_MAX_HP);
   const enemyBarnHpRef = useRef(INITIAL_SAVE?.enemyBarnHp ?? ENEMY_BARN_MAX_HP);
@@ -1470,27 +1475,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
     return () => clearInterval(id);
   }, [gameOver, addFloatingText]);
 
-  // Archer tower attack loop
-  useEffect(() => {
-    if (gameOver) {
-      if (archerTowerTimerRef.current) { clearTimeout(archerTowerTimerRef.current); archerTowerTimerRef.current = null; }
-      return;
-    }
-    const fireArrow = () => {
-      if (gameOverRef.current) return;
-      const inRange = workersRef.current.filter(w => w.hp > 0 && tileDist(w.x, w.y, ARCHER_TOWER_POS.x, ARCHER_TOWER_POS.y) <= ARCHER_TOWER_RANGE);
-      if (inRange.length > 0) {
-        const target = inRange.reduce((a, b) => tileDist(a.x, a.y, ARCHER_TOWER_POS.x, ARCHER_TOWER_POS.y) < tileDist(b.x, b.y, ARCHER_TOWER_POS.x, ARCHER_TOWER_POS.y) ? a : b);
-        workerHitRef.current.set(target.id, Date.now());
-        setWorkers(prev => prev.map(w => w.id === target.id ? { ...w, hp: Math.max(0, w.hp - ARCHER_TOWER_DAMAGE) } : w));
-        addFloatingText(Math.round(target.x), Math.round(target.y), `🏹-${ARCHER_TOWER_DAMAGE}`, '#fb923c');
-        addProjectile(ARCHER_TOWER_POS.x, ARCHER_TOWER_POS.y, Math.round(target.x), Math.round(target.y), 'arrow', 600);
-      }
-      archerTowerTimerRef.current = window.setTimeout(fireArrow, ARCHER_TOWER_ATTACK_MS);
-    };
-    archerTowerTimerRef.current = window.setTimeout(fireArrow, ARCHER_TOWER_ATTACK_MS);
-    return () => { if (archerTowerTimerRef.current) { clearTimeout(archerTowerTimerRef.current); archerTowerTimerRef.current = null; } };
-  }, [gameOver, addFloatingText, addProjectile]);
+  // Archer tower (id -1) is now handled by the shared enemy tower fire loop below
 
   // Enemy barn counterfire: shoots at player units within 5 tiles
   const enemyBarnFireTimerRef = useRef<number | null>(null);
@@ -3207,6 +3192,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
               const barnDmg = Math.max(1, rawBarnDmg - barnArmor);
               Snd.hit();
               barnDmgThisWaveRef.current += barnDmg;
+              addDmgLog(g.isBoss ? '🐂 Boss Grunt' : '👹 Grunt', barnDmg);
               setPlayerBarnHp(hp => { const nHp = Math.max(0, hp - barnDmg); if (nHp <= 0) setGameOver('defeat'); return nHp; });
               addFloatingText(BARN_POS.x, BARN_POS.y, `-${barnDmg}`, g.isBoss ? '#dc2626' : '#ef4444');
               triggerUnderAttackRef.current({ x: BARN_POS.x, y: BARN_POS.y });
@@ -3265,14 +3251,18 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
               if (!siegeAttackTimeoutsRef.current[r.id]) {
                 const tx = nearBuilding && buildingDist <= atkRange ? nearBuilding.x : BARN_POS.x;
                 const ty = nearBuilding && buildingDist <= atkRange ? nearBuilding.y : BARN_POS.y;
+                const capturedRId = r.id;
                 siegeAttackTimeoutsRef.current[r.id] = window.setTimeout(() => {
-                  delete siegeAttackTimeoutsRef.current[r.id];
+                  delete siegeAttackTimeoutsRef.current[capturedRId];
+                  if (gameOverRef.current) return;
+                  if (!enemySiegeRef.current.find(s => s.id === capturedRId && s.hp > 0)) return;
                   // AoE splash on buildings
                   addProjectile(Math.round(r.x), Math.round(r.y), tx, ty, 'rock', 900);
                   setPlacedBuildings(bs => bs.map(b => tileDist(tx, ty, b.x, b.y) <= DEMOLISHER_SPLASH_RANGE ? { ...b, hp: Math.max(0, b.hp - DEMOLISHER_DAMAGE) } : b));
                   // Direct barn hit
                   if (tileDist(tx, ty, BARN_POS.x, BARN_POS.y) <= DEMOLISHER_SPLASH_RANGE) {
                     barnDmgThisWaveRef.current += DEMOLISHER_DAMAGE;
+                    addDmgLog('💥 Demolisher', DEMOLISHER_DAMAGE);
                     setPlayerBarnHp(hp => { const nHp = Math.max(0, hp - DEMOLISHER_DAMAGE); if (nHp <= 0) setGameOver('defeat'); return nHp; });
                     triggerUnderAttackRef.current({ x: BARN_POS.x, y: BARN_POS.y });
                     triggerShakeRef.current(1.5);
@@ -3304,6 +3294,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
             if (!siegeAttackTimeoutsRef.current[r.id]) {
               siegeAttackTimeoutsRef.current[r.id] = window.setTimeout(() => {
                 delete siegeAttackTimeoutsRef.current[r.id];
+                addDmgLog('🪵 War Ram', WAR_RAM_DAMAGE);
                 setPlayerBarnHp(hp => { const nHp = Math.max(0, hp - WAR_RAM_DAMAGE); if (nHp <= 0) setGameOver('defeat'); return nHp; });
                 addFloatingText(BARN_POS.x, BARN_POS.y, `🪵-${WAR_RAM_DAMAGE}`, '#dc2626');
               }, WAR_RAM_ATTACK_MS);
@@ -3484,6 +3475,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
           // Attack barn when adjacent
           const distToBarn = tileDist(wc2.x, wc2.y, BARN_POS.x, BARN_POS.y);
           if (distToBarn <= 1.2) {
+            addDmgLog('⚔️ Warchief', WARCHIEF_DMG);
             setPlayerBarnHp(hp => Math.max(0, hp - WARCHIEF_DMG));
             addFloatingText(BARN_POS.x, BARN_POS.y, `-${WARCHIEF_DMG}🏰`, '#fca5a5');
             return { ...wc2, state: 'attacking' as const };
@@ -3552,8 +3544,11 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
               const capturedTX2 = Math.round(t.x), capturedTY2 = Math.round(t.y);
               trollAttackTimersRef.current[tid] = window.setTimeout(() => {
                 delete trollAttackTimersRef.current[tid];
+                if (gameOverRef.current) return;
+                if (!enemyTrollsRef.current.find(tr => tr.id === tid && tr.hp > 0)) return;
                 addProjectile(capturedTX2, capturedTY2, BARN_POS.x, BARN_POS.y, 'arrow', 700);
                 addFloatingText(BARN_POS.x, BARN_POS.y, `🏹-${TROLL_DAMAGE}`, '#fca5a5');
+                addDmgLog('🏹 Troll Archer', TROLL_DAMAGE);
                 setPlayerBarnHp(hp => { const nHp = Math.max(0, hp - TROLL_DAMAGE); if (nHp <= 0) setGameOver('defeat'); return nHp; });
               }, TROLL_ATTACK_MS);
             }
@@ -3598,6 +3593,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
             }));
             // Damage player barn if in range
             if (tileDist(s.x, s.y, BARN_POS.x, BARN_POS.y) <= SAPPER_EXPLODE_RADIUS) {
+              addDmgLog('💣 Goblin Sapper', SAPPER_EXPLODE_DAMAGE);
               setPlayerBarnHp(hp => { const nHp = Math.max(0, hp - SAPPER_EXPLODE_DAMAGE); if (nHp <= 0) setGameOver('defeat'); return nHp; });
               addFloatingText(BARN_POS.x, BARN_POS.y, `-${SAPPER_EXPLODE_DAMAGE}`, '#ef4444');
             }
@@ -4345,6 +4341,26 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
           ⚠ UNDER ATTACK ⚠
         </div>
       )}
+      {/* Damage log toggle + panel */}
+      <button type="button" onClick={() => setDamageLogOpen(o => !o)} style={{ position: 'absolute', bottom: 180, right: 8, background: 'rgba(15,23,42,0.9)', border: '1px solid rgba(239,68,68,0.5)', color: '#fca5a5', fontSize: 11, padding: '3px 8px', borderRadius: 6, zIndex: 30, cursor: 'pointer' }}>
+        📋 Combat Log {damageLog.length > 0 && `(${damageLog.length})`}
+      </button>
+      {damageLogOpen && (
+        <div style={{ position: 'absolute', bottom: 210, right: 8, width: 220, maxHeight: 280, overflowY: 'auto', background: 'rgba(10,10,20,0.95)', border: '1px solid rgba(239,68,68,0.4)', borderRadius: 8, zIndex: 30, padding: 8, fontSize: 11, color: '#f1f5f9' }}>
+          <div style={{ fontWeight: 700, color: '#ef4444', marginBottom: 6, borderBottom: '1px solid rgba(239,68,68,0.3)', paddingBottom: 4 }}>🏰 Barn Damage Log</div>
+          {damageLog.length === 0 && <div style={{ color: '#64748b' }}>No damage yet.</div>}
+          {[...damageLog].reverse().slice(0, 20).map((entry, i) => {
+            const ago = Math.round((Date.now() - entry.t) / 1000);
+            return (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0', borderBottom: '1px solid rgba(255,255,255,0.05)', color: i === 0 ? '#fca5a5' : '#94a3b8' }}>
+                <span>{entry.source}</span>
+                <span style={{ color: '#ef4444', fontWeight: 700 }}>-{entry.amount} <span style={{ color: '#64748b', fontWeight: 400 }}>{ago}s ago</span></span>
+              </div>
+            );
+          })}
+          <button type="button" onClick={() => setDamageLog([])} style={{ marginTop: 6, background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#fca5a5', fontSize: 10, padding: '2px 8px', borderRadius: 4, cursor: 'pointer', width: '100%' }}>Clear</button>
+        </div>
+      )}
       {(() => {
         const idleCount = workers.filter(w => w.hp > 0 && w.unitType === 'farmer' && w.state === 'idle' && !w.gathering && !w.attacking && !w.repairing).length;
         if (idleCount === 0) return null;
@@ -4849,35 +4865,42 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
               <text x={isoX + TILE_SIZE / 2} y={isoY - 18} textAnchor="middle" fontSize="11" fill="#fca5a5" fontWeight="bold">ENEMY</text>
             </g>; })()}
 
-          {/* Archer Tower (enemy defensive structure) */}
-          {enemyBarnHp > 0 && (() => {
-            const { isoX, isoY } = tileToSvg(ARCHER_TOWER_POS.x, ARCHER_TOWER_POS.y);
-            return (
-              <g pointerEvents="none">
-                <rect x={isoX + TILE_SIZE / 4} y={isoY - 8} width={TILE_SIZE * 1.5} height={TILE_SIZE * 0.85} fill="#3b0764" stroke="#a21caf" strokeWidth={3} rx={5} />
-                <rect x={isoX + TILE_SIZE / 2 - 5} y={isoY - 34} width={10} height={30} fill="#581c87" stroke="#a855f7" strokeWidth={2} />
-                <rect x={isoX + TILE_SIZE / 2 - 14} y={isoY - 42} width={10} height={14} fill="#7c3aed" stroke="#a855f7" strokeWidth={2} />
-                <rect x={isoX + TILE_SIZE / 2 + 4} y={isoY - 42} width={10} height={14} fill="#7c3aed" stroke="#a855f7" strokeWidth={2} />
-                <text x={isoX + TILE_SIZE} y={isoY + 36} textAnchor="middle" fontSize="20">🏹</text>
-                <text x={isoX + TILE_SIZE} y={isoY - 46} textAnchor="middle" fontSize="10" fill="#e879f9" fontWeight="bold">ARCHER</text>
-              </g>
-            );
-          })()}
+          {/* Archer Tower now rendered by the shared enemy tower loop below (id -1) */}
 
-          {/* Enemy fortress towers (wave 5/10/15) */}
+          {/* Enemy fortress towers (wave 5/10/15) + pre-placed Archer Tower (id -1) */}
           {enemyTowers.filter(t => t.hp > 0 && fogVisible[t.x]?.[t.y]).map(t => {
             const { isoX, isoY } = tileToSvg(t.x, t.y);
             const hpPct = t.hp / t.maxHp;
+            const isArcher = t.id === -1;
+            const fill1 = isArcher ? '#3b0764' : '#7f1d1d';
+            const fill2 = isArcher ? '#581c87' : '#991b1b';
+            const fill3 = isArcher ? '#7c3aed' : '#b91c1c';
+            const stroke1 = isArcher ? '#a21caf' : '#dc2626';
+            const stroke2 = isArcher ? '#a855f7' : '#ef4444';
+            const label = isArcher ? 'ARCHER' : 'TOWER';
+            const labelColor = isArcher ? '#e879f9' : '#fca5a5';
+            const barColor = isArcher ? '#a855f7' : '#ef4444';
             return (
               <g key={`etower-${t.id}`} style={{ cursor: 'crosshair' }} onContextMenu={e => handleAttackEnemyTower(t.id, t.x, t.y, e)}>
-                <rect x={isoX + TILE_SIZE / 4} y={isoY} width={TILE_SIZE / 2} height={TILE_SIZE * 0.8} fill="#7f1d1d" stroke="#dc2626" strokeWidth={3} rx={4} />
-                <rect x={isoX + TILE_SIZE / 4 - 6} y={isoY - 8} width={TILE_SIZE / 2 + 12} height={16} fill="#991b1b" stroke="#ef4444" strokeWidth={2} rx={3} />
-                <rect x={isoX + TILE_SIZE / 4 + 2} y={isoY - 20} width={8} height={14} fill="#b91c1c" stroke="#ef4444" strokeWidth={1.5} />
-                <rect x={isoX + TILE_SIZE / 2 + 2} y={isoY - 20} width={8} height={14} fill="#b91c1c" stroke="#ef4444" strokeWidth={1.5} />
-                <text x={isoX + TILE_SIZE / 2} y={isoY + 38} textAnchor="middle" fontSize="16">🏹</text>
-                <text x={isoX + TILE_SIZE / 2} y={isoY - 26} textAnchor="middle" fontSize="8" fill="#fca5a5" fontWeight="bold">TOWER</text>
-                <rect x={isoX + TILE_SIZE / 4} y={isoY - 38} width={TILE_SIZE / 2} height={5} fill="#1e293b" rx={2} />
-                <rect x={isoX + TILE_SIZE / 4} y={isoY - 38} width={(TILE_SIZE / 2) * hpPct} height={5} fill="#ef4444" rx={2} />
+                {isArcher ? (
+                  <>
+                    <rect x={isoX + TILE_SIZE / 4} y={isoY - 8} width={TILE_SIZE * 1.5} height={TILE_SIZE * 0.85} fill={fill1} stroke={stroke1} strokeWidth={3} rx={5} />
+                    <rect x={isoX + TILE_SIZE / 2 - 5} y={isoY - 34} width={10} height={30} fill={fill2} stroke={stroke2} strokeWidth={2} />
+                    <rect x={isoX + TILE_SIZE / 2 - 14} y={isoY - 42} width={10} height={14} fill={fill3} stroke={stroke2} strokeWidth={2} />
+                    <rect x={isoX + TILE_SIZE / 2 + 4} y={isoY - 42} width={10} height={14} fill={fill3} stroke={stroke2} strokeWidth={2} />
+                  </>
+                ) : (
+                  <>
+                    <rect x={isoX + TILE_SIZE / 4} y={isoY} width={TILE_SIZE / 2} height={TILE_SIZE * 0.8} fill={fill1} stroke={stroke1} strokeWidth={3} rx={4} />
+                    <rect x={isoX + TILE_SIZE / 4 - 6} y={isoY - 8} width={TILE_SIZE / 2 + 12} height={16} fill={fill2} stroke={stroke2} strokeWidth={2} rx={3} />
+                    <rect x={isoX + TILE_SIZE / 4 + 2} y={isoY - 20} width={8} height={14} fill={fill3} stroke={stroke2} strokeWidth={1.5} />
+                    <rect x={isoX + TILE_SIZE / 2 + 2} y={isoY - 20} width={8} height={14} fill={fill3} stroke={stroke2} strokeWidth={1.5} />
+                  </>
+                )}
+                <text x={isoX + TILE_SIZE} y={isoY + 38} textAnchor="middle" fontSize="16">🏹</text>
+                <text x={isoX + TILE_SIZE} y={isoY - 48} textAnchor="middle" fontSize="8" fill={labelColor} fontWeight="bold">{label}</text>
+                <rect x={isoX + TILE_SIZE / 4} y={isoY - 58} width={TILE_SIZE / 2} height={5} fill="#1e293b" rx={2} />
+                <rect x={isoX + TILE_SIZE / 4} y={isoY - 58} width={(TILE_SIZE / 2) * hpPct} height={5} fill={barColor} rx={2} />
               </g>
             );
           })}
