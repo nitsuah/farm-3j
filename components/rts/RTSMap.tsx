@@ -2420,8 +2420,23 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
         }
         return survived;
       });
-      // Remove destroyed buildings (hp <= 0)
-      setPlacedBuildings(bs => bs.filter(b => b.hp > 0));
+      // Remove destroyed buildings and spawn loot drops (partial resource refund)
+      setPlacedBuildings(bs => {
+        const destroyed = bs.filter(b => b.hp <= 0);
+        destroyed.forEach(b => {
+          const cost = BUILDING_COSTS[b.type];
+          if (!cost) return;
+          const gold = Math.round((cost.gold ?? 0) * 0.3);
+          const lumber = Math.round((cost.lumber ?? 0) * 0.3);
+          const stone = Math.round((cost.stone ?? 0) * 0.3);
+          if (gold > 0 || lumber > 0 || stone > 0) {
+            const newId = lootCrateIdRef.current++;
+            setLootCrates(lcs => [...lcs, { id: newId, x: b.x, y: b.y, gold, lumber, stone }]);
+            addFloatingText(b.x, b.y, '💥 DESTROYED!', '#f97316');
+          }
+        });
+        return bs.filter(b => b.hp > 0);
+      });
 
       // Burn damage: buildings below 25% HP take 1 HP/s unless a worker is actively repairing
       const repairingBuildingIds = new Set(workersRef.current.filter(w => w.state === 'repairing' && w.repairing).map(w => w.repairing!.buildingId));
@@ -3870,7 +3885,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
           })}
 
           {/* War Rams & Demolishers (enemy siege units) */}
-          {enemySiege.filter(r => r.hp > 0).map(r => {
+          {enemySiege.filter(r => r.hp > 0 && fogVisible[Math.round(r.x)]?.[Math.round(r.y)]).map(r => {
             const { isoX, isoY } = tileToSvg(r.x, r.y);
             const hp = r.hp / r.maxHp;
             const cx = isoX + TILE_SIZE / 2;
@@ -3910,7 +3925,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
           })}
 
           {/* Enemy Shamans */}
-          {enemyShamans.filter(s => s.hp > 0).map(s => {
+          {enemyShamans.filter(s => s.hp > 0 && fogVisible[Math.round(s.x)]?.[Math.round(s.y)]).map(s => {
             const { isoX, isoY } = tileToSvg(s.x, s.y);
             const hp = s.hp / s.maxHp;
             return <g key={`shaman-${s.id}`} style={{ cursor: anySelected ? 'crosshair' : 'default' }} onContextMenu={e => handleAttackShaman(s.id, e)}>
@@ -3932,7 +3947,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
           })}
 
           {/* Necromancers */}
-          {enemyNecromancers.filter(n => n.hp > 0).map(n => {
+          {enemyNecromancers.filter(n => n.hp > 0 && fogVisible[Math.round(n.x)]?.[Math.round(n.y)]).map(n => {
             const { isoX, isoY } = tileToSvg(n.x, n.y);
             const hp = n.hp / n.maxHp;
             const cx = isoX + TILE_SIZE / 2;
@@ -3981,7 +3996,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
           })}
 
           {/* Goblin Sappers */}
-          {enemySappers.filter(s => s.hp > 0 && !s.exploded).map(s => {
+          {enemySappers.filter(s => s.hp > 0 && !s.exploded && fogVisible[Math.round(s.x)]?.[Math.round(s.y)]).map(s => {
             const { isoX, isoY } = tileToSvg(s.x, s.y);
             const hp = s.hp / s.maxHp;
             const urgency = tileDist(s.x, s.y, s.targetX, s.targetY) < 3;
@@ -4010,7 +4025,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
           })}
 
           {/* Enemy Troll Archers */}
-          {enemyTrolls.filter(t => t.hp > 0).map(t => {
+          {enemyTrolls.filter(t => t.hp > 0 && fogVisible[Math.round(t.x)]?.[Math.round(t.y)]).map(t => {
             const { isoX, isoY } = tileToSvg(t.x, t.y);
             const hp = t.hp / t.maxHp;
             return <g key={`troll-${t.id}`} style={{ cursor: anySelected ? 'crosshair' : 'default' }} onContextMenu={e => handleAttackTroll(t.id, e)}>
