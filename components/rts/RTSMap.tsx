@@ -500,6 +500,17 @@ const INITIAL_TILES = makeTiles();
 
 // ---------- Save / Load ----------
 const SAVE_KEY = 'farm3j_rts_v2'; // bumped: map expanded to 25×25
+const HIGH_SCORES_KEY = 'farm3j_highscores_v1';
+interface HighScoreEntry { wave: number; kills: number; result: 'victory' | 'defeat'; gold: number; time: number; date: string; }
+function loadHighScores(): HighScoreEntry[] {
+  try { return JSON.parse(localStorage.getItem(HIGH_SCORES_KEY) ?? '[]'); } catch { return []; }
+}
+function saveHighScore(entry: HighScoreEntry) {
+  const scores = loadHighScores();
+  scores.push(entry);
+  scores.sort((a, b) => b.wave - a.wave || b.kills - a.kills);
+  localStorage.setItem(HIGH_SCORES_KEY, JSON.stringify(scores.slice(0, 5)));
+}
 
 interface SaveWorker { id: number; x: number; y: number; hp: number; maxHp: number; unitType: 'farmer' | 'swordsman' | 'hero' | 'catapult' | 'cavalry' | 'trebuchet'; group: number | null; xp?: number; level?: number }
 interface SaveData {
@@ -518,6 +529,7 @@ interface SaveData {
   killCount: number;
   totalGold: number;
   totalLumber: number;
+  totalStone: number;
   playerBarnHp: number;
   enemyBarnHp: number;
   rallyPoint: { x: number; y: number } | null;
@@ -829,9 +841,16 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
   const [killCount, setKillCount] = useState(() => INITIAL_SAVE?.killCount ?? 0);
   const [totalGold, setTotalGold] = useState(() => INITIAL_SAVE?.totalGold ?? 0);
   const [totalLumber, setTotalLumber] = useState(() => INITIAL_SAVE?.totalLumber ?? 0);
+  const [totalStone, setTotalStone] = useState(() => INITIAL_SAVE?.totalStone ?? 0);
   const startTimeRef = useRef(Date.now());
   const [gameEndTime, setGameEndTime] = useState<number | null>(null);
-  useEffect(() => { if (gameOver && !gameEndTime) setGameEndTime(Date.now()); }, [gameOver, gameEndTime]);
+  useEffect(() => {
+    if (gameOver && !gameEndTime) {
+      const endTime = Date.now();
+      setGameEndTime(endTime);
+      saveHighScore({ wave, kills: killCount, result: gameOver, gold: totalGold, time: Math.floor((endTime - startTimeRef.current) / 1000), date: new Date().toLocaleDateString() });
+    }
+  }, [gameOver, gameEndTime, wave, killCount, totalGold]);
 
   const [farmhouse, setFarmhouse] = useState<{ built: boolean; level: number }>(() => INITIAL_SAVE?.farmhouse ?? { built: false, level: 0 });
   const farmhouseUpgradeCosts = [{ gold: 50, lumber: 50 }, { gold: 100, lumber: 100 }, { gold: 200, lumber: 200 }];
@@ -938,6 +957,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
       killCount,
       totalGold,
       totalLumber,
+      totalStone,
       playerBarnHp: playerBarnHpRef.current,
       enemyBarnHp,
       rallyPoint,
@@ -948,7 +968,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
     });
     setSaveStatus('saved');
     setTimeout(() => setSaveStatus('idle'), 2000);
-  }, [resources, farmhouse, killCount, totalGold, totalLumber, enemyBarnHp, rallyPoint, fogExplored, guardTowerResearched, barracksTech, blacksmithUpgrades]);
+  }, [resources, farmhouse, killCount, totalGold, totalLumber, totalStone, enemyBarnHp, rallyPoint, fogExplored, guardTowerResearched, barracksTech, blacksmithUpgrades]);
 
   // Auto-save every 30 seconds
   useEffect(() => {
@@ -2100,6 +2120,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                   incomeAccRef.current.stone += w.carrying.stone;
                   if (w.carrying.gold > 0) setTotalGold(g => g + w.carrying.gold);
                   if (w.carrying.lumber > 0) setTotalLumber(l => l + w.carrying.lumber);
+                  if (w.carrying.stone > 0) setTotalStone(s => s + w.carrying.stone);
                   if (w.gathering) {
                     if (w.gathering.type === 'tree') {
                       const t = curTrees[w.gathering.idx];
@@ -3971,17 +3992,41 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
               {gameOver === 'victory' ? 'The enemy farm has fallen.' : 'Your barn was destroyed by enemy forces.'}
             </div>
             {/* Score card */}
-            <div style={{ background: 'rgba(15,23,42,0.9)', border: `2px solid ${accentColor}30`, borderRadius: 16, padding: '20px 40px', marginBottom: 28, minWidth: 300 }}>
+            <div style={{ background: 'rgba(15,23,42,0.9)', border: `2px solid ${accentColor}30`, borderRadius: 16, padding: '20px 40px', marginBottom: 16, minWidth: 320 }}>
               <div style={{ color: accentColor, fontWeight: 800, fontSize: 13, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 14, textAlign: 'center' }}>Battle Report</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 32px' }}>
                 <Stat label="Waves Survived" value={wave} color="#f97316" />
                 <Stat label="Grunts Killed" value={killCount} color="#4ade80" />
                 <Stat label="Gold Mined" value={`${totalGold}🪙`} color="#fde68a" />
                 <Stat label="Lumber Cut" value={`${totalLumber}🌲`} color="#bbf7d0" />
-                <Stat label="Workers" value={workers.filter(w => w.hp > 0).length} color="#38bdf8" />
+                <Stat label="Stone Mined" value={`${totalStone}🪨`} color="#cbd5e1" />
+                <Stat label="Buildings" value={placedBuildings.filter(b => !b.constructing).length} color="#a78bfa" />
+                <Stat label="Survivors" value={workers.filter(w => w.hp > 0).length} color="#38bdf8" />
                 <Stat label="Time" value={timeStr} color="#94a3b8" />
               </div>
             </div>
+            {/* High score table */}
+            {(() => {
+              const scores = loadHighScores();
+              if (scores.length === 0) return null;
+              return (
+                <div style={{ background: 'rgba(15,23,42,0.85)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '12px 24px', marginBottom: 20, minWidth: 320 }}>
+                  <div style={{ color: '#94a3b8', fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 8, textAlign: 'center' }}>🏆 Best Runs</div>
+                  <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
+                    <thead><tr style={{ color: '#64748b' }}><th style={{ textAlign: 'left', paddingBottom: 4 }}>Date</th><th>Wave</th><th>Kills</th><th>Gold</th><th>Result</th></tr></thead>
+                    <tbody>{scores.map((s, i) => (
+                      <tr key={i} style={{ color: i === 0 ? '#fbbf24' : '#94a3b8', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                        <td style={{ paddingTop: 3 }}>{s.date}</td>
+                        <td style={{ textAlign: 'center' }}>{s.wave}</td>
+                        <td style={{ textAlign: 'center' }}>{s.kills}</td>
+                        <td style={{ textAlign: 'center' }}>{s.gold}🪙</td>
+                        <td style={{ textAlign: 'center' }}>{s.result === 'victory' ? '🏆' : '💀'}</td>
+                      </tr>
+                    ))}</tbody>
+                  </table>
+                </div>
+              );
+            })()}
             <button className="rounded-lg border-2 border-amber-500 bg-amber-500/20 px-8 py-3 text-lg text-amber-200 hover:bg-amber-500/40" onClick={() => { clearSave(); if (onNewGame) onNewGame(); else window.location.reload(); }}>
               Play Again
             </button>
