@@ -641,9 +641,12 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
   useEffect(() => { lootCratesRef.current = lootCrates; }, [lootCrates]);
   const lootCrateIdRef = useRef(5000);
   const [waveAnnouncement, setWaveAnnouncement] = useState<string | null>(null);
+  const [wavePreview, setWavePreview] = useState<string | null>(null);
+  const previewTimerRef = useRef<number | null>(null);
   const gameOverRef = useRef<'victory' | 'defeat' | null>(null);
   const spawnTimerRef = useRef<number | null>(null);
   const [nextWaveAt, setNextWaveAt] = useState<number | null>(null);
+  const idleWorkerIndexRef = useRef(0);
   const [gameSpeed, setGameSpeed] = useState(1);
   const gameSpeedRef = useRef(1);
   useEffect(() => { gameSpeedRef.current = gameSpeed; }, [gameSpeed]);
@@ -1002,6 +1005,26 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
     const nextDelay = Math.max(20000, GRUNT_SPAWN_MS - (newWave - 1) * 800);
     setNextWaveAt(Date.now() + nextDelay);
     spawnTimerRef.current = window.setTimeout(doSpawnWave, nextDelay);
+
+    // Wave preview: show composition ~6s before next wave
+    if (previewTimerRef.current) clearTimeout(previewTimerRef.current);
+    const previewWave = newWave + 1;
+    const previewDelay = Math.max(0, nextDelay - 6000);
+    previewTimerRef.current = window.setTimeout(() => {
+      if (gameOverRef.current) return;
+      const gruntCount = previewWave + 2 + (previewWave % 3 === 0 ? previewWave + 2 : 0);
+      const parts: string[] = [`${gruntCount} Grunts`];
+      if (previewWave % 10 === 0) parts.push('1 WAR BULL 🐂');
+      if (previewWave >= 8 && previewWave % 4 === 0) parts.push('1 Shaman 🧙');
+      if (previewWave >= 12 && previewWave % 3 === 2) parts.push('1 Witch Doctor 🔮');
+      if (previewWave >= 10 && previewWave % 5 === 0) parts.push('1 Troll 🏹');
+      if (previewWave >= 12 && previewWave % 6 === 0) parts.push('1 Sapper 💥');
+      if (previewWave >= 14 && previewWave % 4 === 0) parts.push('1 Demolisher 💣');
+      if (previewWave >= 16 && previewWave % 5 === 0) parts.push('1 Necromancer 💀');
+      if (previewWave >= 6 && previewWave % 3 === 0) parts.push('1 War Ram 🪵');
+      setWavePreview(`⚠ INCOMING Wave ${previewWave}: ${parts.join(', ')}`);
+      window.setTimeout(() => setWavePreview(null), 5500);
+    }, previewDelay);
   }, []);
 
   useEffect(() => {
@@ -1560,6 +1583,26 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
       if (e.key === 'h' || e.key === 'H') {
         e.preventDefault();
         setWorkers(ws => ws.map(w => w.selected ? { ...w, holdPosition: true, movingTo: null, path: [], patrol: null, attackMove: false, attackMoveTarget: null, waypoints: [], state: 'idle' as const } : w));
+      }
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        setWorkers(ws => {
+          const idleWorkers = ws.filter(w => w.hp > 0 && w.state === 'idle' && !w.gathering && !w.attacking && !w.repairing);
+          if (idleWorkers.length === 0) return ws;
+          const idx = idleWorkerIndexRef.current % idleWorkers.length;
+          idleWorkerIndexRef.current = (idx + 1) % idleWorkers.length;
+          const target = idleWorkers[idx] ?? idleWorkers[0];
+          if (!target) return ws;
+          // Pan camera to center on this worker
+          const { isoX, isoY } = tileToSvg(target.x, target.y);
+          const svgEl = svgRef.current;
+          if (svgEl) {
+            const rect = svgEl.getBoundingClientRect();
+            setCamera({ x: rect.width / 2 - isoX - TILE_SIZE / 2, y: rect.height / 2 - isoY - 18 });
+          }
+          setSelectedType('worker');
+          return ws.map(w => ({ ...w, selected: w.id === target.id }));
+        });
       }
     };
     window.addEventListener('keydown', onKey);
@@ -3303,6 +3346,11 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
       })()}
 
       {/* Wave announcement */}
+      {wavePreview && (
+        <div style={{ position: 'absolute', top: '18%', left: '50%', transform: 'translateX(-50%)', background: 'rgba(120,53,15,0.92)', color: '#fde68a', fontSize: 13, fontWeight: 700, padding: '6px 20px', borderRadius: 8, zIndex: 24, pointerEvents: 'none', border: '2px solid #f59e0b', letterSpacing: 0.5, maxWidth: '80vw', textAlign: 'center' }}>
+          {wavePreview}
+        </div>
+      )}
       {waveAnnouncement && (
         <div style={{ position: 'absolute', top: '22%', left: '50%', transform: 'translateX(-50%)', background: 'rgba(127,29,29,0.92)', color: '#fca5a5', fontSize: 28, fontWeight: 800, padding: '10px 32px', borderRadius: 12, zIndex: 25, pointerEvents: 'none', border: '2px solid #ef4444', letterSpacing: 1 }}>
           {waveAnnouncement}
@@ -3353,7 +3401,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
             ⚔️ Attack-Move · Right-click destination · Esc to cancel
           </span>
         ) : (
-          <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 400 }}>WASD pan · scroll zoom · Ctrl+A all · Ctrl+1-9 groups · P patrol · A atk-move · H hold · C charge · S sprint · F farmer · Q sword · R cavalry · Del stop · G garrison</span>
+          <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 400 }}>WASD pan · scroll zoom · Ctrl+A all · Tab idle · Ctrl+1-9 groups · P patrol · A atk-move · H hold · C charge · S sprint · F farmer · Q sword · R cavalry · Del stop · G garrison</span>
         )}
         <button onClick={doSave} style={{ background: saveStatus === 'saved' ? 'rgba(74,222,128,0.2)' : 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', color: saveStatus === 'saved' ? '#4ade80' : '#94a3b8', padding: '2px 10px', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>
           {saveStatus === 'saved' ? '✓ Saved' : '💾 Save'}
