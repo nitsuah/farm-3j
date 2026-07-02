@@ -842,7 +842,14 @@ export const RTSUI: React.FC<RTSUIProps> = ({
           </div>
           <div className="mt-1 flex justify-between text-xs text-slate-400">
             <span>Pop {resources.food}/{resources.foodCap}</span>
-            {resources.food >= resources.foodCap && <span className="text-amber-400">⚠ Cap!</span>}
+            {resources.food >= resources.foodCap
+              ? <span className="text-amber-400">⚠ Cap!</span>
+              : resources.food > 80
+              ? <span className="text-red-400">📉 Heavy upkeep (40%)</span>
+              : resources.food > 40
+              ? <span className="text-yellow-400">📉 Upkeep (70%)</span>
+              : <span className="text-green-400">✓ No upkeep</span>
+            }
           </div>
         </div>
       </div>

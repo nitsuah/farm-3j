@@ -801,6 +801,12 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
   const barracksTechRef = useRef(barracksTech);
   useEffect(() => { barracksTechRef.current = barracksTech; }, [barracksTech]);
 
+  // Upkeep system (WC3-style): high food usage reduces gold income
+  // 0–40 food = no penalty, 41–80 = 70% gold rate, 81+ = 40% gold rate
+  const upkeepMult = resources.food <= 40 ? 1 : resources.food <= 80 ? 0.7 : 0.4;
+  const upkeepMultRef = useRef(upkeepMult);
+  useEffect(() => { upkeepMultRef.current = upkeepMult; }, [upkeepMult]);
+
   // Unit training queue (barracks + stable)
   const TRAIN_TIME_MS = 8000;
   const [trainingQueue, setTrainingQueue] = useState<{type: 'swordsman' | 'cavalry'}[]>([]);
@@ -1444,9 +1450,9 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
     if (mills.length === 0) return;
     const id = setInterval(() => {
       if (gameOverRef.current) return;
-      const income = mills.length * 2;
+      const income = Math.round(mills.length * 2 * upkeepMultRef.current);
       setResources(r => ({ ...r, gold: r.gold + income }));
-      mills.forEach(m => addFloatingText(m.x, m.y, `+${income / mills.length}🪙`, '#fde68a'));
+      mills.forEach(m => addFloatingText(m.x, m.y, `+${Math.round(income / mills.length)}🪙`, '#fde68a'));
     }, 5000);
     return () => clearInterval(id);
   }, [placedBuildings, gameOver, addFloatingText]);
@@ -1941,8 +1947,9 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
                 const atBarn = tileDist(movDest.x, movDest.y, BARN_POS.x, BARN_POS.y) < epsilon;
                 const atLumberShed = !atBarn && w.carrying.lumber > 0 && placedBuildingsRef.current.some(b => b.type === 'lumberShed' && b.hp > 0 && tileDist(movDest.x, movDest.y, b.x, b.y) < epsilon);
                 if (atBarn || atLumberShed) {
-                  setResources(r => ({ ...r, gold: r.gold + w.carrying.gold, lumber: r.lumber + w.carrying.lumber, stone: r.stone + w.carrying.stone }));
-                  incomeAccRef.current.gold += w.carrying.gold;
+                  const goldDeposit = Math.round(w.carrying.gold * upkeepMultRef.current);
+                  setResources(r => ({ ...r, gold: r.gold + goldDeposit, lumber: r.lumber + w.carrying.lumber, stone: r.stone + w.carrying.stone }));
+                  incomeAccRef.current.gold += goldDeposit;
                   incomeAccRef.current.lumber += w.carrying.lumber;
                   incomeAccRef.current.stone += w.carrying.stone;
                   if (w.carrying.gold > 0) setTotalGold(g => g + w.carrying.gold);
@@ -3742,7 +3749,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
             <span style={{ display: 'block', width: `${(1 - dayProgress) * 100}%`, height: '100%', background: dayPhase === 'night' ? '#6366f1' : '#fbbf24', borderRadius: 2 }} />
           </span>
         </span>
-        <span style={{ color: resources.gold < 30 ? '#ef4444' : '#fde68a', fontWeight: resources.gold < 30 ? 700 : 400, animation: resources.gold < 30 ? 'pulse 1s infinite' : 'none' }}>🪙 {resources.gold}{incomeRate.gold > 0 && <span style={{ fontSize: 11, color: '#a3e635', marginLeft: 2 }}>+{incomeRate.gold}/m</span>}</span>
+        <span style={{ color: resources.gold < 30 ? '#ef4444' : '#fde68a', fontWeight: resources.gold < 30 ? 700 : 400, animation: resources.gold < 30 ? 'pulse 1s infinite' : 'none' }}>🪙 {resources.gold}{incomeRate.gold > 0 && <span style={{ fontSize: 11, color: '#a3e635', marginLeft: 2 }}>+{incomeRate.gold}/m</span>}{upkeepMult < 1 && <span style={{ fontSize: 10, color: upkeepMult < 0.5 ? '#ef4444' : '#fbbf24', marginLeft: 3 }} title={`Upkeep: gold income at ${Math.round(upkeepMult * 100)}%`}>📉{Math.round(upkeepMult * 100)}%</span>}</span>
         <span style={{ color: resources.lumber < 20 ? '#ef4444' : '#bbf7d0', fontWeight: resources.lumber < 20 ? 700 : 400, animation: resources.lumber < 20 ? 'pulse 1s infinite' : 'none' }}>🌲 {resources.lumber}{incomeRate.lumber > 0 && <span style={{ fontSize: 11, color: '#a3e635', marginLeft: 2 }}>+{incomeRate.lumber}/m</span>}</span>
         <span style={{ color: resources.stone < 10 ? '#ef4444' : '#cbd5e1', fontWeight: resources.stone < 10 ? 700 : 400, animation: resources.stone < 10 ? 'pulse 1s infinite' : 'none' }}>🪨 {resources.stone}{incomeRate.stone > 0 && <span style={{ fontSize: 11, color: '#a3e635', marginLeft: 2 }}>+{incomeRate.stone}/m</span>}</span>
         {wave > 0 && <span style={{ color: '#f97316', background: 'rgba(249,115,22,0.15)', padding: '1px 10px', borderRadius: 6, fontSize: 14 }}>Wave {wave}</span>}
