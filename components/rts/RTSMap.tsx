@@ -3972,6 +3972,16 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
               <rect x={isoX + TILE_SIZE / 2 - 13} y={isoY - 3} width={26 * hp} height={4} fill="#a855f7" />
             </g>; })}
 
+          {/* Grunt corpses — faded for 8s; Necromancer raise target */}
+          {deadGruntPositions.filter(p => Date.now() - p.t < 8000 && fogVisible[p.x]?.[p.y]).map((p, i) => {
+            const { isoX, isoY } = tileToSvg(p.x, p.y);
+            const age = (Date.now() - p.t) / 8000;
+            return <g key={`corpse-${i}`} pointerEvents="none" opacity={0.55 - age * 0.45}>
+              <ellipse cx={isoX + TILE_SIZE / 2} cy={isoY + 28} rx={16} ry={8} fill="#374151" />
+              <text x={isoX + TILE_SIZE / 2} y={isoY + 32} textAnchor="middle" fontSize="10">💀</text>
+            </g>;
+          })}
+
           {/* Enemy grunts */}
           {enemyGrunts.map(g => { if (!fogVisible[Math.round(g.x)]?.[Math.round(g.y)]) return null; const { isoX, isoY } = tileToSvg(g.x, g.y); const hp = g.hp / g.maxHp;
             return <g key={`grunt-${g.id}`} style={{ cursor: anySelected ? 'crosshair' : 'default' }} onContextMenu={e => handleAttackGrunt(g.id, e)}>
