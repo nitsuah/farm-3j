@@ -3388,10 +3388,73 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
     };
   }, []);
 
+  // Scroll-wheel zoom anchored to cursor position
   useEffect(() => {
-    const onWheel = (e: WheelEvent) => { e.preventDefault(); setZoom(z => Math.max(0.5, Math.min(2, z + (e.deltaY < 0 ? 0.25 : -0.25)))); };
+    const ZOOM_MIN = 0.4, ZOOM_MAX = 2.5, ZOOM_STEP = 0.15;
+    const svgEl = svgRef.current;
+
+    const applyZoom = (newZoom: number, anchorX: number, anchorY: number) => {
+      if (!svgEl) return;
+      const rect = svgEl.getBoundingClientRect();
+      // anchor in SVG element coords (before camera translate)
+      const svgCenterX = rect.left + rect.width / 2;
+      const svgCenterY = rect.top + rect.height / 2;
+      const ax = anchorX - svgCenterX;
+      const ay = anchorY - svgCenterY;
+      setZoom(prevZoom => {
+        const clamped = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, newZoom));
+        const ratio = clamped / prevZoom;
+        // Shift camera so world point under cursor stays fixed
+        setCamera(c => ({ x: ax + (c.x - ax) * ratio, y: ay + (c.y - ay) * ratio }));
+        return clamped;
+      });
+    };
+
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const delta = e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP;
+      setZoom(prev => {
+        const next = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, prev + delta));
+        if (!svgEl) return next;
+        const rect = svgEl.getBoundingClientRect();
+        const svgCenterX = rect.left + rect.width / 2;
+        const svgCenterY = rect.top + rect.height / 2;
+        const ax = e.clientX - svgCenterX;
+        const ay = e.clientY - svgCenterY;
+        const ratio = next / prev;
+        setCamera(c => ({ x: ax + (c.x - ax) * ratio, y: ay + (c.y - ay) * ratio }));
+        return next;
+      });
+    };
+
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement).tagName === 'INPUT') return;
+      if (e.key === '=' || e.key === '+') applyZoom(999, window.innerWidth / 2, window.innerHeight / 2);
+      if (e.key === '-' || e.key === '_') applyZoom(-999, window.innerWidth / 2, window.innerHeight / 2);
+    };
+    // reuse applyZoom for +/- by clamping to next step
+    const onKeyFull = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement).tagName === 'INPUT') return;
+      if (e.key === '=' || e.key === '+') {
+        setZoom(prev => {
+          const next = Math.min(ZOOM_MAX, prev + ZOOM_STEP);
+          return next;
+        });
+      }
+      if (e.key === '-' || e.key === '_') {
+        setZoom(prev => {
+          const next = Math.max(ZOOM_MIN, prev - ZOOM_STEP);
+          return next;
+        });
+      }
+    };
+
     window.addEventListener('wheel', onWheel, { passive: false });
-    return () => window.removeEventListener('wheel', onWheel);
+    window.addEventListener('keydown', onKeyFull);
+    return () => {
+      window.removeEventListener('wheel', onWheel);
+      window.removeEventListener('keydown', onKeyFull);
+    };
   }, []);
 
   // Smooth WASD/Arrow camera pan using held-key tracking + RAF
@@ -3936,6 +3999,11 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
         <button onClick={() => setGameSpeed(s => s === 0 ? 1 : s === 1 ? 2 : 0)} style={{ background: gameSpeed === 0 ? 'rgba(239,68,68,0.3)' : gameSpeed === 2 ? 'rgba(251,191,36,0.3)' : 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', color: '#fde68a', padding: '2px 12px', borderRadius: 6, fontSize: 13, cursor: 'pointer', fontWeight: 700 }} title="Cycle: Pause / 1× / 2×">
           {gameSpeed === 0 ? '⏸ Pause' : gameSpeed === 1 ? '▶ 1×' : '▶▶ 2×'}
         </button>
+        <span style={{ color: '#94a3b8', fontSize: 12, display: 'flex', alignItems: 'center', gap: 3 }} title="Scroll wheel or +/- to zoom">
+          <button type="button" onClick={() => setZoom(z => Math.max(0.4, z - 0.15))} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.15)', color: '#94a3b8', borderRadius: 4, width: 18, height: 18, cursor: 'pointer', fontSize: 13, lineHeight: '16px', padding: 0, textAlign: 'center' }}>−</button>
+          <span style={{ minWidth: 32, textAlign: 'center' }}>{Math.round(zoom * 100)}%</span>
+          <button type="button" onClick={() => setZoom(z => Math.min(2.5, z + 0.15))} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.15)', color: '#94a3b8', borderRadius: 4, width: 18, height: 18, cursor: 'pointer', fontSize: 13, lineHeight: '16px', padding: 0, textAlign: 'center' }}>+</button>
+        </span>
         {buildMode ? (
           <span style={{ color: '#fcd34d', background: 'rgba(217,119,6,0.3)', padding: '2px 12px', borderRadius: 6, fontSize: 13 }}>
             Placing {BUILDING_COSTS[buildMode].label} · Click to place · Esc to cancel

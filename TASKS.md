@@ -1,6 +1,6 @@
 # TASKS
 
-Last Updated: 2026-07-02 (iter84 — smooth camera pan + edge-scroll + move ring)
+Last Updated: 2026-07-02 (iter85 — cursor-anchored zoom + zoom HUD buttons)
 
 ## Farm RTS MVP (2026 Q2–Q3)
 
@@ -147,3 +147,4 @@ Last Updated: 2026-07-02 (iter84 — smooth camera pan + edge-scroll + move ring
 - [x] Smooth WASD/Arrow camera pan — replaced step-per-keypress with held-key + RAF loop at 480 px/s; Set<string> tracks all held keys; onBlur clears held set; camera bounds expanded to GRID_SIZE×TILE_SIZE for full 25×25 map traversal; AoE/WC3-style fluid keyboard navigation (2026-07-02)
 - [x] Mouse edge-scroll — cursor within 48px of viewport edge pans camera at 400 px/s via RAF loop; independent of WASD; classic RTS edge-of-screen scrolling for the bigger 25×25 map (2026-07-02)
 - [x] Move-target ring — right-click move command flashes an expanding green circle at the destination (WC3-style click confirmation); fades out over 600ms; rendered in SVG coordinate space above terrain (2026-07-02)
+- [x] Cursor-anchored zoom — scroll-wheel zoom now keeps the world point under the cursor fixed (AoE/SC2 zoom behavior); range expanded 0.4×–2.5×; +/- keys zoom to viewport center; HUD shows live % with clickable +/− buttons (2026-07-02)
