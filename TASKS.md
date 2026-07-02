@@ -1,6 +1,6 @@
 # TASKS
 
-Last Updated: 2026-07-02 (iter91 — procedural sound effects)
+Last Updated: 2026-07-02 (iter92 — control group double-tap + HUD bar)
 
 ## Farm RTS MVP (2026 Q2–Q3)
 
@@ -154,3 +154,4 @@ Last Updated: 2026-07-02 (iter91 — procedural sound effects)
 - [x] Battle report improvements — added stone mined🪨, buildings built, survivors count; now 8 stats total on game-over screen (2026-07-02)
 - [x] Hit-flash on damage — workers flash red, grunts flash white for 200ms when hit; uses lightweight per-unit timestamp refs (no state); covers grunt melee, archer tower, enemy fortress towers, and watchtower shots; classic action game damage feedback (2026-07-02)
 - [x] Procedural sound effects — Web Audio API synthesized sounds (no audio files); unit select, move, hit, death, build complete, gold deposit, wave warning, victory/defeat tones; lazy AudioContext init; Snd helper module at module scope (2026-07-02)
+- [x] Control group double-tap camera center + HUD bar — double-tapping 1-9 within 500ms centers camera on group centroid; compact group indicator bar at top-center shows group number + alive unit count for all assigned groups (2026-07-02)

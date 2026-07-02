@@ -798,6 +798,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
   const spawnTimerRef = useRef<number | null>(null);
   const [nextWaveAt, setNextWaveAt] = useState<number | null>(null);
   const idleWorkerIndexRef = useRef(0);
+  const lastGroupKeyRef = useRef<{ num: number; t: number } | null>(null);
   const [capturedShrines, setCapturedShrines] = useState<Set<number>>(new Set());
   const capturedShrinesRef = useRef<Set<number>>(new Set());
   useEffect(() => { capturedShrinesRef.current = capturedShrines; }, [capturedShrines]);
@@ -2017,6 +2018,25 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
           if (!ids?.length) return cg;
           setSelectedType('worker');
           setWorkers(ws => ws.map(w => ({ ...w, selected: ids.includes(w.id) })));
+          // Double-tap: center camera on group centroid
+          const now = Date.now();
+          const last = lastGroupKeyRef.current;
+          if (last && last.num === num && now - last.t < 500) {
+            const units = workersRef.current.filter(w => ids.includes(w.id) && w.hp > 0);
+            if (units.length > 0) {
+              const cx = units.reduce((s, u) => s + u.x, 0) / units.length;
+              const cy = units.reduce((s, u) => s + u.y, 0) / units.length;
+              const { isoX, isoY } = tileToSvg(cx, cy);
+              const svgEl = svgRef.current;
+              if (svgEl) {
+                const rect = svgEl.getBoundingClientRect();
+                setCamera({ x: rect.width / 2 - isoX - TILE_SIZE / 2, y: rect.height / 2 - isoY - 18 });
+              }
+            }
+            lastGroupKeyRef.current = null;
+          } else {
+            lastGroupKeyRef.current = { num, t: now };
+          }
           return cg;
         });
       }
@@ -5087,6 +5107,24 @@ const RTSMap: React.FC<{ onNewGame?: () => void }> = ({ onNewGame }) => {
           )}
         </svg>
       </div>
+
+      {/* Control group bar */}
+      {Object.keys(controlGroups).some(k => (controlGroups[Number(k)]?.length ?? 0) > 0) && (
+        <div style={{ position: 'absolute', top: 44, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 4, zIndex: 30, pointerEvents: 'none' }}>
+          {[1,2,3,4,5,6,7,8,9].map(n => {
+            const ids = controlGroups[n];
+            if (!ids?.length) return null;
+            const alive = workers.filter(w => ids.includes(w.id) && w.hp > 0);
+            if (!alive.length) return null;
+            return (
+              <div key={n} style={{ background: 'rgba(15,23,42,0.85)', border: '1px solid rgba(99,102,241,0.5)', borderRadius: 5, padding: '2px 6px', display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 32 }}>
+                <span style={{ color: '#a5b4fc', fontSize: 11, fontWeight: 700 }}>{n}</span>
+                <span style={{ color: '#e2e8f0', fontSize: 10 }}>{alive.length}u</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       <RTSUI
         selectedType={selectedType}
