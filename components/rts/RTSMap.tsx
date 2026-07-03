@@ -207,7 +207,7 @@ const HERO_ITEM_DATA: Record<HeroItemId, { name: string; emoji: string; desc: st
   tome_xp:        { name: 'Tome of Knowledge',   emoji: '📖', desc: '+80 XP (instant)', consumable: true },
 };
 const HERO_MAX_ITEMS = 3;
-type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market' | 'blacksmith' | 'granary' | 'stable' | 'spikeTrap' | 'frostTower' | 'ballista' | 'poisonTower' | 'supplyStore';
+type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market' | 'blacksmith' | 'granary' | 'stable' | 'spikeTrap' | 'frostTower' | 'ballista' | 'poisonTower' | 'supplyStore' | 'miningCamp';
 
 interface ResourceNode { x: number; y: number; amount: number }
 interface Resources { gold: number; lumber: number; stone: number; food: number; foodCap: number }
@@ -373,6 +373,7 @@ const SHRINES: { id: number; x: number; y: number; type: 'war' | 'plenty'; label
 const BUILDING_COSTS: Record<BuildingType, { gold: number; lumber: number; stone: number; label: string; foodCapBonus: number }> = {
   farmhouse: { gold: 60, lumber: 30, stone: 0, label: 'Farmhouse', foodCapBonus: 5 },
   lumberShed: { gold: 40, lumber: 60, stone: 0, label: 'Lumber Shed', foodCapBonus: 0 },
+  miningCamp: { gold: 50, lumber: 30, stone: 20, label: 'Mining Camp', foodCapBonus: 0 },
   watchtower: { gold: 80, lumber: 0, stone: 60, label: 'Watchtower', foodCapBonus: 0 },
   wall:       { gold: 15, lumber: 25, stone: 0, label: 'Palisade Wall', foodCapBonus: 0 },
   windmill:   { gold: 60, lumber: 40, stone: 0, label: 'Windmill', foodCapBonus: 0 },
@@ -400,13 +401,13 @@ export const BUILDING_REQUIRES: Partial<Record<BuildingType, BuildingType>> = {
 };
 
 const BUILDING_EMOJI: Record<BuildingType, string> = {
-  farmhouse: '🏠', lumberShed: '🪵', watchtower: '🗼', wall: '🧱', windmill: '💨', barracks: '🏯', siegeWorkshop: '⚙️', market: '🏪', blacksmith: '🔨', granary: '🌾', stable: '🐴', spikeTrap: '🪤', frostTower: '❄️', ballista: '🏹', poisonTower: '☠️', supplyStore: '🛒',
+  farmhouse: '🏠', lumberShed: '🪵', watchtower: '🗼', wall: '🧱', windmill: '💨', barracks: '🏯', siegeWorkshop: '⚙️', market: '🏪', blacksmith: '🔨', granary: '🌾', stable: '🐴', spikeTrap: '🪤', frostTower: '❄️', ballista: '🏹', poisonTower: '☠️', supplyStore: '🛒', miningCamp: '⛏️',
 };
 
 const BUILDING_MAX_HP: Record<BuildingType, number> = {
   farmhouse: 200, lumberShed: 150, watchtower: 180, wall: 120, windmill: 100,
   barracks: 250, siegeWorkshop: 220, market: 160, blacksmith: 200, granary: 140, stable: 200, spikeTrap: 60, frostTower: FROST_TOWER_HP, ballista: BALLISTA_HP, poisonTower: POISON_TOWER_HP,
-  supplyStore: 180,
+  supplyStore: 180, miningCamp: 150,
 };
 const BUILDING_GRUNT_DAMAGE = 8; // damage per hit from grunt to building
 const CONSTRUCTION_MS = 6000; // time to construct a building
@@ -800,14 +801,27 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
 
   const [workers, setWorkers] = useState<WorkerState[]>(() =>
     INITIAL_SAVE?.workers?.length
-      ? INITIAL_SAVE.workers.map(w => ({ ...makeUnit(w.id, w.x, w.y, w.unitType), hp: w.hp, maxHp: w.maxHp, group: w.group, xp: w.xp ?? 0, level: w.level ?? 0 }))
-      : [
-          { ...makeUnit(1, 3, 3, 'farmer'), selected: true },
-          makeUnit(2, 4, 3, 'farmer'),
-          makeUnit(3, 3, 4, 'farmer'),
-          makeUnit(4, 4, 4, 'farmer'),
-          makeUnit(5, 5, 3, 'farmer'),
-        ]
+      ? INITIAL_SAVE.workers.map(w => ({ ...makeUnit(w.id, w.x, w.y, w.unitType), hp: w.hp, maxHp: w.maxHp, group: w.group, xp: w.xp ?? 0, level: w.level ?? 0, gathering: w.gathering ?? null, state: (w.state === 'gathering' || w.state === 'moving' || w.state === 'returning') ? w.state as WorkerState['state'] : 'idle' }))
+      : (() => {
+          // WC3/AoE style: workers start pre-assigned to harvest nearby resources
+          const goldMine = { x: 4, y: 5 }; // nearest starting gold mine (idx 0)
+          const tree0 = { x: 4, y: 2 };    // nearest tree cluster
+          const tree1 = { x: 5, y: 2 };
+          const mkGatherer = (id: number, sx: number, sy: number, gtype: 'gold'|'tree', idx: number, dest: {x:number,y:number}) => ({
+            ...makeUnit(id, sx, sy, 'farmer'),
+            gathering: { type: gtype, idx } as { type: 'gold'|'tree'; idx: number },
+            movingTo: dest,
+            path: ([] as {x:number;y:number}[]),
+            state: 'moving' as const,
+          });
+          return [
+            { ...makeUnit(1, 3, 3, 'farmer'), selected: true }, // idle, player's first unit to control
+            mkGatherer(2, 4, 3, 'gold', 0, goldMine),           // → gold mine
+            mkGatherer(3, 3, 4, 'gold', 0, goldMine),           // → gold mine
+            mkGatherer(4, 4, 4, 'tree', 0, tree0),              // → lumber
+            mkGatherer(5, 5, 3, 'tree', 1, tree1),              // → lumber
+          ];
+        })()
   );
   const workersRef = useRef(workers);
   useEffect(() => { workersRef.current = workers; }, [workers]);
@@ -1112,7 +1126,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
     writeSave({
       version: 1,
       resources,
-      workers: workersRef.current.map(w => ({ id: w.id, x: Math.round(w.x), y: Math.round(w.y), hp: w.hp, maxHp: w.maxHp, unitType: w.unitType, group: w.group, xp: w.xp, level: w.level })),
+      workers: workersRef.current.map(w => ({ id: w.id, x: Math.round(w.x), y: Math.round(w.y), hp: w.hp, maxHp: w.maxHp, unitType: w.unitType, group: w.group, xp: w.xp, level: w.level, gathering: w.gathering, state: w.state })),
       trees: treesRef.current,
       goldMines: goldMinesRef.current,
       stoneNodes: stoneNodesRef.current,
@@ -2579,7 +2593,8 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
                 const movDest = w.movingTo!;
                 const atBarn = tileDist(movDest.x, movDest.y, BARN_POS.x, BARN_POS.y) < epsilon;
                 const atLumberShed = !atBarn && w.carrying.lumber > 0 && placedBuildingsRef.current.some(b => b.type === 'lumberShed' && b.hp > 0 && tileDist(movDest.x, movDest.y, b.x, b.y) < epsilon);
-                if (atBarn || atLumberShed) {
+                const atMiningCamp = !atBarn && !atLumberShed && (w.carrying.gold > 0 || w.carrying.stone > 0) && placedBuildingsRef.current.some(b => b.type === 'miningCamp' && b.hp > 0 && tileDist(movDest.x, movDest.y, b.x, b.y) < epsilon);
+                if (atBarn || atLumberShed || atMiningCamp) {
                   const goldDeposit = Math.round(w.carrying.gold * upkeepMultRef.current);
                   if (goldDeposit > 0 || w.carrying.lumber > 0 || w.carrying.stone > 0) Snd.gold();
                   setResources(r => ({ ...r, gold: r.gold + goldDeposit, lumber: r.lumber + w.carrying.lumber, stone: r.stone + w.carrying.stone }));
@@ -2731,8 +2746,13 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
                     const mine = goldMinesRef.current[mineIdx];
                     if (mine && mine.amount > 0 && w2.carrying.gold < CARRY_CAP) {
                       setGoldMines(gms => gms.map((gm, i) => { if (i !== mineIdx) return gm; const next = Math.max(0, gm.amount - CARRY_CAP); if (next === 0) addFloatingText(gm.x, gm.y, '🪙 Mine Depleted!', '#92400e'); return { ...gm, amount: next }; }));
-                      const p = aStar(INITIAL_TILES, { x: Math.round(w2.x), y: Math.round(w2.y) }, BARN_POS);
-                      return { ...w2, carrying: { gold: w2.carrying.gold + CARRY_CAP, lumber: 0, stone: 0 }, state: 'returning', movingTo: p[0] ?? BARN_POS, path: p.slice(1) };
+                      const camps = placedBuildingsRef.current.filter(b => b.type === 'miningCamp' && b.hp > 0);
+                      const goldDrop = camps.reduce<{ x: number; y: number } | null>((best, c) => {
+                        const d = tileDist(w2.x, w2.y, c.x, c.y);
+                        return !best || d < tileDist(w2.x, w2.y, best.x, best.y) ? { x: c.x, y: c.y } : best;
+                      }, null) ?? BARN_POS;
+                      const p = aStar(INITIAL_TILES, { x: Math.round(w2.x), y: Math.round(w2.y) }, goldDrop);
+                      return { ...w2, carrying: { gold: w2.carrying.gold + CARRY_CAP, lumber: 0, stone: 0 }, state: 'returning', movingTo: p[0] ?? goldDrop, path: p.slice(1) };
                     }
                     return w2;
                   }));
@@ -2740,8 +2760,13 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
               }
             } else if (gType === 'stone') {
               if (w.carrying.stone >= CARRY_CAP) {
-                const p = aStar(INITIAL_TILES, { x: Math.round(w.x), y: Math.round(w.y) }, BARN_POS);
-                return { ...w, state: 'returning', movingTo: p[0] ?? BARN_POS, path: p.slice(1) };
+                const stoneCamps = placedBuildingsRef.current.filter(b => b.type === 'miningCamp' && b.hp > 0);
+                const stoneDrop = stoneCamps.reduce<{ x: number; y: number } | null>((best, c) => {
+                  const d = tileDist(w.x, w.y, c.x, c.y);
+                  return !best || d < tileDist(w.x, w.y, best.x, best.y) ? { x: c.x, y: c.y } : best;
+                }, null) ?? BARN_POS;
+                const p = aStar(INITIAL_TILES, { x: Math.round(w.x), y: Math.round(w.y) }, stoneDrop);
+                return { ...w, state: 'returning', movingTo: p[0] ?? stoneDrop, path: p.slice(1) };
               }
               if (!gatherT[w.id]) {
                 const idx = w.gathering.idx;
@@ -2752,8 +2777,13 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
                     if (w2.id !== w.id || w2.state !== 'gathering' || !w2.gathering) return w2;
                     if ((stoneNodesRef.current[idx]?.amount ?? 0) > 0 && w2.carrying.stone < CARRY_CAP) {
                       setStoneNodes(ns => ns.map((n, i) => { if (i !== idx) return n; const next = Math.max(0, n.amount - CARRY_CAP); if (next === 0) addFloatingText(n.x, n.y, '🪨 Quarry Depleted!', '#92400e'); return { ...n, amount: next }; }));
-                      const p = aStar(INITIAL_TILES, { x: Math.round(w2.x), y: Math.round(w2.y) }, BARN_POS);
-                      return { ...w2, carrying: { gold: 0, lumber: 0, stone: w2.carrying.stone + CARRY_CAP }, state: 'returning', movingTo: p[0] ?? BARN_POS, path: p.slice(1) };
+                      const stoneCamps2 = placedBuildingsRef.current.filter(b => b.type === 'miningCamp' && b.hp > 0);
+                      const stoneDrop2 = stoneCamps2.reduce<{ x: number; y: number } | null>((best, c) => {
+                        const d = tileDist(w2.x, w2.y, c.x, c.y);
+                        return !best || d < tileDist(w2.x, w2.y, best.x, best.y) ? { x: c.x, y: c.y } : best;
+                      }, null) ?? BARN_POS;
+                      const p = aStar(INITIAL_TILES, { x: Math.round(w2.x), y: Math.round(w2.y) }, stoneDrop2);
+                      return { ...w2, carrying: { gold: 0, lumber: 0, stone: w2.carrying.stone + CARRY_CAP }, state: 'returning', movingTo: p[0] ?? stoneDrop2, path: p.slice(1) };
                     }
                     return w2;
                   }));
