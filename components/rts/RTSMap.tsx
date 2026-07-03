@@ -9,7 +9,7 @@ const WORKER_SPEED = 1.5;
 const GRUNT_SPEED = 0.8;
 const GATHER_INTERVAL_MS = 900;
 const CARRY_CAP = 10;
-const FOOD_CAP_BASE = 5;
+const FOOD_CAP_BASE = 10; // starts at 10 so 5 workers don't immediately hit cap penalty
 const FOOD_CAP_PER_LEVEL = 5;
 const WORKER_VISION = 3.5;
 const BARN_VISION = 5;
@@ -710,6 +710,12 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
     if (saved && saved.length === GRID_SIZE && saved[0]?.length === GRID_SIZE) return saved;
     return computeVisible([{ x: BARN_POS.x, y: BARN_POS.y, r: BARN_VISION }]);
   });
+  const fogExploredRef = useRef(fogExplored);
+  // fogVisible: currently-visible tiles (for rendering enemy units in/out of fog)
+  const [fogVisible, setFogVisible] = useState<boolean[][]>(() =>
+    computeVisible([{ x: BARN_POS.x, y: BARN_POS.y, r: BARN_VISION }])
+  );
+  const fogVisibleRef = useRef(fogVisible);
   const [dragBox, setDragBox] = useState<{ start: { x: number; y: number }; end: { x: number; y: number } } | null>(null);
   const isDraggingRef = useRef(false);
   const [buildMode, setBuildMode] = useState<BuildingType | null>(null);
@@ -718,8 +724,10 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
   const buildingIdRef = useRef(INITIAL_SAVE?.buildingNextId ?? 1);
   const placedBuildingsRef = useRef(placedBuildings);
   useEffect(() => { placedBuildingsRef.current = placedBuildings; }, [placedBuildings]);
+  useEffect(() => { fogExploredRef.current = fogExplored; }, [fogExplored]);
+  useEffect(() => { fogVisibleRef.current = fogVisible; }, [fogVisible]);
   const [controlGroups, setControlGroups] = useState<Record<number, number[]>>({});
-  const [resources, setResources] = useState<Resources>(() => INITIAL_SAVE?.resources ?? { gold: difficulty?.startGold ?? 150, lumber: difficulty?.startLumber ?? 80, stone: difficulty?.startStone ?? 30, food: 6, foodCap: FOOD_CAP_BASE });
+  const [resources, setResources] = useState<Resources>(() => INITIAL_SAVE?.resources ?? { gold: difficulty?.startGold ?? 150, lumber: difficulty?.startLumber ?? 80, stone: difficulty?.startStone ?? 30, food: 5, foodCap: 10 });
 
   const DEFAULT_TREES: ResourceNode[] = [
     // Starting cluster near barn (2,2)
@@ -799,7 +807,6 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
           makeUnit(3, 3, 4, 'farmer'),
           makeUnit(4, 4, 4, 'farmer'),
           makeUnit(5, 5, 3, 'farmer'),
-          makeUnit(6, 3, 5, 'swordsman'),
         ]
   );
   const workersRef = useRef(workers);
@@ -822,12 +829,15 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
   const neutralCreepsRef = useRef(neutralCreeps);
   useEffect(() => { neutralCreepsRef.current = neutralCreeps; }, [neutralCreeps]);
   const [clearedCamps, setClearedCamps] = useState<Set<number>>(() => new Set());
+  const campClearedAtRef = useRef<Record<number, number>>({}); // campId → timestamp cleared
   const creepAttackTimeoutsRef = useRef<Record<number, number>>({});
+  const creepIdCounterRef = useRef(1000); // avoid id collisions on respawn
 
   const [wave, setWave] = useState(() => INITIAL_SAVE?.wave ?? 0);
   const waveRef = useRef(INITIAL_SAVE?.wave ?? 0);
   const [, setTick] = useState(0);
   useEffect(() => { const id = window.setInterval(() => setTick(t => t + 1), 1000); return () => clearInterval(id); }, []);
+
   const [enemyTowers, setEnemyTowers] = useState<EnemyTower[]>(() => [{ id: -1, x: ARCHER_TOWER_POS.x, y: ARCHER_TOWER_POS.y, hp: 120, maxHp: 120 }]);
   const enemyTowersRef = useRef<EnemyTower[]>([]);
   useEffect(() => { enemyTowersRef.current = enemyTowers; }, [enemyTowers]);
@@ -1162,6 +1172,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
   const buildingRepairTimeoutsRef = useRef<Record<number, number>>({});
   const animationRef = useRef<number | null>(null);
   const prevTimeRef = useRef<number | null>(null);
+  const lastFogUpdateRef = useRef<number>(0); // timestamp of last fog recompute
   // Hit-flash: tracks timestamp of last damage taken per unit id (workers and grunts)
   const workerHitRef = useRef<Map<number, number>>(new Map());
   const gruntHitRef = useRef<Map<number, number>>(new Map());
@@ -1171,7 +1182,11 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
   useEffect(() => {
     const id = setInterval(() => {
       const now = Date.now();
-      setFloatingTexts(ts => ts.filter(t => now - t.createdAt < 1200));
+      setFloatingTexts(ts => {
+        if (ts.length === 0) return ts; // avoid new empty array reference every 100ms
+        const filtered = ts.filter(t => now - t.createdAt < 1200);
+        return filtered.length === ts.length ? ts : filtered;
+      });
     }, 100);
     return () => clearInterval(id);
   }, []);
@@ -1180,6 +1195,35 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
     const { isoX, isoY } = tileToSvg(tileX, tileY);
     setFloatingTexts(ts => [...ts, { id: floatingTextIdRef.current++, x: isoX + TILE_SIZE / 2 + (Math.random() * 20 - 10), y: isoY + 10, text, color, createdAt: Date.now() }]);
   }, []);
+
+  // Creep camp respawn: cleared camps respawn after 3 minutes (WC3-style)
+  const CAMP_RESPAWN_MS = 180_000;
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (gameOverRef.current || gameSpeedRef.current === 0) return;
+      const now = Date.now();
+      const toRespawn = CREEP_CAMPS.filter(camp => {
+        const clearedAt = campClearedAtRef.current[camp.id];
+        return clearedAt && now - clearedAt >= CAMP_RESPAWN_MS;
+      });
+      if (toRespawn.length === 0) return;
+      toRespawn.forEach(camp => {
+        delete campClearedAtRef.current[camp.id];
+        addFloatingText(camp.x, camp.y, '⚠ Creeps Respawned!', '#f87171');
+      });
+      setClearedCamps(s => { const n = new Set(s); toRespawn.forEach(c => n.delete(c.id)); return n; });
+      setNeutralCreeps(cs => {
+        const respawnedIds = new Set(toRespawn.map(c => c.id));
+        const existing = cs.filter(c => !respawnedIds.has(c.campId));
+        const newCreeps = toRespawn.flatMap(camp => [
+          { id: creepIdCounterRef.current++, campId: camp.id, x: camp.x, y: camp.y, homeX: camp.x, homeY: camp.y, hp: CREEP_MAX_HP, maxHp: CREEP_MAX_HP, state: 'idle' as const, targetWorkerId: null },
+          { id: creepIdCounterRef.current++, campId: camp.id, x: camp.x + 1, y: camp.y, homeX: camp.x + 1, homeY: camp.y, hp: CREEP_MAX_HP, maxHp: CREEP_MAX_HP, state: 'idle' as const, targetWorkerId: null },
+        ]);
+        return [...existing, ...newCreeps];
+      });
+    }, 5000);
+    return () => clearInterval(id);
+  }, [addFloatingText]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Hero revive timer — ticks down, spawns hero on completion
   useEffect(() => {
@@ -1234,20 +1278,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
     setProjectiles(ps => [...ps, { id: projIdRef.current++, fx: fx + TILE_SIZE / 2, fy: fy + TILE_SIZE / 4, tx: tx2 + TILE_SIZE / 2, ty: ty2 + TILE_SIZE / 4, type, createdAt: Date.now(), duration }]);
   }, []);
 
-  // Fog of war
-  const fogVisible = useMemo(() => computeVisible([
-    { x: BARN_POS.x, y: BARN_POS.y, r: BARN_VISION },
-    ...workers.map(w => ({ x: w.x, y: w.y, r: WORKER_VISION })),
-    ...placedBuildings.map(b => ({ x: b.x, y: b.y, r: b.type === 'watchtower' ? WATCHTOWER_VISION : 2 })),
-  ]), [workers, placedBuildings]);
-
-  useEffect(() => {
-    setFogExplored(exp => {
-      let changed = false;
-      const next = exp.map((row, i) => row.map((v, j) => { if (!v && fogVisible[i]?.[j]) { changed = true; return true; } return v; }));
-      return changed ? next : exp;
-    });
-  }, [fogVisible]);
+  // Fog of war: updated in the animate loop to avoid useEffect cascade
 
   // Wave-based grunt spawner
   const doSpawnWave = useCallback(() => {
@@ -1533,29 +1564,29 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
     const id = window.setInterval(() => {
       if (gameOverRef.current) return;
       const now = Date.now();
-      setPlacedBuildings(bs => {
-        const hasReady = bs.some(b => {
-          if (!b.constructing) return false;
-          const assistCount = workersRef.current.filter(w => w.assistBuildId === b.id && w.hp > 0).length;
-          const speedMult = 1 + assistCount * 0.4;
-          return (now - (b.constructedAt ?? now)) * speedMult >= CONSTRUCTION_MS;
-        });
-        if (!hasReady) return bs;
-        const nextBs = bs.map(b => {
-          if (!b.constructing) return b;
-          const assistCount = workersRef.current.filter(w => w.assistBuildId === b.id && w.hp > 0).length;
-          const speedMult = 1 + assistCount * 0.4;
-          if ((now - (b.constructedAt ?? now)) * speedMult < CONSTRUCTION_MS) return b;
-          addFloatingText(b.x, b.y, '✅ Built!', '#4ade80');
-          Snd.buildComplete();
-          const bonus = BUILDING_COSTS[b.type]?.foodCapBonus ?? 0;
-          if (bonus > 0) setResources(r => ({ ...r, foodCap: r.foodCap + bonus }));
-          // Release assisting workers
-          setWorkers(ws => ws.map(w => w.assistBuildId === b.id ? { ...w, assistBuildId: undefined, state: 'idle' as const } : w));
-          return { ...b, constructing: false, constructedAt: undefined, hp: b.maxHp };
-        });
-        return nextBs;
+      // Compute which buildings just finished BEFORE entering any updater
+      const justFinished = placedBuildingsRef.current.filter(b => {
+        if (!b.constructing) return false;
+        const assistCount = workersRef.current.filter(w => w.assistBuildId === b.id && w.hp > 0).length;
+        const speedMult = 1 + assistCount * 0.4;
+        return (now - (b.constructedAt ?? now)) * speedMult >= CONSTRUCTION_MS;
       });
+      if (justFinished.length === 0) return;
+      // Side effects (sound/text/other state) — safe to call outside updater
+      justFinished.forEach(b => {
+        addFloatingText(b.x, b.y, '✅ Built!', '#4ade80');
+        Snd.buildComplete();
+        const bonus = BUILDING_COSTS[b.type]?.foodCapBonus ?? 0;
+        if (bonus > 0) setResources(r => ({ ...r, foodCap: r.foodCap + bonus }));
+      });
+      // Release assisting workers
+      const finishedIds = new Set(justFinished.map(b => b.id));
+      setWorkers(ws => ws.map(w => finishedIds.has(w.assistBuildId!) ? { ...w, assistBuildId: undefined, state: 'idle' as const } : w));
+      // Mark buildings as complete
+      setPlacedBuildings(bs => bs.map(b => {
+        if (!finishedIds.has(b.id)) return b;
+        return { ...b, constructing: false, constructedAt: undefined, hp: b.maxHp };
+      }));
     }, 500);
     return () => clearInterval(id);
   }, [gameOver, addFloatingText]);
@@ -3911,6 +3942,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
             const campAlive = alive.filter(c => c.campId === camp.id);
             if (campAlive.length === 0 && killed.some(c => c.campId === camp.id)) {
               setClearedCamps(s => { if (s.has(camp.id)) return s; const n = new Set(s); n.add(camp.id); return n; });
+              campClearedAtRef.current[camp.id] = Date.now();
               setResources(r => ({ ...r, gold: r.gold + camp.goldReward }));
               addFloatingText(camp.x, camp.y, `+${camp.goldReward}🪙 Camp!`, '#fbbf24');
               if (Math.random() < 0.65) {
@@ -3972,6 +4004,40 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
           return c;
         });
       });
+
+      // Fog of war update — throttled to every 200ms to avoid per-frame state churn
+      const nowFog = Date.now();
+      if (nowFog - lastFogUpdateRef.current >= 200) {
+        lastFogUpdateRef.current = nowFog;
+        const newVisible = computeVisible([
+          { x: BARN_POS.x, y: BARN_POS.y, r: BARN_VISION },
+          ...workersRef.current.map(w => ({ x: Math.round(w.x), y: Math.round(w.y), r: WORKER_VISION })),
+          ...placedBuildingsRef.current.map(b => ({ x: b.x, y: b.y, r: b.type === 'watchtower' ? WATCHTOWER_VISION : 2 })),
+        ]);
+        // Check if visible set changed
+        let visChanged = false;
+        const prevVis = fogVisibleRef.current;
+        outer: for (let i = 0; i < GRID_SIZE; i++) {
+          for (let j = 0; j < GRID_SIZE; j++) {
+            if (!!newVisible[i]?.[j] !== !!prevVis[i]?.[j]) { visChanged = true; break outer; }
+          }
+        }
+        if (visChanged) {
+          fogVisibleRef.current = newVisible;
+          setFogVisible(newVisible);
+          // Also expand explored fog
+          const prevExp = fogExploredRef.current;
+          let expChanged = false;
+          const nextExp = prevExp.map((row, i) => row.map((v, j) => {
+            if (!v && newVisible[i]?.[j]) { expChanged = true; return true; }
+            return v;
+          }));
+          if (expChanged) {
+            fogExploredRef.current = nextExp;
+            setFogExplored(nextExp);
+          }
+        }
+      }
 
       // Workers can also attack creeps (already tracked via attackTimeoutsRef for grunt targets)
       animationRef.current = requestAnimationFrame(animate);
