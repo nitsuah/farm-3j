@@ -19,7 +19,7 @@ interface NeutralLayerProps {
   } | null;
 }
 
-export function NeutralLayer({
+export const NeutralLayer: React.FC<NeutralLayerProps> = ({
   anySelected,
   capturedShrines,
   clearedCamps,
@@ -28,7 +28,7 @@ export function NeutralLayer({
   handleAttackCreep,
   neutralCreeps,
   shrineCapturing,
-}: NeutralLayerProps) {
+}) => {
   return (
     <>
       {/* Neutral shrines */}
@@ -195,12 +195,12 @@ export function NeutralLayer({
       {/* Grunt corpses — faded for 8s; Necromancer raise target */}
       {deadGruntPositions
         .filter(p => Date.now() - p.t < 8000 && fogVisible[p.x]?.[p.y])
-        .map((p, i) => {
+        .map(p => {
           const { isoX, isoY } = tileToSvg(p.x, p.y);
           const age = (Date.now() - p.t) / 8000;
           return (
             <g
-              key={`corpse-${i}`}
+              key={`corpse-${p.t}-${p.x}-${p.y}`}
               pointerEvents="none"
               opacity={0.55 - age * 0.45}
             >
@@ -224,4 +224,4 @@ export function NeutralLayer({
         })}
     </>
   );
-}
+};

@@ -7,12 +7,12 @@ interface BuffIndicatorsProps {
   shrineWarBuff: boolean;
 }
 
-export function BuffIndicators({
+export const BuffIndicators: React.FC<BuffIndicatorsProps> = ({
   dayPhase,
   phaseAnnouncement,
   shrinePlentyBuff,
   shrineWarBuff,
-}: BuffIndicatorsProps) {
+}) => {
   return (
     <>
       {/* Shrine buff indicators */}
@@ -89,4 +89,4 @@ export function BuffIndicators({
       )}
     </>
   );
-}
+};

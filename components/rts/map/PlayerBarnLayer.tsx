@@ -26,7 +26,7 @@ interface PlayerBarnLayerProps {
   setWorkers: React.Dispatch<React.SetStateAction<WorkerState[]>>;
 }
 
-export function PlayerBarnLayer({
+export const PlayerBarnLayer: React.FC<PlayerBarnLayerProps> = ({
   anySelected,
   buildMode,
   clientToSvg,
@@ -41,7 +41,7 @@ export function PlayerBarnLayer({
   setSelectedBuildingId,
   setSelectedType,
   setWorkers,
-}: PlayerBarnLayerProps) {
+}) => {
   return (
     <>
       {/* Rally point flag */}
@@ -295,4 +295,4 @@ export function PlayerBarnLayer({
       })()}
     </>
   );
-}
+};

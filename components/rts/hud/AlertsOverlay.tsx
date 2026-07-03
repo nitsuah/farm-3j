@@ -11,14 +11,14 @@ interface AlertsOverlayProps {
   wavePreview: string | null;
 }
 
-export function AlertsOverlay({
+export const AlertsOverlay: React.FC<AlertsOverlayProps> = ({
   gameOver,
   gameSpeed,
   playerBarnHp,
   underAttack,
   waveAnnouncement,
   wavePreview,
-}: AlertsOverlayProps) {
+}) => {
   return (
     <>
       {/* Wave announcement */}
@@ -136,4 +136,4 @@ export function AlertsOverlay({
       )}
     </>
   );
-}
+};

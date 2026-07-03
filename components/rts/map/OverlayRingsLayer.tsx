@@ -25,6 +25,22 @@ import type {
   PlacedBuilding,
 } from '../game/types';
 
+const TOWER_COLORS: Partial<Record<BuildingType, string>> = {
+  watchtower: '#94a3b8',
+  frostTower: '#93c5fd',
+  ballista: '#fbbf24',
+  poisonTower: '#86efac',
+};
+
+const GHOST_RANGES: Partial<
+  Record<BuildingType, { r: number; color: string }>
+> = {
+  watchtower: { r: WATCHTOWER_ATTACK_RANGE, color: '#94a3b8' },
+  frostTower: { r: FROST_TOWER_RANGE, color: '#93c5fd' },
+  ballista: { r: BALLISTA_RANGE, color: '#fbbf24' },
+  poisonTower: { r: POISON_TOWER_RANGE, color: '#86efac' },
+};
+
 interface OverlayRingsLayerProps {
   buildMode: BuildingType | null;
   enemySiege: EnemySiege[];
@@ -38,7 +54,7 @@ interface OverlayRingsLayerProps {
   placedBuildings: PlacedBuilding[];
 }
 
-export function OverlayRingsLayer({
+export const OverlayRingsLayer: React.FC<OverlayRingsLayerProps> = ({
   buildMode,
   enemySiege,
   enemyTowers,
@@ -49,7 +65,7 @@ export function OverlayRingsLayer({
   guardTowerResearched,
   isTileOccupied,
   placedBuildings,
-}: OverlayRingsLayerProps) {
+}) => {
   return (
     <>
       {/* Build ghost */}
@@ -169,12 +185,6 @@ export function OverlayRingsLayer({
           ballista: BALLISTA_RANGE,
           poisonTower: POISON_TOWER_RANGE,
         };
-        const TOWER_COLORS: Partial<Record<BuildingType, string>> = {
-          watchtower: '#94a3b8',
-          frostTower: '#93c5fd',
-          ballista: '#fbbf24',
-          poisonTower: '#86efac',
-        };
         return placedBuildings
           .filter(
             b =>
@@ -221,14 +231,6 @@ export function OverlayRingsLayer({
             .map(p => p.join(','))
             .join(' ');
           // Show range ring for tower placements
-          const GHOST_RANGES: Partial<
-            Record<BuildingType, { r: number; color: string }>
-          > = {
-            watchtower: { r: WATCHTOWER_ATTACK_RANGE, color: '#94a3b8' },
-            frostTower: { r: FROST_TOWER_RANGE, color: '#93c5fd' },
-            ballista: { r: BALLISTA_RANGE, color: '#fbbf24' },
-            poisonTower: { r: POISON_TOWER_RANGE, color: '#86efac' },
-          };
           const ghostRange = GHOST_RANGES[buildMode];
           const gcx = isoX + TILE_SIZE,
             gcy = isoY + TILE_SIZE / 2;
@@ -268,4 +270,4 @@ export function OverlayRingsLayer({
         })()}
     </>
   );
-}
+};

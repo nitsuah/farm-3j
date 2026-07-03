@@ -16,7 +16,11 @@ export function saveHighScore(entry: HighScoreEntry) {
   const scores = loadHighScores();
   scores.push(entry);
   scores.sort((a, b) => b.wave - a.wave || b.kills - a.kills);
-  localStorage.setItem(HIGH_SCORES_KEY, JSON.stringify(scores.slice(0, 5)));
+  try {
+    localStorage.setItem(HIGH_SCORES_KEY, JSON.stringify(scores.slice(0, 5)));
+  } catch {
+    /* ignore storage errors */
+  }
 }
 
 export function loadSave(): SaveData | null {

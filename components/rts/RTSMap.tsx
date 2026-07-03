@@ -507,9 +507,9 @@ const RTSMap: React.FC<{
   const witchDoctorIdRef = useRef(8000);
   const witchDoctorBuffTimersRef = useRef<Record<number, number>>({});
   const [enemyWarchiefs, setEnemyWarchiefs] = useState<EnemyWarchief[]>([]);
-  const enemyWarchiefssRef = useRef<EnemyWarchief[]>([]);
+  const enemyWarchiefsRef = useRef<EnemyWarchief[]>([]);
   useEffect(() => {
-    enemyWarchiefssRef.current = enemyWarchiefs;
+    enemyWarchiefsRef.current = enemyWarchiefs;
   }, [enemyWarchiefs]);
   const warchiefIdRef = useRef(9000);
   const [deadGruntPositions, setDeadGruntPositions] = useState<
@@ -1264,7 +1264,7 @@ const RTSMap: React.FC<{
     enemyTrollsRef,
     enemyWallIdRef,
     enemyWallsRef,
-    enemyWarchiefssRef,
+    enemyWarchiefsRef,
     enemyWitchDoctorsRef,
     farmhouse,
     fogExploredRef,
@@ -3230,7 +3230,7 @@ const RTSMap: React.FC<{
       e.preventDefault();
       e.stopPropagation();
       if (!anySelected) return;
-      const wc = enemyWarchiefssRef.current.find(w2 => w2.id === warchiefId);
+      const wc = enemyWarchiefsRef.current.find(w2 => w2.id === warchiefId);
       if (!wc) return;
       const tx = Math.round(wc.x),
         ty = Math.round(wc.y);

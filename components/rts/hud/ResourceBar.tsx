@@ -48,7 +48,7 @@ interface ResourceBarProps {
   zoom: number;
 }
 
-export function ResourceBar({
+export const ResourceBar: React.FC<ResourceBarProps> = ({
   attackMoveMode,
   buildMode,
   difficulty,
@@ -79,7 +79,7 @@ export function ResourceBar({
   wave,
   waveTimerRemainingRef,
   zoom,
-}: ResourceBarProps) {
+}) => {
   return (
     <>
       {/* Resource bar */}
@@ -343,6 +343,7 @@ export function ResourceBar({
           </span>
         )}
         <button
+          type="button"
           onClick={() => setGameSpeed(s => (s === 0 ? 1 : s === 1 ? 2 : 0))}
           style={{
             background:
@@ -477,6 +478,7 @@ export function ResourceBar({
           {soundMuted ? '🔇' : '🔊'}
         </button>
         <button
+          type="button"
           onClick={doSave}
           style={{
             background:
@@ -494,6 +496,7 @@ export function ResourceBar({
           {saveStatus === 'saved' ? '✓ Saved' : '💾 Save'}
         </button>
         <button
+          type="button"
           onClick={() => {
             clearSave();
             if (onNewGame) onNewGame();
@@ -514,4 +517,4 @@ export function ResourceBar({
       </div>
     </>
   );
-}
+};

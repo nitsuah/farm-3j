@@ -21,7 +21,7 @@ interface WorkersLayerProps {
   workers: WorkerState[];
 }
 
-export function WorkersLayer({
+export const WorkersLayer: React.FC<WorkersLayerProps> = ({
   battleShoutUntil,
   buildMode,
   deadWorkerPositions,
@@ -32,7 +32,9 @@ export function WorkersLayer({
   setWorkers,
   workerHitRef,
   workers,
-}: WorkersLayerProps) {
+}) => {
+  const heroAlive = workers.find(w => w.unitType === 'hero' && w.hp > 0);
+
   return (
     <>
       {/* Worker corpses — faint grey for 6s */}
@@ -74,7 +76,6 @@ export function WorkersLayer({
       {workers.map(worker => {
         const { isoX, isoY } = tileToSvg(worker.x, worker.y);
         const hp = worker.hp / worker.maxHp;
-        const heroAlive = workers.find(w => w.unitType === 'hero' && w.hp > 0);
         const hasMoraleAura =
           heroAlive &&
           worker.unitType !== 'hero' &&
@@ -595,4 +596,4 @@ export function WorkersLayer({
       })}
     </>
   );
-}
+};

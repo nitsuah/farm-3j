@@ -19,7 +19,7 @@ interface GameOverOverlayProps {
   workers: WorkerState[];
 }
 
-export function GameOverOverlay({
+export const GameOverOverlay: React.FC<GameOverOverlayProps> = ({
   gameEndTime,
   gameOver,
   killCount,
@@ -31,7 +31,7 @@ export function GameOverOverlay({
   totalStone,
   wave,
   workers,
-}: GameOverOverlayProps) {
+}) => {
   return (
     <>
       {/* Victory / Defeat overlay */}
@@ -198,6 +198,7 @@ export function GameOverOverlay({
                 );
               })()}
               <button
+                type="button"
                 className="rounded-lg border-2 border-amber-500 bg-amber-500/20 px-8 py-3 text-lg text-amber-200 hover:bg-amber-500/40"
                 onClick={() => {
                   clearSave();
@@ -212,4 +213,4 @@ export function GameOverOverlay({
         })()}
     </>
   );
-}
+};

@@ -7,10 +7,10 @@ interface ControlGroupBarProps {
   workers: WorkerState[];
 }
 
-export function ControlGroupBar({
+export const ControlGroupBar: React.FC<ControlGroupBarProps> = ({
   controlGroups,
   workers,
-}: ControlGroupBarProps) {
+}) => {
   return (
     <>
       {/* Control group bar */}
@@ -63,4 +63,4 @@ export function ControlGroupBar({
       )}
     </>
   );
-}
+};

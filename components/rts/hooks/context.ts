@@ -142,7 +142,7 @@ export interface RTSGameContext {
   enemyTrollsRef: Ref<EnemyTroll[]>;
   enemyWallIdRef: Ref<number>;
   enemyWallsRef: Ref<EnemyTower[]>;
-  enemyWarchiefssRef: Ref<EnemyWarchief[]>;
+  enemyWarchiefsRef: Ref<EnemyWarchief[]>;
   enemyWitchDoctorsRef: Ref<EnemyWitchDoctor[]>;
   fogExploredRef: Ref<boolean[][]>;
   fogVisibleRef: Ref<boolean[][]>;

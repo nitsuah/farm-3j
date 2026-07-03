@@ -1,10 +1,12 @@
 import React from 'react';
 
-export const Stat: React.FC<{
+interface StatProps {
   label: string;
   value: string | number;
   color: string;
-}> = ({ label, value, color }) => (
+}
+
+export const Stat: React.FC<StatProps> = ({ label, value, color }) => (
   <div>
     <div
       style={{

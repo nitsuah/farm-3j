@@ -30,7 +30,7 @@ interface EnemySiegeCastersLayerProps {
   handleAttackWitchDoctor: (wdId: number, e: React.MouseEvent) => void;
 }
 
-export function EnemySiegeCastersLayer({
+export const EnemySiegeCastersLayer: React.FC<EnemySiegeCastersLayerProps> = ({
   anySelected,
   enemyNecromancers,
   enemySappers,
@@ -43,7 +43,7 @@ export function EnemySiegeCastersLayer({
   handleAttackShaman,
   handleAttackSiege,
   handleAttackWitchDoctor,
-}: EnemySiegeCastersLayerProps) {
+}) => {
   return (
     <>
       {/* War Rams & Demolishers (enemy siege units) */}
@@ -649,4 +649,4 @@ export function EnemySiegeCastersLayer({
         })}
     </>
   );
-}
+};

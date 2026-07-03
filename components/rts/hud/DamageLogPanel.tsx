@@ -22,7 +22,7 @@ interface DamageLogPanelProps {
   workers: WorkerState[];
 }
 
-export function DamageLogPanel({
+export const DamageLogPanel: React.FC<DamageLogPanelProps> = ({
   damageLog,
   damageLogOpen,
   idleWorkerIndexRef,
@@ -34,7 +34,7 @@ export function DamageLogPanel({
   svgRef,
   underAttack,
   workers,
-}: DamageLogPanelProps) {
+}) => {
   return (
     <>
       {/* Damage log toggle + panel */}
@@ -200,4 +200,4 @@ export function DamageLogPanel({
       })()}
     </>
   );
-}
+};

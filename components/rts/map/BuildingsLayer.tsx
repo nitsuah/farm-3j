@@ -40,7 +40,7 @@ interface BuildingsLayerProps {
   workers: WorkerState[];
 }
 
-export function BuildingsLayer({
+export const BuildingsLayer: React.FC<BuildingsLayerProps> = ({
   anySelected,
   handleAssistConstruction,
   handleFarmhouseAction,
@@ -55,7 +55,7 @@ export function BuildingsLayer({
   towerGarrison,
   trapTriggeredRef,
   workers,
-}: BuildingsLayerProps) {
+}) => {
   return (
     <>
       {/* Placed buildings */}
@@ -1146,4 +1146,4 @@ export function BuildingsLayer({
         })}
     </>
   );
-}
+};

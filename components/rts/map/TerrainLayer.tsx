@@ -46,7 +46,7 @@ interface TerrainLayerProps {
   workers: WorkerState[];
 }
 
-export function TerrainLayer({
+export const TerrainLayer: React.FC<TerrainLayerProps> = ({
   addFloatingText,
   anySelected,
   attackMoveMode,
@@ -66,7 +66,7 @@ export function TerrainLayer({
   setWorkers,
   tiles,
   workers,
-}: TerrainLayerProps) {
+}) => {
   return (
     <>
       {/* Tiles */}
@@ -209,4 +209,4 @@ export function TerrainLayer({
       )}
     </>
   );
-}
+};

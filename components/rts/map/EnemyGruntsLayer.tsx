@@ -21,7 +21,7 @@ interface EnemyGruntsLayerProps {
   lootCrates: LootCrate[];
 }
 
-export function EnemyGruntsLayer({
+export const EnemyGruntsLayer: React.FC<EnemyGruntsLayerProps> = ({
   anySelected,
   commandMove,
   droppedItems,
@@ -30,7 +30,7 @@ export function EnemyGruntsLayer({
   gruntHitRef,
   handleAttackGrunt,
   lootCrates,
-}: EnemyGruntsLayerProps) {
+}) => {
   return (
     <>
       {/* Enemy grunts */}
@@ -364,4 +364,4 @@ export function EnemyGruntsLayer({
       })}
     </>
   );
-}
+};

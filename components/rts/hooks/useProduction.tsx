@@ -93,7 +93,7 @@ export function useProduction(ctx: RTSGameContext) {
     return () => clearInterval(id);
   }, [gameOver, addFloatingText]);
 
-  // Spike Trap — deal 20 dmg to any grunt that steps within 0.5 tiles; 30s cooldown per trap
+  // Spike Trap — deal 20 dmg to any grunt that steps within 0.8 tiles; 30s cooldown per trap
   useEffect(() => {
     if (gameOver) return;
     const TRAP_DAMAGE = 20;

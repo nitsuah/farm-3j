@@ -13,14 +13,14 @@ interface EnemyEliteLayerProps {
   handleAttackWarchief: (warchiefId: number, e: React.MouseEvent) => void;
 }
 
-export function EnemyEliteLayer({
+export const EnemyEliteLayer: React.FC<EnemyEliteLayerProps> = ({
   anySelected,
   enemyTrolls,
   enemyWarchiefs,
   fogVisible,
   handleAttackTroll,
   handleAttackWarchief,
-}: EnemyEliteLayerProps) {
+}) => {
   return (
     <>
       {/* Enemy Troll Archers */}
@@ -266,4 +266,4 @@ export function EnemyEliteLayer({
         })}
     </>
   );
-}
+};

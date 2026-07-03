@@ -23,7 +23,7 @@ interface EffectsLayerProps {
   workers: WorkerState[];
 }
 
-export function EffectsLayer({
+export const EffectsLayer: React.FC<EffectsLayerProps> = ({
   chickens,
   dayPhase,
   dragBox,
@@ -36,7 +36,7 @@ export function EffectsLayer({
   viewBoxH,
   viewBoxW,
   workers,
-}: EffectsLayerProps) {
+}) => {
   return (
     <>
       {/* Patrol route visualizations */}
@@ -376,19 +376,21 @@ export function EffectsLayer({
         })()}
 
       {/* Box selection */}
-      {dragBox && Math.abs(dragBox.end.x - dragBox.start.x) > 4 && (
-        <rect
-          x={Math.min(dragBox.start.x, dragBox.end.x)}
-          y={Math.min(dragBox.start.y, dragBox.end.y)}
-          width={Math.abs(dragBox.end.x - dragBox.start.x)}
-          height={Math.abs(dragBox.end.y - dragBox.start.y)}
-          fill="rgba(56,189,248,0.08)"
-          stroke="#38bdf8"
-          strokeWidth={2}
-          strokeDasharray="8 4"
-          pointerEvents="none"
-        />
-      )}
+      {dragBox &&
+        (Math.abs(dragBox.end.x - dragBox.start.x) > 4 ||
+          Math.abs(dragBox.end.y - dragBox.start.y) > 4) && (
+          <rect
+            x={Math.min(dragBox.start.x, dragBox.end.x)}
+            y={Math.min(dragBox.start.y, dragBox.end.y)}
+            width={Math.abs(dragBox.end.x - dragBox.start.x)}
+            height={Math.abs(dragBox.end.y - dragBox.start.y)}
+            fill="rgba(56,189,248,0.08)"
+            stroke="#38bdf8"
+            strokeWidth={2}
+            strokeDasharray="8 4"
+            pointerEvents="none"
+          />
+        )}
     </>
   );
-}
+};

@@ -155,7 +155,7 @@ export function useGameLoop(ctx: RTSGameContext) {
     enemyTowersRef,
     enemyTrollsRef,
     enemyWallsRef,
-    enemyWarchiefssRef,
+    enemyWarchiefsRef,
     enemyWitchDoctorsRef,
     fogExploredRef,
     fogVisibleRef,
@@ -482,7 +482,7 @@ export function useGameLoop(ctx: RTSGameContext) {
                 movingTo: null,
                 path: [],
               };
-            const nearWC = enemyWarchiefssRef.current.find(
+            const nearWC = enemyWarchiefsRef.current.find(
               wc2 => wc2.hp > 0 && tileDist(w.x, w.y, wc2.x, wc2.y) <= AM_SCAN
             );
             if (nearWC)
@@ -594,7 +594,7 @@ export function useGameLoop(ctx: RTSGameContext) {
                   },
                   state: 'attacking' as const,
                 };
-              const nearWCH = enemyWarchiefssRef.current.find(
+              const nearWCH = enemyWarchiefsRef.current.find(
                 wc2 =>
                   wc2.hp > 0 && tileDist(w.x, w.y, wc2.x, wc2.y) <= HP_RANGE
               );
@@ -709,7 +709,7 @@ export function useGameLoop(ctx: RTSGameContext) {
                 },
                 state: 'attacking' as const,
               };
-            const nearWCA = enemyWarchiefssRef.current.find(
+            const nearWCA = enemyWarchiefsRef.current.find(
               wc2 => wc2.hp > 0 && tileDist(w.x, w.y, wc2.x, wc2.y) <= AGG_RANGE
             );
             if (nearWCA)
@@ -2492,7 +2492,7 @@ export function useGameLoop(ctx: RTSGameContext) {
               const wcId = (
                 w.attacking as { targetType: 'warchief'; warchiefId: number }
               ).warchiefId;
-              const wcTarget = enemyWarchiefssRef.current.find(
+              const wcTarget = enemyWarchiefsRef.current.find(
                 wc2 => wc2.id === wcId && wc2.hp > 0
               );
               if (!wcTarget) return { ...w, attacking: null, state: 'idle' };
@@ -2552,7 +2552,7 @@ export function useGameLoop(ctx: RTSGameContext) {
                     `-${dmg}`,
                     '#ef4444'
                   );
-                  const wcCurrent = enemyWarchiefssRef.current.find(
+                  const wcCurrent = enemyWarchiefsRef.current.find(
                     wc2 => wc2.id === capturedWCId
                   );
                   if (wcCurrent && wcCurrent.hp - dmg <= 0) {

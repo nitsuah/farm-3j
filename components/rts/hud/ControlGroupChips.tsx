@@ -10,11 +10,11 @@ interface ControlGroupChipsProps {
   setWorkers: React.Dispatch<React.SetStateAction<WorkerState[]>>;
 }
 
-export function ControlGroupChips({
+export const ControlGroupChips: React.FC<ControlGroupChipsProps> = ({
   controlGroups,
   setSelectedType,
   setWorkers,
-}: ControlGroupChipsProps) {
+}) => {
   return (
     <>
       {/* Control group chips */}
@@ -58,4 +58,4 @@ export function ControlGroupChips({
       )}
     </>
   );
-}
+};

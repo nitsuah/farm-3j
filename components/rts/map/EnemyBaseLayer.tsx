@@ -29,7 +29,7 @@ interface EnemyBaseLayerProps {
   ) => void;
 }
 
-export function EnemyBaseLayer({
+export const EnemyBaseLayer: React.FC<EnemyBaseLayerProps> = ({
   anySelected,
   enemyBarnHp,
   enemyTowers,
@@ -38,7 +38,7 @@ export function EnemyBaseLayer({
   handleAttackEnemyBarn,
   handleAttackEnemyTower,
   handleAttackEnemyWall,
-}: EnemyBaseLayerProps) {
+}) => {
   return (
     <>
       {/* Enemy barn */}
@@ -391,4 +391,4 @@ export function EnemyBaseLayer({
         })}
     </>
   );
-}
+};

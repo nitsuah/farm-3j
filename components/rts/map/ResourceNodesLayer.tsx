@@ -18,13 +18,13 @@ interface ResourceNodesLayerProps {
   trees: ResourceNode[];
 }
 
-export function ResourceNodesLayer({
+export const ResourceNodesLayer: React.FC<ResourceNodesLayerProps> = ({
   buildMode,
   commandMove,
   goldMines,
   stoneNodes,
   trees,
-}: ResourceNodesLayerProps) {
+}) => {
   return (
     <>
       {/* Stone nodes */}
@@ -184,4 +184,4 @@ export function ResourceNodesLayer({
       })}
     </>
   );
-}
+};
