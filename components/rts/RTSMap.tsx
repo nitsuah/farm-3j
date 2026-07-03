@@ -593,12 +593,12 @@ let _saveLocked = false;
 
 function writeSave(data: SaveData): void {
   if (_saveLocked) return;
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch {}
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch { /* ignore quota errors */ }
 }
 
 function clearSave(): void {
   _saveLocked = true;
-  try { localStorage.removeItem(SAVE_KEY); } catch {}
+  try { localStorage.removeItem(SAVE_KEY); } catch { /* ignore storage errors */ }
   // Unlock after a tick — by then the new component has mounted and taken over
   setTimeout(() => { _saveLocked = false; }, 500);
 }
@@ -611,10 +611,10 @@ function makeUnit(id: number, x: number, y: number, unitType: 'farmer' | 'swords
 
 // Web Audio sound helpers — procedural tones, no audio files required
 let _audioCtx: AudioContext | null = null;
-let _soundMuted = (() => { try { return localStorage.getItem('farm3j_muted') === '1'; } catch { return false; } })();
+let _soundMuted = (() => { try { return localStorage.getItem('farm3j_muted') === '1'; } catch { /* SSR/private mode */ return false; } })();
 let _lastGoldSnd = 0;
 function getSoundMuted() { return _soundMuted; }
-function setSoundMuted(v: boolean) { _soundMuted = v; try { localStorage.setItem('farm3j_muted', v ? '1' : '0'); } catch {} }
+function setSoundMuted(v: boolean) { _soundMuted = v; try { localStorage.setItem('farm3j_muted', v ? '1' : '0'); } catch { /* ignore storage errors */ } }
 function getAudioCtx(): AudioContext | null {
   if (typeof window === 'undefined') return null;
   if (!_audioCtx || _audioCtx.state === 'closed') _audioCtx = new AudioContext();
