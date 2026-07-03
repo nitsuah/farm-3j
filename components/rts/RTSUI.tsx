@@ -38,6 +38,21 @@ export interface WorkerState {
 
 export type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market' | 'blacksmith' | 'granary' | 'stable' | 'spikeTrap' | 'frostTower' | 'ballista' | 'poisonTower' | 'supplyStore' | 'miningCamp';
 
+export type FarmhouseAction =
+  | 'build' | 'upgrade' | 'train' | 'recruitHero'
+  | 'trainSwordsman' | 'trainCavalry' | 'trainCatapult' | 'trainTrebuchet'
+  | 'trade:lumberToGold' | 'trade:stoneToGold' | 'trade:stoneToLumber'
+  | 'blacksmith:steelEdge' | 'blacksmith:ironHide'
+  | 'guardTower'
+  | 'barracks:veteranTraining' | 'barracks:warDrums'
+  | `upgradeWall:${number}`
+  | `build:${BuildingType}`;
+
+// XP thresholds — keep in sync with RTSMap.tsx
+const XP_TO_LEVEL_1 = 40;
+const XP_TO_LEVEL_2 = 120;
+const XP_TO_LEVEL_3 = 280;
+
 // Tech tree: building → required building (keep in sync with RTSMap.tsx BUILDING_REQUIRES)
 const BUILDING_REQUIRES: Partial<Record<BuildingType, BuildingType>> = {
   barracks: 'farmhouse',
@@ -134,7 +149,7 @@ interface RTSUIProps {
   resources: { gold: number; lumber: number; stone: number; food: number; foodCap: number };
   placedBuildings: PlacedBuilding[];
   buildingCosts: Record<BuildingType, BuildingCost>;
-  onFarmhouseAction: (action: string) => void;
+  onFarmhouseAction: (action: FarmhouseAction) => void;
   onWorkerCommand: (cmd: 'stop' | 'gather' | 'attack') => void;
   patrolMode: boolean;
   onPatrolCommand: () => void;
@@ -335,23 +350,23 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                     {firstWorker.carrying.stone > 0 && `🪨${firstWorker.carrying.stone}`}
                     {!firstWorker.carrying.gold && !firstWorker.carrying.lumber && !firstWorker.carrying.stone && 'Empty'}
                   </div>
-                  {firstWorker.level > 0 || firstWorker.xp > 0 ? (
-                    <div className="mt-0.5 flex items-center gap-1.5">
-                      <span className="text-xs text-yellow-300">{'⭐'.repeat(firstWorker.level)}{firstWorker.level === 0 ? '☆☆☆' : firstWorker.level === 1 ? '☆☆' : firstWorker.level === 2 ? '☆' : ''}</span>
-                      <div className="h-1.5 flex-1 rounded bg-slate-700">
-                        <div className="h-1.5 rounded bg-yellow-400 transition-all" style={{ width: `${Math.min(100, (firstWorker.xp / (firstWorker.level >= 3 ? 280 : firstWorker.level >= 2 ? 280 : firstWorker.level === 1 ? 120 : 40)) * 100)}%` }} />
+                  {(() => {
+                    const lvl = firstWorker.level;
+                    const xp = firstWorker.xp;
+                    const brackets: [number, number][] = [[0, XP_TO_LEVEL_1], [XP_TO_LEVEL_1, XP_TO_LEVEL_2], [XP_TO_LEVEL_2, XP_TO_LEVEL_3]];
+                    const [lo, hi] = lvl >= 3 ? [XP_TO_LEVEL_3, XP_TO_LEVEL_3] : brackets[lvl] ?? [0, XP_TO_LEVEL_1];
+                    const pct = lvl >= 3 ? 100 : hi === lo ? 100 : Math.min(100, ((xp - lo) / (hi - lo)) * 100);
+                    const stars = '⭐'.repeat(lvl) + '☆'.repeat(Math.max(0, 3 - lvl));
+                    return (
+                      <div className="mt-0.5 flex items-center gap-1.5">
+                        <span className="text-xs text-yellow-300">{stars}</span>
+                        <div className="h-1.5 flex-1 rounded bg-slate-700">
+                          <div className="h-1.5 rounded bg-yellow-400 transition-all" style={{ width: `${pct}%` }} />
+                        </div>
+                        <span className="text-xs text-yellow-400/70">{lvl >= 3 ? 'MAX' : `${xp - lo}/${hi - lo}xp`}</span>
                       </div>
-                      <span className="text-xs text-yellow-400/70">{firstWorker.xp}xp</span>
-                    </div>
-                  ) : (
-                    <div className="mt-0.5 flex items-center gap-1.5">
-                      <span className="text-xs text-slate-500">☆☆ Lv0</span>
-                      <div className="h-1.5 flex-1 rounded bg-slate-700">
-                        <div className="h-1.5 rounded bg-yellow-400/50 transition-all" style={{ width: `${(firstWorker.xp / 40) * 100}%` }} />
-                      </div>
-                      <span className="text-xs text-slate-500">{firstWorker.xp}/40</span>
-                    </div>
-                  )}
+                    );
+                  })()}
                 </>
               )}
               {selectedCount > 1 && (

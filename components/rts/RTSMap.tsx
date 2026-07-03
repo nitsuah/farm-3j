@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 
-import { RTSUI, WorkerState, Upgrades, UPGRADE_COSTS, UPGRADE_MAX } from './RTSUI';
+import { RTSUI, WorkerState, Upgrades, UPGRADE_COSTS, UPGRADE_MAX, FarmhouseAction } from './RTSUI';
 
 const GRID_SIZE = 25;
 const TILE_SIZE = 64;
@@ -4250,7 +4250,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
   const viewBoxW = GRID_SIZE * TILE_SIZE * 2 + 200;
   const viewBoxH = GRID_SIZE * TILE_SIZE + 200;
 
-  const handleFarmhouseAction = (action: string) => {
+  const handleFarmhouseAction = (action: FarmhouseAction) => {
     if (action === 'build' || action === 'upgrade') {
       const level = farmhouse.built ? farmhouse.level : 0;
       const cost = farmhouseUpgradeCosts[level];
