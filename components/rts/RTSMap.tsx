@@ -550,7 +550,7 @@ function saveHighScore(entry: HighScoreEntry) {
   localStorage.setItem(HIGH_SCORES_KEY, JSON.stringify(scores.slice(0, 5)));
 }
 
-interface SaveWorker { id: number; x: number; y: number; hp: number; maxHp: number; unitType: 'farmer' | 'swordsman' | 'hero' | 'catapult' | 'cavalry' | 'trebuchet'; group: number | null; xp?: number; level?: number }
+interface SaveWorker { id: number; x: number; y: number; hp: number; maxHp: number; unitType: 'farmer' | 'swordsman' | 'hero' | 'catapult' | 'cavalry' | 'trebuchet'; group: number | null; xp?: number; level?: number; gathering?: { type: 'tree' | 'gold' | 'stone'; idx: number } | null; state?: string }
 interface SaveData {
   version: 1 | 2;
   resources: Resources;
