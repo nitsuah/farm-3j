@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type { WorkerState } from '../RTSUI';
+import type { WorkerState } from '../game/types';
 import { GRID_SIZE, SHRINES, TILE_SIZE } from '../game/constants';
 import { INITIAL_TILES, tileToSvg } from '../game/map';
 import { aStar } from '../game/pathfinding';
@@ -15,7 +15,7 @@ interface TerrainLayerProps {
   ) => void;
   anySelected: boolean;
   attackMoveMode: boolean;
-  attackMoveModeRef: React.MutableRefObject<boolean>;
+  attackMoveModeRef: React.RefObject<boolean>;
   buildMode: BuildingType | null;
   capturedShrines: Set<number>;
   commandMove: (
@@ -27,7 +27,7 @@ interface TerrainLayerProps {
   commandQueueMove: (targetX: number, targetY: number) => void;
   lootCrates: LootCrate[];
   patrolMode: boolean;
-  patrolModeRef: React.MutableRefObject<boolean>;
+  patrolModeRef: React.RefObject<boolean>;
   selectedType: 'worker' | 'farmhouse' | 'building' | null;
   setAttackMoveMode: React.Dispatch<React.SetStateAction<boolean>>;
   setPatrolMode: React.Dispatch<React.SetStateAction<boolean>>;

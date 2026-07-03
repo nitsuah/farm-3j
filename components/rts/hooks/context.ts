@@ -5,9 +5,10 @@
 import type React from 'react';
 
 import type { DifficultyConfig } from '../RTSGameRoot';
-import type { Upgrades, WorkerState } from '../RTSUI';
 import type {
   DroppedItem,
+  Upgrades,
+  WorkerState,
   EnemyGrunt,
   EnemyNecromancer,
   EnemySapper,
@@ -28,7 +29,7 @@ import type {
 } from '../game/types';
 
 type Setter<T> = React.Dispatch<React.SetStateAction<T>>;
-type Ref<T> = React.MutableRefObject<T>;
+type Ref<T> = React.RefObject<T>;
 
 export interface RTSGameContext {
   difficulty?: DifficultyConfig;

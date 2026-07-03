@@ -1,17 +1,21 @@
 import React from 'react';
 
-import type { WorkerState } from '../RTSUI';
+import type { WorkerState } from '../game/types';
 import { TILE_SIZE } from '../game/constants';
 import { tileToSvg } from '../game/map';
 
+interface DamageLogEntry {
+  source: string;
+  amount: number;
+  t: number;
+}
+
 interface DamageLogPanelProps {
-  damageLog: { source: string; amount: number; t: number }[];
+  damageLog: DamageLogEntry[];
   damageLogOpen: boolean;
-  idleWorkerIndexRef: React.MutableRefObject<number>;
+  idleWorkerIndexRef: React.RefObject<number>;
   setCamera: React.Dispatch<React.SetStateAction<{ x: number; y: number }>>;
-  setDamageLog: React.Dispatch<
-    React.SetStateAction<{ source: string; amount: number; t: number }[]>
-  >;
+  setDamageLog: React.Dispatch<React.SetStateAction<DamageLogEntry[]>>;
   setDamageLogOpen: React.Dispatch<React.SetStateAction<boolean>>;
   setSelectedType: React.Dispatch<
     React.SetStateAction<'worker' | 'farmhouse' | 'building' | null>

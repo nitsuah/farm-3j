@@ -1,7 +1,5 @@
 // Shared entity/state types for the RTS mode, split out of RTSMap.tsx.
 
-import type { Upgrades } from '../RTSUI';
-
 export interface FloatingText {
   id: number;
   x: number;
@@ -11,6 +9,71 @@ export interface FloatingText {
   createdAt: number;
 }
 export type TileType = 'grass' | 'dirt' | 'water' | 'tree' | 'rock';
+
+export interface WorkerState {
+  id: number;
+  x: number;
+  y: number;
+  selected: boolean;
+  movingTo: null | { x: number; y: number };
+  path: { x: number; y: number }[];
+  gathering: null | { type: 'tree' | 'gold' | 'stone'; idx: number };
+  attacking:
+    | null
+    | { targetType: 'enemyBarn' }
+    | { targetType: 'grunt'; gruntId: number }
+    | { targetType: 'creep'; creepId: number }
+    | { targetType: 'enemyTower'; towerId: number }
+    | { targetType: 'enemyWall'; wallId: number }
+    | { targetType: 'siege'; siegeId: number }
+    | { targetType: 'shaman'; shamanId: number }
+    | { targetType: 'troll'; trollId: number }
+    | { targetType: 'sapper'; sapperId: number }
+    | { targetType: 'necromancer'; necromancerId: number }
+    | { targetType: 'witchDoctor'; witchDoctorId: number }
+    | { targetType: 'warchief'; warchiefId: number };
+  stunUntil?: number;
+  assistBuildId?: number;
+  repairing: null | { buildingId: number };
+  chargeCooldown: number;
+  sprintCooldown: number;
+  sprinting: boolean;
+  waypoints: { x: number; y: number }[];
+  attackMove: boolean;
+  attackMoveTarget: { x: number; y: number } | null;
+  carrying: { gold: number; lumber: number; stone: number };
+  state:
+    | 'idle'
+    | 'moving'
+    | 'gathering'
+    | 'returning'
+    | 'attacking'
+    | 'repairing';
+  group: number | null;
+  hp: number;
+  maxHp: number;
+  patrol: {
+    a: { x: number; y: number };
+    b: { x: number; y: number };
+    heading: 'a' | 'b';
+  } | null;
+  holdPosition: boolean;
+  unitType:
+    | 'farmer'
+    | 'swordsman'
+    | 'hero'
+    | 'catapult'
+    | 'cavalry'
+    | 'trebuchet';
+  xp: number;
+  level: number;
+}
+
+export interface Upgrades {
+  sharperTools: number;
+  swiftHarvest: number;
+  ironWill: number;
+}
 
 export type UnitType =
   | 'farmer'

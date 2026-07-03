@@ -2,6 +2,11 @@ import { useEffect, useRef } from 'react';
 
 import {
   BALLISTA_ATTACK_MS,
+  BARN_COUNTER_DMG,
+  BARN_COUNTER_MS,
+  BARN_COUNTER_RANGE,
+  ENEMY_EXTRA_TOWER_SLOTS,
+  ENEMY_EXTRA_WALL_SLOTS,
   BALLISTA_DAMAGE,
   BALLISTA_PIERCE_DAMAGE,
   BALLISTA_PIERCE_RANGE,
@@ -70,9 +75,6 @@ export function useTowerCombat(ctx: RTSGameContext) {
   const enemyBarnFireTimerRef = useRef<number | null>(null);
   useEffect(() => {
     if (gameOver) return;
-    const BARN_COUNTER_RANGE = 5;
-    const BARN_COUNTER_DMG = 7;
-    const BARN_COUNTER_MS = 3000;
     const fire = () => {
       if (gameOverRef.current || enemyBarnHpRef.current <= 0) return;
       const inRange = workersRef.current.filter(
@@ -123,18 +125,6 @@ export function useTowerCombat(ctx: RTSGameContext) {
   // Enemy AI: auto-builds new towers and walls over time to simulate active enemy base
   useEffect(() => {
     if (gameOver) return;
-    const EXTRA_TOWER_SLOTS = [
-      { x: 20, y: 21 },
-      { x: 21, y: 20 },
-      { x: 23, y: 20 },
-      { x: 20, y: 23 },
-    ];
-    const EXTRA_WALL_SLOTS = [
-      { x: 20, y: 24 },
-      { x: 21, y: 23 },
-      { x: 23, y: 21 },
-      { x: 24, y: 20 },
-    ];
     let nextTowerIdx = 0;
     let nextWallIdx = 0;
     const towerBuildTimer = window.setInterval(() => {
@@ -145,8 +135,8 @@ export function useTowerCombat(ctx: RTSGameContext) {
       )
         return;
       if (waveRef.current < 5) return;
-      const pos = EXTRA_TOWER_SLOTS[nextTowerIdx];
-      if (pos && nextTowerIdx < EXTRA_TOWER_SLOTS.length) {
+      const pos = ENEMY_EXTRA_TOWER_SLOTS[nextTowerIdx];
+      if (pos && nextTowerIdx < ENEMY_EXTRA_TOWER_SLOTS.length) {
         const alreadyExists = enemyTowersRef.current.find(
           t => t.x === pos.x && t.y === pos.y
         );
@@ -175,8 +165,8 @@ export function useTowerCombat(ctx: RTSGameContext) {
       )
         return;
       if (waveRef.current < 7) return;
-      const pos = EXTRA_WALL_SLOTS[nextWallIdx];
-      if (pos && nextWallIdx < EXTRA_WALL_SLOTS.length) {
+      const pos = ENEMY_EXTRA_WALL_SLOTS[nextWallIdx];
+      if (pos && nextWallIdx < ENEMY_EXTRA_WALL_SLOTS.length) {
         const alreadyExists = enemyWallsRef.current.find(
           w => w.x === pos.x && w.y === pos.y
         );

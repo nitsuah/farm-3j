@@ -1,6 +1,6 @@
 // Unit factory shared by initial spawn, training, and save restore.
 
-import type { WorkerState } from '../RTSUI';
+import type { WorkerState } from './types';
 import {
   CATAPULT_MAX_HP,
   CAVALRY_MAX_HP,

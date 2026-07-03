@@ -4,6 +4,10 @@ import {
   BARN_POS,
   GARRISON_HEAL_AMOUNT,
   GARRISON_HEAL_MS,
+  TRAIN_TIME_MS,
+  TRAP_COOLDOWN_MS,
+  TRAP_DAMAGE,
+  TRAP_RADIUS,
 } from '../game/constants';
 import { INITIAL_TILES, tileDist } from '../game/map';
 import { aStar } from '../game/pathfinding';
@@ -12,14 +16,12 @@ import { makeUnit } from '../game/units';
 import type { RTSGameContext } from './context';
 
 export function useProduction(ctx: RTSGameContext) {
-  const TRAIN_TIME_MS = 8000;
   const {
     addFloatingText,
     barracksTechRef,
     enemyGruntsRef,
     gameOver,
     gameOverRef,
-    placedBuildings,
     placedBuildingsRef,
     rallyPointRef,
     setEnemyGrunts,
@@ -96,9 +98,6 @@ export function useProduction(ctx: RTSGameContext) {
   // Spike Trap — deal 20 dmg to any grunt that steps within 0.8 tiles; 30s cooldown per trap
   useEffect(() => {
     if (gameOver) return;
-    const TRAP_DAMAGE = 20;
-    const TRAP_COOLDOWN_MS = 30000;
-    const TRAP_RADIUS = 0.8;
     const checkTraps = () => {
       if (gameOverRef.current) return;
       const traps = placedBuildingsRef.current.filter(
@@ -128,13 +127,16 @@ export function useProduction(ctx: RTSGameContext) {
     return () => clearInterval(id);
   }, [gameOver, addFloatingText]);
 
-  // Windmill passive gold income
+  // Windmill passive gold income — reads buildings via ref so the payout
+  // timer isn't reset every time placedBuildings updates
   useEffect(() => {
     if (gameOver) return;
-    const mills = placedBuildings.filter(b => b.type === 'windmill');
-    if (mills.length === 0) return;
     const id = setInterval(() => {
       if (gameOverRef.current) return;
+      const mills = placedBuildingsRef.current.filter(
+        b => b.type === 'windmill'
+      );
+      if (mills.length === 0) return;
       const income = Math.round(mills.length * 2 * upkeepMultRef.current);
       setResources(r => ({ ...r, gold: r.gold + income }));
       mills.forEach(m =>
@@ -147,7 +149,7 @@ export function useProduction(ctx: RTSGameContext) {
       );
     }, 5000);
     return () => clearInterval(id);
-  }, [placedBuildings, gameOver, addFloatingText]);
+  }, [gameOver, addFloatingText]);
 
   // Garrison heal
   useEffect(() => {

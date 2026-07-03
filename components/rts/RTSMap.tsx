@@ -19,6 +19,9 @@ import {
 import {
   ARCHER_TOWER_POS,
   ATTACK_DAMAGE,
+  ZOOM_MAX,
+  ZOOM_MIN,
+  ZOOM_STEP,
   BARN_POS,
   BARN_VISION,
   BUILDING_COSTS,
@@ -2372,9 +2375,6 @@ const RTSMap: React.FC<{
 
   // Scroll-wheel zoom anchored to cursor position
   useEffect(() => {
-    const ZOOM_MIN = 0.4,
-      ZOOM_MAX = 2.5,
-      ZOOM_STEP = 0.15;
     const svgEl = svgRef.current;
 
     const applyZoom = (newZoom: number, anchorX: number, anchorY: number) => {

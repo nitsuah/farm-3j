@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type { WorkerState } from '../RTSUI';
+import type { WorkerState } from '../game/types';
 import { EARTHQUAKE_RADIUS, GRID_SIZE, TILE_SIZE } from '../game/constants';
 import { tileToSvg } from '../game/map';
 import type { FloatingText, Projectile } from '../game/types';

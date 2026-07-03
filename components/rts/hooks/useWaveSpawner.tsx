@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import {
   BARN_POS,
   BOSS_HP_MULTIPLIER,
+  ENEMY_FLANK_POSITIONS,
   DEMOLISHER_FIRST_WAVE,
   DEMOLISHER_MAX_HP,
   ENEMY_BARN_POS,
@@ -110,18 +111,20 @@ export function useWaveSpawner(ctx: RTSGameContext) {
     const isBossWave = newWave % 10 === 0;
     if (towerIdx >= 0 && !isBossWave) {
       const pos = ENEMY_TOWER_POSITIONS[towerIdx];
-      if (!pos) return;
-      setEnemyTowers(ts => [
-        ...ts,
-        {
-          id: newWave,
-          x: pos.x,
-          y: pos.y,
-          hp: ENEMY_TOWER_MAX_HP,
-          maxHp: ENEMY_TOWER_MAX_HP,
-        },
-      ]);
-      setWaveAnnouncement(`⚔️ Wave ${newWave} — ENEMY TOWER BUILT!`);
+      // Guard only the tower spawn — never abort the rest of the wave
+      if (pos) {
+        setEnemyTowers(ts => [
+          ...ts,
+          {
+            id: newWave,
+            x: pos.x,
+            y: pos.y,
+            hp: ENEMY_TOWER_MAX_HP,
+            maxHp: ENEMY_TOWER_MAX_HP,
+          },
+        ]);
+        setWaveAnnouncement(`⚔️ Wave ${newWave} — ENEMY TOWER BUILT!`);
+      }
     } else if (isBossWave) {
       setWaveAnnouncement(`💀 Wave ${newWave} — WAR BULL INCOMING!`);
     } else {
@@ -213,11 +216,7 @@ export function useWaveSpawner(ctx: RTSGameContext) {
     }
     // Flanking attack: wave 8+ every 4 waves — 2 grunts from east/south corner
     if (newWave >= 8 && newWave % 4 === 0) {
-      const FLANK_POSITIONS = [
-        { x: 24, y: 12 },
-        { x: 12, y: 24 },
-      ];
-      FLANK_POSITIONS.forEach(fp => {
+      ENEMY_FLANK_POSITIONS.forEach(fp => {
         const fPath = aStar(INITIAL_TILES, fp, BARN_POS, true, wallSet);
         const flankGrunt: EnemyGrunt = {
           id: gruntIdRef.current++,

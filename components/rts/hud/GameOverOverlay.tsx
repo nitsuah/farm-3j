@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type { WorkerState } from '../RTSUI';
+import type { WorkerState } from '../game/types';
 import { loadHighScores, clearSave } from '../game/persistence';
 import type { PlacedBuilding } from '../game/types';
 import { Stat } from '../ui/Stat';
@@ -11,7 +11,7 @@ interface GameOverOverlayProps {
   killCount: number;
   onNewGame?: () => void;
   placedBuildings: PlacedBuilding[];
-  startTimeRef: React.MutableRefObject<number>;
+  startTimeRef: React.RefObject<number>;
   totalGold: number;
   totalLumber: number;
   totalStone: number;

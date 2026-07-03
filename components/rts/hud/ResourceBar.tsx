@@ -2,7 +2,12 @@ import React from 'react';
 
 import type { DifficultyConfig } from '../RTSGameRoot';
 
-import { BUILDING_COSTS } from '../game/constants';
+import {
+  BUILDING_COSTS,
+  ZOOM_MAX,
+  ZOOM_MIN,
+  ZOOM_STEP,
+} from '../game/constants';
 import { clearSave } from '../game/persistence';
 import type {
   BuildingType,
@@ -40,11 +45,11 @@ interface ResourceBarProps {
   setGameSpeed: React.Dispatch<React.SetStateAction<number>>;
   setZoom: React.Dispatch<React.SetStateAction<number>>;
   soundMuted: boolean;
-  startTimeRef: React.MutableRefObject<number>;
+  startTimeRef: React.RefObject<number>;
   toggleMute: () => void;
   upkeepMult: number;
   wave: number;
-  waveTimerRemainingRef: React.MutableRefObject<number | null>;
+  waveTimerRemainingRef: React.RefObject<number | null>;
   zoom: number;
 }
 
@@ -376,7 +381,7 @@ export const ResourceBar: React.FC<ResourceBarProps> = ({
         >
           <button
             type="button"
-            onClick={() => setZoom(z => Math.max(0.4, z - 0.15))}
+            onClick={() => setZoom(z => Math.max(ZOOM_MIN, z - ZOOM_STEP))}
             style={{
               background: 'none',
               border: '1px solid rgba(255,255,255,0.15)',
@@ -398,7 +403,7 @@ export const ResourceBar: React.FC<ResourceBarProps> = ({
           </span>
           <button
             type="button"
-            onClick={() => setZoom(z => Math.min(2.5, z + 0.15))}
+            onClick={() => setZoom(z => Math.min(ZOOM_MAX, z + ZOOM_STEP))}
             style={{
               background: 'none',
               border: '1px solid rgba(255,255,255,0.15)',

@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type { WorkerState } from '../RTSUI';
+import type { WorkerState } from '../game/types';
 
 interface ControlGroupBarProps {
   controlGroups: Record<number, number[]>;

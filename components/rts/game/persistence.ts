@@ -23,13 +23,27 @@ export function saveHighScore(entry: HighScoreEntry) {
   }
 }
 
+// Shallow structural check so a stale or corrupted blob is discarded instead of
+// crashing gameplay code later. Kept lenient: legacy saves may omit goldMines.
+function isValidSave(d: unknown): d is SaveData {
+  if (!d || typeof d !== 'object') return false;
+  const s = d as SaveData;
+  return (
+    s.version === 1 &&
+    typeof s.resources === 'object' &&
+    s.resources !== null &&
+    Array.isArray(s.workers) &&
+    Array.isArray(s.placedBuildings)
+  );
+}
+
 export function loadSave(): SaveData | null {
   if (typeof window === 'undefined') return null;
   try {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return null;
     const d = JSON.parse(raw) as SaveData;
-    return d?.version === 1 ? d : null;
+    return isValidSave(d) ? d : null;
   } catch {
     return null;
   }

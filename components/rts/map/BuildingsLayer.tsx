@@ -1,6 +1,7 @@
 import React from 'react';
 
-import type { FarmhouseAction, WorkerState } from '../RTSUI';
+import type { FarmhouseAction } from '../RTSUI';
+import type { WorkerState } from '../game/types';
 import {
   BALLISTA_RANGE,
   BUILDING_EMOJI,
@@ -36,7 +37,7 @@ interface BuildingsLayerProps {
   >;
   setWorkers: React.Dispatch<React.SetStateAction<WorkerState[]>>;
   towerGarrison: Record<number, WorkerState[]>;
-  trapTriggeredRef: React.MutableRefObject<Record<number, number>>;
+  trapTriggeredRef: React.RefObject<Record<number, number>>;
   workers: WorkerState[];
 }
 

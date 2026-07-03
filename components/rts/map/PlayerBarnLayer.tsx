@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type { WorkerState } from '../RTSUI';
+import type { WorkerState } from '../game/types';
 import { BARN_POS, PLAYER_BARN_MAX_HP, TILE_SIZE } from '../game/constants';
 import { svgToTile, tileDist, tileToSvg } from '../game/map';
 import type { BuildingType, EnemyGrunt } from '../game/types';

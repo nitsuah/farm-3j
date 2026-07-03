@@ -4,6 +4,7 @@ import {
   ARCHER_TOWER_RANGE,
   BALLISTA_RANGE,
   BARN_POS,
+  BARN_DEFENSE_DISPLAY_RANGE,
   BUILDING_EMOJI,
   DEMOLISHER_FIRE_RANGE,
   ENEMY_TOWER_RANGE,
@@ -158,7 +159,6 @@ export const OverlayRingsLayer: React.FC<OverlayRingsLayerProps> = ({
       {/* Player barn defense range ring */}
       {(() => {
         const { isoX, isoY } = tileToSvg(BARN_POS.x, BARN_POS.y);
-        const BARN_DEFENSE_DISPLAY_RANGE = 4;
         return (
           <ellipse
             cx={isoX + TILE_SIZE / 2}

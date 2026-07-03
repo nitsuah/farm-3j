@@ -511,6 +511,49 @@ export const BUILDING_MAX_HP: Record<BuildingType, number> = {
 export const BUILDING_GRUNT_DAMAGE = 8; // damage per hit from grunt to building
 export const CONSTRUCTION_MS = 6000; // time to construct a building
 
+// ---------- Production & traps ----------
+export const TRAIN_TIME_MS = 8000;
+export const TRAP_DAMAGE = 20;
+export const TRAP_COOLDOWN_MS = 30000;
+export const TRAP_RADIUS = 0.8;
+
+// ---------- Enemy barn counterfire & base expansion ----------
+export const BARN_COUNTER_RANGE = 5;
+export const BARN_COUNTER_DMG = 7;
+export const BARN_COUNTER_MS = 3000;
+export const ENEMY_EXTRA_TOWER_SLOTS = [
+  { x: 20, y: 21 },
+  { x: 21, y: 20 },
+  { x: 23, y: 20 },
+  { x: 20, y: 23 },
+];
+export const ENEMY_EXTRA_WALL_SLOTS = [
+  { x: 20, y: 24 },
+  { x: 21, y: 23 },
+  { x: 23, y: 21 },
+  { x: 24, y: 20 },
+];
+export const ENEMY_FLANK_POSITIONS = [
+  { x: 24, y: 12 },
+  { x: 12, y: 24 },
+];
+
+// ---------- Loot crate rewards ----------
+export const LOOT_CRATE_REWARDS = [
+  { gold: 40, lumber: 0, stone: 0 },
+  { gold: 0, lumber: 30, stone: 0 },
+  { gold: 0, lumber: 0, stone: 25 },
+  { gold: 20, lumber: 15, stone: 0 },
+  { gold: 25, lumber: 0, stone: 20 },
+  { gold: 15, lumber: 15, stone: 10 },
+];
+
+// ---------- UI display ----------
+export const BARN_DEFENSE_DISPLAY_RANGE = 4;
+export const ZOOM_MIN = 0.4;
+export const ZOOM_MAX = 2.5;
+export const ZOOM_STEP = 0.15;
+
 // ---------- Player military units ----------
 export const SWORDSMAN_MAX_HP = 80;
 export const SWORDSMAN_DAMAGE_BONUS = 10;

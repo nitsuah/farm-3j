@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type { WorkerState } from '../RTSUI';
+import type { WorkerState } from '../game/types';
 import { HERO_SHOUT_RADIUS, TILE_SIZE } from '../game/constants';
 import { tileDist, tileToSvg } from '../game/map';
 import { Snd } from '../game/sound';
@@ -11,13 +11,13 @@ interface WorkersLayerProps {
   buildMode: BuildingType | null;
   deadWorkerPositions: { x: number; y: number; t: number; unitType: string }[];
   fogVisible: boolean[][];
-  isDraggingRef: React.MutableRefObject<boolean>;
+  isDraggingRef: React.RefObject<boolean>;
   setSelectedBuildingId: React.Dispatch<React.SetStateAction<number | null>>;
   setSelectedType: React.Dispatch<
     React.SetStateAction<'worker' | 'farmhouse' | 'building' | null>
   >;
   setWorkers: React.Dispatch<React.SetStateAction<WorkerState[]>>;
-  workerHitRef: React.MutableRefObject<Map<number, number>>;
+  workerHitRef: React.RefObject<Map<number, number>>;
   workers: WorkerState[];
 }
 

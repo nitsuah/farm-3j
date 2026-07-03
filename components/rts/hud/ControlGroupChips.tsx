@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type { WorkerState } from '../RTSUI';
+import type { WorkerState } from '../game/types';
 
 interface ControlGroupChipsProps {
   controlGroups: Record<number, number[]>;
@@ -29,31 +29,40 @@ export const ControlGroupChips: React.FC<ControlGroupChipsProps> = ({
             gap: 6,
           }}
         >
-          {Object.entries(controlGroups).map(
-            ([num, ids]) =>
-              ids.length > 0 && (
-                <div
-                  key={num}
-                  style={{
-                    background: 'rgba(15,23,42,0.9)',
-                    border: '1px solid #d97706',
-                    color: '#fde68a',
-                    padding: '2px 10px',
-                    borderRadius: 4,
-                    fontSize: 13,
-                    cursor: 'pointer',
-                  }}
-                  onClick={() => {
-                    setSelectedType('worker');
-                    setWorkers(ws =>
-                      ws.map(w => ({ ...w, selected: ids.includes(w.id) }))
-                    );
-                  }}
-                >
-                  [{num}] ×{ids.length}
-                </div>
-              )
-          )}
+          {Object.entries(controlGroups).map(([num, ids]) => {
+            if (ids.length === 0) return null;
+            const selectGroup = () => {
+              setSelectedType('worker');
+              setWorkers(ws =>
+                ws.map(w => ({ ...w, selected: ids.includes(w.id) }))
+              );
+            };
+            return (
+              <div
+                key={num}
+                role="button"
+                tabIndex={0}
+                style={{
+                  background: 'rgba(15,23,42,0.9)',
+                  border: '1px solid #d97706',
+                  color: '#fde68a',
+                  padding: '2px 10px',
+                  borderRadius: 4,
+                  fontSize: 13,
+                  cursor: 'pointer',
+                }}
+                onClick={selectGroup}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    selectGroup();
+                  }
+                }}
+              >
+                [{num}] ×{ids.length}
+              </div>
+            );
+          })}
         </div>
       )}
     </>

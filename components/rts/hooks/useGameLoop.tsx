@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-import type { WorkerState } from '../RTSUI';
+import type { WorkerState } from '../game/types';
 import {
   ATTACK_DAMAGE,
   ATTACK_INTERVAL_MS,

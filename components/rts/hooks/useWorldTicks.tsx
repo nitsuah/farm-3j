@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import {
   BUILDING_COSTS,
   CONSTRUCTION_MS,
+  LOOT_CRATE_REWARDS,
   LOOT_CRATE_POSITIONS,
   LOOT_CRATE_SPAWN_MS,
   SHRINES,
@@ -37,14 +38,6 @@ export function useWorldTicks(ctx: RTSGameContext) {
     if (gameOver) return;
     const spawnCrate = () => {
       if (gameOverRef.current) return;
-      const RESOURCES = [
-        { gold: 40, lumber: 0, stone: 0 },
-        { gold: 0, lumber: 30, stone: 0 },
-        { gold: 0, lumber: 0, stone: 25 },
-        { gold: 20, lumber: 15, stone: 0 },
-        { gold: 25, lumber: 0, stone: 20 },
-        { gold: 15, lumber: 15, stone: 10 },
-      ];
       const spawnCount =
         waveRef.current >= 10 ? 3 : waveRef.current >= 5 ? 2 : 1;
       const occupied = new Set(lootCratesRef.current.map(c => `${c.x},${c.y}`));
@@ -55,7 +48,9 @@ export function useWorldTicks(ctx: RTSGameContext) {
         const idx = Math.floor(Math.random() * candidates.length);
         const pos = candidates.splice(idx, 1)[0];
         if (!pos) break;
-        const res = RESOURCES[Math.floor(Math.random() * RESOURCES.length)] ?? {
+        const res = LOOT_CRATE_REWARDS[
+          Math.floor(Math.random() * LOOT_CRATE_REWARDS.length)
+        ] ?? {
           gold: 30,
           lumber: 0,
           stone: 0,
@@ -149,7 +144,7 @@ export function useWorldTicks(ctx: RTSGameContext) {
       const finishedIds = new Set(justFinished.map(b => b.id));
       setWorkers(ws =>
         ws.map(w =>
-          finishedIds.has(w.assistBuildId!)
+          w.assistBuildId !== undefined && finishedIds.has(w.assistBuildId)
             ? { ...w, assistBuildId: undefined, state: 'idle' as const }
             : w
         )

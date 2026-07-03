@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type { WorkerState } from '../RTSUI';
+import type { WorkerState } from '../game/types';
 import { HERO_ITEM_DATA, TILE_SIZE } from '../game/constants';
 import { tileToSvg } from '../game/map';
 import type { DroppedItem, EnemyGrunt, LootCrate } from '../game/types';
@@ -16,7 +16,7 @@ interface EnemyGruntsLayerProps {
   droppedItems: DroppedItem[];
   enemyGrunts: EnemyGrunt[];
   fogVisible: boolean[][];
-  gruntHitRef: React.MutableRefObject<Map<number, number>>;
+  gruntHitRef: React.RefObject<Map<number, number>>;
   handleAttackGrunt: (gruntId: number, e: React.MouseEvent) => void;
   lootCrates: LootCrate[];
 }
