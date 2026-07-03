@@ -4,6 +4,9 @@ import type { DifficultyConfig } from '../RTSGameRoot';
 
 import {
   BUILDING_COSTS,
+  LOW_GOLD_WARNING,
+  LOW_LUMBER_WARNING,
+  LOW_STONE_WARNING,
   ZOOM_MAX,
   ZOOM_MIN,
   ZOOM_STEP,
@@ -143,9 +146,10 @@ export const ResourceBar: React.FC<ResourceBarProps> = ({
         </span>
         <span
           style={{
-            color: resources.gold < 30 ? '#ef4444' : '#fde68a',
-            fontWeight: resources.gold < 30 ? 700 : 400,
-            animation: resources.gold < 30 ? 'pulse 1s infinite' : 'none',
+            color: resources.gold < LOW_GOLD_WARNING ? '#ef4444' : '#fde68a',
+            fontWeight: resources.gold < LOW_GOLD_WARNING ? 700 : 400,
+            animation:
+              resources.gold < LOW_GOLD_WARNING ? 'pulse 1s infinite' : 'none',
           }}
         >
           🪙 {resources.gold}
@@ -169,9 +173,13 @@ export const ResourceBar: React.FC<ResourceBarProps> = ({
         </span>
         <span
           style={{
-            color: resources.lumber < 20 ? '#ef4444' : '#bbf7d0',
-            fontWeight: resources.lumber < 20 ? 700 : 400,
-            animation: resources.lumber < 20 ? 'pulse 1s infinite' : 'none',
+            color:
+              resources.lumber < LOW_LUMBER_WARNING ? '#ef4444' : '#bbf7d0',
+            fontWeight: resources.lumber < LOW_LUMBER_WARNING ? 700 : 400,
+            animation:
+              resources.lumber < LOW_LUMBER_WARNING
+                ? 'pulse 1s infinite'
+                : 'none',
           }}
         >
           🌲 {resources.lumber}
@@ -183,9 +191,12 @@ export const ResourceBar: React.FC<ResourceBarProps> = ({
         </span>
         <span
           style={{
-            color: resources.stone < 10 ? '#ef4444' : '#cbd5e1',
-            fontWeight: resources.stone < 10 ? 700 : 400,
-            animation: resources.stone < 10 ? 'pulse 1s infinite' : 'none',
+            color: resources.stone < LOW_STONE_WARNING ? '#ef4444' : '#cbd5e1',
+            fontWeight: resources.stone < LOW_STONE_WARNING ? 700 : 400,
+            animation:
+              resources.stone < LOW_STONE_WARNING
+                ? 'pulse 1s infinite'
+                : 'none',
           }}
         >
           🪨 {resources.stone}

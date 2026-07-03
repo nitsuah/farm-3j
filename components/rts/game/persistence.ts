@@ -29,7 +29,7 @@ function isValidSave(d: unknown): d is SaveData {
   if (!d || typeof d !== 'object') return false;
   const s = d as SaveData;
   return (
-    s.version === 1 &&
+    (s.version === 1 || s.version === 2) &&
     typeof s.resources === 'object' &&
     s.resources !== null &&
     Array.isArray(s.workers) &&

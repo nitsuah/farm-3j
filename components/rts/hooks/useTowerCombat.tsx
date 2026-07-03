@@ -5,6 +5,7 @@ import {
   BARN_COUNTER_DMG,
   BARN_COUNTER_MS,
   BARN_COUNTER_RANGE,
+  BARN_DEFENSE_RANGE,
   ENEMY_EXTRA_TOWER_SLOTS,
   ENEMY_EXTRA_WALL_SLOTS,
   BALLISTA_DAMAGE,
@@ -519,7 +520,6 @@ export function useTowerCombat(ctx: RTSGameContext) {
   const barnArrowTimerRef = useRef<number | null>(null);
   useEffect(() => {
     if (gameOver) return;
-    const BARN_DEFENSE_RANGE = 5;
     const BARN_DEFENSE_MS = 2500;
     const fireBarnArrow = () => {
       if (gameOverRef.current) return;

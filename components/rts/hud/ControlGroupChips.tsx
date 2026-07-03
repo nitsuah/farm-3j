@@ -38,10 +38,9 @@ export const ControlGroupChips: React.FC<ControlGroupChipsProps> = ({
               );
             };
             return (
-              <div
+              <button
                 key={num}
-                role="button"
-                tabIndex={0}
+                type="button"
                 style={{
                   background: 'rgba(15,23,42,0.9)',
                   border: '1px solid #d97706',
@@ -52,15 +51,9 @@ export const ControlGroupChips: React.FC<ControlGroupChipsProps> = ({
                   cursor: 'pointer',
                 }}
                 onClick={selectGroup}
-                onKeyDown={e => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    selectGroup();
-                  }
-                }}
               >
                 [{num}] ×{ids.length}
-              </div>
+              </button>
             );
           })}
         </div>

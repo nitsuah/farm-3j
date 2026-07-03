@@ -4,7 +4,7 @@ import {
   ARCHER_TOWER_RANGE,
   BALLISTA_RANGE,
   BARN_POS,
-  BARN_DEFENSE_DISPLAY_RANGE,
+  BARN_DEFENSE_RANGE,
   BUILDING_EMOJI,
   DEMOLISHER_FIRE_RANGE,
   ENEMY_TOWER_RANGE,
@@ -163,8 +163,8 @@ export const OverlayRingsLayer: React.FC<OverlayRingsLayerProps> = ({
           <ellipse
             cx={isoX + TILE_SIZE / 2}
             cy={isoY + TILE_SIZE / 4}
-            rx={BARN_DEFENSE_DISPLAY_RANGE * TILE_SIZE}
-            ry={(BARN_DEFENSE_DISPLAY_RANGE * TILE_SIZE) / 2}
+            rx={BARN_DEFENSE_RANGE * TILE_SIZE}
+            ry={(BARN_DEFENSE_RANGE * TILE_SIZE) / 2}
             fill="none"
             stroke="#fbbf24"
             strokeWidth={1}

@@ -548,11 +548,18 @@ export const LOOT_CRATE_REWARDS = [
   { gold: 15, lumber: 15, stone: 10 },
 ];
 
+// Player barn defense fire — single source for both combat logic and the
+// range ring drawn on the map, so the displayed ring matches the real reach
+export const BARN_DEFENSE_RANGE = 5;
+
 // ---------- UI display ----------
-export const BARN_DEFENSE_DISPLAY_RANGE = 4;
 export const ZOOM_MIN = 0.4;
 export const ZOOM_MAX = 2.5;
 export const ZOOM_STEP = 0.15;
+// Low-resource warning cutoffs for the resource bar
+export const LOW_GOLD_WARNING = 30;
+export const LOW_LUMBER_WARNING = 20;
+export const LOW_STONE_WARNING = 10;
 
 // ---------- Player military units ----------
 export const SWORDSMAN_MAX_HP = 80;
