@@ -389,6 +389,16 @@ const BUILDING_COSTS: Record<BuildingType, { gold: number; lumber: number; stone
   supplyStore:   { gold: 80,  lumber: 40, stone: 20, label: 'Farm Supply Store', foodCapBonus: 0 },
 };
 
+// Tech tree prerequisites: building type → required building type (must be fully built)
+export const BUILDING_REQUIRES: Partial<Record<BuildingType, BuildingType>> = {
+  barracks: 'farmhouse',
+  stable: 'barracks',
+  blacksmith: 'barracks',
+  siegeWorkshop: 'blacksmith',
+  ballista: 'watchtower',
+  supplyStore: 'market',
+};
+
 const BUILDING_EMOJI: Record<BuildingType, string> = {
   farmhouse: '🏠', lumberShed: '🪵', watchtower: '🗼', wall: '🧱', windmill: '💨', barracks: '🏯', siegeWorkshop: '⚙️', market: '🏪', blacksmith: '🔨', granary: '🌾', stable: '🐴', spikeTrap: '🪤', frostTower: '❄️', ballista: '🏹', poisonTower: '☠️', supplyStore: '🛒',
 };
@@ -1028,8 +1038,9 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
   useEffect(() => { barracksTechRef.current = barracksTech; }, [barracksTech]);
 
   // Upkeep system (WC3-style): high food usage reduces gold income
-  // 0–40 food = no penalty, 41–80 = 70% gold rate, 81+ = 40% gold rate
-  const upkeepMult = resources.food <= 40 ? 1 : resources.food <= 80 ? 0.7 : 0.4;
+  // 0–50% food cap = no penalty, 51–80% = 70% gold rate, 81%+ = 40% gold rate
+  const upkeepPct = resources.foodCap > 0 ? resources.food / resources.foodCap : 0;
+  const upkeepMult = upkeepPct <= 0.5 ? 1 : upkeepPct <= 0.8 ? 0.7 : 0.4;
   const upkeepMultRef = useRef(upkeepMult);
   useEffect(() => { upkeepMultRef.current = upkeepMult; }, [upkeepMult]);
 
@@ -2221,11 +2232,10 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
         const { tx, ty } = svgToTile(coords.x, coords.y);
         if (!isTileOccupied(tx, ty)) {
           const cost = BUILDING_COSTS[buildMode];
-          setResources(r => {
-            if (r.gold < cost.gold || r.lumber < cost.lumber || r.stone < cost.stone) return r;
+          if (resources.gold >= cost.gold && resources.lumber >= cost.lumber && resources.stone >= cost.stone) {
+            setResources(r => ({ ...r, gold: r.gold - cost.gold, lumber: r.lumber - cost.lumber, stone: r.stone - cost.stone }));
             setPlacedBuildings(bs => { const maxHp = BUILDING_MAX_HP[buildMode]; return [...bs, { id: buildingIdRef.current++, type: buildMode, x: tx, y: ty, hp: 1, maxHp, constructing: true, constructedAt: Date.now() }]; });
-            return { ...r, gold: r.gold - cost.gold, lumber: r.lumber - cost.lumber, stone: r.stone - cost.stone };
-          });
+          }
           setBuildMode(null); setGhostTile(null);
         }
       }
@@ -2374,6 +2384,12 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
   // Animation loop
   useEffect(() => {
     function animate(timestamp: number) {
+      // When paused, skip all game-state updates to avoid 60fps React re-renders
+      if (gameSpeedRef.current === 0) {
+        prevTimeRef.current = null; // reset so we get a clean delta on resume
+        animationRef.current = requestAnimationFrame(animate);
+        return;
+      }
       const deltaTime = prevTimeRef.current !== null ? (timestamp - prevTimeRef.current) / 1000 : 1 / 60;
       const dt = Math.min(deltaTime, 0.1) * gameSpeedRef.current;
       prevTimeRef.current = timestamp;
@@ -2423,10 +2439,11 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
         }
       }
 
-      // Update workers
+      // Update workers — compute food loss from ref to avoid setState-inside-updater
+      const deadWorkerCount = workersRef.current.filter(w => w.hp <= 0).length;
+      if (deadWorkerCount > 0) setResources(r => ({ ...r, food: Math.max(0, r.food - deadWorkerCount) }));
       setWorkers(ws => {
         const alive = ws.filter(w => w.hp > 0);
-        if (alive.length < ws.length) setResources(r => ({ ...r, food: Math.max(0, r.food - (ws.length - alive.length)) }));
 
         return alive.map(w => {
           // Stun check: War Stomp from Warchief freezes unit in place
@@ -4258,7 +4275,11 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
       addFloatingText(wall.x, wall.y, '🪨 Stone Wall!', '#94a3b8');
     } else if (action.startsWith('build:')) {
       const btype = action.split(':')[1] as BuildingType;
-      if (BUILDING_COSTS[btype]) setBuildMode(btype);
+      if (BUILDING_COSTS[btype]) {
+        const req = BUILDING_REQUIRES[btype];
+        const prereqMet = !req || (req === 'farmhouse' ? farmhouse.built : placedBuildings.some(b => b.type === req && !b.constructing));
+        if (prereqMet) setBuildMode(btype);
+      }
     }
   };
 

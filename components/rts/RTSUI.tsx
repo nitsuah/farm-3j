@@ -38,6 +38,16 @@ export interface WorkerState {
 
 export type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market' | 'blacksmith' | 'granary' | 'stable' | 'spikeTrap' | 'frostTower' | 'ballista' | 'poisonTower' | 'supplyStore';
 
+// Tech tree: building → required building (keep in sync with RTSMap.tsx BUILDING_REQUIRES)
+const BUILDING_REQUIRES: Partial<Record<BuildingType, BuildingType>> = {
+  barracks: 'farmhouse',
+  stable: 'barracks',
+  blacksmith: 'barracks',
+  siegeWorkshop: 'blacksmith',
+  ballista: 'watchtower',
+  supplyStore: 'market',
+};
+
 export interface PlacedBuilding {
   id: number;
   type: BuildingType;
@@ -226,6 +236,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
   onTowerDeploy,
   selectedBuilding,
   placedBuildingsList,
+  placedBuildings,
   onSwordsmanCharge,
   onCavalrySprint,
   onMinimapClick,
@@ -753,20 +764,25 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                       { key: 'poisonTower',  icon: '☠️', label: 'Poison Twr', border: 'border-green-500/70',  bg: 'bg-green-500/15',  hover: 'hover:bg-green-500/30',  text: 'text-green-100',  desc: '8+3/s, 5-tile' },
                       { key: 'supplyStore',  icon: '🛒', label: 'Supply Store',border: 'border-violet-600/70', bg: 'bg-violet-900/20', hover: 'hover:bg-violet-900/40', text: 'text-violet-100', desc: 'Hero item shop' },
                     ];
+                    const builtTypes = new Set(placedBuildings.filter(b => !b.constructing).map(b => b.type));
+                    if (farmhouse.built) builtTypes.add('farmhouse');
                     return (
                       <div className="grid grid-cols-3 gap-1.5 pt-1">
                         {buildings.map(b => {
                           const cost = buildingCosts[b.key];
                           const affordable = canAfford(cost);
+                          const reqType = BUILDING_REQUIRES[b.key as BuildingType];
+                          const prereqMet = !reqType || builtTypes.has(reqType);
+                          const reqLabel = reqType ? buildingCosts[reqType]?.label ?? reqType : '';
                           return (
                             <button key={b.key} type="button"
                               className={`flex flex-col items-center rounded border ${b.border} ${b.bg} ${b.hover} ${b.text} py-1.5 text-xs disabled:opacity-40`}
                               onClick={() => onFarmhouseAction(`build:${b.key}`)}
-                              disabled={!affordable}
-                              title={b.desc}
+                              disabled={!affordable || !prereqMet}
+                              title={!prereqMet ? `🔒 Requires ${reqLabel}` : b.desc}
                             >
-                              <span>{b.icon} {b.label}</span>
-                              <span className={`text-[10px] mt-0.5 ${affordable ? 'text-amber-300/80' : 'text-slate-500'}`}>{fmtCost(cost)}</span>
+                              <span>{!prereqMet ? '🔒' : b.icon} {b.label}</span>
+                              <span className={`text-[10px] mt-0.5 ${!prereqMet ? 'text-slate-600' : affordable ? 'text-amber-300/80' : 'text-slate-500'}`}>{!prereqMet ? `Req: ${reqLabel}` : fmtCost(cost)}</span>
                             </button>
                           );
                         })}
@@ -963,10 +979,10 @@ export const RTSUI: React.FC<RTSUIProps> = ({
             <span>Pop {resources.food}/{resources.foodCap}</span>
             {resources.food >= resources.foodCap
               ? <span className="text-amber-400">⚠ Cap!</span>
-              : resources.food > 80
+              : resources.food > resources.foodCap * 0.8
               ? <span className="text-red-400">📉 Heavy upkeep (40%)</span>
-              : resources.food > 40
-              ? <span className="text-yellow-400">📉 Upkeep (70%)</span>
+              : resources.food > resources.foodCap * 0.5
+              ? <span className="text-yellow-400">📉 Low upkeep (70%)</span>
               : <span className="text-green-400">✓ No upkeep</span>
             }
           </div>
