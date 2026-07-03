@@ -17,12 +17,14 @@ Farm 3J is an interactive farm website with a full-featured isometric **Real-Tim
 ## Farm RTS — Key Features
 
 ### Economy & Workers
+
 - **Farmers** harvest gold, lumber, and stone from resource nodes; return to barn to deposit
 - **Auto-gather** on node depletion; Lumber Shed reduces lumber gather time; Windmill passive gold income
 - **Loot Crates** spawn on the map every 45s; send farmers to collect for bonus resources
 - **Building Destruction Loot Drops** — 30% resource refund when enemies destroy a building
 
 ### Combat Units
+
 - **Swordsman** ⚔️ — dedicated fighter, Charge ability [C], trains from Barracks
 - **Cavalry** 🐴 — 2× speed, Sprint [S] + Trample passive, trains from Stable
 - **Catapult** 🪨 — AoE splash siege, trains from Siege Workshop
@@ -30,24 +32,26 @@ Farm 3J is an interactive farm website with a full-featured isometric **Real-Tim
 - **Hero: Barnabas** 🦸 — 150 HP, +20 ATK, Rallying Cry ⚡ (AoE damage), Harvest Boon 🌾 (2× gather speed), Battle Shout 📯 at level 2 (40% faster attacks for all nearby allies), Morale Aura (30% faster attacks within 3 tiles)
 
 ### Buildings
-| Building | Unlocks |
-|---|---|
-| Farmhouse | Food cap +5, barn research upgrades |
-| Barracks | Swordsman training, Hero recruitment, Veteran Training + War Drums research |
-| Stable | Cavalry training |
-| Siege Workshop | Catapult + Trebuchet training |
-| Watchtower | Arrow fire, Garrison, Guard Tower upgrade |
-| Ballista | Piercing AoE arrow tower |
-| Frost Tower | Slowing tower (50% slow, 3s) |
-| Blacksmith | Steel Edge (+5 ATK/level) + Iron Hide (-2 dmg taken/level) |
-| Lumber Shed | -200ms lumber gather per shed |
-| Windmill | +2 gold passive per 5s |
-| Granary | +8 population cap |
-| Market | Resource trading (lumber→gold, stone→gold) |
-| Palisade Wall / Stone Wall | Blocks enemy pathfinding; upgradeable to Stone (350 HP) |
-| Spike Trap | 20 dmg on trigger, 30s rearm |
+
+| Building                   | Unlocks                                                                     |
+| -------------------------- | --------------------------------------------------------------------------- |
+| Farmhouse                  | Food cap +5, barn research upgrades                                         |
+| Barracks                   | Swordsman training, Hero recruitment, Veteran Training + War Drums research |
+| Stable                     | Cavalry training                                                            |
+| Siege Workshop             | Catapult + Trebuchet training                                               |
+| Watchtower                 | Arrow fire, Garrison, Guard Tower upgrade                                   |
+| Ballista                   | Piercing AoE arrow tower                                                    |
+| Frost Tower                | Slowing tower (50% slow, 3s)                                                |
+| Blacksmith                 | Steel Edge (+5 ATK/level) + Iron Hide (-2 dmg taken/level)                  |
+| Lumber Shed                | -200ms lumber gather per shed                                               |
+| Windmill                   | +2 gold passive per 5s                                                      |
+| Granary                    | +8 population cap                                                           |
+| Market                     | Resource trading (lumber→gold, stone→gold)                                  |
+| Palisade Wall / Stone Wall | Blocks enemy pathfinding; upgradeable to Stone (350 HP)                     |
+| Spike Trap                 | 20 dmg on trigger, 30s rearm                                                |
 
 ### Enemy Waves
+
 - **Grunts** — scale in HP and count each wave; Enraged when Witch Doctor buffs them
 - **War Bull** 🐂 — boss every 10th wave (3× HP, 25 dmg)
 - **Shaman** 🧙 — heals grunts; spawns wave 8+
@@ -60,6 +64,7 @@ Farm 3J is an interactive farm website with a full-featured isometric **Real-Tim
 - **Enemy Fortress Towers** — spawn at waves 5, 10, 15
 
 ### Strategic Systems
+
 - **Fog of War** — unexplored dark, explored-but-not-visible dimmed; all enemy units hidden in fog
 - **Day/Night Cycle** — grunts 30% faster at night; visual dark overlay
 - **Neutral Creep Camps** — clear for 60🪙 bonus; grants unit XP
@@ -76,6 +81,7 @@ Farm 3J is an interactive farm website with a full-featured isometric **Real-Tim
 - **Wave Preview** — composition shown 6s before each wave arrives
 
 ### Polish & Feel
+
 - **Difficulty Selection** — Easy 🌻 / Normal ⚔️ / Hard 💀 picker before each game; scales resources, enemy HP/damage/speed, and wave interval
 - **Procedural Sounds** — Web Audio API tones for select, move, attack, death, build, ability, garrison, wave warning, victory/defeat; 🔊/🔇 mute toggle
 - **Unit Voice Lines** — WC3-style acknowledgement text on move/attack commands ("Moving out!", "Charge!", "For glory!")
@@ -93,7 +99,7 @@ Farm 3J is an interactive farm website with a full-featured isometric **Real-Tim
 - **Language**: TypeScript (strict mode)
 - **Styling**: Tailwind CSS v4
 - **Rendering**: SVG-based isometric grid (25×25 tiles, 64px tile size)
-- **Pathfinding**: 8-directional A* with wall avoidance
+- **Pathfinding**: 8-directional A\* with wall avoidance
 - **Audio**: Web Audio API procedural tone synthesis (no audio files)
 - **State**: React useState/useRef + requestAnimationFrame animation loop
 
