@@ -16,1173 +16,244 @@ import {
   FarmhouseAction,
 } from './RTSUI';
 
-const GRID_SIZE = 25;
-const TILE_SIZE = 64;
-const WORKER_SPEED = 1.5;
-const GRUNT_SPEED = 0.8;
-const GATHER_INTERVAL_MS = 900;
-const CARRY_CAP = 10;
-const FOOD_CAP_BASE = 10; // starts at 10 so 5 workers don't immediately hit cap penalty
-const FOOD_CAP_PER_LEVEL = 5;
-const WORKER_VISION = 3.5;
-const BARN_VISION = 5;
-const WATCHTOWER_VISION = 7;
-const WATCHTOWER_ATTACK_RANGE = 5;
-const WATCHTOWER_DAMAGE = 8;
-const WATCHTOWER_ATTACK_MS = 2000;
-const ENEMY_BARN_POS = { x: 22, y: 22 };
-const ENEMY_BARN_MAX_HP = 200;
-const PLAYER_BARN_MAX_HP = 300;
-const ATTACK_DAMAGE = 15;
-const ATTACK_INTERVAL_MS = 1200;
-const ENEMY_COUNTER_DAMAGE = 8;
-const WORKER_MAX_HP = 50;
-const GRUNT_MAX_HP = 60;
-const GRUNT_DAMAGE = 12;
-const GRUNT_ATTACK_MS = 1500;
-const BOSS_HP_MULTIPLIER = 3;
-const BOSS_DAMAGE = 25;
-const BOSS_GOLD_REWARD = 20;
-const BOSS_XP_REWARD = 80;
-const GRUNT_SPAWN_MS = 40000;
-const REPAIR_INTERVAL_MS = 2000;
-const REPAIR_AMOUNT = 2;
-const REPAIR_RADIUS = 3;
-const GARRISON_CAP = 5;
-const GARRISON_HEAL_MS = 1000;
-const GARRISON_HEAL_AMOUNT = 5;
-const GARRISON_ARMOR_PER_UNIT = 2;
-const HERO_MAX_HP = 150;
-const HERO_DAMAGE_BONUS = 20;
-const HERO_ABILITY_RADIUS = 3.5;
-const HERO_ABILITY_DAMAGE = 30;
-const HERO_ABILITY_COOLDOWN_S = 25;
-const HERO_SHOUT_RADIUS = 4.0;
-const HERO_SHOUT_DURATION_MS = 8000;
-const HERO_SHOUT_COOLDOWN_S = 30;
-const HERO_SHOUT_ATK_MULT = 0.6; // 40% faster attack (0.6× interval)
-const CATAPULT_MAX_HP = 60;
-const CATAPULT_SPEED = 0.45;
-const CATAPULT_RANGE = 6;
-const CATAPULT_DAMAGE = 22;
-const CATAPULT_SPLASH_RANGE = 1.5;
-const CATAPULT_SPLASH_DAMAGE = 11;
-const CATAPULT_FIRE_MS = 3500;
-const XP_PER_KILL = 40;
-const XP_TO_LEVEL_1 = 40;
-const XP_TO_LEVEL_2 = 120;
-const XP_TO_LEVEL_3 = 280;
-const EARTHQUAKE_RADIUS = 5.0;
-const EARTHQUAKE_DAMAGE = 45;
-const EARTHQUAKE_COOLDOWN_S = 45;
-const EARTHQUAKE_STUN_MS = 2500;
-const VETERAN_HP_BONUS = 10;
-const VETERAN_ATK_BONUS = 5;
-const ARCHER_TOWER_POS = { x: 12, y: 13 };
-const ARCHER_TOWER_RANGE = 4;
-const ARCHER_TOWER_DAMAGE = 10;
-const ENEMY_TOWER_SPAWN_WAVES = [5, 10, 15] as const;
-const ENEMY_TOWER_POSITIONS = [
-  { x: 18, y: 16 },
-  { x: 16, y: 18 },
-  { x: 20, y: 18 },
-];
-const ENEMY_WALL_MAX_HP = 80;
-// Wall rings spawn incrementally: wave 3 = south, wave 6 = west, wave 9 = north, wave 12 = east
-const ENEMY_WALL_SPAWN: Record<number, { x: number; y: number }[]> = {
-  3: [
-    { x: 21, y: 24 },
-    { x: 22, y: 24 },
-    { x: 23, y: 24 },
-  ],
-  6: [
-    { x: 19, y: 22 },
-    { x: 19, y: 23 },
-  ],
-  9: [
-    { x: 21, y: 20 },
-    { x: 22, y: 20 },
-    { x: 23, y: 20 },
-  ],
-  12: [
-    { x: 24, y: 21 },
-    { x: 24, y: 22 },
-    { x: 24, y: 23 },
-  ],
-};
-const ENEMY_TOWER_MAX_HP = 60;
-const ENEMY_TOWER_DAMAGE = 9;
-const ENEMY_TOWER_RANGE = 4.5;
-const ENEMY_TOWER_ATTACK_MS = 2500;
-const ARCHER_TOWER_ATTACK_MS = 2500;
-const WAR_RAM_MAX_HP = 200;
-const WAR_RAM_SPEED = 0.3;
-const WAR_RAM_DAMAGE = 40;
-const WAR_RAM_ATTACK_MS = 3000;
-const WAR_RAM_GOLD_REWARD = 25;
-const WAR_RAM_XP_REWARD = 50;
-const WAR_RAM_FIRST_WAVE = 6;
-const DEMOLISHER_MAX_HP = 120;
-const DEMOLISHER_SPEED = 0.22;
-const DEMOLISHER_DAMAGE = 35;
-const DEMOLISHER_SPLASH_RANGE = 1.5;
-const DEMOLISHER_FIRE_RANGE = 4.0;
-const DEMOLISHER_ATTACK_MS = 4500;
-const DEMOLISHER_GOLD_REWARD = 30;
-const DEMOLISHER_XP_REWARD = 60;
-const DEMOLISHER_FIRST_WAVE = 14;
-const NECROMANCER_MAX_HP = 35;
-const NECROMANCER_SPEED = 0.5;
-const NECROMANCER_RAISE_RADIUS = 3.0;
-const NECROMANCER_RAISE_MS = 4000;
-const NECROMANCER_FIRST_WAVE = 16;
-const NECROMANCER_GOLD_REWARD = 20;
-const NECROMANCER_XP_REWARD = 45;
-const WITCH_DOCTOR_MAX_HP = 40;
-const WITCH_DOCTOR_SPEED = 0.45;
-const WITCH_DOCTOR_BUFF_RADIUS = 3.0;
-const WITCH_DOCTOR_BUFF_MS = 7000;
-const WITCH_DOCTOR_BUFF_DURATION = 6000;
-const WITCH_DOCTOR_FIRST_WAVE = 12;
-const WITCH_DOCTOR_GOLD_REWARD = 18;
-const WITCH_DOCTOR_XP_REWARD = 40;
-const WITCH_DOCTOR_ENRAGE_DMG_BONUS = 8;
-const WARCHIEF_MAX_HP = 300;
-const WARCHIEF_SPEED = 0.55;
-const WARCHIEF_DMG = 30;
-const WARCHIEF_FIRST_WAVE = 18;
-const WARCHIEF_STOMP_RADIUS = 3.0;
-const WARCHIEF_STOMP_SLOW_MS = 2500;
-const WARCHIEF_STOMP_COOLDOWN_MS = 12000;
-const WARCHIEF_GOLD_REWARD = 50;
-const WARCHIEF_XP_REWARD = 120;
-const LOOT_CRATE_SPAWN_MS = 45000;
-const SHAMAN_MAX_HP = 45;
-const SHAMAN_SPEED = 0.6;
-const SHAMAN_HEAL_AMOUNT = 5;
-const SHAMAN_HEAL_RADIUS = 2.5;
-const SHAMAN_HEAL_MS = 2000;
-const SHAMAN_FIRST_WAVE = 8;
-const SHAMAN_GOLD_REWARD = 15;
-const SHAMAN_XP_REWARD = 35;
-const TROLL_MAX_HP = 30;
-const TROLL_SPEED = 0.9;
-const TROLL_ATTACK_RANGE = 4.0;
-const TROLL_KITE_RANGE = 3.0;
-const TROLL_DAMAGE = 8;
-const TROLL_ATTACK_MS = 2500;
-const TROLL_FIRST_WAVE = 10;
-const TROLL_GOLD_REWARD = 12;
-const TROLL_XP_REWARD = 30;
-
-const SAPPER_MAX_HP = 25;
-const SAPPER_SPEED = 1.3;
-const SAPPER_EXPLODE_RADIUS = 1.5;
-const SAPPER_EXPLODE_DAMAGE = 80;
-const SAPPER_FIRST_WAVE = 12;
-const SAPPER_GOLD_REWARD = 20;
-const SAPPER_XP_REWARD = 45;
-const LUMBER_SHED_BONUS_MS = 200;
-const TREBUCHET_MAX_HP = 45;
-const TREBUCHET_SPEED = 0.28;
-const TREBUCHET_RANGE = 9;
-const TREBUCHET_MIN_RANGE = 2.5;
-const TREBUCHET_DAMAGE = 40;
-const TREBUCHET_FIRE_MS = 6000;
-
-const FROST_TOWER_RANGE = 4.5;
-const FROST_TOWER_DAMAGE = 5;
-const FROST_TOWER_ATTACK_MS = 2500;
-const FROST_TOWER_SLOW_DURATION = 3000;
-const FROST_TOWER_SLOW_FACTOR = 0.5;
-const FROST_TOWER_HP = 160;
-const FROST_TOWER_GOLD_COST = 80;
-const FROST_TOWER_LUMBER_COST = 40;
-const FROST_TOWER_STONE_COST = 60;
-
-const BALLISTA_RANGE = 6.5;
-const BALLISTA_DAMAGE = 18;
-const BALLISTA_PIERCE_RANGE = 1.5;
-const BALLISTA_PIERCE_DAMAGE = 9;
-const BALLISTA_ATTACK_MS = 4000;
-const BALLISTA_HP = 150;
-const POISON_TOWER_RANGE = 5.0;
-const POISON_TOWER_DAMAGE = 8;
-const POISON_TOWER_DPS = 3;
-const POISON_TOWER_DURATION_MS = 4000;
-const POISON_TOWER_ATTACK_MS = 3000;
-const POISON_TOWER_HP = 130;
-
-const LOOT_CRATE_POSITIONS = [
-  // Near player base
-  { x: 3, y: 10 },
-  { x: 10, y: 3 },
-  { x: 1, y: 6 },
-  { x: 6, y: 1 },
-  // Mid map
-  { x: 7, y: 9 },
-  { x: 9, y: 7 },
-  { x: 13, y: 5 },
-  { x: 5, y: 13 },
-  // Contested center
-  { x: 12, y: 12 },
-  { x: 10, y: 16 },
-  { x: 16, y: 10 },
-  // Deep map
-  { x: 18, y: 7 },
-  { x: 7, y: 18 },
-  { x: 20, y: 13 },
-  { x: 13, y: 20 },
-  { x: 22, y: 5 },
-  { x: 5, y: 22 },
-  { x: 17, y: 17 },
-];
-
-interface FloatingText {
-  id: number;
-  x: number;
-  y: number;
-  text: string;
-  color: string;
-  createdAt: number;
-}
-type TileType = 'grass' | 'dirt' | 'water' | 'tree' | 'rock';
-
-type HeroItemId =
-  | 'boots_speed'
-  | 'battle_sword'
-  | 'shield_pendant'
-  | 'healing_potion'
-  | 'tome_xp';
-interface HeroItem {
-  id: number;
-  itemId: HeroItemId;
-}
-interface DroppedItem {
-  id: number;
-  itemId: HeroItemId;
-  x: number;
-  y: number;
-}
-const HERO_ITEM_DATA: Record<
-  HeroItemId,
-  {
-    name: string;
-    emoji: string;
-    desc: string;
-    speedBonus?: number;
-    dmgBonus?: number;
-    armorBonus?: number;
-    consumable?: boolean;
-  }
-> = {
-  boots_speed: {
-    name: 'Boots of Swiftness',
-    emoji: '👟',
-    desc: '+0.4 move speed',
-    speedBonus: 0.4,
-  },
-  battle_sword: {
-    name: 'Battle Blade',
-    emoji: '🗡️',
-    desc: '+20 hero damage',
-    dmgBonus: 20,
-  },
-  shield_pendant: {
-    name: 'Shield Pendant',
-    emoji: '🛡️',
-    desc: '-6 damage taken',
-    armorBonus: 6,
-  },
-  healing_potion: {
-    name: 'Healing Potion',
-    emoji: '🧪',
-    desc: 'Restore 75 HP',
-    consumable: true,
-  },
-  tome_xp: {
-    name: 'Tome of Knowledge',
-    emoji: '📖',
-    desc: '+80 XP (instant)',
-    consumable: true,
-  },
-};
-const HERO_MAX_ITEMS = 3;
-type BuildingType =
-  | 'farmhouse'
-  | 'lumberShed'
-  | 'watchtower'
-  | 'wall'
-  | 'windmill'
-  | 'barracks'
-  | 'siegeWorkshop'
-  | 'market'
-  | 'blacksmith'
-  | 'granary'
-  | 'stable'
-  | 'spikeTrap'
-  | 'frostTower'
-  | 'ballista'
-  | 'poisonTower'
-  | 'supplyStore'
-  | 'miningCamp';
-
-interface ResourceNode {
-  x: number;
-  y: number;
-  amount: number;
-}
-interface Resources {
-  gold: number;
-  lumber: number;
-  stone: number;
-  food: number;
-  foodCap: number;
-}
-interface PlacedBuilding {
-  id: number;
-  type: BuildingType;
-  x: number;
-  y: number;
-  hp: number;
-  maxHp: number;
-  upgraded?: boolean;
-  constructing?: boolean;
-  constructedAt?: number;
-}
-
-interface EnemyGrunt {
-  id: number;
-  x: number;
-  y: number;
-  hp: number;
-  maxHp: number;
-  movingTo: { x: number; y: number } | null;
-  path: { x: number; y: number }[];
-  state: 'moving' | 'attacking';
-  isBoss?: boolean;
-  isSkeleton?: boolean;
-  frozenUntil?: number;
-  enragedUntil?: number;
-  poisonedUntil?: number;
-  poisonDps?: number;
-}
-
-interface EnemyTower {
-  id: number;
-  x: number;
-  y: number;
-  hp: number;
-  maxHp: number;
-}
-
-interface EnemySiege {
-  id: number;
-  x: number;
-  y: number;
-  hp: number;
-  maxHp: number;
-  movingTo: { x: number; y: number } | null;
-  path: { x: number; y: number }[];
-  state: 'moving' | 'attacking';
-  targetBuildingId: number | null;
-  siegeType?: 'ram' | 'demolisher';
-}
-
-interface LootCrate {
-  id: number;
-  x: number;
-  y: number;
-  gold: number;
-  lumber: number;
-  stone: number;
-}
-
-interface EnemyShaman {
-  id: number;
-  x: number;
-  y: number;
-  hp: number;
-  maxHp: number;
-  movingTo: { x: number; y: number } | null;
-  path: { x: number; y: number }[];
-  state: 'moving' | 'healing';
-}
-
-interface EnemyNecromancer {
-  id: number;
-  x: number;
-  y: number;
-  hp: number;
-  maxHp: number;
-  movingTo: { x: number; y: number } | null;
-  path: { x: number; y: number }[];
-  state: 'moving' | 'raising';
-}
-interface EnemyWitchDoctor {
-  id: number;
-  x: number;
-  y: number;
-  hp: number;
-  maxHp: number;
-  movingTo: { x: number; y: number } | null;
-  path: { x: number; y: number }[];
-  state: 'moving' | 'casting';
-}
-
-interface EnemyTroll {
-  id: number;
-  x: number;
-  y: number;
-  hp: number;
-  maxHp: number;
-  movingTo: { x: number; y: number } | null;
-  path: { x: number; y: number }[];
-  state: 'moving' | 'attacking' | 'kiting';
-  targetType: 'worker' | 'building' | 'barn';
-  targetId: number | null;
-}
-
-interface EnemySapper {
-  id: number;
-  x: number;
-  y: number;
-  hp: number;
-  maxHp: number;
-  movingTo: { x: number; y: number } | null;
-  path: { x: number; y: number }[];
-  targetX: number;
-  targetY: number;
-  exploded: boolean;
-}
-
-interface EnemyWarchief {
-  id: number;
-  x: number;
-  y: number;
-  hp: number;
-  maxHp: number;
-  movingTo: { x: number; y: number } | null;
-  path: { x: number; y: number }[];
-  state: 'moving' | 'attacking' | 'stomping';
-  lastStompAt: number;
-}
-
-interface NeutralCreep {
-  id: number;
-  campId: number;
-  x: number;
-  y: number;
-  homeX: number;
-  homeY: number;
-  hp: number;
-  maxHp: number;
-  state: 'idle' | 'chasing' | 'returning';
-  targetWorkerId: number | null;
-}
-
-const CREEP_MAX_HP = 45;
-const CREEP_DAMAGE = 9;
-const CREEP_SPEED = 1.2;
-const CREEP_AGGRO_RANGE = 3.5;
-const CREEP_ATTACK_MS = 1400;
-const CREEP_LEASH_RANGE = 5;
-const CAMP_GOLD_REWARD = 60;
-
-const CREEP_CAMPS: { id: number; x: number; y: number; goldReward: number }[] =
-  [
-    { id: 1, x: 2, y: 14, goldReward: CAMP_GOLD_REWARD },
-    { id: 2, x: 14, y: 2, goldReward: CAMP_GOLD_REWARD },
-    { id: 3, x: 6, y: 6, goldReward: CAMP_GOLD_REWARD },
-    { id: 4, x: 17, y: 8, goldReward: CAMP_GOLD_REWARD },
-    { id: 5, x: 8, y: 17, goldReward: CAMP_GOLD_REWARD },
-    { id: 6, x: 20, y: 14, goldReward: CAMP_GOLD_REWARD },
-    { id: 7, x: 14, y: 20, goldReward: CAMP_GOLD_REWARD },
-  ];
-
-const BARN_POS = { x: 2, y: 2 };
-
-const SHRINES: {
-  id: number;
-  x: number;
-  y: number;
-  type: 'war' | 'plenty';
-  label: string;
-  captureMs: number;
-}[] = [
-  { id: 1, x: 5, y: 11, type: 'war', label: 'Shrine of War', captureMs: 6000 },
-  {
-    id: 2,
-    x: 11,
-    y: 5,
-    type: 'plenty',
-    label: 'Shrine of Plenty',
-    captureMs: 6000,
-  },
-  { id: 3, x: 19, y: 13, type: 'war', label: 'Shrine of War', captureMs: 8000 },
-  {
-    id: 4,
-    x: 13,
-    y: 19,
-    type: 'plenty',
-    label: 'Shrine of Plenty',
-    captureMs: 8000,
-  },
-];
-
-const BUILDING_COSTS: Record<
+import {
+  ARCHER_TOWER_POS,
+  ARCHER_TOWER_RANGE,
+  ATTACK_DAMAGE,
+  ATTACK_INTERVAL_MS,
+  BALLISTA_ATTACK_MS,
+  BALLISTA_DAMAGE,
+  BALLISTA_PIERCE_DAMAGE,
+  BALLISTA_PIERCE_RANGE,
+  BALLISTA_RANGE,
+  BARN_POS,
+  BARN_VISION,
+  BOSS_DAMAGE,
+  BOSS_GOLD_REWARD,
+  BOSS_HP_MULTIPLIER,
+  BOSS_XP_REWARD,
+  BUILDING_COSTS,
+  BUILDING_EMOJI,
+  BUILDING_GRUNT_DAMAGE,
+  BUILDING_MAX_HP,
+  BUILDING_REQUIRES,
+  CARRY_CAP,
+  CATAPULT_DAMAGE,
+  CATAPULT_FIRE_MS,
+  CATAPULT_RANGE,
+  CATAPULT_SPEED,
+  CATAPULT_SPLASH_DAMAGE,
+  CATAPULT_SPLASH_RANGE,
+  CAVALRY_DAMAGE_BONUS,
+  CAVALRY_SPEED,
+  CAVALRY_SPRINT_COOLDOWN_S,
+  CAVALRY_SPRINT_DURATION_MS,
+  CAVALRY_SPRINT_SPEED_MULT,
+  CAVALRY_TRAMPLE_DAMAGE,
+  CAVALRY_TRAMPLE_RADIUS,
+  CONSTRUCTION_MS,
+  CREEP_AGGRO_RANGE,
+  CREEP_ATTACK_MS,
+  CREEP_CAMPS,
+  CREEP_DAMAGE,
+  CREEP_LEASH_RANGE,
+  CREEP_MAX_HP,
+  CREEP_SPEED,
+  DEMOLISHER_ATTACK_MS,
+  DEMOLISHER_DAMAGE,
+  DEMOLISHER_FIRE_RANGE,
+  DEMOLISHER_FIRST_WAVE,
+  DEMOLISHER_GOLD_REWARD,
+  DEMOLISHER_MAX_HP,
+  DEMOLISHER_SPEED,
+  DEMOLISHER_SPLASH_RANGE,
+  DEMOLISHER_XP_REWARD,
+  EARTHQUAKE_COOLDOWN_S,
+  EARTHQUAKE_DAMAGE,
+  EARTHQUAKE_RADIUS,
+  EARTHQUAKE_STUN_MS,
+  ENEMY_BARN_MAX_HP,
+  ENEMY_BARN_POS,
+  ENEMY_COUNTER_DAMAGE,
+  ENEMY_TOWER_ATTACK_MS,
+  ENEMY_TOWER_DAMAGE,
+  ENEMY_TOWER_MAX_HP,
+  ENEMY_TOWER_POSITIONS,
+  ENEMY_TOWER_RANGE,
+  ENEMY_TOWER_SPAWN_WAVES,
+  ENEMY_WALL_MAX_HP,
+  ENEMY_WALL_SPAWN,
+  FOOD_CAP_BASE,
+  FOOD_CAP_PER_LEVEL,
+  FROST_TOWER_ATTACK_MS,
+  FROST_TOWER_DAMAGE,
+  FROST_TOWER_RANGE,
+  FROST_TOWER_SLOW_DURATION,
+  FROST_TOWER_SLOW_FACTOR,
+  GARRISON_ARMOR_PER_UNIT,
+  GARRISON_CAP,
+  GARRISON_HEAL_AMOUNT,
+  GARRISON_HEAL_MS,
+  GATHER_INTERVAL_MS,
+  GRID_SIZE,
+  GRUNT_ATTACK_MS,
+  GRUNT_DAMAGE,
+  GRUNT_MAX_HP,
+  GRUNT_SPAWN_MS,
+  GRUNT_SPEED,
+  HERO_ABILITY_COOLDOWN_S,
+  HERO_ABILITY_DAMAGE,
+  HERO_ABILITY_RADIUS,
+  HERO_DAMAGE_BONUS,
+  HERO_ITEM_DATA,
+  HERO_MAX_HP,
+  HERO_MAX_ITEMS,
+  HERO_SHOUT_ATK_MULT,
+  HERO_SHOUT_COOLDOWN_S,
+  HERO_SHOUT_DURATION_MS,
+  HERO_SHOUT_RADIUS,
+  LOOT_CRATE_POSITIONS,
+  LOOT_CRATE_SPAWN_MS,
+  LUMBER_SHED_BONUS_MS,
+  NECROMANCER_FIRST_WAVE,
+  NECROMANCER_GOLD_REWARD,
+  NECROMANCER_MAX_HP,
+  NECROMANCER_RAISE_MS,
+  NECROMANCER_RAISE_RADIUS,
+  NECROMANCER_SPEED,
+  NECROMANCER_XP_REWARD,
+  PLAYER_BARN_MAX_HP,
+  POISON_TOWER_ATTACK_MS,
+  POISON_TOWER_DAMAGE,
+  POISON_TOWER_DPS,
+  POISON_TOWER_DURATION_MS,
+  POISON_TOWER_RANGE,
+  REPAIR_AMOUNT,
+  REPAIR_INTERVAL_MS,
+  REPAIR_RADIUS,
+  SAPPER_EXPLODE_DAMAGE,
+  SAPPER_EXPLODE_RADIUS,
+  SAPPER_FIRST_WAVE,
+  SAPPER_GOLD_REWARD,
+  SAPPER_MAX_HP,
+  SAPPER_SPEED,
+  SAPPER_XP_REWARD,
+  SHAMAN_FIRST_WAVE,
+  SHAMAN_GOLD_REWARD,
+  SHAMAN_HEAL_AMOUNT,
+  SHAMAN_HEAL_MS,
+  SHAMAN_HEAL_RADIUS,
+  SHAMAN_MAX_HP,
+  SHAMAN_SPEED,
+  SHAMAN_XP_REWARD,
+  SHRINES,
+  SWORDSMAN_CHARGE_COOLDOWN_S,
+  SWORDSMAN_CHARGE_DAMAGE_MULT,
+  SWORDSMAN_DAMAGE_BONUS,
+  TILE_SIZE,
+  TREBUCHET_DAMAGE,
+  TREBUCHET_FIRE_MS,
+  TREBUCHET_MIN_RANGE,
+  TREBUCHET_RANGE,
+  TREBUCHET_SPEED,
+  TROLL_ATTACK_MS,
+  TROLL_ATTACK_RANGE,
+  TROLL_DAMAGE,
+  TROLL_FIRST_WAVE,
+  TROLL_GOLD_REWARD,
+  TROLL_KITE_RANGE,
+  TROLL_MAX_HP,
+  TROLL_SPEED,
+  TROLL_XP_REWARD,
+  VETERAN_ATK_BONUS,
+  VETERAN_HP_BONUS,
+  WARCHIEF_DMG,
+  WARCHIEF_FIRST_WAVE,
+  WARCHIEF_GOLD_REWARD,
+  WARCHIEF_MAX_HP,
+  WARCHIEF_SPEED,
+  WARCHIEF_STOMP_COOLDOWN_MS,
+  WARCHIEF_STOMP_RADIUS,
+  WARCHIEF_STOMP_SLOW_MS,
+  WARCHIEF_XP_REWARD,
+  WAR_RAM_ATTACK_MS,
+  WAR_RAM_DAMAGE,
+  WAR_RAM_FIRST_WAVE,
+  WAR_RAM_GOLD_REWARD,
+  WAR_RAM_MAX_HP,
+  WAR_RAM_SPEED,
+  WAR_RAM_XP_REWARD,
+  WATCHTOWER_ATTACK_MS,
+  WATCHTOWER_ATTACK_RANGE,
+  WATCHTOWER_DAMAGE,
+  WATCHTOWER_VISION,
+  WITCH_DOCTOR_BUFF_DURATION,
+  WITCH_DOCTOR_BUFF_MS,
+  WITCH_DOCTOR_BUFF_RADIUS,
+  WITCH_DOCTOR_ENRAGE_DMG_BONUS,
+  WITCH_DOCTOR_FIRST_WAVE,
+  WITCH_DOCTOR_GOLD_REWARD,
+  WITCH_DOCTOR_MAX_HP,
+  WITCH_DOCTOR_SPEED,
+  WITCH_DOCTOR_XP_REWARD,
+  WORKER_SPEED,
+  WORKER_VISION,
+  XP_PER_KILL,
+  XP_TO_LEVEL_1,
+  XP_TO_LEVEL_2,
+  XP_TO_LEVEL_3,
+} from './game/constants';
+import type {
   BuildingType,
-  {
-    gold: number;
-    lumber: number;
-    stone: number;
-    label: string;
-    foodCapBonus: number;
-  }
-> = {
-  farmhouse: {
-    gold: 60,
-    lumber: 30,
-    stone: 0,
-    label: 'Farmhouse',
-    foodCapBonus: 5,
-  },
-  lumberShed: {
-    gold: 40,
-    lumber: 60,
-    stone: 0,
-    label: 'Lumber Shed',
-    foodCapBonus: 0,
-  },
-  miningCamp: {
-    gold: 50,
-    lumber: 30,
-    stone: 20,
-    label: 'Mining Camp',
-    foodCapBonus: 0,
-  },
-  watchtower: {
-    gold: 80,
-    lumber: 0,
-    stone: 60,
-    label: 'Watchtower',
-    foodCapBonus: 0,
-  },
-  wall: {
-    gold: 15,
-    lumber: 25,
-    stone: 0,
-    label: 'Palisade Wall',
-    foodCapBonus: 0,
-  },
-  windmill: {
-    gold: 60,
-    lumber: 40,
-    stone: 0,
-    label: 'Windmill',
-    foodCapBonus: 0,
-  },
-  barracks: {
-    gold: 80,
-    lumber: 60,
-    stone: 40,
-    label: 'Barracks',
-    foodCapBonus: 0,
-  },
-  siegeWorkshop: {
-    gold: 100,
-    lumber: 80,
-    stone: 60,
-    label: 'Siege Workshop',
-    foodCapBonus: 0,
-  },
-  market: { gold: 80, lumber: 60, stone: 20, label: 'Market', foodCapBonus: 0 },
-  blacksmith: {
-    gold: 100,
-    lumber: 60,
-    stone: 80,
-    label: 'Blacksmith',
-    foodCapBonus: 0,
-  },
-  granary: {
-    gold: 50,
-    lumber: 80,
-    stone: 20,
-    label: 'Granary',
-    foodCapBonus: 8,
-  },
-  stable: { gold: 80, lumber: 60, stone: 30, label: 'Stable', foodCapBonus: 0 },
-  spikeTrap: {
-    gold: 30,
-    lumber: 20,
-    stone: 10,
-    label: 'Spike Trap',
-    foodCapBonus: 0,
-  },
-  frostTower: {
-    gold: FROST_TOWER_GOLD_COST,
-    lumber: FROST_TOWER_LUMBER_COST,
-    stone: FROST_TOWER_STONE_COST,
-    label: 'Frost Tower',
-    foodCapBonus: 0,
-  },
-  ballista: {
-    gold: 100,
-    lumber: 60,
-    stone: 80,
-    label: 'Ballista Tower',
-    foodCapBonus: 0,
-  },
-  poisonTower: {
-    gold: 70,
-    lumber: 40,
-    stone: 50,
-    label: 'Poison Tower',
-    foodCapBonus: 0,
-  },
-  supplyStore: {
-    gold: 80,
-    lumber: 40,
-    stone: 20,
-    label: 'Farm Supply Store',
-    foodCapBonus: 0,
-  },
-};
+  DroppedItem,
+  EnemyGrunt,
+  EnemyNecromancer,
+  EnemySapper,
+  EnemyShaman,
+  EnemySiege,
+  EnemyTower,
+  EnemyTroll,
+  EnemyWarchief,
+  EnemyWitchDoctor,
+  FloatingText,
+  HeroItem,
+  HeroItemId,
+  LootCrate,
+  NeutralCreep,
+  PlacedBuilding,
+  Projectile,
+  ResourceNode,
+  Resources,
+  SaveData,
+} from './game/types';
+import {
+  computeVisible,
+  INITIAL_TILES,
+  svgToTile,
+  tileDist,
+  tileToSvg,
+} from './game/map';
+import { aStar } from './game/pathfinding';
+import {
+  clearSave,
+  loadHighScores,
+  loadSave,
+  saveHighScore,
+  writeSave,
+} from './game/persistence';
+import { makeUnit } from './game/units';
+import {
+  ACK_ATTACK,
+  ACK_MOVE,
+  getSoundMuted,
+  pickAck,
+  setSoundMuted,
+  Snd,
+} from './game/sound';
+import { Stat } from './ui/Stat';
 
-// Tech tree prerequisites: building type → required building type (must be fully built)
-export const BUILDING_REQUIRES: Partial<Record<BuildingType, BuildingType>> = {
-  barracks: 'farmhouse',
-  stable: 'barracks',
-  blacksmith: 'barracks',
-  siegeWorkshop: 'blacksmith',
-  ballista: 'watchtower',
-  supplyStore: 'market',
-};
-
-const BUILDING_EMOJI: Record<BuildingType, string> = {
-  farmhouse: '🏠',
-  lumberShed: '🪵',
-  watchtower: '🗼',
-  wall: '🧱',
-  windmill: '💨',
-  barracks: '🏯',
-  siegeWorkshop: '⚙️',
-  market: '🏪',
-  blacksmith: '🔨',
-  granary: '🌾',
-  stable: '🐴',
-  spikeTrap: '🪤',
-  frostTower: '❄️',
-  ballista: '🏹',
-  poisonTower: '☠️',
-  supplyStore: '🛒',
-  miningCamp: '⛏️',
-};
-
-const BUILDING_MAX_HP: Record<BuildingType, number> = {
-  farmhouse: 200,
-  lumberShed: 150,
-  watchtower: 180,
-  wall: 120,
-  windmill: 100,
-  barracks: 250,
-  siegeWorkshop: 220,
-  market: 160,
-  blacksmith: 200,
-  granary: 140,
-  stable: 200,
-  spikeTrap: 60,
-  frostTower: FROST_TOWER_HP,
-  ballista: BALLISTA_HP,
-  poisonTower: POISON_TOWER_HP,
-  supplyStore: 180,
-  miningCamp: 150,
-};
-const BUILDING_GRUNT_DAMAGE = 8; // damage per hit from grunt to building
-const CONSTRUCTION_MS = 6000; // time to construct a building
-
-const SWORDSMAN_MAX_HP = 80;
-const SWORDSMAN_DAMAGE_BONUS = 10;
-const SWORDSMAN_CHARGE_COOLDOWN_S = 12;
-const SWORDSMAN_CHARGE_DAMAGE_MULT = 2;
-const CAVALRY_MAX_HP = 65;
-const CAVALRY_SPEED = 3.0;
-const CAVALRY_DAMAGE_BONUS = 8;
-const CAVALRY_TRAMPLE_RADIUS = 0.8;
-const CAVALRY_TRAMPLE_DAMAGE = 6;
-const CAVALRY_SPRINT_COOLDOWN_S = 20;
-const CAVALRY_SPRINT_DURATION_MS = 5000;
-const CAVALRY_SPRINT_SPEED_MULT = 2;
-
-function makeTiles(): TileType[][] {
-  return Array.from({ length: GRID_SIZE }, (_, i) =>
-    Array.from({ length: GRID_SIZE }, (_, j) => {
-      // Water lakes — player corner, enemy corner, two flanks
-      if (i >= 0 && i <= 2 && j >= 6 && j <= 9) return 'water';
-      if (i >= 6 && i <= 9 && j >= 0 && j <= 2) return 'water';
-      if (i >= 22 && i <= 24 && j >= 14 && j <= 17) return 'water';
-      if (i >= 14 && i <= 17 && j >= 22 && j <= 24) return 'water';
-      // Mid-map lakes (two flanks)
-      if (i >= 10 && i <= 12 && j >= 10 && j <= 12) return 'water';
-      if (i >= 18 && i <= 20 && j >= 5 && j <= 7) return 'water';
-      if (i >= 5 && i <= 7 && j >= 18 && j <= 20) return 'water';
-      // Tree clusters (decorative / harvestable backdrop)
-      if ((i === 7 || i === 8) && (j === 13 || j === 14)) return 'tree';
-      if ((i === 13 || i === 14) && (j === 7 || j === 8)) return 'tree';
-      if ((i === 4 || i === 5) && (j === 19 || j === 20)) return 'tree';
-      if ((i === 19 || i === 20) && (j === 4 || j === 5)) return 'tree';
-      if ((i === 15 || i === 16) && (j === 15 || j === 16)) return 'tree';
-      if ((i === 21 || i === 22) && (j === 9 || j === 10)) return 'tree';
-      if ((i === 9 || i === 10) && (j === 21 || j === 22)) return 'tree';
-      // Rock clusters (decorative)
-      if ((i === 11 || i === 12) && (j === 6 || j === 7)) return 'rock';
-      if ((i === 6 || i === 7) && (j === 11 || j === 12)) return 'rock';
-      if ((i === 17 || i === 18) && (j === 13 || j === 14)) return 'rock';
-      if ((i === 13 || i === 14) && (j === 17 || j === 18)) return 'rock';
-      if ((i === 21 || i === 22) && (j === 17 || j === 18)) return 'rock';
-      if ((i === 17 || i === 18) && (j === 21 || j === 22)) return 'rock';
-      // Dirt paths crossing the map (two axes + diagonal)
-      if (j === 8 || i === 12 || (i === j && i >= 4 && i <= 20)) return 'dirt';
-      return 'grass';
-    })
-  );
-}
-
-function tileToSvg(tx: number, ty: number) {
-  const isoX = (tx - ty) * TILE_SIZE + (GRID_SIZE * TILE_SIZE) / 2 + TILE_SIZE;
-  const isoY = ((tx + ty) * TILE_SIZE) / 2 + TILE_SIZE / 2;
-  return { isoX, isoY };
-}
-
-function svgToTile(svgX: number, svgY: number) {
-  const A = (svgX - ((GRID_SIZE * TILE_SIZE) / 2 + TILE_SIZE)) / TILE_SIZE;
-  const B = ((svgY - TILE_SIZE / 2) * 2) / TILE_SIZE;
-  return { tx: Math.round((A + B) / 2), ty: Math.round((B - A) / 2) };
-}
-
-function tileDist(ax: number, ay: number, bx: number, by: number) {
-  return Math.sqrt((ax - bx) ** 2 + (ay - by) ** 2);
-}
-
-/** A* pathfinding on isometric tile grid. Returns waypoints excluding start, including goal. */
-function aStar(
-  tiles: TileType[][],
-  start: { x: number; y: number },
-  goal: { x: number; y: number },
-  allowPassThroughGoal = true,
-  extraBlocked?: Set<string>
-): { x: number; y: number }[] {
-  const isPassable = (x: number, y: number): boolean => {
-    if (x < 0 || y < 0 || x >= GRID_SIZE || y >= GRID_SIZE) return false;
-    if (x === goal.x && y === goal.y && allowPassThroughGoal) return true;
-    if (extraBlocked?.has(`${x},${y}`)) return false;
-    return tiles[x]?.[y] !== 'water';
-  };
-
-  type Node = {
-    x: number;
-    y: number;
-    g: number;
-    f: number;
-    parent: Node | null;
-  };
-  const key = (x: number, y: number) => `${x},${y}`;
-  const h = (x: number, y: number) =>
-    Math.abs(x - goal.x) + Math.abs(y - goal.y);
-
-  const open = new Map<string, Node>();
-  const closed = new Set<string>();
-  open.set(key(start.x, start.y), {
-    x: start.x,
-    y: start.y,
-    g: 0,
-    f: h(start.x, start.y),
-    parent: null,
-  });
-
-  while (open.size > 0) {
-    let current: Node | null = null;
-    for (const n of open.values()) {
-      if (!current || n.f < current.f) current = n;
-    }
-    if (!current) break;
-    if (current.x === goal.x && current.y === goal.y) {
-      const path: { x: number; y: number }[] = [];
-      let n: Node | null = current;
-      while (n) {
-        path.unshift({ x: n.x, y: n.y });
-        n = n.parent;
-      }
-      return path.slice(1);
-    }
-    open.delete(key(current.x, current.y));
-    closed.add(key(current.x, current.y));
-    const dirs = [
-      { dx: 1, dy: 0 },
-      { dx: -1, dy: 0 },
-      { dx: 0, dy: 1 },
-      { dx: 0, dy: -1 },
-      { dx: 1, dy: 1 },
-      { dx: 1, dy: -1 },
-      { dx: -1, dy: 1 },
-      { dx: -1, dy: -1 },
-    ];
-    for (const { dx, dy } of dirs) {
-      const nx = current.x + dx,
-        ny = current.y + dy;
-      if (!isPassable(nx, ny) || closed.has(key(nx, ny))) continue;
-      const g = current.g + (dx !== 0 && dy !== 0 ? 1.414 : 1);
-      const ex = open.get(key(nx, ny));
-      if (!ex || g < ex.g)
-        open.set(key(nx, ny), {
-          x: nx,
-          y: ny,
-          g,
-          f: g + h(nx, ny),
-          parent: current,
-        });
-    }
-  }
-  return [goal]; // no path: go direct
-}
-
-function computeVisible(
-  sources: { x: number; y: number; r: number }[]
-): boolean[][] {
-  const grid = Array.from(
-    { length: GRID_SIZE },
-    () => Array(GRID_SIZE).fill(false) as boolean[]
-  );
-  for (const src of sources) {
-    for (let i = 0; i < GRID_SIZE; i++) {
-      for (let j = 0; j < GRID_SIZE; j++) {
-        if (tileDist(src.x, src.y, i, j) <= src.r) grid[i]![j] = true;
-      }
-    }
-  }
-  return grid;
-}
-
-const INITIAL_TILES = makeTiles();
-
-// ---------- Save / Load ----------
-const SAVE_KEY = 'farm3j_rts_v2'; // bumped: map expanded to 25×25
-const HIGH_SCORES_KEY = 'farm3j_highscores_v1';
-interface HighScoreEntry {
-  wave: number;
-  kills: number;
-  result: 'victory' | 'defeat';
-  gold: number;
-  time: number;
-  date: string;
-}
-function loadHighScores(): HighScoreEntry[] {
-  try {
-    return JSON.parse(localStorage.getItem(HIGH_SCORES_KEY) ?? '[]');
-  } catch {
-    return [];
-  }
-}
-function saveHighScore(entry: HighScoreEntry) {
-  const scores = loadHighScores();
-  scores.push(entry);
-  scores.sort((a, b) => b.wave - a.wave || b.kills - a.kills);
-  localStorage.setItem(HIGH_SCORES_KEY, JSON.stringify(scores.slice(0, 5)));
-}
-
-interface SaveWorker {
-  id: number;
-  x: number;
-  y: number;
-  hp: number;
-  maxHp: number;
-  unitType:
-    | 'farmer'
-    | 'swordsman'
-    | 'hero'
-    | 'catapult'
-    | 'cavalry'
-    | 'trebuchet';
-  group: number | null;
-  xp?: number;
-  level?: number;
-  gathering?: { type: 'tree' | 'gold' | 'stone'; idx: number } | null;
-  state?: string;
-}
-interface SaveData {
-  version: 1 | 2;
-  resources: Resources;
-  workers: SaveWorker[];
-  trees: ResourceNode[];
-  goldMines: ResourceNode[];
-  goldMine?: ResourceNode; // legacy — migrated to goldMines on load
-  stoneNodes: ResourceNode[];
-  placedBuildings: PlacedBuilding[];
-  buildingNextId: number;
-  farmhouse: { built: boolean; level: number };
-  upgrades: Upgrades;
-  wave: number;
-  killCount: number;
-  totalGold: number;
-  totalLumber: number;
-  totalStone: number;
-  playerBarnHp: number;
-  enemyBarnHp: number;
-  rallyPoint: { x: number; y: number } | null;
-  fogExplored: boolean[][];
-  guardTowerResearched?: boolean;
-  barracksTech?: { veteranTraining: boolean; warDrums: boolean };
-  blacksmithUpgrades?: { steelEdge: number; ironHide: number };
-}
-
-function loadSave(): SaveData | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) return null;
-    const d = JSON.parse(raw) as SaveData;
-    return d?.version === 1 ? d : null;
-  } catch {
-    return null;
-  }
-}
-
-// Blocked when a New Game reset is in progress — prevents auto-save from re-writing state
-// after clearSave() but before the new component finishes mounting.
-let _saveLocked = false;
-
-function writeSave(data: SaveData): void {
-  if (_saveLocked) return;
-  try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
-  } catch {
-    /* ignore quota errors */
-  }
-}
-
-function clearSave(): void {
-  _saveLocked = true;
-  try {
-    localStorage.removeItem(SAVE_KEY);
-  } catch {
-    /* ignore storage errors */
-  }
-  // Unlock after a tick — by then the new component has mounted and taken over
-  setTimeout(() => {
-    _saveLocked = false;
-  }, 500);
-}
-
-function makeUnit(
-  id: number,
-  x: number,
-  y: number,
-  unitType:
-    | 'farmer'
-    | 'swordsman'
-    | 'hero'
-    | 'catapult'
-    | 'cavalry'
-    | 'trebuchet'
-): WorkerState {
-  const maxHp =
-    unitType === 'hero'
-      ? HERO_MAX_HP
-      : unitType === 'swordsman'
-        ? SWORDSMAN_MAX_HP
-        : unitType === 'catapult'
-          ? CATAPULT_MAX_HP
-          : unitType === 'cavalry'
-            ? CAVALRY_MAX_HP
-            : unitType === 'trebuchet'
-              ? TREBUCHET_MAX_HP
-              : WORKER_MAX_HP;
-  return {
-    id,
-    x,
-    y,
-    selected: false,
-    movingTo: null,
-    path: [],
-    gathering: null,
-    attacking: null,
-    repairing: null,
-    chargeCooldown: 0,
-    sprintCooldown: 0,
-    sprinting: false,
-    waypoints: [],
-    attackMove: false,
-    attackMoveTarget: null,
-    carrying: { gold: 0, lumber: 0, stone: 0 },
-    state: 'idle',
-    group: null,
-    hp: maxHp,
-    maxHp,
-    patrol: null,
-    holdPosition: false,
-    unitType,
-    xp: 0,
-    level: 0,
-  };
-}
-// ---------------------------------
-
-// Web Audio sound helpers — procedural tones, no audio files required
-let _audioCtx: AudioContext | null = null;
-let _soundMuted = (() => {
-  try {
-    return localStorage.getItem('farm3j_muted') === '1';
-  } catch {
-    /* SSR/private mode */ return false;
-  }
-})();
-let _lastGoldSnd = 0;
-function getSoundMuted() {
-  return _soundMuted;
-}
-function setSoundMuted(v: boolean) {
-  _soundMuted = v;
-  try {
-    localStorage.setItem('farm3j_muted', v ? '1' : '0');
-  } catch {
-    /* ignore storage errors */
-  }
-}
-function getAudioCtx(): AudioContext | null {
-  if (typeof window === 'undefined') return null;
-  if (!_audioCtx || _audioCtx.state === 'closed')
-    _audioCtx = new AudioContext();
-  if (_audioCtx.state === 'suspended') _audioCtx.resume();
-  return _audioCtx;
-}
-function playTone(
-  freq: number,
-  duration: number,
-  vol = 0.18,
-  type: OscillatorType = 'square',
-  freqEnd?: number
-): void {
-  if (_soundMuted) return;
-  const ctx = getAudioCtx();
-  if (!ctx) return;
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.type = type;
-  osc.frequency.setValueAtTime(freq, ctx.currentTime);
-  if (freqEnd !== undefined)
-    osc.frequency.linearRampToValueAtTime(freqEnd, ctx.currentTime + duration);
-  gain.gain.setValueAtTime(vol, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
-  osc.start(ctx.currentTime);
-  osc.stop(ctx.currentTime + duration);
-}
-const Snd = {
-  select: () => playTone(880, 0.08, 0.12, 'sine'),
-  move: () => playTone(660, 0.1, 0.1, 'sine', 720),
-  attack: () => {
-    playTone(220, 0.06, 0.15, 'sawtooth');
-    playTone(180, 0.1, 0.08, 'square');
-  },
-  hit: () => playTone(140, 0.05, 0.12, 'square', 80),
-  death: () => {
-    playTone(300, 0.08, 0.14, 'sawtooth', 100);
-  },
-  buildComplete: () => {
-    playTone(523, 0.1, 0.14, 'sine');
-    playTone(659, 0.14, 0.12, 'sine');
-    playTone(784, 0.2, 0.1, 'sine');
-  },
-  // Throttled to once per 2s so it doesn't spam on every deposit
-  gold: () => {
-    const now = Date.now();
-    if (now - _lastGoldSnd < 2000) return;
-    _lastGoldSnd = now;
-    playTone(1047, 0.12, 0.1, 'sine', 1319);
-  },
-  waveWarning: () => {
-    playTone(220, 0.2, 0.16, 'sawtooth');
-    playTone(196, 0.3, 0.12, 'sawtooth');
-  },
-  victory: () => {
-    playTone(523, 0.12, 0.15, 'sine');
-    playTone(659, 0.16, 0.13, 'sine');
-    playTone(784, 0.2, 0.11, 'sine');
-    playTone(1047, 0.4, 0.1, 'sine');
-  },
-  defeat: () => {
-    playTone(392, 0.2, 0.14, 'sawtooth', 220);
-    playTone(220, 0.4, 0.12, 'sawtooth', 110);
-  },
-  unitReady: () => {
-    playTone(587, 0.08, 0.12, 'sine');
-    playTone(784, 0.14, 0.1, 'sine');
-  },
-  ability: () => {
-    playTone(440, 0.06, 0.14, 'sine');
-    playTone(660, 0.12, 0.12, 'sine', 880);
-  },
-  garrison: () => playTone(330, 0.1, 0.11, 'sine', 440),
-  charge: () => {
-    playTone(330, 0.05, 0.16, 'sawtooth');
-    playTone(494, 0.1, 0.14, 'sawtooth');
-  },
-  error: () => playTone(220, 0.08, 0.1, 'square', 180),
-};
-
-// Unit acknowledgement voice lines — WC3-style responses on command
-const ACK_MOVE: Record<string, string[]> = {
-  farmer: [
-    'On my way!',
-    'Right away!',
-    'Yes sir!',
-    'Moving out!',
-    'As you wish!',
-  ],
-  swordsman: [
-    'For the farm!',
-    'Moving out!',
-    'At once!',
-    'Aye!',
-    'Steel ready!',
-  ],
-  cavalry: ['Ride out!', 'Full gallop!', 'On it!', 'Charging!', 'To battle!'],
-  hero: ['Barnabas rides!', 'Lead the way!', 'For glory!', 'With honour!'],
-  catapult: ['Repositioning!', 'Loading up!', 'Moving!'],
-  trebuchet: ['Advancing!', 'New position!', 'Moving range!'],
-};
-const ACK_ATTACK: Record<string, string[]> = {
-  farmer: ["I'll try!", 'For the farm!', 'Defending!'],
-  swordsman: ['Attack!', 'Charging!', "They'll pay!", 'Engage!'],
-  cavalry: ['Trample them!', 'Charge!!', 'Crush them!'],
-  hero: ['Taste steel!', 'You dare?!', 'For glory!'],
-  catapult: ['Fire!', 'Launching!', 'Boulders away!'],
-  trebuchet: ['Incoming!', 'Fire for effect!'],
-};
-function pickAck(lines: string[]): string {
-  return lines[Math.floor(Math.random() * lines.length)] ?? '';
-}
-
-const Stat: React.FC<{
-  label: string;
-  value: string | number;
-  color: string;
-}> = ({ label, value, color }) => (
-  <div>
-    <div
-      style={{
-        color: '#64748b',
-        fontSize: 11,
-        textTransform: 'uppercase',
-        letterSpacing: 1,
-      }}
-    >
-      {label}
-    </div>
-    <div style={{ color, fontSize: 22, fontWeight: 700 }}>{value}</div>
-  </div>
-);
+// Re-exported for backwards compatibility — previously defined in this file.
+export { BUILDING_REQUIRES } from './game/constants';
 
 import type { DifficultyConfig } from './RTSGameRoot';
 
@@ -2244,16 +1315,6 @@ const RTSMap: React.FC<{
   }, [workers, heroRecruited, heroReviveAt, gameOver, addFloatingText]);
 
   // Projectile system — flying arrows/rocks/ice bolts
-  interface Projectile {
-    id: number;
-    fx: number;
-    fy: number;
-    tx: number;
-    ty: number;
-    type: 'arrow' | 'bolt' | 'rock' | 'ice' | 'poison';
-    createdAt: number;
-    duration: number;
-  }
   const [projectiles, setProjectiles] = useState<Projectile[]>([]);
   const projIdRef = useRef(0);
   // Move-target ring — flashes at right-click destination like WC3/AoE
