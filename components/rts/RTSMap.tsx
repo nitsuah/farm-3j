@@ -976,13 +976,13 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
     if (heroAbilityCooldown <= 0) return;
     const id = setInterval(() => setHeroAbilityCooldown(c => Math.max(0, c - 1)), 1000);
     return () => clearInterval(id);
-  }, [heroAbilityCooldown > 0]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [heroAbilityCooldown > 0]);
   const [heroShoutCooldown, setHeroShoutCooldown] = useState(0);
   useEffect(() => {
     if (heroShoutCooldown <= 0) return;
     const id = setInterval(() => setHeroShoutCooldown(c => Math.max(0, c - 1)), 1000);
     return () => clearInterval(id);
-  }, [heroShoutCooldown > 0]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [heroShoutCooldown > 0]);
   const [battleShoutUntil, setBattleShoutUntil] = useState(0);
   const battleShoutUntilRef = useRef(0);
   useEffect(() => { battleShoutUntilRef.current = battleShoutUntil; }, [battleShoutUntil]);
@@ -1008,12 +1008,12 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
     if (harvestBoonCooldown <= 0) return;
     const id = setInterval(() => setHarvestBoonCooldown(c => Math.max(0, c - 1)), 1000);
     return () => clearInterval(id);
-  }, [harvestBoonCooldown > 0]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [harvestBoonCooldown > 0]);
   useEffect(() => {
     if (earthquakeCooldown <= 0) return;
     const id = setInterval(() => setEarthquakeCooldown(c => Math.max(0, c - 1)), 1000);
     return () => clearInterval(id);
-  }, [earthquakeCooldown > 0]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [earthquakeCooldown > 0]);
   const [killCount, setKillCount] = useState(() => INITIAL_SAVE?.killCount ?? 0);
   const [totalGold, setTotalGold] = useState(() => INITIAL_SAVE?.totalGold ?? 0);
   const [totalLumber, setTotalLumber] = useState(() => INITIAL_SAVE?.totalLumber ?? 0);
@@ -1237,7 +1237,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
       });
     }, 5000);
     return () => clearInterval(id);
-  }, [addFloatingText]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [addFloatingText]);
 
   // Hero revive timer — ticks down, spawns hero on completion
   useEffect(() => {
