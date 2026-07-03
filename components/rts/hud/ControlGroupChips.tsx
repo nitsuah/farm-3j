@@ -56,7 +56,6 @@ export function ControlGroupChips({
           )}
         </div>
       )}
-
     </>
   );
 }

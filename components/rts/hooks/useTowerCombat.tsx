@@ -28,9 +28,7 @@ import {
   WATCHTOWER_DAMAGE,
 } from '../game/constants';
 import { tileDist } from '../game/map';
-import type {
-  EnemyGrunt,
-} from '../game/types';
+import type { EnemyGrunt } from '../game/types';
 import type { RTSGameContext } from './context';
 
 export function useTowerCombat(ctx: RTSGameContext) {
@@ -612,5 +610,4 @@ export function useTowerCombat(ctx: RTSGameContext) {
     }, 1000);
     return () => clearInterval(id);
   }, [gameOver, garrisoned.length, addFloatingText]);
-
 }

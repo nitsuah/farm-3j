@@ -210,7 +210,6 @@ export function GameOverOverlay({
             </div>
           );
         })()}
-
     </>
   );
 }

@@ -87,7 +87,6 @@ export function BuffIndicators({
           {phaseAnnouncement}
         </div>
       )}
-
     </>
   );
 }

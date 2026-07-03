@@ -512,7 +512,6 @@ export function ResourceBar({
           🗑 New Game
         </button>
       </div>
-
     </>
   );
 }

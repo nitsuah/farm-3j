@@ -169,5 +169,4 @@ export function useWorldTicks(ctx: RTSGameContext) {
     }, 500);
     return () => clearInterval(id);
   }, [gameOver, addFloatingText]);
-
 }

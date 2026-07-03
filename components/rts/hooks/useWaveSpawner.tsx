@@ -582,5 +582,4 @@ export function useWaveSpawner(ctx: RTSGameContext) {
       }
     }
   }, [gameSpeed, gameOver]);
-
 }

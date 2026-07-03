@@ -88,11 +88,7 @@ import {
   tileToSvg,
 } from './game/map';
 import { aStar } from './game/pathfinding';
-import {
-  loadSave,
-  saveHighScore,
-  writeSave,
-} from './game/persistence';
+import { loadSave, saveHighScore, writeSave } from './game/persistence';
 import { makeUnit } from './game/units';
 import {
   ACK_ATTACK,

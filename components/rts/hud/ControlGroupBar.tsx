@@ -61,7 +61,6 @@ export function ControlGroupBar({
           })}
         </div>
       )}
-
     </>
   );
 }
