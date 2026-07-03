@@ -207,7 +207,7 @@ const HERO_ITEM_DATA: Record<HeroItemId, { name: string; emoji: string; desc: st
   tome_xp:        { name: 'Tome of Knowledge',   emoji: '📖', desc: '+80 XP (instant)', consumable: true },
 };
 const HERO_MAX_ITEMS = 3;
-type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market' | 'blacksmith' | 'granary' | 'stable' | 'spikeTrap' | 'frostTower' | 'ballista' | 'poisonTower';
+type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market' | 'blacksmith' | 'granary' | 'stable' | 'spikeTrap' | 'frostTower' | 'ballista' | 'poisonTower' | 'supplyStore';
 
 interface ResourceNode { x: number; y: number; amount: number }
 interface Resources { gold: number; lumber: number; stone: number; food: number; foodCap: number }
@@ -386,15 +386,17 @@ const BUILDING_COSTS: Record<BuildingType, { gold: number; lumber: number; stone
   frostTower:    { gold: FROST_TOWER_GOLD_COST, lumber: FROST_TOWER_LUMBER_COST, stone: FROST_TOWER_STONE_COST, label: 'Frost Tower', foodCapBonus: 0 },
   ballista:      { gold: 100, lumber: 60, stone: 80, label: 'Ballista Tower', foodCapBonus: 0 },
   poisonTower:   { gold: 70,  lumber: 40, stone: 50, label: 'Poison Tower',   foodCapBonus: 0 },
+  supplyStore:   { gold: 80,  lumber: 40, stone: 20, label: 'Farm Supply Store', foodCapBonus: 0 },
 };
 
 const BUILDING_EMOJI: Record<BuildingType, string> = {
-  farmhouse: '🏠', lumberShed: '🪵', watchtower: '🗼', wall: '🧱', windmill: '💨', barracks: '🏯', siegeWorkshop: '⚙️', market: '🏪', blacksmith: '🔨', granary: '🌾', stable: '🐴', spikeTrap: '🪤', frostTower: '❄️', ballista: '🏹', poisonTower: '☠️',
+  farmhouse: '🏠', lumberShed: '🪵', watchtower: '🗼', wall: '🧱', windmill: '💨', barracks: '🏯', siegeWorkshop: '⚙️', market: '🏪', blacksmith: '🔨', granary: '🌾', stable: '🐴', spikeTrap: '🪤', frostTower: '❄️', ballista: '🏹', poisonTower: '☠️', supplyStore: '🛒',
 };
 
 const BUILDING_MAX_HP: Record<BuildingType, number> = {
   farmhouse: 200, lumberShed: 150, watchtower: 180, wall: 120, windmill: 100,
   barracks: 250, siegeWorkshop: 220, market: 160, blacksmith: 200, granary: 140, stable: 200, spikeTrap: 60, frostTower: FROST_TOWER_HP, ballista: BALLISTA_HP, poisonTower: POISON_TOWER_HP,
+  supplyStore: 180,
 };
 const BUILDING_GRUNT_DAMAGE = 8; // damage per hit from grunt to building
 const CONSTRUCTION_MS = 6000; // time to construct a building
@@ -872,6 +874,7 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
   const droppedItemsRef = useRef<DroppedItem[]>([]);
   useEffect(() => { droppedItemsRef.current = droppedItems; }, [droppedItems]);
   const dropItemIdRef = useRef(9000);
+  const pendingPickupRef = useRef<Set<number>>(new Set());
   const [waveAnnouncement, setWaveAnnouncement] = useState<string | null>(null);
   const [wavePreview, setWavePreview] = useState<string | null>(null);
   const previewTimerRef = useRef<number | null>(null);
@@ -1990,6 +1993,34 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
     }, 10000);
   }, [harvestBoonCooldown, harvestBoonActive, addFloatingText, workers]);
 
+  const SHOP_ITEMS: { itemId: HeroItemId; cost: number }[] = [
+    { itemId: 'boots_speed', cost: 75 },
+    { itemId: 'battle_sword', cost: 100 },
+    { itemId: 'shield_pendant', cost: 80 },
+    { itemId: 'healing_potion', cost: 50 },
+  ];
+
+  const handleBuyItem = useCallback((itemId: string, cost: number) => {
+    const id = itemId as HeroItemId;
+    if (resources.gold < cost) return;
+    if (heroItemsRef.current.length >= HERO_MAX_ITEMS) return;
+    if (id === 'tome_xp') {
+      setWorkers(ws => ws.map(w => {
+        if (w.unitType !== 'hero') return w;
+        const newXp = w.xp + 80;
+        const newLevel = newXp >= XP_TO_LEVEL_3 ? 3 : newXp >= XP_TO_LEVEL_2 ? 2 : newXp >= XP_TO_LEVEL_1 ? 1 : 0;
+        if (newLevel > w.level) { addFloatingText(Math.round(w.x), Math.round(w.y), `⭐ Level ${newLevel}!`, '#fbbf24'); return { ...w, xp: newXp, level: newLevel, maxHp: w.maxHp + VETERAN_HP_BONUS, hp: Math.min(w.hp + VETERAN_HP_BONUS, w.maxHp + VETERAN_HP_BONUS) }; }
+        return { ...w, xp: newXp };
+      }));
+    } else {
+      setHeroItems(hi => [...hi, { id: dropItemIdRef.current++, itemId: id }]);
+    }
+    setResources(r => ({ ...r, gold: r.gold - cost }));
+    const hero = workersRef.current.find(w => w.unitType === 'hero' && w.hp > 0);
+    if (hero) addFloatingText(Math.round(hero.x), Math.round(hero.y), `${HERO_ITEM_DATA[id].emoji} Purchased!`, '#c084fc');
+    Snd.ability();
+  }, [resources.gold, addFloatingText]);
+
   const handleDropItem = useCallback((itemSlotId: number) => {
     const item = heroItems.find(it => it.id === itemSlotId);
     if (!item) return;
@@ -2364,6 +2395,34 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
         return Math.round(ATTACK_INTERVAL_MS * moraleMult * shoutMult);
       };
 
+      // Hero item auto-pickup (must run outside setWorkers updater to avoid nested setState)
+      const heroForPickup = workersRef.current.find(w => w.unitType === 'hero' && w.hp > 0);
+      if (heroForPickup) {
+        const nearItem = droppedItemsRef.current.find(d =>
+          !pendingPickupRef.current.has(d.id) && tileDist(d.x, d.y, heroForPickup.x, heroForPickup.y) <= 1.0
+        );
+        if (nearItem) {
+          const data = HERO_ITEM_DATA[nearItem.itemId];
+          if (nearItem.itemId === 'tome_xp') {
+            pendingPickupRef.current.add(nearItem.id);
+            setWorkers(ws2 => ws2.map(u => {
+              if (u.unitType !== 'hero') return u;
+              const newXp = u.xp + 80;
+              const newLevel = newXp >= XP_TO_LEVEL_3 ? 3 : newXp >= XP_TO_LEVEL_2 ? 2 : newXp >= XP_TO_LEVEL_1 ? 1 : 0;
+              if (newLevel > u.level) { addFloatingText(Math.round(u.x), Math.round(u.y), `⭐ Level ${newLevel}!`, '#fbbf24'); return { ...u, xp: newXp, level: newLevel, maxHp: u.maxHp + VETERAN_HP_BONUS, hp: Math.min(u.hp + VETERAN_HP_BONUS, u.maxHp + VETERAN_HP_BONUS) }; }
+              return { ...u, xp: newXp };
+            }));
+            addFloatingText(Math.round(heroForPickup.x), Math.round(heroForPickup.y), `📖 +80 XP!`, '#c084fc');
+            setDroppedItems(ds => { pendingPickupRef.current.delete(nearItem.id); return ds.filter(d => d.id !== nearItem.id); });
+          } else if (heroItemsRef.current.length < HERO_MAX_ITEMS) {
+            pendingPickupRef.current.add(nearItem.id);
+            setHeroItems(hi => [...hi, { id: nearItem.id, itemId: nearItem.itemId }]);
+            setDroppedItems(ds => { pendingPickupRef.current.delete(nearItem.id); return ds.filter(d => d.id !== nearItem.id); });
+            addFloatingText(Math.round(heroForPickup.x), Math.round(heroForPickup.y), `${data.emoji} ${data.name}!`, '#c084fc');
+          }
+        }
+      }
+
       // Update workers
       setWorkers(ws => {
         const alive = ws.filter(w => w.hp > 0);
@@ -2566,31 +2625,6 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
                   setEnemyGrunts(gs => gs.map(eg => eg.id === g.id ? { ...eg, hp: Math.max(0, eg.hp - CAVALRY_TRAMPLE_DAMAGE * dt) } : eg));
                 }
               });
-            }
-            // Hero item auto-pickup: pick up dropped items within 1 tile
-            if (w.unitType === 'hero' && w.hp > 0) {
-              const nearItem = droppedItemsRef.current.find(d => tileDist(d.x, d.y, w.x, w.y) <= 1.0);
-              if (nearItem) {
-                const items = heroItemsRef.current;
-                const data = HERO_ITEM_DATA[nearItem.itemId];
-                if (data.consumable) {
-                  if (nearItem.itemId === 'tome_xp') {
-                    setWorkers(ws2 => ws2.map(u => {
-                      if (u.unitType !== 'hero') return u;
-                      const newXp = u.xp + 80;
-                      const newLevel = newXp >= XP_TO_LEVEL_3 ? 3 : newXp >= XP_TO_LEVEL_2 ? 2 : newXp >= XP_TO_LEVEL_1 ? 1 : 0;
-                      if (newLevel > u.level) { addFloatingText(Math.round(u.x), Math.round(u.y), `⭐ Level ${newLevel}!`, '#fbbf24'); return { ...u, xp: newXp, level: newLevel, maxHp: u.maxHp + VETERAN_HP_BONUS, hp: Math.min(u.hp + VETERAN_HP_BONUS, u.maxHp + VETERAN_HP_BONUS) }; }
-                      return { ...u, xp: newXp };
-                    }));
-                    addFloatingText(Math.round(w.x), Math.round(w.y), `📖 +80 XP!`, '#c084fc');
-                  }
-                  setDroppedItems(ds => ds.filter(d => d.id !== nearItem.id));
-                } else if (items.length < HERO_MAX_ITEMS) {
-                  setHeroItems(hi => [...hi, { id: nearItem.id, itemId: nearItem.itemId }]);
-                  setDroppedItems(ds => ds.filter(d => d.id !== nearItem.id));
-                  addFloatingText(Math.round(w.x), Math.round(w.y), `${data.emoji} ${data.name}!`, '#c084fc');
-                }
-              }
             }
             const sprintMult = w.sprinting ? CAVALRY_SPRINT_SPEED_MULT : 1;
             const itemSpeedBonus = w.unitType === 'hero' ? heroItemsRef.current.reduce((s, it) => s + (HERO_ITEM_DATA[it.itemId].speedBonus ?? 0), 0) : 0;
@@ -5959,6 +5993,8 @@ const RTSMap: React.FC<{ onNewGame?: () => void; difficulty?: DifficultyConfig }
         heroItems={heroItems}
         onDropItem={handleDropItem}
         onUsePotion={handleUsePotion}
+        shopItems={SHOP_ITEMS}
+        onBuyItem={handleBuyItem}
       />
     </div>
   );

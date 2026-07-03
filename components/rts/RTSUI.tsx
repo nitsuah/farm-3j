@@ -36,7 +36,7 @@ export interface WorkerState {
   level: number;
 }
 
-export type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market' | 'blacksmith' | 'granary' | 'stable' | 'spikeTrap' | 'frostTower' | 'ballista' | 'poisonTower';
+export type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market' | 'blacksmith' | 'granary' | 'stable' | 'spikeTrap' | 'frostTower' | 'ballista' | 'poisonTower' | 'supplyStore';
 
 export interface PlacedBuilding {
   id: number;
@@ -143,6 +143,8 @@ interface RTSUIProps {
   heroItems: { id: number; itemId: string }[];
   onDropItem: (slotId: number) => void;
   onUsePotion: () => void;
+  shopItems: { itemId: string; cost: number }[];
+  onBuyItem: (itemId: string, cost: number) => void;
   enemyBarnHp: number;
   enemyBarnMaxHp: number;
   playerBarnHp: number;
@@ -238,6 +240,8 @@ export const RTSUI: React.FC<RTSUIProps> = ({
   heroItems,
   onDropItem,
   onUsePotion,
+  shopItems,
+  onBuyItem,
 }) => {
   const HERO_ITEM_DATA_UI: Record<string, { name: string; emoji: string; desc: string; consumable?: boolean }> = {
     boots_speed:    { name: 'Boots of Swiftness', emoji: '👟', desc: '+0.4 move speed' },
@@ -370,9 +374,9 @@ export const RTSUI: React.FC<RTSUIProps> = ({
             </>
           ) : selectedType === 'building' && selectedBuilding ? (() => {
             const b = selectedBuilding;
-            const BUILDING_LABELS: Record<string, string> = { farmhouse: 'Farmhouse', lumberShed: 'Lumber Shed', watchtower: 'Watchtower', windmill: 'Windmill', barracks: 'Barracks', siegeWorkshop: 'Siege Workshop', market: 'Market', blacksmith: 'Blacksmith', granary: 'Granary', stable: 'Stable', spikeTrap: 'Spike Trap', frostTower: 'Frost Tower', ballista: 'Ballista', poisonTower: 'Poison Tower', wall: 'Wall' };
-            const BUILDING_EMOJI_MAP: Record<string, string> = { farmhouse: '🏠', lumberShed: '🪵', watchtower: '🗼', windmill: '💨', barracks: '🏯', siegeWorkshop: '⚙️', market: '🏪', blacksmith: '🔨', granary: '🌾', stable: '🐴', spikeTrap: '🪤', frostTower: '❄️', ballista: '🏹', poisonTower: '☠️', wall: '🧱' };
-            const BUILDING_DESCS: Record<string, string> = { watchtower: 'Ranged attack · garrison 3 units', barracks: 'Trains swordsmen · upgrade to guard', frostTower: 'Slows enemies · 5-tile range', ballista: 'High dmg · long range · single target', poisonTower: 'Poisons AoE · 3-tile range', siegeWorkshop: 'Builds catapults & trebuchets', market: 'Passive gold income +2/5s', blacksmith: 'Upgrade unit attack & armor', stable: 'Trains cavalry units', granary: '+15 food cap', lumberShed: 'Bonus lumber drop-off speed', windmill: '+2🪙 every 5s', spikeTrap: 'Damage grunts that step on it', farmhouse: '+5 food cap per level' };
+            const BUILDING_LABELS: Record<string, string> = { farmhouse: 'Farmhouse', lumberShed: 'Lumber Shed', watchtower: 'Watchtower', windmill: 'Windmill', barracks: 'Barracks', siegeWorkshop: 'Siege Workshop', market: 'Market', blacksmith: 'Blacksmith', granary: 'Granary', stable: 'Stable', spikeTrap: 'Spike Trap', frostTower: 'Frost Tower', ballista: 'Ballista', poisonTower: 'Poison Tower', wall: 'Wall', supplyStore: 'Farm Supply Store' };
+            const BUILDING_EMOJI_MAP: Record<string, string> = { farmhouse: '🏠', lumberShed: '🪵', watchtower: '🗼', windmill: '💨', barracks: '🏯', siegeWorkshop: '⚙️', market: '🏪', blacksmith: '🔨', granary: '🌾', stable: '🐴', spikeTrap: '🪤', frostTower: '❄️', ballista: '🏹', poisonTower: '☠️', wall: '🧱', supplyStore: '🛒' };
+            const BUILDING_DESCS: Record<string, string> = { watchtower: 'Ranged attack · garrison 3 units', barracks: 'Trains swordsmen · upgrade to guard', frostTower: 'Slows enemies · 5-tile range', ballista: 'High dmg · long range · single target', poisonTower: 'Poisons AoE · 3-tile range', siegeWorkshop: 'Builds catapults & trebuchets', market: 'Passive gold income +2/5s', blacksmith: 'Upgrade unit attack & armor', stable: 'Trains cavalry units', granary: '+15 food cap', lumberShed: 'Bonus lumber drop-off speed', windmill: '+2🪙 every 5s', spikeTrap: 'Damage grunts that step on it', farmhouse: '+5 food cap per level', supplyStore: 'Hero item shop · buy with gold' };
             const hpP = b.hp / b.maxHp;
             const isTower = b.type === 'watchtower' || b.type === 'frostTower' || b.type === 'ballista' || b.type === 'poisonTower';
             const tgUnits = isTower ? (towerGarrison[b.id] ?? []) : [];
@@ -561,7 +565,31 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                 {b.hp < b.maxHp && (
                   <div className="col-span-2 text-xs text-amber-400/80 py-1 text-center">🔧 Damaged — right-click with workers to repair</div>
                 )}
-                {b.type !== 'watchtower' && !isAttackTower && b.type !== 'barracks' && b.hp >= b.maxHp && (
+                {b.type === 'supplyStore' && (
+                  <div className="col-span-2">
+                    <div className="mb-1 text-xs font-semibold text-violet-300">🛒 Shop — Hero Items</div>
+                    <div className="grid grid-cols-2 gap-1">
+                      {shopItems.map(s => {
+                        const data = HERO_ITEM_DATA_UI[s.itemId];
+                        if (!data) return null;
+                        const canBuy = resources.gold >= s.cost && heroItems.length < 3;
+                        return (
+                          <button key={s.itemId} type="button"
+                            className={`flex flex-col items-center rounded border py-1.5 text-[10px] ${canBuy ? 'border-violet-500/60 bg-violet-900/20 text-violet-100 hover:bg-violet-900/40 cursor-pointer' : 'border-slate-700/40 bg-slate-800/30 text-slate-500 cursor-not-allowed opacity-50'}`}
+                            onClick={() => canBuy && onBuyItem(s.itemId, s.cost)}
+                            title={`${data.name}: ${data.desc}`}
+                            disabled={!canBuy}>
+                            <span className="text-base">{data.emoji}</span>
+                            <span className="font-medium">{data.name}</span>
+                            <span className="text-yellow-400">{s.cost}🪙</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {heroItems.length >= 3 && <div className="mt-1 text-center text-[10px] text-amber-400">Inventory full (3/3)</div>}
+                  </div>
+                )}
+                {b.type !== 'watchtower' && !isAttackTower && b.type !== 'barracks' && b.type !== 'supplyStore' && b.hp >= b.maxHp && (
                   <div className="col-span-2 text-xs text-slate-500 py-1 text-center">No actions available</div>
                 )}
               </div>
@@ -723,6 +751,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                       { key: 'frostTower',   icon: '❄️', label: 'Frost Tower',border: 'border-cyan-700/70',   bg: 'bg-cyan-900/20',   hover: 'hover:bg-cyan-800/30',   text: 'text-cyan-200',   desc: 'Slow + 5 dmg' },
                       { key: 'ballista',     icon: '🏹', label: 'Ballista',   border: 'border-yellow-700/70', bg: 'bg-yellow-900/20', hover: 'hover:bg-yellow-800/30', text: 'text-yellow-200', desc: '18 pierce, 6.5 range' },
                       { key: 'poisonTower',  icon: '☠️', label: 'Poison Twr', border: 'border-green-500/70',  bg: 'bg-green-500/15',  hover: 'hover:bg-green-500/30',  text: 'text-green-100',  desc: '8+3/s, 5-tile' },
+                      { key: 'supplyStore',  icon: '🛒', label: 'Supply Store',border: 'border-violet-600/70', bg: 'bg-violet-900/20', hover: 'hover:bg-violet-900/40', text: 'text-violet-100', desc: 'Hero item shop' },
                     ];
                     return (
                       <div className="grid grid-cols-3 gap-1.5 pt-1">
