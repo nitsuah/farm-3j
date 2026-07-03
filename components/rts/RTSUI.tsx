@@ -36,7 +36,7 @@ export interface WorkerState {
   level: number;
 }
 
-export type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market' | 'blacksmith' | 'granary' | 'stable' | 'spikeTrap' | 'frostTower' | 'ballista' | 'poisonTower' | 'supplyStore';
+export type BuildingType = 'farmhouse' | 'lumberShed' | 'watchtower' | 'wall' | 'windmill' | 'barracks' | 'siegeWorkshop' | 'market' | 'blacksmith' | 'granary' | 'stable' | 'spikeTrap' | 'frostTower' | 'ballista' | 'poisonTower' | 'supplyStore' | 'miningCamp';
 
 // Tech tree: building → required building (keep in sync with RTSMap.tsx BUILDING_REQUIRES)
 const BUILDING_REQUIRES: Partial<Record<BuildingType, BuildingType>> = {
@@ -385,9 +385,9 @@ export const RTSUI: React.FC<RTSUIProps> = ({
             </>
           ) : selectedType === 'building' && selectedBuilding ? (() => {
             const b = selectedBuilding;
-            const BUILDING_LABELS: Record<string, string> = { farmhouse: 'Farmhouse', lumberShed: 'Lumber Shed', watchtower: 'Watchtower', windmill: 'Windmill', barracks: 'Barracks', siegeWorkshop: 'Siege Workshop', market: 'Market', blacksmith: 'Blacksmith', granary: 'Granary', stable: 'Stable', spikeTrap: 'Spike Trap', frostTower: 'Frost Tower', ballista: 'Ballista', poisonTower: 'Poison Tower', wall: 'Wall', supplyStore: 'Farm Supply Store' };
-            const BUILDING_EMOJI_MAP: Record<string, string> = { farmhouse: '🏠', lumberShed: '🪵', watchtower: '🗼', windmill: '💨', barracks: '🏯', siegeWorkshop: '⚙️', market: '🏪', blacksmith: '🔨', granary: '🌾', stable: '🐴', spikeTrap: '🪤', frostTower: '❄️', ballista: '🏹', poisonTower: '☠️', wall: '🧱', supplyStore: '🛒' };
-            const BUILDING_DESCS: Record<string, string> = { watchtower: 'Ranged attack · garrison 3 units', barracks: 'Trains swordsmen · upgrade to guard', frostTower: 'Slows enemies · 5-tile range', ballista: 'High dmg · long range · single target', poisonTower: 'Poisons AoE · 3-tile range', siegeWorkshop: 'Builds catapults & trebuchets', market: 'Passive gold income +2/5s', blacksmith: 'Upgrade unit attack & armor', stable: 'Trains cavalry units', granary: '+15 food cap', lumberShed: 'Bonus lumber drop-off speed', windmill: '+2🪙 every 5s', spikeTrap: 'Damage grunts that step on it', farmhouse: '+5 food cap per level', supplyStore: 'Hero item shop · buy with gold' };
+            const BUILDING_LABELS: Record<string, string> = { farmhouse: 'Farmhouse', lumberShed: 'Lumber Shed', watchtower: 'Watchtower', windmill: 'Windmill', barracks: 'Barracks', siegeWorkshop: 'Siege Workshop', market: 'Market', blacksmith: 'Blacksmith', granary: 'Granary', stable: 'Stable', spikeTrap: 'Spike Trap', frostTower: 'Frost Tower', ballista: 'Ballista', poisonTower: 'Poison Tower', wall: 'Wall', supplyStore: 'Farm Supply Store', miningCamp: 'Mining Camp' };
+            const BUILDING_EMOJI_MAP: Record<string, string> = { farmhouse: '🏠', lumberShed: '🪵', watchtower: '🗼', windmill: '💨', barracks: '🏯', siegeWorkshop: '⚙️', market: '🏪', blacksmith: '🔨', granary: '🌾', stable: '🐴', spikeTrap: '🪤', frostTower: '❄️', ballista: '🏹', poisonTower: '☠️', wall: '🧱', supplyStore: '🛒', miningCamp: '⛏️' };
+            const BUILDING_DESCS: Record<string, string> = { watchtower: 'Ranged attack · garrison 3 units', barracks: 'Trains swordsmen · upgrade to guard', frostTower: 'Slows enemies · 5-tile range', ballista: 'High dmg · long range · single target', poisonTower: 'Poisons AoE · 3-tile range', siegeWorkshop: 'Builds catapults & trebuchets', market: 'Passive gold income +2/5s', blacksmith: 'Upgrade unit attack & armor', stable: 'Trains cavalry units', granary: '+15 food cap', lumberShed: 'Lumber drop-off · gather bonus', windmill: '+2🪙 every 5s', spikeTrap: 'Damage grunts that step on it', farmhouse: '+5 food cap per level', supplyStore: 'Hero item shop · buy with gold', miningCamp: 'Gold/stone drop-off site' };
             const hpP = b.hp / b.maxHp;
             const isTower = b.type === 'watchtower' || b.type === 'frostTower' || b.type === 'ballista' || b.type === 'poisonTower';
             const tgUnits = isTower ? (towerGarrison[b.id] ?? []) : [];
@@ -763,6 +763,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                       { key: 'ballista',     icon: '🏹', label: 'Ballista',   border: 'border-yellow-700/70', bg: 'bg-yellow-900/20', hover: 'hover:bg-yellow-800/30', text: 'text-yellow-200', desc: '18 pierce, 6.5 range' },
                       { key: 'poisonTower',  icon: '☠️', label: 'Poison Twr', border: 'border-green-500/70',  bg: 'bg-green-500/15',  hover: 'hover:bg-green-500/30',  text: 'text-green-100',  desc: '8+3/s, 5-tile' },
                       { key: 'supplyStore',  icon: '🛒', label: 'Supply Store',border: 'border-violet-600/70', bg: 'bg-violet-900/20', hover: 'hover:bg-violet-900/40', text: 'text-violet-100', desc: 'Hero item shop' },
+                      { key: 'miningCamp',   icon: '⛏️', label: 'Mining Camp', border: 'border-yellow-500/70', bg: 'bg-yellow-900/20', hover: 'hover:bg-yellow-900/40', text: 'text-yellow-100', desc: 'Gold/stone drop-off' },
                     ];
                     const builtTypes = new Set(placedBuildings.filter(b => !b.constructing).map(b => b.type));
                     if (farmhouse.built) builtTypes.add('farmhouse');
