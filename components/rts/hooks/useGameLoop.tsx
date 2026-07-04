@@ -94,6 +94,16 @@ import {
   WARCHIEF_STOMP_RADIUS,
   WARCHIEF_STOMP_SLOW_MS,
   WARCHIEF_XP_REWARD,
+  WARLORD_DMG,
+  WARLORD_GOLD_REWARD,
+  WARLORD_SHIELD_BASH_COOLDOWN_MS,
+  WARLORD_SHIELD_BASH_RANGE,
+  WARLORD_SHIELD_BASH_STUN_MS,
+  WARLORD_SPEED,
+  WARLORD_WAR_CRY_COOLDOWN_MS,
+  WARLORD_WAR_CRY_RADIUS,
+  WARLORD_WAR_CRY_SLOW_MS,
+  WARLORD_XP_REWARD,
   WAR_RAM_ATTACK_MS,
   WAR_RAM_DAMAGE,
   WAR_RAM_GOLD_REWARD,
@@ -120,6 +130,7 @@ import { Snd } from '../game/sound';
 import type {
   BuildingType,
   EnemyGrunt,
+  EnemyWarlord,
   HeroItemId,
   ResourceNode,
 } from '../game/types';
@@ -156,6 +167,7 @@ export function useGameLoop(ctx: RTSGameContext) {
     enemyTrollsRef,
     enemyWallsRef,
     enemyWarchiefsRef,
+    enemyWarlordsRef,
     enemyWitchDoctorsRef,
     fogExploredRef,
     fogVisibleRef,
@@ -196,6 +208,7 @@ export function useGameLoop(ctx: RTSGameContext) {
     setEnemyTrolls,
     setEnemyWalls,
     setEnemyWarchiefs,
+    setEnemyWarlords,
     setEnemyWitchDoctors,
     setFogExplored,
     setFogVisible,
@@ -496,6 +509,20 @@ export function useGameLoop(ctx: RTSGameContext) {
                 movingTo: null,
                 path: [],
               };
+            const nearWL = enemyWarlordsRef.current.find(
+              wl => wl.hp > 0 && tileDist(w.x, w.y, wl.x, wl.y) <= AM_SCAN
+            );
+            if (nearWL)
+              return {
+                ...w,
+                attacking: {
+                  targetType: 'warlord' as const,
+                  warlordId: nearWL.id,
+                },
+                state: 'attacking' as const,
+                movingTo: null,
+                path: [],
+              };
           }
           // Hold position: stay put, auto-attack nearby enemies without chasing
           if (w.holdPosition) {
@@ -604,6 +631,19 @@ export function useGameLoop(ctx: RTSGameContext) {
                   attacking: {
                     targetType: 'warchief' as const,
                     warchiefId: nearWCH.id,
+                  },
+                  state: 'attacking' as const,
+                };
+              const nearWLH = enemyWarlordsRef.current.find(
+                wl =>
+                  wl.hp > 0 && tileDist(w.x, w.y, wl.x, wl.y) <= HP_RANGE
+              );
+              if (nearWLH)
+                return {
+                  ...w,
+                  attacking: {
+                    targetType: 'warlord' as const,
+                    warlordId: nearWLH.id,
                   },
                   state: 'attacking' as const,
                 };
@@ -718,6 +758,18 @@ export function useGameLoop(ctx: RTSGameContext) {
                 attacking: {
                   targetType: 'warchief' as const,
                   warchiefId: nearWCA.id,
+                },
+                state: 'attacking' as const,
+              };
+            const nearWLA = enemyWarlordsRef.current.find(
+              wl => wl.hp > 0 && tileDist(w.x, w.y, wl.x, wl.y) <= AGG_RANGE
+            );
+            if (nearWLA)
+              return {
+                ...w,
+                attacking: {
+                  targetType: 'warlord' as const,
+                  warlordId: nearWLA.id,
                 },
                 state: 'attacking' as const,
               };
@@ -2635,6 +2687,144 @@ export function useGameLoop(ctx: RTSGameContext) {
                   }
                 }, moraleWC);
               }
+            } else if (w.attacking.targetType === 'warlord') {
+              const wlId = (
+                w.attacking as { targetType: 'warlord'; warlordId: number }
+              ).warlordId;
+              const wlTarget = enemyWarlordsRef.current.find(
+                wl => wl.id === wlId && wl.hp > 0
+              );
+              if (!wlTarget) return { ...w, attacking: null, state: 'idle' };
+              const distToWL = tileDist(w.x, w.y, wlTarget.x, wlTarget.y);
+              if (distToWL > 1.8) {
+                const p = aStar(
+                  INITIAL_TILES,
+                  { x: Math.round(w.x), y: Math.round(w.y) },
+                  { x: Math.round(wlTarget.x), y: Math.round(wlTarget.y) }
+                );
+                return {
+                  ...w,
+                  movingTo: p[0] ?? { x: wlTarget.x, y: wlTarget.y },
+                  path: p.slice(1),
+                  state: 'moving',
+                };
+              }
+              if (!attackT[w.id]) {
+                const capturedWLX = Math.round(wlTarget.x),
+                  capturedWLY = Math.round(wlTarget.y);
+                const capturedWLId = wlId;
+                const unitBonusWL =
+                  w.unitType === 'hero'
+                    ? HERO_DAMAGE_BONUS +
+                      heroItemsRef.current.reduce(
+                        (s, it) =>
+                          s + (HERO_ITEM_DATA[it.itemId].dmgBonus ?? 0),
+                        0
+                      )
+                    : w.unitType === 'swordsman'
+                      ? SWORDSMAN_DAMAGE_BONUS
+                      : w.unitType === 'cavalry'
+                        ? CAVALRY_DAMAGE_BONUS
+                        : 0;
+                const capturedVetWL = w.level;
+                const moraleWL = getMoraleMs(w.x, w.y);
+                attackT[w.id] = window.setTimeout(() => {
+                  delete attackTimeoutsRef.current[w.id];
+                  const dmg =
+                    ATTACK_DAMAGE +
+                    upgradesRef.current.sharperTools * 5 +
+                    blacksmithUpgradesRef.current.steelEdge * 5 +
+                    (shrineWarBuffRef.current ? 5 : 0) +
+                    (barracksTechRef.current.warDrums ? 8 : 0) +
+                    unitBonusWL +
+                    capturedVetWL * VETERAN_ATK_BONUS;
+                  setEnemyWarlords(wls =>
+                    wls.map(wl =>
+                      wl.id === capturedWLId
+                        ? { ...wl, hp: Math.max(0, wl.hp - dmg) }
+                        : wl
+                    )
+                  );
+                  addFloatingText(capturedWLX, capturedWLY, `-${dmg}`, '#ef4444');
+                  const wlCurrent = enemyWarlordsRef.current.find(
+                    wl => wl.id === capturedWLId
+                  );
+                  if (wlCurrent && wlCurrent.hp - dmg <= 0) {
+                    setResources(r => ({
+                      ...r,
+                      gold: r.gold + WARLORD_GOLD_REWARD,
+                    }));
+                    addFloatingText(
+                      capturedWLX,
+                      capturedWLY,
+                      `⚔ +${WARLORD_GOLD_REWARD}🪙`,
+                      '#c4b5fd'
+                    );
+                    // Warlord drops a rare item (always battle_sword or boots_speed)
+                    const wlDropPool: HeroItemId[] = ['battle_sword', 'boots_speed'];
+                    const wlDrop =
+                      wlDropPool[Math.floor(Math.random() * wlDropPool.length)]!;
+                    setDroppedItems(ds => [
+                      ...ds,
+                      {
+                        id: dropItemIdRef.current++,
+                        itemId: wlDrop,
+                        x: capturedWLX,
+                        y: capturedWLY,
+                      },
+                    ]);
+                    addFloatingText(
+                      capturedWLX,
+                      capturedWLY,
+                      `⚔ ${HERO_ITEM_DATA[wlDrop].emoji} Dropped!`,
+                      '#c084fc'
+                    );
+                    setWorkers(ws2 =>
+                      ws2.map(u => {
+                        const isAttacker = u.id === w.id;
+                        const isNearby =
+                          !isAttacker &&
+                          u.hp > 0 &&
+                          tileDist(u.x, u.y, capturedWLX, capturedWLY) <= 3;
+                        const xpGain = isAttacker
+                          ? WARLORD_XP_REWARD
+                          : isNearby
+                            ? Math.round(WARLORD_XP_REWARD * 0.25)
+                            : 0;
+                        if (xpGain === 0) return u;
+                        const newXp = u.xp + xpGain;
+                        const newLevel =
+                          newXp >= XP_TO_LEVEL_3
+                            ? 3
+                            : newXp >= XP_TO_LEVEL_2
+                              ? 2
+                              : newXp >= XP_TO_LEVEL_1
+                                ? 1
+                                : 0;
+                        if (newLevel > u.level) {
+                          addFloatingText(
+                            Math.round(u.x),
+                            Math.round(u.y),
+                            `⭐ Level ${newLevel}!`,
+                            '#fbbf24'
+                          );
+                          return {
+                            ...u,
+                            xp: newXp,
+                            level: newLevel,
+                            maxHp: u.maxHp + VETERAN_HP_BONUS,
+                            hp: Math.min(
+                              u.hp + VETERAN_HP_BONUS,
+                              u.maxHp + VETERAN_HP_BONUS
+                            ),
+                          };
+                        }
+                        return { ...u, xp: newXp };
+                      })
+                    );
+                  }
+                }, moraleWL);
+              }
             } else {
               if (!attackT[w.id]) {
                 const capturedWX = Math.round(w.x),
@@ -4149,6 +4339,142 @@ export function useGameLoop(ctx: RTSGameContext) {
             wallSetWC2
           );
           return { ...wc2, movingTo: pWC[0] ?? BARN_POS, path: pWC.slice(1) };
+        });
+      });
+
+      // Update Enemy Warlords (War Cry slow AoE + Shield Bash hero stun + march to barn)
+      setEnemyWarlords((wls: EnemyWarlord[]) => {
+        const alive = wls.filter(wl => wl.hp > 0);
+        const killed = wls.filter(wl => wl.hp <= 0);
+        killed.forEach(wl => {
+          setResources(r => ({ ...r, gold: r.gold + WARLORD_GOLD_REWARD }));
+          addFloatingText(
+            Math.round(wl.x),
+            Math.round(wl.y),
+            `⚔ +${WARLORD_GOLD_REWARD}🪙`,
+            '#c4b5fd'
+          );
+          const wlDropPool: HeroItemId[] = ['battle_sword', 'boots_speed'];
+          const wlDrop = wlDropPool[Math.floor(Math.random() * wlDropPool.length)]!;
+          setDroppedItems(ds => [
+            ...ds,
+            {
+              id: dropItemIdRef.current++,
+              itemId: wlDrop,
+              x: Math.round(wl.x),
+              y: Math.round(wl.y),
+            },
+          ]);
+          addFloatingText(
+            Math.round(wl.x),
+            Math.round(wl.y),
+            `⚔ ${HERO_ITEM_DATA[wlDrop].emoji} Dropped!`,
+            '#c084fc'
+          );
+        });
+        const now = Date.now();
+        return alive.map(wl => {
+          // War Cry: slow all workers in radius
+          if (now - wl.lastWarCryAt >= WARLORD_WAR_CRY_COOLDOWN_MS) {
+            const slowUntil = now + WARLORD_WAR_CRY_SLOW_MS;
+            setWorkers(ws =>
+              ws.map(w => {
+                if (
+                  w.hp <= 0 ||
+                  tileDist(w.x, w.y, wl.x, wl.y) > WARLORD_WAR_CRY_RADIUS
+                )
+                  return w;
+                addFloatingText(
+                  Math.round(w.x),
+                  Math.round(w.y),
+                  '🌀SLOWED!',
+                  '#a855f7'
+                );
+                return { ...w, stunUntil: slowUntil };
+              })
+            );
+            addFloatingText(
+              Math.round(wl.x),
+              Math.round(wl.y),
+              '📣 WAR CRY!',
+              '#a855f7'
+            );
+            return { ...wl, lastWarCryAt: now };
+          }
+          // Shield Bash: stun the closest hero within bash range
+          if (now - wl.lastShieldBashAt >= WARLORD_SHIELD_BASH_COOLDOWN_MS) {
+            const heroInRange = workersRef.current.find(
+              w =>
+                w.unitType === 'hero' &&
+                w.hp > 0 &&
+                tileDist(w.x, w.y, wl.x, wl.y) <= WARLORD_SHIELD_BASH_RANGE
+            );
+            if (heroInRange) {
+              const stunUntil = now + WARLORD_SHIELD_BASH_STUN_MS;
+              setWorkers(ws =>
+                ws.map(w => {
+                  if (w.id !== heroInRange.id) return w;
+                  addFloatingText(
+                    Math.round(w.x),
+                    Math.round(w.y),
+                    '🛡 SHIELD BASH!',
+                    '#ef4444'
+                  );
+                  return { ...w, stunUntil };
+                })
+              );
+              return { ...wl, lastShieldBashAt: now };
+            }
+          }
+          // Attack barn when adjacent
+          const distToBarnWL = tileDist(wl.x, wl.y, BARN_POS.x, BARN_POS.y);
+          if (distToBarnWL <= 1.2) {
+            addDmgLog('⚔️ Warlord', WARLORD_DMG);
+            setPlayerBarnHp(hp => Math.max(0, hp - WARLORD_DMG));
+            addFloatingText(
+              BARN_POS.x,
+              BARN_POS.y,
+              `-${WARLORD_DMG}🏰`,
+              '#fca5a5'
+            );
+            return { ...wl, state: 'attacking' as const };
+          }
+          // March toward barn
+          if (wl.movingTo) {
+            const dx = wl.movingTo.x - wl.x,
+              dy = wl.movingTo.y - wl.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 0.1) {
+              const next = wl.path[0] ?? null;
+              return {
+                ...wl,
+                x: wl.movingTo.x,
+                y: wl.movingTo.y,
+                movingTo: next,
+                path: wl.path.slice(1),
+                state: 'moving' as const,
+              };
+            }
+            return {
+              ...wl,
+              x: wl.x + (dx / dist) * Math.min(WARLORD_SPEED * dt, dist),
+              y: wl.y + (dy / dist) * Math.min(WARLORD_SPEED * dt, dist),
+              state: 'moving' as const,
+            };
+          }
+          const wallSetWL = new Set(
+            placedBuildingsRef.current
+              .filter(b => b.type === 'wall')
+              .map(b => `${b.x},${b.y}`)
+          );
+          const pWL = aStar(
+            INITIAL_TILES,
+            { x: Math.round(wl.x), y: Math.round(wl.y) },
+            BARN_POS,
+            true,
+            wallSetWL
+          );
+          return { ...wl, movingTo: pWL[0] ?? BARN_POS, path: pWL.slice(1) };
         });
       });
 

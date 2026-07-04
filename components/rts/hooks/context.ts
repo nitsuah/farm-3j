@@ -17,6 +17,7 @@ import type {
   EnemyTower,
   EnemyTroll,
   EnemyWarchief,
+  EnemyWarlord,
   EnemyWitchDoctor,
   HeroItem,
   LootCrate,
@@ -83,6 +84,7 @@ export interface RTSGameContext {
   setEnemyTrolls: Setter<EnemyTroll[]>;
   setEnemyWalls: Setter<EnemyTower[]>;
   setEnemyWarchiefs: Setter<EnemyWarchief[]>;
+  setEnemyWarlords: Setter<EnemyWarlord[]>;
   setEnemyWitchDoctors: Setter<EnemyWitchDoctor[]>;
   setFogExplored: Setter<boolean[][]>;
   setFogVisible: Setter<boolean[][]>;
@@ -144,6 +146,7 @@ export interface RTSGameContext {
   enemyWallIdRef: Ref<number>;
   enemyWallsRef: Ref<EnemyTower[]>;
   enemyWarchiefsRef: Ref<EnemyWarchief[]>;
+  enemyWarlordsRef: Ref<EnemyWarlord[]>;
   enemyWitchDoctorsRef: Ref<EnemyWitchDoctor[]>;
   fogExploredRef: Ref<boolean[][]>;
   fogVisibleRef: Ref<boolean[][]>;
@@ -201,6 +204,7 @@ export interface RTSGameContext {
   upgradesRef: Ref<Upgrades>;
   upkeepMultRef: Ref<number>;
   warchiefIdRef: Ref<number>;
+  warlordIdRef: Ref<number>;
   watchtowerTimersRef: Ref<Record<number, number>>;
   waveRef: Ref<number>;
   waveTimerRemainingRef: Ref<number | null>;

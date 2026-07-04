@@ -205,6 +205,7 @@ interface RTSUIProps {
     enemyWalls: { x: number; y: number }[];
     lootCrates: { x: number; y: number }[];
     droppedItems: { x: number; y: number }[];
+    warlords: { x: number; y: number }[];
   };
 }
 
@@ -2034,6 +2035,16 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                 points={`${d.x},${d.y - 0.5} ${d.x + 0.4},${d.y} ${d.x},${d.y + 0.5} ${d.x - 0.4},${d.y}`}
                 fill="#a855f7"
                 opacity={0.9}
+              />
+            ))}
+            {/* Warlords — large dark-purple star */}
+            {minimapData.warlords.map((wl, i) => (
+              <polygon
+                key={`warlord${i}`}
+                points={`${wl.x},${wl.y - 1.4} ${wl.x + 0.5},${wl.y - 0.5} ${wl.x + 1.4},${wl.y - 0.4} ${wl.x + 0.7},${wl.y + 0.4} ${wl.x + 0.9},${wl.y + 1.4} ${wl.x},${wl.y + 0.8} ${wl.x - 0.9},${wl.y + 1.4} ${wl.x - 0.7},${wl.y + 0.4} ${wl.x - 1.4},${wl.y - 0.4} ${wl.x - 0.5},${wl.y - 0.5}`}
+                fill="#7c3aed"
+                stroke="#c4b5fd"
+                strokeWidth={0.15}
               />
             ))}
             {/* Attack pings — expanding red rings */}

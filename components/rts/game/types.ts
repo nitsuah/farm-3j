@@ -31,7 +31,8 @@ export interface WorkerState {
     | { targetType: 'sapper'; sapperId: number }
     | { targetType: 'necromancer'; necromancerId: number }
     | { targetType: 'witchDoctor'; witchDoctorId: number }
-    | { targetType: 'warchief'; warchiefId: number };
+    | { targetType: 'warchief'; warchiefId: number }
+    | { targetType: 'warlord'; warlordId: number };
   stunUntil?: number;
   assistBuildId?: number;
   repairing: null | { buildingId: number };
@@ -258,6 +259,19 @@ export interface EnemyWarchief {
   path: { x: number; y: number }[];
   state: 'moving' | 'attacking' | 'stomping';
   lastStompAt: number;
+}
+
+export interface EnemyWarlord {
+  id: number;
+  x: number;
+  y: number;
+  hp: number;
+  maxHp: number;
+  movingTo: { x: number; y: number } | null;
+  path: { x: number; y: number }[];
+  state: 'moving' | 'attacking';
+  lastWarCryAt: number;
+  lastShieldBashAt: number;
 }
 
 export interface NeutralCreep {

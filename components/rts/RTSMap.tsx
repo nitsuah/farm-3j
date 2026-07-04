@@ -71,6 +71,7 @@ import type {
   EnemyTower,
   EnemyTroll,
   EnemyWarchief,
+  EnemyWarlord,
   EnemyWitchDoctor,
   FloatingText,
   HeroItem,
@@ -521,6 +522,12 @@ const RTSMap: React.FC<{
     enemyWarchiefsRef.current = enemyWarchiefs;
   }, [enemyWarchiefs]);
   const warchiefIdRef = useRef(9000);
+  const [enemyWarlords, setEnemyWarlords] = useState<EnemyWarlord[]>([]);
+  const enemyWarlordsRef = useRef<EnemyWarlord[]>([]);
+  useEffect(() => {
+    enemyWarlordsRef.current = enemyWarlords;
+  }, [enemyWarlords]);
+  const warlordIdRef = useRef(10000);
   const [deadGruntPositions, setDeadGruntPositions] = useState<
     { x: number; y: number; t: number }[]
   >([]);
@@ -1282,6 +1289,7 @@ const RTSMap: React.FC<{
     enemyWallIdRef,
     enemyWallsRef,
     enemyWarchiefsRef,
+    enemyWarlordsRef,
     enemyWitchDoctorsRef,
     farmhouse,
     fogExploredRef,
@@ -1335,6 +1343,7 @@ const RTSMap: React.FC<{
     setEnemyTrolls,
     setEnemyWalls,
     setEnemyWarchiefs,
+    setEnemyWarlords,
     setEnemyWitchDoctors,
     setFogExplored,
     setFogVisible,
@@ -1387,6 +1396,7 @@ const RTSMap: React.FC<{
     upgradesRef,
     upkeepMultRef,
     warchiefIdRef,
+    warlordIdRef,
     watchtowerTimersRef,
     wave,
     waveRef,
@@ -3312,6 +3322,38 @@ const RTSMap: React.FC<{
     [anySelected]
   );
 
+  const handleAttackWarlord = useCallback(
+    (warlordId: number, e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!anySelected) return;
+      const wl = enemyWarlordsRef.current.find(w2 => w2.id === warlordId);
+      if (!wl) return;
+      const tx = Math.round(wl.x),
+        ty = Math.round(wl.y);
+      setWorkers(ws =>
+        ws.map(w => {
+          if (!w.selected) return w;
+          const path = aStar(
+            INITIAL_TILES,
+            { x: Math.round(w.x), y: Math.round(w.y) },
+            { x: tx, y: ty }
+          );
+          const first = path[0] ?? { x: tx, y: ty };
+          return {
+            ...w,
+            movingTo: first,
+            path: path.slice(1),
+            gathering: null,
+            attacking: { targetType: 'warlord' as const, warlordId },
+            state: 'moving',
+          };
+        })
+      );
+    },
+    [anySelected]
+  );
+
   const handleAttackTroll = useCallback(
     (trollId: number, e: React.MouseEvent) => {
       e.preventDefault();
@@ -3451,6 +3493,9 @@ const RTSMap: React.FC<{
         .map(ew => ({ x: ew.x, y: ew.y })),
       lootCrates: lootCrates.map(c => ({ x: c.x, y: c.y })),
       droppedItems: droppedItems.map(d => ({ x: d.x, y: d.y })),
+      warlords: enemyWarlords
+        .filter(wl => wl.hp > 0)
+        .map(wl => ({ x: wl.x, y: wl.y })),
     }),
     [
       workers,
@@ -3473,6 +3518,7 @@ const RTSMap: React.FC<{
       enemyWalls,
       lootCrates,
       droppedItems,
+      enemyWarlords,
     ]
   );
 
@@ -3742,9 +3788,11 @@ const RTSMap: React.FC<{
               anySelected,
               enemyTrolls,
               enemyWarchiefs,
+              enemyWarlords,
               fogVisible,
               handleAttackTroll,
               handleAttackWarchief,
+              handleAttackWarlord,
             }}
           />
           <WorkersLayer

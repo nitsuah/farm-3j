@@ -1,26 +1,30 @@
 import React from 'react';
 
-import { TILE_SIZE, WARCHIEF_STOMP_RADIUS } from '../game/constants';
+import { TILE_SIZE, WARCHIEF_STOMP_RADIUS, WARLORD_WAR_CRY_RADIUS } from '../game/constants';
 import { HpBar } from './HpBar';
 import { tileToSvg } from '../game/map';
-import type { EnemyTroll, EnemyWarchief } from '../game/types';
+import type { EnemyTroll, EnemyWarchief, EnemyWarlord } from '../game/types';
 
 interface EnemyEliteLayerProps {
   anySelected: boolean;
   enemyTrolls: EnemyTroll[];
   enemyWarchiefs: EnemyWarchief[];
+  enemyWarlords: EnemyWarlord[];
   fogVisible: boolean[][];
   handleAttackTroll: (trollId: number, e: React.MouseEvent) => void;
   handleAttackWarchief: (warchiefId: number, e: React.MouseEvent) => void;
+  handleAttackWarlord: (warlordId: number, e: React.MouseEvent) => void;
 }
 
 export const EnemyEliteLayer: React.FC<EnemyEliteLayerProps> = ({
   anySelected,
   enemyTrolls,
   enemyWarchiefs,
+  enemyWarlords,
   fogVisible,
   handleAttackTroll,
   handleAttackWarchief,
+  handleAttackWarlord,
 }) => {
   return (
     <>
@@ -232,6 +236,107 @@ export const EnemyEliteLayer: React.FC<EnemyEliteLayerProps> = ({
                 👑 WARCHIEF
               </text>
               <HpBar x={cx - 22} y={isoY - 15} width={44} height={4} hpPct={hp} fill="#ef4444" />
+            </g>
+          );
+        })}
+      {/* Enemy Warlords (wave 20+ boss) */}
+      {enemyWarlords
+        .filter(
+          wl =>
+            wl.hp > 0 && fogVisible[Math.round(wl.x)]?.[Math.round(wl.y)]
+        )
+        .map(wl => {
+          const { isoX, isoY } = tileToSvg(wl.x, wl.y);
+          const hp = wl.hp / wl.maxHp;
+          const cx = isoX + TILE_SIZE / 2;
+          const now = Date.now();
+          const warCryActive = now - wl.lastWarCryAt < 3000;
+          return (
+            <g
+              key={`warlord-${wl.id}`}
+              style={{ cursor: anySelected ? 'crosshair' : 'default' }}
+              onContextMenu={e => handleAttackWarlord(wl.id, e)}
+            >
+              {/* War Cry aura ring */}
+              {warCryActive && (
+                <circle
+                  cx={cx}
+                  cy={isoY + 25}
+                  r={WARLORD_WAR_CRY_RADIUS * TILE_SIZE * 0.5}
+                  fill="rgba(168,85,247,0.08)"
+                  stroke="#a855f7"
+                  strokeWidth={2}
+                  strokeDasharray="8 4"
+                  opacity={0.7}
+                />
+              )}
+              {/* Massive armored body */}
+              <ellipse
+                cx={cx}
+                cy={isoY + 30}
+                rx={17}
+                ry={20}
+                fill={wl.state === 'attacking' ? '#6d28d9' : '#4c1d95'}
+                stroke="#2e1065"
+                strokeWidth={3}
+              />
+              {/* Shoulder plates — bigger than warchief */}
+              <ellipse cx={cx - 18} cy={isoY + 19} rx={9} ry={6} fill="#1e1b4b" stroke="#312e81" strokeWidth={2} />
+              <ellipse cx={cx + 18} cy={isoY + 19} rx={9} ry={6} fill="#1e1b4b" stroke="#312e81" strokeWidth={2} />
+              {/* Chest plate */}
+              <rect
+                x={cx - 10}
+                y={isoY + 18}
+                width={20}
+                height={18}
+                rx={3}
+                fill="#3730a3"
+                stroke="#1e1b4b"
+                strokeWidth={1.5}
+              />
+              {/* Head — larger, horned war helm */}
+              <circle cx={cx} cy={isoY + 9} r={11} fill="#c4b5fd" stroke="#4c1d95" strokeWidth={2.5} />
+              {/* War helm visor */}
+              <rect x={cx - 8} y={isoY + 8} width={16} height={6} rx={2} fill="#3730a3" stroke="#1e1b4b" strokeWidth={1} />
+              {/* Helm horns */}
+              <polygon
+                points={`${cx - 9},${isoY + 3} ${cx - 12},${isoY - 8} ${cx - 6},${isoY + 1}`}
+                fill="#7c3aed"
+                stroke="#4c1d95"
+                strokeWidth={1}
+              />
+              <polygon
+                points={`${cx + 9},${isoY + 3} ${cx + 12},${isoY - 8} ${cx + 6},${isoY + 1}`}
+                fill="#7c3aed"
+                stroke="#4c1d95"
+                strokeWidth={1}
+              />
+              {/* Eyes — glowing purple */}
+              <circle cx={cx - 3.5} cy={isoY + 10} r={2.5} fill="#a855f7" />
+              <circle cx={cx + 3.5} cy={isoY + 10} r={2.5} fill="#a855f7" />
+              {/* Great sword */}
+              <line x1={cx + 17} y1={isoY + 2} x2={cx + 17} y2={isoY + 48} stroke="#94a3b8" strokeWidth={5} strokeLinecap="round" />
+              <polygon
+                points={`${cx + 11},${isoY + 6} ${cx + 23},${isoY + 6} ${cx + 17},${isoY - 6}`}
+                fill="#e2e8f0"
+                stroke="#64748b"
+                strokeWidth={1.5}
+              />
+              {/* Shield */}
+              <ellipse cx={cx - 18} cy={isoY + 26} rx={7} ry={10} fill="#1d4ed8" stroke="#1e3a8a" strokeWidth={2} />
+              <line x1={cx - 18} y1={isoY + 16} x2={cx - 18} y2={isoY + 36} stroke="#3b82f6" strokeWidth={1.5} opacity={0.5} />
+              {/* Label */}
+              <text
+                x={cx}
+                y={isoY - 13}
+                textAnchor="middle"
+                fontSize="9"
+                fill="#c4b5fd"
+                fontWeight="bold"
+              >
+                ⚔ WARLORD
+              </text>
+              <HpBar x={cx - 26} y={isoY - 19} width={52} height={5} hpPct={hp} fill="#a855f7" />
             </g>
           );
         })}

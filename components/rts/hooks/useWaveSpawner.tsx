@@ -25,6 +25,8 @@ import {
   TROLL_MAX_HP,
   WARCHIEF_FIRST_WAVE,
   WARCHIEF_MAX_HP,
+  WARLORD_FIRST_WAVE,
+  WARLORD_MAX_HP,
   WAR_RAM_FIRST_WAVE,
   WAR_RAM_MAX_HP,
   WITCH_DOCTOR_FIRST_WAVE,
@@ -41,6 +43,7 @@ import type {
   EnemySiege,
   EnemyTroll,
   EnemyWarchief,
+  EnemyWarlord,
   EnemyWitchDoctor,
   PlacedBuilding,
 } from '../game/types';
@@ -70,6 +73,7 @@ export function useWaveSpawner(ctx: RTSGameContext) {
     setEnemyTrolls,
     setEnemyWalls,
     setEnemyWarchiefs,
+    setEnemyWarlords,
     setEnemyWitchDoctors,
     setNextWaveAt,
     setResources,
@@ -81,6 +85,7 @@ export function useWaveSpawner(ctx: RTSGameContext) {
     spawnTimerRef,
     trollIdRef,
     warchiefIdRef,
+    warlordIdRef,
     waveRef,
     waveTimerRemainingRef,
     witchDoctorIdRef,
@@ -491,6 +496,36 @@ export function useWaveSpawner(ctx: RTSGameContext) {
       window.setTimeout(() => setWaveAnnouncement(null), 5000);
     }
 
+    // Warlord spawn: wave 20+ every 10 waves
+    if (newWave >= WARLORD_FIRST_WAVE && (newWave - WARLORD_FIRST_WAVE) % 10 === 0) {
+      const wlx = Math.max(0, ENEMY_BARN_POS.x - 2);
+      const wly = ENEMY_BARN_POS.y + 2;
+      const wlPath = aStar(
+        INITIAL_TILES,
+        { x: wlx, y: wly },
+        BARN_POS,
+        true,
+        wallSet
+      );
+      const warlord: EnemyWarlord = {
+        id: warlordIdRef.current++,
+        x: wlx,
+        y: wly,
+        hp: WARLORD_MAX_HP,
+        maxHp: WARLORD_MAX_HP,
+        movingTo: wlPath[0] ?? BARN_POS,
+        path: wlPath.slice(1),
+        state: 'moving',
+        lastWarCryAt: 0,
+        lastShieldBashAt: 0,
+      };
+      setEnemyWarlords(wls => [...wls, warlord]);
+      setWaveAnnouncement(
+        `⚔ Wave ${newWave} — WARLORD! A dread champion approaches — he War Cries and Shield Bashes!`
+      );
+      window.setTimeout(() => setWaveAnnouncement(null), 6000);
+    }
+
     const nextDelay = Math.max(
       12000,
       Math.round(
@@ -522,6 +557,11 @@ export function useWaveSpawner(ctx: RTSGameContext) {
         parts.push('1 Necromancer 💀');
       if (previewWave >= WARCHIEF_FIRST_WAVE && previewWave % 8 === 2)
         parts.push('1 WARCHIEF 👑');
+      if (
+        previewWave >= WARLORD_FIRST_WAVE &&
+        (previewWave - WARLORD_FIRST_WAVE) % 10 === 0
+      )
+        parts.push('1 ⚔ WARLORD ⚔');
       if (previewWave >= 6 && previewWave % 3 === 0) parts.push('1 War Ram 🪵');
       setWavePreview(`⚠ INCOMING Wave ${previewWave}: ${parts.join(', ')}`);
       window.setTimeout(() => setWavePreview(null), 5500);
