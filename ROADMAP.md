@@ -1,17 +1,36 @@
 # ROADMAP
 
-Last Updated: 2026-06-25
+Last Updated: 2026-07-04
 
 ## 2026 Q1 ✅
 
 > Completed. Core Next.js architecture with linting/CI, Farm Tycoon Phase 1 MVP, and Farm Tycoon Phase 2a–2f isometric grid foundation shipped.
 
-## 2026 Q2–Q3: Farm RTS MVP
+## 2026 Q2–Q3: Farm RTS MVP ✅ (feature-complete)
 
-- [ ] Complete all MVP milestones as defined in docs/Farm_RTS_Game_Manual.md and docs/FARM-RTS-TODO.md and refer to docs/FARM-RTS-NORTH-STAR.md for guidance on the overall vision.
-  - Progress: Milestones 1, 3, 4 (partial), 5 (building placement), 7 (enemy+win/lose) complete (reverify progress and remaining tasks in docs/FARM-RTS-TODO.md docs/TASKS.md)
-  - Also shipped: fog of war, control groups, stone resource, box selection, population cap, unit HP, grunt-vs-worker combat, formation/patrol commands
-  - Remaining: animal units, advanced combat polish
+> All core gameplay systems shipped. 25×25 map, 10+ enemy unit types, full economy/combat/building loop, fog of war, day/night cycle, hero unit, 20+ buildings, unit veterancy, tech research, save/load, procedural audio, high-score leaderboard, and wave escalation all live. Codebase refactored with shared SVG component layer (HpBar, StructureDamageSmoke, StructureFireEffect) eliminating duplicated render primitives across all map layer files.
+
+## 2026 Q3: Farm RTS — Round 2
+
+### Technical Health
+- [ ] Continue SVG component extraction — worker body shapes, enemy unit torsos, building base rects are next candidates for shared components (see iter109 pattern)
+- [ ] Extract blacksmith upgrade costs to shared config constants (currently hardcoded in RTSUI disable logic)
+- [ ] Profile render loop on 25×25 map with 30+ units; investigate canvas or OffscreenCanvas fallback if SVG drops below 30fps on mobile
+- [ ] Add unit tests for core game-logic helpers (`tileDist`, `tileToSvg`, pathfinding, damage formulas)
+
+### Gameplay Features
+- [ ] **Named formations** — move a selected group in line, wedge, or box formation; prevents units stacking on the same tile and adds strategic depth to multi-unit control
+- [ ] **Enemy hero unit** — Warlord spawns at wave 20+; unique abilities (War Cry, Shield Bash); harder than Warchief, drops rare item
+- [ ] **Dropped hero items** — slain enemy elites drop equippable items Barnabas can pick up (Speed Boots, War Banner, Healing Totem); persists between hero deaths
+- [ ] **Save slots** — 3 named save slots instead of a single localStorage entry; slot picker on New Game screen
+- [ ] **Challenge / achievement system** — unlock badges for milestone runs (e.g., "Survive 20 waves without losing a building", "Kill 5 Sappers before they explode")
+- [ ] **Campaign mode (Phase 1)** — linear sequence of 3 hand-crafted scenarios with scripted objectives beyond simple "defend the barn"
+
+### Content & Polish
+- [ ] Background ambient audio loop (farm sounds, wind, distant battle) with independent volume slider
+- [ ] More unit voice lines and enemy audio cues (Warchief stomp roar, Sapper countdown tick)
+- [ ] Minimap: show dropped hero items and loot crate positions
+- [ ] Ensure farmers always render in front of barn and remain selectable when barn is clicked
 
 ## 2026 Q4: Product and Content Surface
 
@@ -20,8 +39,6 @@ Last Updated: 2026-06-25
 - [ ] Ship ecommerce phase 1.
 - [ ] Evaluate subscription or recurring-order follow-ons.
 - [ ] Harden accessibility and SEO for a broader launch.
-- [ ] **Fog of war** — tile visibility driven by unit and building vision radius; unexplored tiles dark, explored-but-unoccupied tiles dimmed; creates strategic exploration tension without adding a full multiplayer requirement.
-- [ ] **Unit formation commands** — move a selected group in a named formation (line, wedge, box); prevents all units path-finding to the same point and adds visual strategic depth to multi-unit control.
 
 ## Legacy Tycoon Tasks (on hold)
 

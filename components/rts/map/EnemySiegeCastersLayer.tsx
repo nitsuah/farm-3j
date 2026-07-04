@@ -6,6 +6,7 @@ import {
   TILE_SIZE,
   WITCH_DOCTOR_BUFF_RADIUS,
 } from '../game/constants';
+import { HpBar } from './HpBar';
 import { tileDist, tileToSvg } from '../game/map';
 import type {
   EnemyNecromancer,
@@ -131,22 +132,7 @@ export const EnemySiegeCastersLayer: React.FC<EnemySiegeCastersLayerProps> = ({
                 >
                   DEMOLISHER
                 </text>
-                <rect
-                  x={cx - 20}
-                  y={isoY - 10}
-                  width={40}
-                  height={4}
-                  fill="#1e293b"
-                  rx={2}
-                />
-                <rect
-                  x={cx - 20}
-                  y={isoY - 10}
-                  width={40 * hp}
-                  height={4}
-                  fill="#f97316"
-                  rx={2}
-                />
+                <HpBar x={cx - 20} y={isoY - 10} width={40} height={4} hpPct={hp} fill="#f97316" />
               </g>
             );
           }
@@ -212,22 +198,7 @@ export const EnemySiegeCastersLayer: React.FC<EnemySiegeCastersLayerProps> = ({
               >
                 WAR RAM
               </text>
-              <rect
-                x={cx - 20}
-                y={isoY - 10}
-                width={40}
-                height={4}
-                fill="#1e293b"
-                rx={2}
-              />
-              <rect
-                x={cx - 20}
-                y={isoY - 10}
-                width={40 * hp}
-                height={4}
-                fill="#dc2626"
-                rx={2}
-              />
+              <HpBar x={cx - 20} y={isoY - 10} width={40} height={4} hpPct={hp} fill="#dc2626" />
             </g>
           );
         })}
@@ -303,22 +274,7 @@ export const EnemySiegeCastersLayer: React.FC<EnemySiegeCastersLayerProps> = ({
                 SHAMAN
               </text>
               {/* HP bar */}
-              <rect
-                x={isoX + TILE_SIZE / 2 - 16}
-                y={isoY - 10}
-                width={32}
-                height={4}
-                fill="#1e293b"
-                rx={2}
-              />
-              <rect
-                x={isoX + TILE_SIZE / 2 - 16}
-                y={isoY - 10}
-                width={32 * hp}
-                height={4}
-                fill="#22c55e"
-                rx={2}
-              />
+              <HpBar x={isoX + TILE_SIZE / 2 - 16} y={isoY - 10} width={32} height={4} hpPct={hp} fill="#22c55e" />
             </g>
           );
         })}
@@ -398,22 +354,7 @@ export const EnemySiegeCastersLayer: React.FC<EnemySiegeCastersLayerProps> = ({
               >
                 NECROMANCER
               </text>
-              <rect
-                x={cx - 18}
-                y={isoY - 10}
-                width={36}
-                height={4}
-                fill="#1e293b"
-                rx={2}
-              />
-              <rect
-                x={cx - 18}
-                y={isoY - 10}
-                width={36 * hp}
-                height={4}
-                fill="#a855f7"
-                rx={2}
-              />
+              <HpBar x={cx - 18} y={isoY - 10} width={36} height={4} hpPct={hp} fill="#a855f7" />
             </g>
           );
         })}
@@ -503,22 +444,7 @@ export const EnemySiegeCastersLayer: React.FC<EnemySiegeCastersLayerProps> = ({
               >
                 WITCH DOCTOR
               </text>
-              <rect
-                x={cx - 18}
-                y={isoY - 10}
-                width={36}
-                height={4}
-                fill="#1e293b"
-                rx={2}
-              />
-              <rect
-                x={cx - 18}
-                y={isoY - 10}
-                width={36 * hp}
-                height={4}
-                fill="#e879f9"
-                rx={2}
-              />
+              <HpBar x={cx - 18} y={isoY - 10} width={36} height={4} hpPct={hp} fill="#e879f9" />
             </g>
           );
         })}
@@ -628,22 +554,7 @@ export const EnemySiegeCastersLayer: React.FC<EnemySiegeCastersLayerProps> = ({
                 SAPPER
               </text>
               {/* HP bar */}
-              <rect
-                x={isoX + TILE_SIZE / 2 - 14}
-                y={isoY - 10}
-                width={28}
-                height={4}
-                fill="#1e293b"
-                rx={2}
-              />
-              <rect
-                x={isoX + TILE_SIZE / 2 - 14}
-                y={isoY - 10}
-                width={28 * hp}
-                height={4}
-                fill="#dc2626"
-                rx={2}
-              />
+              <HpBar x={isoX + TILE_SIZE / 2 - 14} y={isoY - 10} width={28} height={4} hpPct={hp} fill="#dc2626" />
             </g>
           );
         })}

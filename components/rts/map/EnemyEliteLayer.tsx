@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { TILE_SIZE, WARCHIEF_STOMP_RADIUS } from '../game/constants';
+import { HpBar } from './HpBar';
 import { tileToSvg } from '../game/map';
 import type { EnemyTroll, EnemyWarchief } from '../game/types';
 
@@ -114,22 +115,7 @@ export const EnemyEliteLayer: React.FC<EnemyEliteLayerProps> = ({
                 TROLL
               </text>
               {/* HP bar */}
-              <rect
-                x={isoX + TILE_SIZE / 2 - 16}
-                y={isoY - 10}
-                width={32}
-                height={4}
-                fill="#1e293b"
-                rx={2}
-              />
-              <rect
-                x={isoX + TILE_SIZE / 2 - 16}
-                y={isoY - 10}
-                width={32 * hp}
-                height={4}
-                fill="#22c55e"
-                rx={2}
-              />
+              <HpBar x={isoX + TILE_SIZE / 2 - 16} y={isoY - 10} width={32} height={4} hpPct={hp} fill="#22c55e" />
             </g>
           );
         })}
@@ -245,22 +231,7 @@ export const EnemyEliteLayer: React.FC<EnemyEliteLayerProps> = ({
               >
                 👑 WARCHIEF
               </text>
-              <rect
-                x={cx - 22}
-                y={isoY - 15}
-                width={44}
-                height={4}
-                fill="#1e293b"
-                rx={2}
-              />
-              <rect
-                x={cx - 22}
-                y={isoY - 15}
-                width={44 * hp}
-                height={4}
-                fill="#ef4444"
-                rx={2}
-              />
+              <HpBar x={cx - 22} y={isoY - 15} width={44} height={4} hpPct={hp} fill="#ef4444" />
             </g>
           );
         })}

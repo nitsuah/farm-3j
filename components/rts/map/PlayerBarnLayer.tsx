@@ -4,6 +4,9 @@ import type { WorkerState } from '../game/types';
 import { BARN_POS, PLAYER_BARN_MAX_HP, TILE_SIZE } from '../game/constants';
 import { svgToTile, tileDist, tileToSvg } from '../game/map';
 import type { BuildingType, EnemyGrunt } from '../game/types';
+import { HpBar } from './HpBar';
+import { StructureDamageSmoke } from './StructureDamageSmoke';
+import { StructureFireEffect } from './StructureFireEffect';
 
 interface PlayerBarnLayerProps {
   anySelected: boolean;
@@ -172,100 +175,30 @@ export const PlayerBarnLayer: React.FC<PlayerBarnLayerProps> = ({
               />
             )}
             {barnDamaged && !lastStand && (
-              <g pointerEvents="none">
-                <circle
-                  cx={bcx - 8}
-                  cy={bcy - 18 - Math.sin(bt) * 4}
-                  r={6}
-                  fill="#374151"
-                  opacity={0.55}
-                />
-                <circle
-                  cx={bcx + 6}
-                  cy={bcy - 28 - Math.sin(bt + 1) * 5}
-                  r={5}
-                  fill="#6b7280"
-                  opacity={0.4}
-                />
-                <circle
-                  cx={bcx}
-                  cy={bcy - 38 - Math.sin(bt + 2) * 3}
-                  r={4}
-                  fill="#9ca3af"
-                  opacity={0.25}
-                />
-              </g>
+              <StructureDamageSmoke
+                cx={bcx}
+                cy={bcy}
+                t={bt}
+                colors={['#374151', '#6b7280', '#9ca3af']}
+                opacities={[0.55, 0.4, 0.25]}
+              />
             )}
             {lastStand && (
-              <g pointerEvents="none">
-                <ellipse
-                  cx={bcx}
-                  cy={bcy - 4}
-                  rx={9}
-                  ry={6}
-                  fill="#f97316"
-                  opacity={0.85}
-                />
-                <ellipse
-                  cx={bcx - 5}
-                  cy={bcy - 2}
-                  rx={5}
-                  ry={4}
-                  fill="#dc2626"
-                  opacity={0.75}
-                />
-                <ellipse
-                  cx={bcx + 5}
-                  cy={bcy - 2}
-                  rx={5}
-                  ry={4}
-                  fill="#ef4444"
-                  opacity={0.7}
-                />
-                <ellipse
-                  cx={bcx}
-                  cy={bcy - 14}
-                  rx={5}
-                  ry={10}
-                  fill="#fbbf24"
-                  opacity={0.9}
-                />
-                <ellipse
-                  cx={bcx}
-                  cy={bcy - 18}
-                  rx={3}
-                  ry={6}
-                  fill="#fef08a"
-                  opacity={0.8}
-                />
-                <text
-                  x={bcx}
-                  y={isoY - 20}
-                  textAnchor="middle"
-                  fontSize="11"
-                  fill="#ef4444"
-                  fontWeight="bold"
-                >
-                  ⚔ LAST STAND!
-                </text>
-              </g>
+              <StructureFireEffect
+                cx={bcx}
+                cy={bcy}
+                labelText="⚔ LAST STAND!"
+                labelColor="#ef4444"
+                labelY={isoY - 20}
+              />
             )}
-            <rect
+            <HpBar
               x={isoX - 8}
               y={isoY - 14}
               width={TILE_SIZE + 16}
               height={8}
-              fill="#1e293b"
-              rx={4}
-            />
-            <rect
-              x={isoX - 8}
-              y={isoY - 14}
-              width={(TILE_SIZE + 16) * hpPct}
-              height={8}
-              fill={
-                hpPct > 0.5 ? '#4ade80' : hpPct > 0.25 ? '#fbbf24' : '#ef4444'
-              }
+              hpPct={hpPct}
+              fill={hpPct > 0.5 ? '#4ade80' : hpPct > 0.25 ? '#fbbf24' : '#ef4444'}
               rx={4}
             />
             {hasGarrison && (

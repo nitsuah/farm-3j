@@ -1,8 +1,32 @@
 # TASKS
 
-Last Updated: 2026-07-02 (iter108 — barn damage visuals, spacebar pause, ghost-shot fix, enemy AI, combat log)
+Last Updated: 2026-07-04 (iter109 — shared SVG component refactor: HpBar, StructureDamageSmoke, StructureFireEffect)
 
-## Farm RTS MVP (2026 Q2–Q3)
+## Farm RTS — Round 2 (2026 Q3)
+
+### Technical Cleanup
+- [ ] Extract blacksmith upgrade costs to shared config constants (currently hardcoded in RTSUI disable logic)
+- [ ] Continue SVG component extraction — worker body shapes, enemy unit torsos, and building base rects are next candidates
+- [ ] Profile render loop at 30+ units on 25×25 map; investigate canvas/OffscreenCanvas fallback for mobile
+- [ ] Add unit tests for core helpers: `tileDist`, `tileToSvg`, A\* pathfinding, damage formulas
+
+### Gameplay Features
+- [ ] Named unit formations — move selected group in line/wedge/box formation
+- [ ] Enemy hero unit — Warlord (wave 20+, unique abilities, drops loot)
+- [ ] Dropped hero items — equippable pickups from slain elite enemies (Speed Boots, War Banner, Healing Totem)
+- [ ] Save slots — 3 named localStorage slots; slot picker on New Game screen
+- [ ] Achievement / challenge system — milestone badges for specific run conditions
+- [ ] Campaign mode Phase 1 — 3 hand-crafted scenarios with scripted objectives
+
+### Content & Polish
+- [ ] Background ambient audio loop with independent volume slider
+- [ ] More unit voice lines and enemy audio cues (Warchief stomp, Sapper countdown)
+- [ ] Minimap: show dropped items and loot crate positions
+- [ ] Ensure farmers always render in front of barn and remain selectable when barn is clicked
+
+---
+
+## Farm RTS MVP (2026 Q2–Q3) ✅
 
 - [ ] Complete all MVP milestones as defined in docs/Farm_RTS_Game_Manual.md and docs/FARM-RTS-TODO.md
   - Progress: Milestone 1 complete; Milestone 3 (resource node depletion/feedback) complete
@@ -175,3 +199,4 @@ Last Updated: 2026-07-02 (iter108 — barn damage visuals, spacebar pause, ghost
 - [x] Procedural sound effects — Web Audio API synthesized sounds (no audio files); unit select, move, hit, death, build complete, gold deposit, wave warning, victory/defeat tones; lazy AudioContext init; Snd helper module at module scope (2026-07-02)
 - [x] Control group double-tap camera center + HUD bar — double-tapping 1-9 within 500ms centers camera on group centroid; compact group indicator bar at top-center shows group number + alive unit count for all assigned groups (2026-07-02)
 - [x] Sound mute toggle + gold deposit throttle — 🔊/🔇 button in HUD persists mute state to localStorage; gold deposit sound throttled to once per 2s so it doesn't spam with multiple harvesters; all playTone calls check mute flag (2026-07-02)
+- [x] Shared SVG component refactor (iter109) — extracted `HpBar`, `StructureDamageSmoke`, and `StructureFireEffect` into `components/rts/map/`; replaced duplicated inline two-rect HP bars across EnemyBaseLayer, EnemySiegeCastersLayer, EnemyGruntsLayer, EnemyEliteLayer, PlayerBarnLayer, BuildingsLayer, WorkersLayer (17 call sites); replaced near-identical smoke-circle and flame-ellipse blocks in PlayerBarnLayer, EnemyBaseLayer, and BuildingsLayer; components parameterized by center coordinates, colors, opacities, and optional label; type-check and lint clean; visual verified in running dev server (2026-07-04)

@@ -2,6 +2,7 @@ import React from 'react';
 
 import type { WorkerState } from '../game/types';
 import { HERO_ITEM_DATA, TILE_SIZE } from '../game/constants';
+import { HpBar } from './HpBar';
 import { tileToSvg } from '../game/map';
 import type { DroppedItem, EnemyGrunt, LootCrate } from '../game/types';
 
@@ -102,22 +103,7 @@ export const EnemyGruntsLayer: React.FC<EnemyGruntsLayerProps> = ({
                 >
                   WAR BULL
                 </text>
-                <rect
-                  x={isoX + TILE_SIZE / 2 - 20}
-                  y={isoY - 5}
-                  width={40}
-                  height={5}
-                  fill="#1e293b"
-                  rx={2}
-                />
-                <rect
-                  x={isoX + TILE_SIZE / 2 - 20}
-                  y={isoY - 5}
-                  width={40 * hp}
-                  height={5}
-                  fill="#dc2626"
-                  rx={2}
-                />
+                <HpBar x={isoX + TILE_SIZE / 2 - 20} y={isoY - 5} width={40} height={5} hpPct={hp} fill="#dc2626" />
               </>
             ) : g.isSkeleton ? (
               <>
@@ -148,20 +134,7 @@ export const EnemyGruntsLayer: React.FC<EnemyGruntsLayerProps> = ({
                 >
                   SKELETON
                 </text>
-                <rect
-                  x={isoX + TILE_SIZE / 2 - 12}
-                  y={isoY - 10}
-                  width={24}
-                  height={4}
-                  fill="#1e293b"
-                />
-                <rect
-                  x={isoX + TILE_SIZE / 2 - 12}
-                  y={isoY - 10}
-                  width={24 * hp}
-                  height={4}
-                  fill="#a855f7"
-                />
+                <HpBar x={isoX + TILE_SIZE / 2 - 12} y={isoY - 10} width={24} height={4} hpPct={hp} fill="#a855f7" rx={0} />
               </>
             ) : (
               <>
@@ -222,20 +195,7 @@ export const EnemyGruntsLayer: React.FC<EnemyGruntsLayerProps> = ({
                     BERSERK!
                   </text>
                 )}
-                <rect
-                  x={isoX + TILE_SIZE / 2 - 14}
-                  y={isoY - 4}
-                  width={28}
-                  height={4}
-                  fill="#1e293b"
-                />
-                <rect
-                  x={isoX + TILE_SIZE / 2 - 14}
-                  y={isoY - 4}
-                  width={28 * hp}
-                  height={4}
-                  fill="#ef4444"
-                />
+                <HpBar x={isoX + TILE_SIZE / 2 - 14} y={isoY - 4} width={28} height={4} hpPct={hp} fill="#ef4444" rx={0} />
               </>
             )}
             {(() => {

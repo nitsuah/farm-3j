@@ -2,6 +2,7 @@ import React from 'react';
 
 import type { WorkerState } from '../game/types';
 import { HERO_SHOUT_RADIUS, TILE_SIZE } from '../game/constants';
+import { HpBar } from './HpBar';
 import { tileDist, tileToSvg } from '../game/map';
 import { Snd } from '../game/sound';
 import type { BuildingType } from '../game/types';
@@ -485,19 +486,14 @@ export const WorkersLayer: React.FC<WorkersLayerProps> = ({
                 </text>
               </>
             )}
-            <rect
+            <HpBar
               x={isoX + TILE_SIZE / 2 - 16}
               y={isoY - 4}
               width={32}
               height={4}
-              fill="#1e293b"
-            />
-            <rect
-              x={isoX + TILE_SIZE / 2 - 16}
-              y={isoY - 4}
-              width={32 * hp}
-              height={4}
+              hpPct={hp}
               fill={hp > 0.5 ? '#4ade80' : hp > 0.25 ? '#fbbf24' : '#ef4444'}
+              rx={0}
             />
             {worker.level > 0 && (
               <text

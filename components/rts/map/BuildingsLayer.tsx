@@ -9,6 +9,9 @@ import {
   POISON_TOWER_RANGE,
   TILE_SIZE,
 } from '../game/constants';
+import { HpBar } from './HpBar';
+import { StructureDamageSmoke } from './StructureDamageSmoke';
+import { StructureFireEffect } from './StructureFireEffect';
 import { tileToSvg } from '../game/map';
 import type { PlacedBuilding, Resources } from '../game/types';
 
@@ -1005,22 +1008,13 @@ export const BuildingsLayer: React.FC<BuildingsLayerProps> = ({
           const pct = b.hp / b.maxHp;
           return (
             <g key={`bhp-${b.id}`} pointerEvents="none">
-              <rect
+              <HpBar
                 x={isoX + TILE_SIZE * 0.1}
                 y={isoY - 14}
                 width={TILE_SIZE * 1.8}
                 height={6}
-                fill="#1e293b"
-                rx={3}
-              />
-              <rect
-                x={isoX + TILE_SIZE * 0.1}
-                y={isoY - 14}
-                width={TILE_SIZE * 1.8 * pct}
-                height={6}
-                fill={
-                  pct > 0.5 ? '#4ade80' : pct > 0.25 ? '#fbbf24' : '#ef4444'
-                }
+                hpPct={pct}
+                fill={pct > 0.5 ? '#4ade80' : pct > 0.25 ? '#fbbf24' : '#ef4444'}
                 rx={3}
               />
             </g>
@@ -1077,72 +1071,16 @@ export const BuildingsLayer: React.FC<BuildingsLayerProps> = ({
           const cy = isoY + TILE_SIZE * 0.3;
           const t = (Date.now() / 600) % (2 * Math.PI);
           return (
-            <g key={`fire-${b.id}`} pointerEvents="none">
-              {/* Smoke puffs */}
-              <circle
-                cx={cx - 6}
-                cy={cy - 18 - Math.sin(t) * 4}
-                r={6}
-                fill="#374151"
-                opacity={0.55}
-              />
-              <circle
-                cx={cx + 4}
-                cy={cy - 28 - Math.sin(t + 1) * 5}
-                r={5}
-                fill="#4b5563"
-                opacity={0.4}
-              />
-              <circle
-                cx={cx - 2}
-                cy={cy - 38 - Math.sin(t + 2) * 3}
-                r={4}
-                fill="#1f2937"
-                opacity={0.25}
-              />
-              {/* Flame base */}
-              <ellipse
+            <React.Fragment key={`fire-${b.id}`}>
+              <StructureDamageSmoke
                 cx={cx}
-                cy={cy - 4}
-                rx={9}
-                ry={6}
-                fill="#f97316"
-                opacity={0.85}
+                cy={cy}
+                t={t}
+                colors={['#374151', '#4b5563', '#1f2937']}
+                opacities={[0.55, 0.4, 0.25]}
               />
-              <ellipse
-                cx={cx - 5}
-                cy={cy - 2}
-                rx={5}
-                ry={4}
-                fill="#dc2626"
-                opacity={0.75}
-              />
-              <ellipse
-                cx={cx + 5}
-                cy={cy - 2}
-                rx={5}
-                ry={4}
-                fill="#ef4444"
-                opacity={0.7}
-              />
-              {/* Flame tip */}
-              <ellipse
-                cx={cx}
-                cy={cy - 14}
-                rx={5}
-                ry={10}
-                fill="#fbbf24"
-                opacity={0.9}
-              />
-              <ellipse
-                cx={cx}
-                cy={cy - 18}
-                rx={3}
-                ry={6}
-                fill="#fef08a"
-                opacity={0.8}
-              />
-            </g>
+              <StructureFireEffect cx={cx} cy={cy} />
+            </React.Fragment>
           );
         })}
     </>

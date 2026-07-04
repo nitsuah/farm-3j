@@ -7,6 +7,9 @@ import {
 } from '../game/constants';
 import { tileToSvg } from '../game/map';
 import type { EnemyTower } from '../game/types';
+import { HpBar } from './HpBar';
+import { StructureDamageSmoke } from './StructureDamageSmoke';
+import { StructureFireEffect } from './StructureFireEffect';
 
 interface EnemyBaseLayerProps {
   anySelected: boolean;
@@ -82,100 +85,30 @@ export const EnemyBaseLayer: React.FC<EnemyBaseLayerProps> = ({
                 🏴‍☠️
               </text>
               {damaged && (
-                <g pointerEvents="none">
-                  <circle
-                    cx={cx - 8}
-                    cy={cy - 18 - Math.sin(t) * 4}
-                    r={6}
-                    fill="#374151"
-                    opacity={0.6}
-                  />
-                  <circle
-                    cx={cx + 6}
-                    cy={cy - 28 - Math.sin(t + 1) * 5}
-                    r={5}
-                    fill="#4b5563"
-                    opacity={0.45}
-                  />
-                  <circle
-                    cx={cx}
-                    cy={cy - 38 - Math.sin(t + 2) * 3}
-                    r={4}
-                    fill="#1f2937"
-                    opacity={0.3}
-                  />
-                </g>
+                <StructureDamageSmoke
+                  cx={cx}
+                  cy={cy}
+                  t={t}
+                  colors={['#374151', '#4b5563', '#1f2937']}
+                  opacities={[0.6, 0.45, 0.3]}
+                />
               )}
               {critical && (
-                <g pointerEvents="none">
-                  <ellipse
-                    cx={cx}
-                    cy={cy - 4}
-                    rx={9}
-                    ry={6}
-                    fill="#f97316"
-                    opacity={0.85}
-                  />
-                  <ellipse
-                    cx={cx - 5}
-                    cy={cy - 2}
-                    rx={5}
-                    ry={4}
-                    fill="#dc2626"
-                    opacity={0.75}
-                  />
-                  <ellipse
-                    cx={cx + 5}
-                    cy={cy - 2}
-                    rx={5}
-                    ry={4}
-                    fill="#ef4444"
-                    opacity={0.7}
-                  />
-                  <ellipse
-                    cx={cx}
-                    cy={cy - 14}
-                    rx={5}
-                    ry={10}
-                    fill="#fbbf24"
-                    opacity={0.9}
-                  />
-                  <ellipse
-                    cx={cx}
-                    cy={cy - 18}
-                    rx={3}
-                    ry={6}
-                    fill="#fef08a"
-                    opacity={0.8}
-                  />
-                  <text
-                    x={cx}
-                    y={isoY - 20}
-                    textAnchor="middle"
-                    fontSize="11"
-                    fill="#fbbf24"
-                    fontWeight="bold"
-                  >
-                    ☠ COLLAPSING!
-                  </text>
-                </g>
+                <StructureFireEffect
+                  cx={cx}
+                  cy={cy}
+                  labelText="☠ COLLAPSING!"
+                  labelColor="#fbbf24"
+                  labelY={isoY - 20}
+                />
               )}
-              <rect
+              <HpBar
                 x={isoX - 8}
                 y={isoY - 14}
                 width={TILE_SIZE + 16}
                 height={8}
-                fill="#1e293b"
-                rx={4}
-              />
-              <rect
-                x={isoX - 8}
-                y={isoY - 14}
-                width={(TILE_SIZE + 16) * hpPct}
-                height={8}
-                fill={
-                  hpPct > 0.5 ? '#4ade80' : hpPct > 0.25 ? '#fbbf24' : '#ef4444'
-                }
+                hpPct={hpPct}
+                fill={hpPct > 0.5 ? '#4ade80' : hpPct > 0.25 ? '#fbbf24' : '#ef4444'}
                 rx={4}
               />
               <text
@@ -315,21 +248,13 @@ export const EnemyBaseLayer: React.FC<EnemyBaseLayerProps> = ({
               >
                 {label}
               </text>
-              <rect
+              <HpBar
                 x={isoX + TILE_SIZE / 4}
                 y={isoY - 58}
                 width={TILE_SIZE / 2}
                 height={5}
-                fill="#1e293b"
-                rx={2}
-              />
-              <rect
-                x={isoX + TILE_SIZE / 4}
-                y={isoY - 58}
-                width={(TILE_SIZE / 2) * hpPct}
-                height={5}
+                hpPct={hpPct}
                 fill={barColor}
-                rx={2}
               />
             </g>
           );
@@ -370,21 +295,13 @@ export const EnemyBaseLayer: React.FC<EnemyBaseLayerProps> = ({
                   rx={1}
                 />
               ))}
-              <rect
+              <HpBar
                 x={isoX + 8}
                 y={isoY - 2}
                 width={TILE_SIZE - 16}
                 height={5}
-                fill="#1e293b"
-                rx={2}
-              />
-              <rect
-                x={isoX + 8}
-                y={isoY - 2}
-                width={(TILE_SIZE - 16) * hpPct}
-                height={5}
+                hpPct={hpPct}
                 fill="#ef4444"
-                rx={2}
               />
             </g>
           );
