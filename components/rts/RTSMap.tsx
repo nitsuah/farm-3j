@@ -558,6 +558,12 @@ const RTSMap: React.FC<{
     droppedItemsRef.current = droppedItems;
   }, [droppedItems]);
   const dropItemIdRef = useRef(9000);
+  type FormationMode = 'cluster' | 'line' | 'wedge' | 'box';
+  const [formationMode, setFormationMode] = useState<FormationMode>('cluster');
+  const formationModeRef = useRef<FormationMode>('cluster');
+  useEffect(() => {
+    formationModeRef.current = formationMode;
+  }, [formationMode]);
   const pendingPickupRef = useRef<Set<number>>(new Set());
   const [waveAnnouncement, setWaveAnnouncement] = useState<string | null>(null);
   const [wavePreview, setWavePreview] = useState<string | null>(null);
@@ -1900,17 +1906,58 @@ const RTSMap: React.FC<{
     return pt.matrixTransform(ctm.inverse());
   }, []);
 
-  const FORMATION_OFFSETS = [
-    { dx: 0, dy: 0 },
-    { dx: 1, dy: 0 },
-    { dx: -1, dy: 0 },
-    { dx: 0, dy: 1 },
-    { dx: 0, dy: -1 },
-    { dx: 1, dy: 1 },
-    { dx: -1, dy: 1 },
-    { dx: 1, dy: -1 },
-    { dx: -1, dy: -1 },
-  ];
+  const FORMATION_OFFSETS_BY_MODE: Record<
+    string,
+    { dx: number; dy: number }[]
+  > = {
+    cluster: [
+      { dx: 0, dy: 0 },
+      { dx: 1, dy: 0 },
+      { dx: -1, dy: 0 },
+      { dx: 0, dy: 1 },
+      { dx: 0, dy: -1 },
+      { dx: 1, dy: 1 },
+      { dx: -1, dy: 1 },
+      { dx: 1, dy: -1 },
+      { dx: -1, dy: -1 },
+    ],
+    line: [
+      { dx: 0, dy: 0 },
+      { dx: 1, dy: 0 },
+      { dx: -1, dy: 0 },
+      { dx: 2, dy: 0 },
+      { dx: -2, dy: 0 },
+      { dx: 3, dy: 0 },
+      { dx: -3, dy: 0 },
+      { dx: 4, dy: 0 },
+      { dx: -4, dy: 0 },
+    ],
+    wedge: [
+      { dx: 0, dy: 0 },
+      { dx: -1, dy: 1 },
+      { dx: 1, dy: 1 },
+      { dx: -2, dy: 2 },
+      { dx: 0, dy: 2 },
+      { dx: 2, dy: 2 },
+      { dx: -3, dy: 3 },
+      { dx: -1, dy: 3 },
+      { dx: 1, dy: 3 },
+    ],
+    box: [
+      { dx: 0, dy: 0 },
+      { dx: 1, dy: 0 },
+      { dx: -1, dy: 0 },
+      { dx: 0, dy: 1 },
+      { dx: 1, dy: 1 },
+      { dx: -1, dy: 1 },
+      { dx: 0, dy: 2 },
+      { dx: 1, dy: 2 },
+      { dx: -1, dy: 2 },
+    ],
+  };
+  const getFormationOffsets = () =>
+    FORMATION_OFFSETS_BY_MODE[formationModeRef.current] ??
+    FORMATION_OFFSETS_BY_MODE.cluster!;
 
   /** Issue a move command to selected workers using A*; spreads into formation when pure move */
   const commandMove = useCallback(
@@ -1961,7 +2008,7 @@ const RTSMap: React.FC<{
             return w;
           const isFormation = !gathering && !attacking;
           const offset = isFormation
-            ? (FORMATION_OFFSETS[idx++] ?? { dx: 0, dy: 0 })
+            ? (getFormationOffsets()[idx++] ?? { dx: 0, dy: 0 })
             : { dx: 0, dy: 0 };
           const tx = Math.max(0, Math.min(GRID_SIZE - 1, targetX + offset.dx));
           const ty = Math.max(0, Math.min(GRID_SIZE - 1, targetY + offset.dy));
@@ -1999,7 +2046,7 @@ const RTSMap: React.FC<{
       let idx = 0;
       return ws.map(w => {
         if (!w.selected) return w;
-        const offset = FORMATION_OFFSETS[idx++] ?? { dx: 0, dy: 0 };
+        const offset = getFormationOffsets()[idx++] ?? { dx: 0, dy: 0 };
         const tx = Math.max(0, Math.min(GRID_SIZE - 1, targetX + offset.dx));
         const ty = Math.max(0, Math.min(GRID_SIZE - 1, targetY + offset.dy));
         const dest =
@@ -3863,6 +3910,13 @@ const RTSMap: React.FC<{
         onUsePotion={handleUsePotion}
         shopItems={SHOP_ITEMS}
         onBuyItem={handleBuyItem}
+        formationMode={formationMode}
+        onCycleFormation={() =>
+          setFormationMode(m => {
+            const order: FormationMode[] = ['cluster', 'line', 'wedge', 'box'];
+            return order[(order.indexOf(m) + 1) % order.length]!;
+          })
+        }
       />
     </div>
   );

@@ -574,3 +574,13 @@ export const CAVALRY_TRAMPLE_DAMAGE = 6;
 export const CAVALRY_SPRINT_COOLDOWN_S = 20;
 export const CAVALRY_SPRINT_DURATION_MS = 5000;
 export const CAVALRY_SPRINT_SPEED_MULT = 2;
+
+// ---------- Blacksmith upgrade costs [level 0→1, level 1→2] ----------
+export const BLACKSMITH_STEEL_EDGE_COSTS: { gold: number; stone: number }[] = [
+  { gold: 80, stone: 60 },
+  { gold: 160, stone: 120 },
+];
+export const BLACKSMITH_IRON_HIDE_COSTS: { gold: number; lumber: number }[] = [
+  { gold: 80, lumber: 50 },
+  { gold: 160, lumber: 100 },
+];
