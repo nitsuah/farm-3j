@@ -332,4 +332,7 @@ export interface SaveData {
   guardTowerResearched?: boolean;
   barracksTech?: { veteranTraining: boolean; warDrums: boolean };
   blacksmithUpgrades?: { steelEdge: number; ironHide: number };
+  savedAt?: number;
+  difficultyId?: string;
+  slotName?: string;
 }

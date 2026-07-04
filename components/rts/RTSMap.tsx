@@ -91,7 +91,12 @@ import {
   tileToSvg,
 } from './game/map';
 import { aStar } from './game/pathfinding';
-import { loadSave, saveHighScore, writeSave } from './game/persistence';
+import {
+  loadSave,
+  saveHighScore,
+  writeSave,
+  type SaveSlot,
+} from './game/persistence';
 import { makeUnit } from './game/units';
 import {
   ACK_ATTACK,
@@ -134,10 +139,11 @@ import type { DifficultyConfig } from './RTSGameRoot';
 const RTSMap: React.FC<{
   onNewGame?: () => void;
   difficulty?: DifficultyConfig;
-}> = ({ onNewGame, difficulty }) => {
+  slot?: SaveSlot;
+}> = ({ onNewGame, difficulty, slot = 0 }) => {
   // Load save once per mount (module-level caching caused stale data after New Game)
   const saveRef = useRef<SaveData | null | undefined>(undefined);
-  if (saveRef.current === undefined) saveRef.current = loadSave();
+  if (saveRef.current === undefined) saveRef.current = loadSave(slot);
   const INITIAL_SAVE = saveRef.current;
 
   const [zoom, setZoom] = useState(1);
@@ -986,7 +992,9 @@ const RTSMap: React.FC<{
       guardTowerResearched,
       barracksTech,
       blacksmithUpgrades,
-    });
+      savedAt: Date.now(),
+      difficultyId: difficulty?.id,
+    }, slot);
     setSaveStatus('saved');
     setTimeout(() => setSaveStatus('idle'), 2000);
   }, [
@@ -3489,6 +3497,7 @@ const RTSMap: React.FC<{
           killCount,
           onNewGame,
           placedBuildings,
+          slot,
           startTimeRef,
           totalGold,
           totalLumber,
@@ -3550,6 +3559,7 @@ const RTSMap: React.FC<{
           saveStatus,
           setGameSpeed,
           setZoom,
+          slot,
           soundMuted,
           startTimeRef,
           toggleMute,

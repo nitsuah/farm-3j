@@ -11,7 +11,7 @@ import {
   ZOOM_MIN,
   ZOOM_STEP,
 } from '../game/constants';
-import { clearSave } from '../game/persistence';
+import { clearSave, type SaveSlot } from '../game/persistence';
 import type {
   BuildingType,
   EnemyGrunt,
@@ -43,6 +43,7 @@ interface ResourceBarProps {
   nextWaveAt: number | null;
   onNewGame?: () => void;
   patrolMode: boolean;
+  slot: SaveSlot;
   resources: Resources;
   saveStatus: 'idle' | 'saved';
   setGameSpeed: React.Dispatch<React.SetStateAction<number>>;
@@ -80,6 +81,7 @@ export const ResourceBar: React.FC<ResourceBarProps> = ({
   saveStatus,
   setGameSpeed,
   setZoom,
+  slot,
   soundMuted,
   startTimeRef,
   toggleMute,
@@ -514,7 +516,7 @@ export const ResourceBar: React.FC<ResourceBarProps> = ({
         <button
           type="button"
           onClick={() => {
-            clearSave();
+            clearSave(slot);
             if (onNewGame) onNewGame();
             else window.location.reload();
           }}

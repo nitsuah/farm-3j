@@ -1,7 +1,7 @@
 import React from 'react';
 
 import type { WorkerState } from '../game/types';
-import { loadHighScores, clearSave } from '../game/persistence';
+import { loadHighScores, clearSave, type SaveSlot } from '../game/persistence';
 import type { PlacedBuilding } from '../game/types';
 import { Stat } from '../ui/Stat';
 
@@ -11,6 +11,7 @@ interface GameOverOverlayProps {
   killCount: number;
   onNewGame?: () => void;
   placedBuildings: PlacedBuilding[];
+  slot: SaveSlot;
   startTimeRef: React.RefObject<number>;
   totalGold: number;
   totalLumber: number;
@@ -25,6 +26,7 @@ export const GameOverOverlay: React.FC<GameOverOverlayProps> = ({
   killCount,
   onNewGame,
   placedBuildings,
+  slot,
   startTimeRef,
   totalGold,
   totalLumber,
@@ -201,7 +203,7 @@ export const GameOverOverlay: React.FC<GameOverOverlayProps> = ({
                 type="button"
                 className="rounded-lg border-2 border-amber-500 bg-amber-500/20 px-8 py-3 text-lg text-amber-200 hover:bg-amber-500/40"
                 onClick={() => {
-                  clearSave();
+                  clearSave(slot);
                   if (onNewGame) onNewGame();
                   else window.location.reload();
                 }}
