@@ -3449,6 +3449,8 @@ const RTSMap: React.FC<{
       enemyWalls: enemyWalls
         .filter(ew => ew.hp > 0)
         .map(ew => ({ x: ew.x, y: ew.y })),
+      lootCrates: lootCrates.map(c => ({ x: c.x, y: c.y })),
+      droppedItems: droppedItems.map(d => ({ x: d.x, y: d.y })),
     }),
     [
       workers,
@@ -3469,6 +3471,8 @@ const RTSMap: React.FC<{
       fogExplored,
       minimapPings,
       enemyWalls,
+      lootCrates,
+      droppedItems,
     ]
   );
 

@@ -203,6 +203,8 @@ interface RTSUIProps {
     fogExplored: boolean[][];
     attackPings: { x: number; y: number; t: number }[];
     enemyWalls: { x: number; y: number }[];
+    lootCrates: { x: number; y: number }[];
+    droppedItems: { x: number; y: number }[];
   };
 }
 
@@ -2010,6 +2012,28 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                 stroke="#dc2626"
                 strokeWidth={0.1}
                 rx={0.05}
+              />
+            ))}
+            {/* Loot crates — cyan squares */}
+            {minimapData.lootCrates.map((c, i) => (
+              <rect
+                key={`lc${i}`}
+                x={c.x - 0.35}
+                y={c.y - 0.35}
+                width={0.7}
+                height={0.7}
+                fill="#06b6d4"
+                opacity={0.8}
+                rx={0.1}
+              />
+            ))}
+            {/* Dropped hero items — purple diamonds */}
+            {minimapData.droppedItems.map((d, i) => (
+              <polygon
+                key={`di${i}`}
+                points={`${d.x},${d.y - 0.5} ${d.x + 0.4},${d.y} ${d.x},${d.y + 0.5} ${d.x - 0.4},${d.y}`}
+                fill="#a855f7"
+                opacity={0.9}
               />
             ))}
             {/* Attack pings — expanding red rings */}
