@@ -19,7 +19,7 @@ interface NeutralLayerProps {
   } | null;
 }
 
-export const NeutralLayer: React.FC<NeutralLayerProps> = ({
+export const NeutralLayer: React.FC<NeutralLayerProps> = React.memo(({
   anySelected,
   capturedShrines,
   clearedCamps,
@@ -224,4 +224,4 @@ export const NeutralLayer: React.FC<NeutralLayerProps> = ({
         })}
     </>
   );
-};
+});

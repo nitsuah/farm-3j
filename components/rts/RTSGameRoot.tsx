@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import RTSMap from './RTSMap';
 import { loadSlotMeta, type SaveSlot, type SlotMeta } from './game/persistence';
 
-export type Difficulty = 'easy' | 'normal' | 'hard';
+export type Difficulty = 'easy' | 'normal' | 'hard' | 'demo';
 
 export interface DifficultyConfig {
   id: Difficulty;
@@ -19,6 +19,19 @@ export interface DifficultyConfig {
 }
 
 export const DIFFICULTY_CONFIGS: Record<Difficulty, DifficultyConfig> = {
+  demo: {
+    id: 'demo',
+    label: 'Demo',
+    icon: '🤖',
+    desc: 'Watch an AI bot play automatically. Great for showcases and e2e testing.',
+    startGold: 200,
+    startLumber: 120,
+    startStone: 40,
+    gruntHpMult: 0.8,
+    gruntDmgMult: 0.8,
+    gruntSpeedMult: 0.9,
+    waveIntervalMult: 1.3,
+  },
   easy: {
     id: 'easy',
     label: 'Easy',
@@ -72,7 +85,7 @@ function formatDate(ts: number): string {
   });
 }
 
-const DIFF_ICONS: Record<string, string> = { easy: '🌻', normal: '⚔️', hard: '💀' };
+const DIFF_ICONS: Record<string, string> = { easy: '🌻', normal: '⚔️', hard: '💀', demo: '🤖' };
 
 export const RTSGameRoot: React.FC = () => {
   const [gameKey, setGameKey] = useState(0);
@@ -126,7 +139,7 @@ export const RTSGameRoot: React.FC = () => {
             Slot {pendingSlot + 1} — new game
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 16 }}>
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
           {(['easy', 'normal', 'hard'] as Difficulty[]).map(d => {
             const cfg = DIFFICULTY_CONFIGS[d];
             const border = d === 'easy' ? '#4ade80' : d === 'normal' ? '#60a5fa' : '#f87171';
@@ -150,6 +163,25 @@ export const RTSGameRoot: React.FC = () => {
               </button>
             );
           })}
+          {/* Demo / bot mode */}
+          {(() => {
+            const cfg = DIFFICULTY_CONFIGS.demo;
+            return (
+              <button
+                key="demo"
+                type="button"
+                onClick={() => { setSlot(pendingSlot); setDifficulty('demo'); }}
+                style={{ background: 'rgba(167,139,250,0.08)', border: '2px dashed #a78bfa', borderRadius: 12, padding: '20px 28px', cursor: 'pointer', minWidth: 160, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, color: '#f1f5f9' }}
+                onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.05)')}
+                onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+              >
+                <span style={{ fontSize: 32 }}>{cfg.icon}</span>
+                <span style={{ fontSize: 20, fontWeight: 700, color: '#a78bfa' }}>{cfg.label}</span>
+                <span style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center', maxWidth: 130 }}>{cfg.desc}</span>
+                <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>AI controls all units</div>
+              </button>
+            );
+          })()}
         </div>
       </div>
     );

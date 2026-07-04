@@ -5278,9 +5278,9 @@ export function useGameLoop(ctx: RTSGameContext) {
         });
       });
 
-      // Fog of war update — throttled to every 200ms to avoid per-frame state churn
+      // Fog of war update — throttled to every 350ms to avoid per-frame state churn
       const nowFog = Date.now();
-      if (nowFog - lastFogUpdateRef.current >= 200) {
+      if (nowFog - lastFogUpdateRef.current >= 350) {
         lastFogUpdateRef.current = nowFog;
         const newVisible = computeVisible([
           { x: BARN_POS.x, y: BARN_POS.y, r: BARN_VISION },

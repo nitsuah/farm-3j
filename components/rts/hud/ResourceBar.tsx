@@ -362,14 +362,16 @@ export const ResourceBar: React.FC<ResourceBarProps> = ({
         )}
         <button
           type="button"
-          onClick={() => setGameSpeed(s => (s === 0 ? 1 : s === 1 ? 2 : 0))}
+          onClick={() => setGameSpeed(s => (s === 0 ? 1 : s === 1 ? 2 : s === 2 ? 3 : 0))}
           style={{
             background:
               gameSpeed === 0
                 ? 'rgba(239,68,68,0.3)'
-                : gameSpeed === 2
-                  ? 'rgba(251,191,36,0.3)'
-                  : 'rgba(255,255,255,0.08)',
+                : gameSpeed === 3
+                  ? 'rgba(167,139,250,0.35)'
+                  : gameSpeed === 2
+                    ? 'rgba(251,191,36,0.3)'
+                    : 'rgba(255,255,255,0.08)',
             border: '1px solid rgba(255,255,255,0.2)',
             color: '#fde68a',
             padding: '2px 12px',
@@ -378,9 +380,9 @@ export const ResourceBar: React.FC<ResourceBarProps> = ({
             cursor: 'pointer',
             fontWeight: 700,
           }}
-          title="Cycle: Pause / 1× / 2×"
+          title="Cycle: Pause / 1× / 2× / 3×"
         >
-          {gameSpeed === 0 ? '▶ Start' : gameSpeed === 1 ? '⏸ Pause' : '▶▶ 2×'}
+          {gameSpeed === 0 ? '▶ Start' : gameSpeed === 1 ? '⏸ Pause' : gameSpeed === 2 ? '▶▶ 2×' : '▶▶▶ 3×'}
         </button>
         <span
           style={{

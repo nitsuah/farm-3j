@@ -32,7 +32,7 @@ interface EnemyBaseLayerProps {
   ) => void;
 }
 
-export const EnemyBaseLayer: React.FC<EnemyBaseLayerProps> = ({
+export const EnemyBaseLayer: React.FC<EnemyBaseLayerProps> = React.memo(({
   anySelected,
   enemyBarnHp,
   enemyTowers,
@@ -308,4 +308,4 @@ export const EnemyBaseLayer: React.FC<EnemyBaseLayerProps> = ({
         })}
     </>
   );
-};
+});

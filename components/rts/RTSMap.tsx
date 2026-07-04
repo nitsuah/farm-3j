@@ -140,6 +140,11 @@ import { useProduction } from './hooks/useProduction';
 import { useTowerCombat } from './hooks/useTowerCombat';
 import { useWaveSpawner } from './hooks/useWaveSpawner';
 import { useWorldTicks } from './hooks/useWorldTicks';
+import {
+  useBotController,
+  type BotCommands,
+  type BotSnapshot,
+} from './hooks/useBotController';
 
 // Re-exported for backwards compatibility — previously defined in this file.
 export { BUILDING_REQUIRES } from './game/constants';
@@ -2529,6 +2534,180 @@ const RTSMap: React.FC<{
 
   useGameLoop(gameCtx);
 
+  // ---------- Bot / Demo mode ----------
+  const isDemo = difficulty?.id === 'demo';
+  const botSnapshotRef = useRef<BotSnapshot | null>(null);
+  useEffect(() => {
+    botSnapshotRef.current = {
+      resources,
+      workers,
+      placedBuildings,
+      tiles,
+      wave,
+      farmhouse,
+      gameOver,
+    };
+  }, [resources, workers, placedBuildings, tiles, wave, farmhouse, gameOver]);
+
+  const botCommands = useMemo<BotCommands>(
+    () => ({
+      orderGather: (workerId, resourceType, resourceIdx) => {
+        const nodes =
+          resourceType === 'gold'
+            ? goldMinesRef.current
+            : resourceType === 'tree'
+              ? treesRef.current
+              : stoneNodesRef.current;
+        const node = nodes[resourceIdx];
+        if (!node) return;
+        setWorkers(ws =>
+          ws.map(w => {
+            if (w.id !== workerId || w.hp <= 0) return w;
+            const dest = { x: node.x, y: node.y };
+            const path = aStar(
+              INITIAL_TILES,
+              { x: Math.round(w.x), y: Math.round(w.y) },
+              dest
+            );
+            return {
+              ...w,
+              movingTo: path[0] ?? dest,
+              path: path.slice(1),
+              gathering: { type: resourceType, idx: resourceIdx },
+              attacking: null,
+              state: 'moving' as const,
+              selected: false,
+            };
+          })
+        );
+      },
+
+      orderAttack: (workerId, target) => {
+        setWorkers(ws =>
+          ws.map(w => {
+            if (w.id !== workerId || w.hp <= 0) return w;
+            return {
+              ...w,
+              attacking: target,
+              gathering: null,
+              movingTo: null,
+              path: [],
+              state: 'attacking' as const,
+              selected: false,
+            };
+          })
+        );
+      },
+
+      orderMove: (workerId, tx, ty) => {
+        setWorkers(ws =>
+          ws.map(w => {
+            if (w.id !== workerId || w.hp <= 0) return w;
+            const dest = { x: tx, y: ty };
+            const path = aStar(
+              INITIAL_TILES,
+              { x: Math.round(w.x), y: Math.round(w.y) },
+              dest
+            );
+            return {
+              ...w,
+              movingTo: path[0] ?? dest,
+              path: path.slice(1),
+              attacking: null,
+              gathering: null,
+              state: 'moving' as const,
+              selected: false,
+            };
+          })
+        );
+      },
+
+      buildAt: (type, tx, ty) => {
+        const snap = botSnapshotRef.current;
+        if (!snap) return false;
+        const cost = BUILDING_COSTS[type];
+        if (!cost) return false;
+        if (
+          snap.resources.gold < cost.gold ||
+          snap.resources.lumber < cost.lumber ||
+          snap.resources.stone < cost.stone
+        )
+          return false;
+        const occupied =
+          (tx === BARN_POS.x && ty === BARN_POS.y) ||
+          (tx === ENEMY_BARN_POS.x && ty === ENEMY_BARN_POS.y) ||
+          (tiles[tx]?.[ty] === 'water') ||
+          (tiles[tx]?.[ty] === 'tree') ||
+          (tiles[tx]?.[ty] === 'rock') ||
+          placedBuildingsRef.current.some(b => b.x === tx && b.y === ty) ||
+          treesRef.current.some(t => t.x === tx && t.y === ty && t.amount > 0) ||
+          goldMinesRef.current.some(m => m.x === tx && m.y === ty && m.amount > 0) ||
+          stoneNodesRef.current.some(s => s.x === tx && s.y === ty && s.amount > 0);
+        if (occupied) return false;
+        setResources(r => ({
+          ...r,
+          gold: r.gold - cost.gold,
+          lumber: r.lumber - cost.lumber,
+          stone: r.stone - cost.stone,
+        }));
+        setPlacedBuildings(bs => [
+          ...bs,
+          {
+            id: buildingIdRef.current++,
+            type,
+            x: tx,
+            y: ty,
+            hp: 1,
+            maxHp: BUILDING_MAX_HP[type] ?? 100,
+            constructing: true,
+            constructedAt: Date.now(),
+          },
+        ]);
+        return true;
+      },
+
+      trainFarmer: () => {
+        const snap = botSnapshotRef.current;
+        if (!snap) return false;
+        if (snap.resources.gold < 30 || snap.resources.food >= snap.resources.foodCap)
+          return false;
+        if (!snap.farmhouse.built) return false;
+        setResources(r => ({ ...r, gold: r.gold - 30, food: r.food + 1 }));
+        setWorkers(ws => {
+          const newId = Math.max(...ws.map(w => w.id), 0) + 1;
+          return [...ws, makeWorker(newId, BARN_POS.x, BARN_POS.y)];
+        });
+        return true;
+      },
+
+      trainSwordsman: () => {
+        const snap = botSnapshotRef.current;
+        if (!snap) return false;
+        if (
+          snap.resources.gold < 50 ||
+          snap.resources.food >= snap.resources.foodCap
+        )
+          return false;
+        setResources(r => ({ ...r, gold: r.gold - 50, food: r.food + 1 }));
+        setTrainingQueue(q => [...q, { type: 'swordsman' }]);
+        return true;
+      },
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
+  useBotController(gameCtx, botCommands, botSnapshotRef, isDemo);
+
+  // Demo mode: auto-restart 5 s after game over so it loops as a showcase
+  useEffect(() => {
+    if (!isDemo || !gameOver) return;
+    const id = window.setTimeout(() => {
+      if (onNewGame) onNewGame();
+    }, 5000);
+    return () => window.clearTimeout(id);
+  }, [isDemo, gameOver, onNewGame]);
+
   // Scroll-wheel zoom anchored to cursor position
   useEffect(() => {
     const svgEl = svgRef.current;
@@ -3671,6 +3850,7 @@ const RTSMap: React.FC<{
         {...{
           gameEndTime,
           gameOver,
+          isDemo,
           killCount,
           onNewGame,
           placedBuildings,
@@ -4109,6 +4289,29 @@ const RTSMap: React.FC<{
           })
         }
       />
+      {/* Demo mode indicator */}
+      {isDemo && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '0.4rem',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 200,
+            background: 'rgba(109,40,217,0.85)',
+            border: '1.5px solid #a78bfa',
+            borderRadius: '1rem',
+            color: '#ddd6fe',
+            fontSize: '0.75rem',
+            fontWeight: 700,
+            padding: '0.2rem 0.75rem',
+            letterSpacing: 1,
+            pointerEvents: 'none',
+          }}
+        >
+          🤖 DEMO MODE — AI is playing
+        </div>
+      )}
       {/* Achievement panel button */}
       <button
         onClick={() => setAchievementPanelOpen(o => !o)}

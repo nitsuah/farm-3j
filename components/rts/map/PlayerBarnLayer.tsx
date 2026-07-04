@@ -29,7 +29,7 @@ interface PlayerBarnLayerProps {
   setWorkers: React.Dispatch<React.SetStateAction<WorkerState[]>>;
 }
 
-export const PlayerBarnLayer: React.FC<PlayerBarnLayerProps> = ({
+export const PlayerBarnLayer: React.FC<PlayerBarnLayerProps> = React.memo(({
   anySelected,
   buildMode,
   clientToSvg,
@@ -228,4 +228,4 @@ export const PlayerBarnLayer: React.FC<PlayerBarnLayerProps> = ({
       })()}
     </>
   );
-};
+});
