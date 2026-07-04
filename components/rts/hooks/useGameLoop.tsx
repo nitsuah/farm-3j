@@ -126,7 +126,7 @@ import {
 } from '../game/constants';
 import { INITIAL_TILES, computeVisible, tileDist } from '../game/map';
 import { aStar } from '../game/pathfinding';
-import { Snd } from '../game/sound';
+import { ENEMY_VOICELINES, Snd, pickAck } from '../game/sound';
 import type {
   BuildingType,
   EnemyGrunt,
@@ -4170,6 +4170,12 @@ export function useGameLoop(ctx: RTSGameContext) {
               const capturedWDY2 = Math.round(wd.y);
               witchDoctorBuffTimersRef.current[wdid] = window.setTimeout(() => {
                 delete witchDoctorBuffTimersRef.current[wdid];
+                addFloatingText(
+                  capturedWDX2,
+                  capturedWDY2,
+                  pickAck(ENEMY_VOICELINES.witch_doctor ?? []),
+                  '#a855f7'
+                );
                 const buffUntil = Date.now() + WITCH_DOCTOR_BUFF_DURATION;
                 setEnemyGrunts(gs =>
                   gs.map(g => {
@@ -4286,11 +4292,18 @@ export function useGameLoop(ctx: RTSGameContext) {
                 return { ...w, stunUntil };
               })
             );
+            Snd.warchiefStomp();
             addFloatingText(
               Math.round(wc2.x),
               Math.round(wc2.y),
               '👊 WAR STOMP!',
               '#ef4444'
+            );
+            addFloatingText(
+              Math.round(wc2.x),
+              Math.round(wc2.y) - 1,
+              pickAck(ENEMY_VOICELINES.warchief_stomp ?? []),
+              '#fbbf24'
             );
             return { ...wc2, state: 'stomping' as const, lastStompAt: now };
           }
@@ -4397,11 +4410,18 @@ export function useGameLoop(ctx: RTSGameContext) {
                 return { ...w, stunUntil: slowUntil };
               })
             );
+            Snd.warlordWarCry();
             addFloatingText(
               Math.round(wl.x),
               Math.round(wl.y),
               '📣 WAR CRY!',
               '#a855f7'
+            );
+            addFloatingText(
+              Math.round(wl.x),
+              Math.round(wl.y) - 1,
+              pickAck(ENEMY_VOICELINES.warlord_warcry ?? []),
+              '#c4b5fd'
             );
             return { ...wl, lastWarCryAt: now };
           }
@@ -4415,6 +4435,7 @@ export function useGameLoop(ctx: RTSGameContext) {
             );
             if (heroInRange) {
               const stunUntil = now + WARLORD_SHIELD_BASH_STUN_MS;
+              Snd.warlordShieldBash();
               setWorkers(ws =>
                 ws.map(w => {
                   if (w.id !== heroInRange.id) return w;
@@ -4426,6 +4447,12 @@ export function useGameLoop(ctx: RTSGameContext) {
                   );
                   return { ...w, stunUntil };
                 })
+              );
+              addFloatingText(
+                Math.round(wl.x),
+                Math.round(wl.y) - 1,
+                pickAck(ENEMY_VOICELINES.warlord_bash ?? []),
+                '#c4b5fd'
               );
               return { ...wl, lastShieldBashAt: now };
             }

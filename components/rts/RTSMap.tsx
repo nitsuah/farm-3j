@@ -110,6 +110,8 @@ import {
   getSoundMuted,
   pickAck,
   setSoundMuted,
+  startAmbient,
+  stopAmbient,
   Snd,
 } from './game/sound';
 import { AchievementPanel } from './hud/AchievementPanel';
@@ -912,7 +914,14 @@ const RTSMap: React.FC<{
   const isNightRef = useRef(false);
   useEffect(() => {
     isNightRef.current = dayPhase === 'night';
-  }, [dayPhase]);
+    if (!soundMuted) startAmbient(dayPhase === 'night');
+  }, [dayPhase, soundMuted]);
+
+  // Stop ambient audio when muted or game over
+  useEffect(() => {
+    if (soundMuted || gameOver) stopAmbient();
+    else startAmbient(isNightRef.current);
+  }, [soundMuted, gameOver]);
 
   useEffect(() => {
     if (gameOver) return;
@@ -1042,6 +1051,7 @@ const RTSMap: React.FC<{
     if (!isNew) return;
     const achv = ALL_ACHIEVEMENTS.find(a => a.id === id);
     if (!achv) return;
+    Snd.achievementUnlock();
     setAchievementToast(achv);
     window.setTimeout(() => setAchievementToast(null), 4500);
   }, []);
