@@ -127,6 +127,12 @@ export const Snd = {
     playTone(400, 0.04, 0.22, 'square', 80);
     playTone(250, 0.1, 0.15, 'square', 60);
   },
+  // Night Lurker shriek — high-pitched eerie screech
+  lurkerShriek: () => {
+    playTone(1200, 0.06, 0.08, 'sine', 600);
+    window.setTimeout(() => playTone(900, 0.05, 0.12, 'sine', 300), 60);
+    window.setTimeout(() => playTone(600, 0.04, 0.1, 'sine', 200), 130);
+  },
 };
 
 // ---------- Ambient audio loop ----------

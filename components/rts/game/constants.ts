@@ -168,6 +168,16 @@ export const WARLORD_SHIELD_BASH_STUN_MS = 2500;
 export const WARLORD_SHIELD_BASH_COOLDOWN_MS = 12000;
 export const WARLORD_GOLD_REWARD = 100;
 export const WARLORD_XP_REWARD = 250;
+
+// ---------- Night Lurker ----------
+export const LURKER_MAX_HP = 70;
+export const LURKER_SPEED = 1.4;
+export const LURKER_DAMAGE = 12;
+export const LURKER_ATTACK_MS = 900;
+export const LURKER_FIRST_WAVE = 15;
+export const LURKER_GOLD_REWARD = 35;
+export const LURKER_XP_REWARD = 40;
+
 export const LOOT_CRATE_SPAWN_MS = 45000;
 export const SHAMAN_MAX_HP = 45;
 export const SHAMAN_SPEED = 0.6;

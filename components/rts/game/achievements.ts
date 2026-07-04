@@ -91,6 +91,12 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     emoji: '🔮',
   },
   {
+    id: 'lurker_slayer',
+    name: 'Shadow Slayer',
+    description: 'Kill 10 Night Lurkers',
+    emoji: '🦇',
+  },
+  {
     id: 'veteran_corps',
     name: 'Veteran Corps',
     description: 'Field 3 level-3 units simultaneously',

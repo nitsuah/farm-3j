@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 import type { WorkerState } from '../game/types';
 import {
@@ -104,6 +104,11 @@ import {
   WARLORD_WAR_CRY_RADIUS,
   WARLORD_WAR_CRY_SLOW_MS,
   WARLORD_XP_REWARD,
+  LURKER_ATTACK_MS,
+  LURKER_DAMAGE,
+  LURKER_GOLD_REWARD,
+  LURKER_SPEED,
+  LURKER_XP_REWARD,
   WAR_RAM_ATTACK_MS,
   WAR_RAM_DAMAGE,
   WAR_RAM_GOLD_REWARD,
@@ -130,6 +135,7 @@ import { ENEMY_VOICELINES, Snd, pickAck } from '../game/sound';
 import type {
   BuildingType,
   EnemyGrunt,
+  EnemyLurker,
   EnemyWarlord,
   HeroItemId,
   ResourceNode,
@@ -138,6 +144,7 @@ import type { RTSGameContext } from './context';
 
 export function useGameLoop(ctx: RTSGameContext) {
   const NIGHT_SPEED_MULT = 1.3;
+  const lurkerKillCountRef = useRef(0);
   const {
     difficulty,
     onAchievement,
@@ -169,6 +176,7 @@ export function useGameLoop(ctx: RTSGameContext) {
     enemyWallsRef,
     enemyWarchiefsRef,
     enemyWarlordsRef,
+    enemyLurkersRef,
     enemyWitchDoctorsRef,
     fogExploredRef,
     fogVisibleRef,
@@ -210,6 +218,7 @@ export function useGameLoop(ctx: RTSGameContext) {
     setEnemyWalls,
     setEnemyWarchiefs,
     setEnemyWarlords,
+    setEnemyLurkers,
     setEnemyWitchDoctors,
     setFogExplored,
     setFogVisible,
@@ -239,6 +248,7 @@ export function useGameLoop(ctx: RTSGameContext) {
     treesRef,
     triggerShakeRef,
     triggerUnderAttackRef,
+    lurkerAttackTimeoutsRef,
     trollAttackTimersRef,
     upgradesRef,
     upkeepMultRef,
@@ -525,6 +535,20 @@ export function useGameLoop(ctx: RTSGameContext) {
                 movingTo: null,
                 path: [],
               };
+            const nearLKAM = enemyLurkersRef.current.find(
+              lk => lk.hp > 0 && tileDist(w.x, w.y, lk.x, lk.y) <= AM_SCAN
+            );
+            if (nearLKAM)
+              return {
+                ...w,
+                attacking: {
+                  targetType: 'lurker' as const,
+                  lurkerId: nearLKAM.id,
+                },
+                state: 'attacking' as const,
+                movingTo: null,
+                path: [],
+              };
           }
           // Hold position: stay put, auto-attack nearby enemies without chasing
           if (w.holdPosition) {
@@ -646,6 +670,18 @@ export function useGameLoop(ctx: RTSGameContext) {
                   attacking: {
                     targetType: 'warlord' as const,
                     warlordId: nearWLH.id,
+                  },
+                  state: 'attacking' as const,
+                };
+              const nearLKH = enemyLurkersRef.current.find(
+                lk => lk.hp > 0 && tileDist(w.x, w.y, lk.x, lk.y) <= HP_RANGE
+              );
+              if (nearLKH)
+                return {
+                  ...w,
+                  attacking: {
+                    targetType: 'lurker' as const,
+                    lurkerId: nearLKH.id,
                   },
                   state: 'attacking' as const,
                 };
@@ -772,6 +808,18 @@ export function useGameLoop(ctx: RTSGameContext) {
                 attacking: {
                   targetType: 'warlord' as const,
                   warlordId: nearWLA.id,
+                },
+                state: 'attacking' as const,
+              };
+            const nearLKA = enemyLurkersRef.current.find(
+              lk => lk.hp > 0 && tileDist(w.x, w.y, lk.x, lk.y) <= AGG_RANGE
+            );
+            if (nearLKA)
+              return {
+                ...w,
+                attacking: {
+                  targetType: 'lurker' as const,
+                  lurkerId: nearLKA.id,
                 },
                 state: 'attacking' as const,
               };
@@ -2829,6 +2877,115 @@ export function useGameLoop(ctx: RTSGameContext) {
                   }
                 }, moraleWL);
               }
+            } else if (w.attacking.targetType === 'lurker') {
+              const lkId = (
+                w.attacking as { targetType: 'lurker'; lurkerId: number }
+              ).lurkerId;
+              const lkTarget = enemyLurkersRef.current.find(
+                lk => lk.id === lkId && lk.hp > 0
+              );
+              if (!lkTarget) return { ...w, attacking: null, state: 'idle' };
+              const distToLK = tileDist(w.x, w.y, lkTarget.x, lkTarget.y);
+              if (distToLK > 1.5) {
+                const p = aStar(
+                  INITIAL_TILES,
+                  { x: Math.round(w.x), y: Math.round(w.y) },
+                  { x: Math.round(lkTarget.x), y: Math.round(lkTarget.y) }
+                );
+                return {
+                  ...w,
+                  movingTo: p[0] ?? { x: lkTarget.x, y: lkTarget.y },
+                  path: p.slice(1),
+                  state: 'moving',
+                };
+              }
+              if (!attackT[w.id]) {
+                const capturedLKX = Math.round(lkTarget.x),
+                  capturedLKY = Math.round(lkTarget.y);
+                const capturedLKId = lkId;
+                const unitBonusLK =
+                  w.unitType === 'hero'
+                    ? HERO_DAMAGE_BONUS +
+                      heroItemsRef.current.reduce(
+                        (s, it) =>
+                          s + (HERO_ITEM_DATA[it.itemId].dmgBonus ?? 0),
+                        0
+                      )
+                    : w.unitType === 'swordsman'
+                      ? SWORDSMAN_DAMAGE_BONUS
+                      : w.unitType === 'cavalry'
+                        ? CAVALRY_DAMAGE_BONUS
+                        : 0;
+                const capturedVetLK = w.level;
+                const moraleLK = getMoraleMs(w.x, w.y);
+                attackT[w.id] = window.setTimeout(() => {
+                  delete attackTimeoutsRef.current[w.id];
+                  const dmg =
+                    ATTACK_DAMAGE +
+                    upgradesRef.current.sharperTools * 5 +
+                    blacksmithUpgradesRef.current.steelEdge * 5 +
+                    (shrineWarBuffRef.current ? 5 : 0) +
+                    (barracksTechRef.current.warDrums ? 8 : 0) +
+                    unitBonusLK +
+                    capturedVetLK * VETERAN_ATK_BONUS;
+                  setEnemyLurkers(lks =>
+                    lks.map(lk =>
+                      lk.id === capturedLKId
+                        ? { ...lk, hp: Math.max(0, lk.hp - dmg) }
+                        : lk
+                    )
+                  );
+                  addFloatingText(capturedLKX, capturedLKY, `-${dmg}`, '#99f6e4');
+                  const lkCurrent = enemyLurkersRef.current.find(
+                    lk => lk.id === capturedLKId
+                  );
+                  if (lkCurrent && lkCurrent.hp - dmg <= 0) {
+                    setWorkers(ws2 =>
+                      ws2.map(u => {
+                        const isAttacker = u.id === w.id;
+                        const isNearby =
+                          !isAttacker &&
+                          u.hp > 0 &&
+                          tileDist(u.x, u.y, capturedLKX, capturedLKY) <= 3;
+                        const xpGain = isAttacker
+                          ? LURKER_XP_REWARD
+                          : isNearby
+                            ? Math.round(LURKER_XP_REWARD * 0.25)
+                            : 0;
+                        if (xpGain === 0) return u;
+                        const newXp = u.xp + xpGain;
+                        const newLevel =
+                          newXp >= XP_TO_LEVEL_3
+                            ? 3
+                            : newXp >= XP_TO_LEVEL_2
+                              ? 2
+                              : newXp >= XP_TO_LEVEL_1
+                                ? 1
+                                : 0;
+                        if (newLevel > u.level) {
+                          addFloatingText(
+                            Math.round(u.x),
+                            Math.round(u.y),
+                            `⭐ Level ${newLevel}!`,
+                            '#fbbf24'
+                          );
+                          return {
+                            ...u,
+                            xp: newXp,
+                            level: newLevel,
+                            maxHp: u.maxHp + VETERAN_HP_BONUS,
+                            hp: Math.min(
+                              u.hp + VETERAN_HP_BONUS,
+                              u.maxHp + VETERAN_HP_BONUS
+                            ),
+                          };
+                        }
+                        return { ...u, xp: newXp };
+                      })
+                    );
+                  }
+                }, moraleLK);
+              }
             } else {
               if (!attackT[w.id]) {
                 const capturedWX = Math.round(w.x),
@@ -4506,6 +4663,139 @@ export function useGameLoop(ctx: RTSGameContext) {
             wallSetWL
           );
           return { ...wl, movingTo: pWL[0] ?? BARN_POS, path: pWL.slice(1) };
+        });
+      });
+
+      // Update Enemy Lurkers (fast flankers — chase nearest worker or march to barn)
+      setEnemyLurkers((lks: EnemyLurker[]) => {
+        const alive = lks.filter(lk => lk.hp > 0);
+        const killed = lks.filter(lk => lk.hp <= 0);
+        killed.forEach(lk => {
+          lurkerKillCountRef.current += 1;
+          if (lurkerKillCountRef.current >= 10) onAchievement('lurker_slayer');
+          setResources(r => ({ ...r, gold: r.gold + LURKER_GOLD_REWARD }));
+          setKillCount(k => k + 1);
+          addFloatingText(
+            Math.round(lk.x),
+            Math.round(lk.y),
+            `+${LURKER_GOLD_REWARD}🪙`,
+            '#34d399'
+          );
+        });
+        return alive.map(lk => {
+          // Find nearest alive worker
+          const nearestWorker = workersRef.current
+            .filter(w => w.hp > 0)
+            .reduce<(typeof workersRef.current)[0] | null>(
+              (best, w) =>
+                !best ||
+                tileDist(lk.x, lk.y, w.x, w.y) <
+                  tileDist(lk.x, lk.y, best.x, best.y)
+                  ? w
+                  : best,
+              null
+            );
+          const distToWorker = nearestWorker
+            ? tileDist(lk.x, lk.y, nearestWorker.x, nearestWorker.y)
+            : 999;
+          const distToBarn = tileDist(lk.x, lk.y, BARN_POS.x, BARN_POS.y);
+
+          // Attack nearest worker when adjacent
+          if (nearestWorker && distToWorker <= 1.2) {
+            if (!lurkerAttackTimeoutsRef.current[lk.id]) {
+              const wid = nearestWorker.id;
+              const capturedWX = Math.round(nearestWorker.x),
+                capturedWY = Math.round(nearestWorker.y);
+              const capturedLkId = lk.id;
+              lurkerAttackTimeoutsRef.current[capturedLkId] =
+                window.setTimeout(() => {
+                  delete lurkerAttackTimeoutsRef.current[capturedLkId];
+                  setWorkers(ws =>
+                    ws.map(w => {
+                      if (w.id !== wid || w.hp <= 0) return w;
+                      addFloatingText(
+                        capturedWX,
+                        capturedWY,
+                        `-${LURKER_DAMAGE}`,
+                        '#99f6e4'
+                      );
+                      return { ...w, hp: Math.max(0, w.hp - LURKER_DAMAGE) };
+                    })
+                  );
+                }, LURKER_ATTACK_MS);
+            }
+            return { ...lk, state: 'attacking' as const };
+          }
+
+          // Attack barn when adjacent (use negative id to avoid collision with worker-attack keys)
+          if (distToBarn <= 1.2) {
+            const barnKey = -(lk.id);
+            if (!lurkerAttackTimeoutsRef.current[barnKey]) {
+              lurkerAttackTimeoutsRef.current[barnKey] = window.setTimeout(
+                () => {
+                  delete lurkerAttackTimeoutsRef.current[barnKey];
+                  addDmgLog('🦇 Night Lurker', LURKER_DAMAGE);
+                  barnDmgThisWaveRef.current += LURKER_DAMAGE;
+                  setPlayerBarnHp(hp => Math.max(0, hp - LURKER_DAMAGE));
+                  addFloatingText(
+                    BARN_POS.x,
+                    BARN_POS.y,
+                    `-${LURKER_DAMAGE}🏰`,
+                    '#99f6e4'
+                  );
+                },
+                LURKER_ATTACK_MS
+              );
+            }
+            return { ...lk, state: 'attacking' as const };
+          }
+
+          // Chase nearest worker if within 5 tiles, else march to barn
+          const chaseTarget =
+            nearestWorker && distToWorker <= 5
+              ? {
+                  x: Math.round(nearestWorker.x),
+                  y: Math.round(nearestWorker.y),
+                }
+              : null;
+          const dest = chaseTarget ?? BARN_POS;
+
+          if (lk.movingTo) {
+            const dx = lk.movingTo.x - lk.x,
+              dy = lk.movingTo.y - lk.y;
+            const distLK = Math.sqrt(dx * dx + dy * dy);
+            if (distLK < 0.1) {
+              const next = lk.path[0] ?? null;
+              return {
+                ...lk,
+                x: lk.movingTo.x,
+                y: lk.movingTo.y,
+                movingTo: next,
+                path: lk.path.slice(1),
+                state: 'moving' as const,
+              };
+            }
+            return {
+              ...lk,
+              x: lk.x + (dx / distLK) * Math.min(LURKER_SPEED * dt, distLK),
+              y: lk.y + (dy / distLK) * Math.min(LURKER_SPEED * dt, distLK),
+              state: 'moving' as const,
+            };
+          }
+          // Need new path — pathfind around walls
+          const wallSetLK = new Set(
+            placedBuildingsRef.current
+              .filter(b => b.type === 'wall')
+              .map(b => `${b.x},${b.y}`)
+          );
+          const pLK = aStar(
+            INITIAL_TILES,
+            { x: Math.round(lk.x), y: Math.round(lk.y) },
+            dest,
+            true,
+            wallSetLK
+          );
+          return { ...lk, movingTo: pLK[0] ?? dest, path: pLK.slice(1) };
         });
       });
 

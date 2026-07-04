@@ -4,7 +4,7 @@ import type { WorkerState } from '../game/types';
 import { HERO_ITEM_DATA, TILE_SIZE } from '../game/constants';
 import { HpBar } from './HpBar';
 import { tileToSvg } from '../game/map';
-import type { DroppedItem, EnemyGrunt, LootCrate } from '../game/types';
+import type { DroppedItem, EnemyGrunt, EnemyLurker, LootCrate } from '../game/types';
 
 interface EnemyGruntsLayerProps {
   anySelected: boolean;
@@ -16,9 +16,11 @@ interface EnemyGruntsLayerProps {
   ) => void;
   droppedItems: DroppedItem[];
   enemyGrunts: EnemyGrunt[];
+  enemyLurkers: EnemyLurker[];
   fogVisible: boolean[][];
   gruntHitRef: React.RefObject<Map<number, number>>;
   handleAttackGrunt: (gruntId: number, e: React.MouseEvent) => void;
+  handleAttackLurker: (lurkerId: number, e: React.MouseEvent) => void;
   lootCrates: LootCrate[];
 }
 
@@ -27,9 +29,11 @@ export const EnemyGruntsLayer: React.FC<EnemyGruntsLayerProps> = ({
   commandMove,
   droppedItems,
   enemyGrunts,
+  enemyLurkers,
   fogVisible,
   gruntHitRef,
   handleAttackGrunt,
+  handleAttackLurker,
   lootCrates,
 }) => {
   return (
@@ -212,6 +216,89 @@ export const EnemyGruntsLayer: React.FC<EnemyGruntsLayerProps> = ({
                 />
               ) : null;
             })()}
+          </g>
+        );
+      })}
+
+      {/* Night Lurkers */}
+      {enemyLurkers.map(lk => {
+        if (lk.hp <= 0) return null;
+        if (!fogVisible[Math.round(lk.x)]?.[Math.round(lk.y)]) return null;
+        const { isoX, isoY } = tileToSvg(lk.x, lk.y);
+        const cx = isoX + TILE_SIZE / 2;
+        const cy = isoY + 20;
+        const hpPct = lk.hp / lk.maxHp;
+        const isAttacking = lk.state === 'attacking';
+        return (
+          <g
+            key={`lurker-${lk.id}`}
+            style={{ cursor: anySelected ? 'crosshair' : 'default' }}
+            onContextMenu={e => handleAttackLurker(lk.id, e)}
+          >
+            {/* Shadow */}
+            <ellipse
+              cx={cx}
+              cy={cy + 8}
+              rx={14}
+              ry={5}
+              fill="#000"
+              opacity={0.25}
+            />
+            {/* Body — sleek dark teal teardrop */}
+            <ellipse
+              cx={cx}
+              cy={cy}
+              rx={11}
+              ry={14}
+              fill={isAttacking ? '#0f766e' : '#115e59'}
+              stroke="#042f2e"
+              strokeWidth={2}
+            />
+            {/* Wing-cape left */}
+            <path
+              d={`M${cx - 8},${cy - 2} Q${cx - 22},${cy - 12} ${cx - 16},${cy + 10}`}
+              fill="#134e4a"
+              stroke="#042f2e"
+              strokeWidth={1.5}
+            />
+            {/* Wing-cape right */}
+            <path
+              d={`M${cx + 8},${cy - 2} Q${cx + 22},${cy - 12} ${cx + 16},${cy + 10}`}
+              fill="#134e4a"
+              stroke="#042f2e"
+              strokeWidth={1.5}
+            />
+            {/* Glowing teal eyes */}
+            <circle cx={cx - 4} cy={cy - 4} r={3} fill="#2dd4bf" opacity={0.9} />
+            <circle cx={cx + 4} cy={cy - 4} r={3} fill="#2dd4bf" opacity={0.9} />
+            {/* Claw marks on attack */}
+            {isAttacking && (
+              <>
+                <line x1={cx - 6} y1={cy + 6} x2={cx - 2} y2={cy + 12} stroke="#5eead4" strokeWidth={1.5} />
+                <line x1={cx - 3} y1={cy + 5} x2={cx + 1} y2={cy + 11} stroke="#5eead4" strokeWidth={1.5} />
+                <line x1={cx} y1={cy + 4} x2={cx + 4} y2={cy + 10} stroke="#5eead4" strokeWidth={1.5} />
+              </>
+            )}
+            {/* Label */}
+            <text
+              x={cx}
+              y={isoY - 2}
+              textAnchor="middle"
+              fontSize="7"
+              fill="#5eead4"
+              fontWeight="bold"
+            >
+              LURKER
+            </text>
+            <HpBar
+              x={cx - 12}
+              y={isoY - 8}
+              width={24}
+              height={4}
+              hpPct={hpPct}
+              fill="#0d9488"
+              rx={0}
+            />
           </g>
         );
       })}

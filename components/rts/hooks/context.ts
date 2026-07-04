@@ -10,6 +10,7 @@ import type {
   Upgrades,
   WorkerState,
   EnemyGrunt,
+  EnemyLurker,
   EnemyNecromancer,
   EnemySapper,
   EnemyShaman,
@@ -85,6 +86,7 @@ export interface RTSGameContext {
   setEnemyTrolls: Setter<EnemyTroll[]>;
   setEnemyWalls: Setter<EnemyTower[]>;
   setEnemyWarchiefs: Setter<EnemyWarchief[]>;
+  setEnemyLurkers: Setter<EnemyLurker[]>;
   setEnemyWarlords: Setter<EnemyWarlord[]>;
   setEnemyWitchDoctors: Setter<EnemyWitchDoctor[]>;
   setFogExplored: Setter<boolean[][]>;
@@ -146,6 +148,9 @@ export interface RTSGameContext {
   enemyTrollsRef: Ref<EnemyTroll[]>;
   enemyWallIdRef: Ref<number>;
   enemyWallsRef: Ref<EnemyTower[]>;
+  enemyLurkersRef: Ref<EnemyLurker[]>;
+  lurkerAttackTimeoutsRef: Ref<Record<number, number>>;
+  lurkerIdRef: Ref<number>;
   enemyWarchiefsRef: Ref<EnemyWarchief[]>;
   enemyWarlordsRef: Ref<EnemyWarlord[]>;
   enemyWitchDoctorsRef: Ref<EnemyWitchDoctor[]>;

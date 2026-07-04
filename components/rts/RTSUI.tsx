@@ -206,6 +206,7 @@ interface RTSUIProps {
     lootCrates: { x: number; y: number }[];
     droppedItems: { x: number; y: number }[];
     warlords: { x: number; y: number }[];
+    lurkers: { x: number; y: number }[];
   };
 }
 
@@ -2045,6 +2046,16 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                 fill="#7c3aed"
                 stroke="#c4b5fd"
                 strokeWidth={0.15}
+              />
+            ))}
+            {/* Night Lurkers — fast teal triangles */}
+            {minimapData.lurkers.map((lk, i) => (
+              <polygon
+                key={`lurker${i}`}
+                points={`${lk.x},${lk.y - 0.9} ${lk.x + 0.8},${lk.y + 0.7} ${lk.x - 0.8},${lk.y + 0.7}`}
+                fill="#0d9488"
+                stroke="#99f6e4"
+                strokeWidth={0.12}
               />
             ))}
             {/* Attack pings — expanding red rings */}

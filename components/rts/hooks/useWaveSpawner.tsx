@@ -25,6 +25,8 @@ import {
   TROLL_MAX_HP,
   WARCHIEF_FIRST_WAVE,
   WARCHIEF_MAX_HP,
+  LURKER_FIRST_WAVE,
+  LURKER_MAX_HP,
   WARLORD_FIRST_WAVE,
   WARLORD_MAX_HP,
   WAR_RAM_FIRST_WAVE,
@@ -37,6 +39,7 @@ import { aStar } from '../game/pathfinding';
 import { Snd } from '../game/sound';
 import type {
   EnemyGrunt,
+  EnemyLurker,
   EnemyNecromancer,
   EnemySapper,
   EnemyShaman,
@@ -66,6 +69,7 @@ export function useWaveSpawner(ctx: RTSGameContext) {
     previewTimerRef,
     sapperIdRef,
     setEnemyGrunts,
+    setEnemyLurkers,
     setEnemyNecromancers,
     setEnemySappers,
     setEnemyShamans,
@@ -85,6 +89,7 @@ export function useWaveSpawner(ctx: RTSGameContext) {
     siegeIdRef,
     spawnTimerRef,
     trollIdRef,
+    lurkerIdRef,
     warchiefIdRef,
     warlordIdRef,
     waveRef,
@@ -528,6 +533,48 @@ export function useWaveSpawner(ctx: RTSGameContext) {
       window.setTimeout(() => setWaveAnnouncement(null), 6000);
     }
 
+    // Night Lurker spawn: wave 15+ every 2 waves — fast flankers from sides
+    if (newWave >= LURKER_FIRST_WAVE && (newWave - LURKER_FIRST_WAVE) % 2 === 0) {
+      const lurkerCount = 2 + Math.min(3, Math.floor((newWave - LURKER_FIRST_WAVE) / 6));
+      const lurkerPositions = ENEMY_FLANK_POSITIONS.slice(0, Math.min(lurkerCount, ENEMY_FLANK_POSITIONS.length));
+      lurkerPositions.forEach(fp => {
+        const lkPath = aStar(INITIAL_TILES, fp, BARN_POS, true, wallSet);
+        const lurker: EnemyLurker = {
+          id: lurkerIdRef.current++,
+          x: fp.x,
+          y: fp.y,
+          hp: LURKER_MAX_HP,
+          maxHp: LURKER_MAX_HP,
+          movingTo: lkPath[0] ?? BARN_POS,
+          path: lkPath.slice(1),
+          state: 'moving',
+        };
+        setEnemyLurkers(lks => [...lks, lurker]);
+      });
+      // Extra lurker from enemy base at higher waves
+      if (newWave >= LURKER_FIRST_WAVE + 10) {
+        const lx = Math.max(0, ENEMY_BARN_POS.x - 1);
+        const ly = Math.max(0, ENEMY_BARN_POS.y - 1);
+        const lPath = aStar(INITIAL_TILES, { x: lx, y: ly }, BARN_POS, true, wallSet);
+        const extraLurker: EnemyLurker = {
+          id: lurkerIdRef.current++,
+          x: lx,
+          y: ly,
+          hp: LURKER_MAX_HP,
+          maxHp: LURKER_MAX_HP,
+          movingTo: lPath[0] ?? BARN_POS,
+          path: lPath.slice(1),
+          state: 'moving',
+        };
+        setEnemyLurkers(lks => [...lks, extraLurker]);
+      }
+      Snd.lurkerShriek();
+      setWaveAnnouncement(
+        `🦇 Wave ${newWave} — NIGHT LURKERS! Fast flankers strike from the shadows!`
+      );
+      window.setTimeout(() => setWaveAnnouncement(null), 4500);
+    }
+
     const nextDelay = Math.max(
       12000,
       Math.round(
@@ -565,6 +612,11 @@ export function useWaveSpawner(ctx: RTSGameContext) {
       )
         parts.push('1 ⚔ WARLORD ⚔');
       if (previewWave >= 6 && previewWave % 3 === 0) parts.push('1 War Ram 🪵');
+      if (
+        previewWave >= LURKER_FIRST_WAVE &&
+        (previewWave - LURKER_FIRST_WAVE) % 2 === 0
+      )
+        parts.push('2+ 🦇 Night Lurkers');
       setWavePreview(`⚠ INCOMING Wave ${previewWave}: ${parts.join(', ')}`);
       window.setTimeout(() => setWavePreview(null), 5500);
     }, previewDelay);

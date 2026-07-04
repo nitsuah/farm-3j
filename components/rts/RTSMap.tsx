@@ -70,6 +70,7 @@ import type {
   EnemySiege,
   EnemyTower,
   EnemyTroll,
+  EnemyLurker,
   EnemyWarchief,
   EnemyWarlord,
   EnemyWitchDoctor,
@@ -536,6 +537,13 @@ const RTSMap: React.FC<{
     enemyWarlordsRef.current = enemyWarlords;
   }, [enemyWarlords]);
   const warlordIdRef = useRef(10000);
+  const [enemyLurkers, setEnemyLurkers] = useState<EnemyLurker[]>([]);
+  const enemyLurkersRef = useRef<EnemyLurker[]>([]);
+  useEffect(() => {
+    enemyLurkersRef.current = enemyLurkers;
+  }, [enemyLurkers]);
+  const lurkerIdRef = useRef(11000);
+  const lurkerAttackTimeoutsRef = useRef<Record<number, number>>({});
   const [deadGruntPositions, setDeadGruntPositions] = useState<
     { x: number; y: number; t: number }[]
   >([]);
@@ -1365,6 +1373,7 @@ const RTSMap: React.FC<{
     enemyTowersRef,
     enemyTrollsRef,
     enemyWallIdRef,
+    enemyLurkersRef,
     enemyWallsRef,
     enemyWarchiefsRef,
     enemyWarlordsRef,
@@ -1420,6 +1429,7 @@ const RTSMap: React.FC<{
     setEnemySiege,
     setEnemyTowers,
     setEnemyTrolls,
+    setEnemyLurkers,
     setEnemyWalls,
     setEnemyWarchiefs,
     setEnemyWarlords,
@@ -1470,6 +1480,8 @@ const RTSMap: React.FC<{
     treesRef,
     triggerShakeRef,
     triggerUnderAttackRef,
+    lurkerAttackTimeoutsRef,
+    lurkerIdRef,
     trollAttackTimersRef,
     trollIdRef,
     upgradesRef,
@@ -3433,6 +3445,38 @@ const RTSMap: React.FC<{
     [anySelected]
   );
 
+  const handleAttackLurker = useCallback(
+    (lurkerId: number, e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!anySelected) return;
+      const lk = enemyLurkersRef.current.find(l => l.id === lurkerId);
+      if (!lk) return;
+      const tx = Math.round(lk.x),
+        ty = Math.round(lk.y);
+      setWorkers(ws =>
+        ws.map(w => {
+          if (!w.selected) return w;
+          const path = aStar(
+            INITIAL_TILES,
+            { x: Math.round(w.x), y: Math.round(w.y) },
+            { x: tx, y: ty }
+          );
+          const first = path[0] ?? { x: tx, y: ty };
+          return {
+            ...w,
+            movingTo: first,
+            path: path.slice(1),
+            gathering: null,
+            attacking: { targetType: 'lurker' as const, lurkerId },
+            state: 'moving',
+          };
+        })
+      );
+    },
+    [anySelected]
+  );
+
   const handleAttackTroll = useCallback(
     (trollId: number, e: React.MouseEvent) => {
       e.preventDefault();
@@ -3575,6 +3619,9 @@ const RTSMap: React.FC<{
       warlords: enemyWarlords
         .filter(wl => wl.hp > 0)
         .map(wl => ({ x: wl.x, y: wl.y })),
+      lurkers: enemyLurkers
+        .filter(lk => lk.hp > 0)
+        .map(lk => ({ x: lk.x, y: lk.y })),
     }),
     [
       workers,
@@ -3598,6 +3645,7 @@ const RTSMap: React.FC<{
       lootCrates,
       droppedItems,
       enemyWarlords,
+      enemyLurkers,
     ]
   );
 
@@ -3840,9 +3888,11 @@ const RTSMap: React.FC<{
               commandMove,
               droppedItems,
               enemyGrunts,
+              enemyLurkers,
               fogVisible,
               gruntHitRef,
               handleAttackGrunt,
+              handleAttackLurker,
               lootCrates,
             }}
           />
