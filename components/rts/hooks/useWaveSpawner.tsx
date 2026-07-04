@@ -52,6 +52,7 @@ import type { RTSGameContext } from './context';
 export function useWaveSpawner(ctx: RTSGameContext) {
   const {
     difficulty,
+    onAchievement,
     addFloatingText,
     barnDmgThisWaveRef,
     enemyWallIdRef,
@@ -105,6 +106,7 @@ export function useWaveSpawner(ctx: RTSGameContext) {
         `✨ Flawless! +${bonus}🪙`,
         '#fbbf24'
       );
+      onAchievement('flawless');
     }
     barnDmgThisWaveRef.current = 0;
     waveRef.current = newWave;

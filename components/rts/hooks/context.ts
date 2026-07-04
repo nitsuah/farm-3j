@@ -36,6 +36,7 @@ export interface RTSGameContext {
   difficulty?: DifficultyConfig;
 
   // ---------- callbacks ----------
+  onAchievement: (id: string) => void;
   addDmgLog: (source: string, amount: number) => void;
   addFloatingText: (
     tileX: number,
@@ -180,6 +181,7 @@ export interface RTSGameContext {
   repairTimeoutsRef: Ref<Record<number, number>>;
   sallyForthThresholdsRef: Ref<Set<number>>;
   sapperIdRef: Ref<number>;
+  sapperKillCountRef: Ref<number>;
   shamanHealTimersRef: Ref<Record<number, number>>;
   shamanIdRef: Ref<number>;
   shrineCapturingRef: Ref<{

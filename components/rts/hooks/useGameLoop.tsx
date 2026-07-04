@@ -140,6 +140,7 @@ export function useGameLoop(ctx: RTSGameContext) {
   const NIGHT_SPEED_MULT = 1.3;
   const {
     difficulty,
+    onAchievement,
     addDmgLog,
     addFloatingText,
     addProjectile,
@@ -232,6 +233,7 @@ export function useGameLoop(ctx: RTSGameContext) {
     shrinePlentyBuffRef,
     shrineWarBuffRef,
     siegeAttackTimeoutsRef,
+    sapperKillCountRef,
     stanceRef,
     stoneNodesRef,
     treesRef,
@@ -2608,6 +2610,7 @@ export function useGameLoop(ctx: RTSGameContext) {
                     wc2 => wc2.id === capturedWCId
                   );
                   if (wcCurrent && wcCurrent.hp - dmg <= 0) {
+                    onAchievement('warchief_slayer');
                     setResources(r => ({
                       ...r,
                       gold: r.gold + WARCHIEF_GOLD_REWARD,
@@ -2750,6 +2753,7 @@ export function useGameLoop(ctx: RTSGameContext) {
                     wl => wl.id === capturedWLId
                   );
                   if (wlCurrent && wlCurrent.hp - dmg <= 0) {
+                    onAchievement('warlord_slayer');
                     setResources(r => ({
                       ...r,
                       gold: r.gold + WARLORD_GOLD_REWARD,
@@ -4636,6 +4640,8 @@ export function useGameLoop(ctx: RTSGameContext) {
         const alive = ss.filter(s => !s.exploded && s.hp > 0);
         const killed = ss.filter(s => !s.exploded && s.hp <= 0);
         killed.forEach(s => {
+          sapperKillCountRef.current += 1;
+          if (sapperKillCountRef.current >= 5) onAchievement('sapper_slayer');
           setResources(r => ({ ...r, gold: r.gold + SAPPER_GOLD_REWARD }));
           addFloatingText(
             Math.round(s.x),

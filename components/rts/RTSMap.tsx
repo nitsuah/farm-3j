@@ -93,6 +93,11 @@ import {
 } from './game/map';
 import { aStar } from './game/pathfinding';
 import {
+  ALL_ACHIEVEMENTS,
+  unlockAchievement,
+  type Achievement,
+} from './game/achievements';
+import {
   loadSave,
   saveHighScore,
   writeSave,
@@ -107,6 +112,7 @@ import {
   setSoundMuted,
   Snd,
 } from './game/sound';
+import { AchievementPanel } from './hud/AchievementPanel';
 import { AlertsOverlay } from './hud/AlertsOverlay';
 import { BuffIndicators } from './hud/BuffIndicators';
 import { ControlGroupBar } from './hud/ControlGroupBar';
@@ -934,6 +940,11 @@ const RTSMap: React.FC<{
   }, [gameOver]);
 
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle');
+  const [achievementToast, setAchievementToast] = useState<Achievement | null>(
+    null
+  );
+  const [achievementPanelOpen, setAchievementPanelOpen] = useState(false);
+  const sapperKillCountRef = useRef<number>(0);
   const [incomeRate, setIncomeRate] = useState({
     gold: 0,
     lumber: 0,
@@ -1025,6 +1036,62 @@ const RTSMap: React.FC<{
     const id = setInterval(doSave, 30000);
     return () => clearInterval(id);
   }, [gameOver, doSave]);
+
+  const triggerAchievement = useCallback((id: string) => {
+    const isNew = unlockAchievement(id);
+    if (!isNew) return;
+    const achv = ALL_ACHIEVEMENTS.find(a => a.id === id);
+    if (!achv) return;
+    setAchievementToast(achv);
+    window.setTimeout(() => setAchievementToast(null), 4500);
+  }, []);
+
+  // Achievement: kill milestones
+  useEffect(() => {
+    if (killCount >= 1) triggerAchievement('first_blood');
+    if (killCount >= 100) triggerAchievement('kill_100');
+    if (killCount >= 500) triggerAchievement('kill_500');
+  }, [killCount, triggerAchievement]);
+
+  // Achievement: wave milestones
+  useEffect(() => {
+    if (wave >= 10) triggerAchievement('wave_10');
+    if (wave >= 20) triggerAchievement('wave_20');
+    if (wave >= 30) triggerAchievement('wave_30');
+    if (wave >= 50) triggerAchievement('wave_50');
+  }, [wave, triggerAchievement]);
+
+  // Achievement: total gold earned
+  useEffect(() => {
+    if (totalGold >= 1000) triggerAchievement('gold_baron');
+  }, [totalGold, triggerAchievement]);
+
+  // Achievement: unit count and veterancy
+  useEffect(() => {
+    if (workers.length >= 6) triggerAchievement('pack_leader');
+    const level3Count = workers.filter(w => w.level >= 3).length;
+    if (level3Count >= 3) triggerAchievement('veteran_corps');
+  }, [workers, triggerAchievement]);
+
+  // Achievement: hero items
+  useEffect(() => {
+    if (heroItems.length >= 3) triggerAchievement('hero_equipped');
+  }, [heroItems, triggerAchievement]);
+
+  // Achievement: buildings — fortified (3 walls) and blacksmith max
+  useEffect(() => {
+    const wallCount = placedBuildings.filter(b => b.type === 'wall').length;
+    if (wallCount >= 3) triggerAchievement('fortified');
+  }, [placedBuildings, triggerAchievement]);
+
+  useEffect(() => {
+    if (
+      blacksmithUpgrades.steelEdge >= 2 ||
+      blacksmithUpgrades.ironHide >= 2
+    ) {
+      triggerAchievement('blacksmith_max');
+    }
+  }, [blacksmithUpgrades, triggerAchievement]);
 
   // Income rate: snapshot every 30s, publish as per-minute rate
   useEffect(() => {
@@ -1258,6 +1325,7 @@ const RTSMap: React.FC<{
 
   const gameCtx = {
     difficulty,
+    onAchievement: triggerAchievement,
     addDmgLog,
     addFloatingText,
     addProjectile,
@@ -1328,6 +1396,7 @@ const RTSMap: React.FC<{
     repairTimeoutsRef,
     sallyForthThresholdsRef,
     sapperIdRef,
+    sapperKillCountRef,
     setCapturedShrines,
     setClearedCamps,
     setDeadGruntPositions,
@@ -3980,6 +4049,82 @@ const RTSMap: React.FC<{
           })
         }
       />
+      {/* Achievement panel button */}
+      <button
+        onClick={() => setAchievementPanelOpen(o => !o)}
+        style={{
+          position: 'fixed',
+          top: '3.5rem',
+          right: '0.5rem',
+          zIndex: 150,
+          background: achievementPanelOpen
+            ? 'rgba(109,40,217,0.9)'
+            : 'rgba(30,27,75,0.85)',
+          border: '1.5px solid #7c3aed',
+          borderRadius: '0.5rem',
+          color: '#c4b5fd',
+          fontSize: '1.1rem',
+          padding: '0.3rem 0.5rem',
+          cursor: 'pointer',
+          lineHeight: 1,
+        }}
+        title="Achievements"
+      >
+        🏆
+      </button>
+      {/* Achievement panel */}
+      {achievementPanelOpen && (
+        <AchievementPanel onClose={() => setAchievementPanelOpen(false)} />
+      )}
+      {/* Achievement unlock toast */}
+      {achievementToast && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '5.5rem',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 200,
+            background: 'linear-gradient(135deg, #1e1b4b 0%, #4c1d95 100%)',
+            border: '1.5px solid #a855f7',
+            borderRadius: '0.75rem',
+            padding: '0.6rem 1.2rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.6rem',
+            boxShadow: '0 4px 24px rgba(168,85,247,0.5)',
+            pointerEvents: 'none',
+            animation: 'fadeInUp 0.3s ease',
+          }}
+        >
+          <span style={{ fontSize: '1.4rem' }}>{achievementToast.emoji}</span>
+          <div>
+            <div
+              style={{
+                fontSize: '0.6rem',
+                color: '#c4b5fd',
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+                fontWeight: 700,
+              }}
+            >
+              Achievement Unlocked
+            </div>
+            <div
+              style={{
+                fontSize: '0.85rem',
+                color: '#f5f3ff',
+                fontWeight: 700,
+              }}
+            >
+              {achievementToast.name}
+            </div>
+            <div style={{ fontSize: '0.65rem', color: '#ddd6fe' }}>
+              {achievementToast.description}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
