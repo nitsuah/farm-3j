@@ -330,10 +330,20 @@ export const BuildingsLayer: React.FC<BuildingsLayerProps> = ({
           return (
             <g key={`building-${b.id}`} pointerEvents="none">
               {isoBox(isoX, isoY, h2, '#fef9c3', '#fde68a', '#fbbf24', isDmg2 ? '#f97316' : '#b45309', 2)}
-              {/* Windmill sails above roof */}
-              <line x1={cx2} y1={isoY - h2 - 2} x2={cx2} y2={isoY - h2 - 28} stroke="#6b7280" strokeWidth={4} />
-              <line x1={cx2 - 14} y1={isoY - h2 - 15} x2={cx2 + 14} y2={isoY - h2 - 15} stroke="#6b7280" strokeWidth={4} />
-              <circle cx={cx2} cy={isoY - h2 - 15} r={5} fill="#374151" />
+              {/* Animated windmill sails — SVG animateTransform runs on compositor */}
+              <g>
+                <g>
+                  {/* 4 blades at 0/90/180/270 degrees */}
+                  <polygon points={`${cx2},${isoY-h2-4} ${cx2-5},${isoY-h2-20} ${cx2+5},${isoY-h2-20}`} fill="#d1d5db" stroke="#6b7280" strokeWidth={1} />
+                  <polygon points={`${cx2},${isoY-h2-26} ${cx2-5},${isoY-h2-10} ${cx2+5},${isoY-h2-10}`} fill="#e5e7eb" stroke="#6b7280" strokeWidth={1} />
+                  <polygon points={`${cx2+4},${isoY-h2-15} ${cx2+20},${isoY-h2-10} ${cx2+20},${isoY-h2-20}`} fill="#d1d5db" stroke="#6b7280" strokeWidth={1} />
+                  <polygon points={`${cx2-4},${isoY-h2-15} ${cx2-20},${isoY-h2-10} ${cx2-20},${isoY-h2-20}`} fill="#e5e7eb" stroke="#6b7280" strokeWidth={1} />
+                  <animateTransform attributeName="transform" type="rotate"
+                    from={`0 ${cx2} ${isoY - h2 - 15}`} to={`360 ${cx2} ${isoY - h2 - 15}`}
+                    dur="3s" repeatCount="indefinite" />
+                </g>
+                <circle cx={cx2} cy={isoY - h2 - 15} r={4} fill="#374151" />
+              </g>
               <text x={cx2} y={isoY + TILE_SIZE / 2 - h2 / 2} textAnchor="middle" dominantBaseline="middle" fontSize="18">💨</text>
               <text x={cx2} y={isoY - h2 - 34} textAnchor="middle" fontSize="8" fill="#fde68a" fontWeight="bold">+2🪙/5s</text>
               {isDmg2 && <text x={cx2} y={isoY - h2 - 46} textAnchor="middle" fontSize="9" fill="#f97316" fontWeight="bold">🔧 REPAIR</text>}

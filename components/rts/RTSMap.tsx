@@ -122,6 +122,7 @@ import { ControlGroupBar } from './hud/ControlGroupBar';
 import { ControlGroupChips } from './hud/ControlGroupChips';
 import { DamageLogPanel } from './hud/DamageLogPanel';
 import { GameOverOverlay } from './hud/GameOverOverlay';
+import { MinimapPanel } from './hud/MinimapPanel';
 import { ResourceBar } from './hud/ResourceBar';
 import { BuildingsLayer } from './map/BuildingsLayer';
 import { EffectsLayer } from './map/EffectsLayer';
@@ -3927,6 +3928,24 @@ const RTSMap: React.FC<{
         }}
       />
       <ControlGroupChips {...{ controlGroups, setSelectedType, setWorkers }} />
+      {!gameOver && (
+        <MinimapPanel
+          {...{
+            enemyGrunts,
+            enemySappers,
+            enemyShamans,
+            enemySiege,
+            enemyTrolls,
+            enemyWarchiefs,
+            enemyWarlords,
+            fogExplored,
+            fogVisible,
+            placedBuildings,
+            tiles,
+            workers,
+          }}
+        />
+      )}
       {/* SVG map */}
       <div
         style={{

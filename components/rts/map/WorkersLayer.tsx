@@ -22,7 +22,7 @@ interface WorkersLayerProps {
   workers: WorkerState[];
 }
 
-export const WorkersLayer: React.FC<WorkersLayerProps> = ({
+export const WorkersLayer: React.FC<WorkersLayerProps> = React.memo(({
   battleShoutUntil,
   buildMode,
   deadWorkerPositions,
@@ -592,4 +592,6 @@ export const WorkersLayer: React.FC<WorkersLayerProps> = ({
       })}
     </>
   );
-};
+});
+
+WorkersLayer.displayName = 'WorkersLayer';
