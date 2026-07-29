@@ -113,7 +113,12 @@ export const ResourceNodesLayer: React.FC<ResourceNodesLayerProps> = ({
         const trunkH = 16;
         const base = floor - trunkH;
         // Helper: one foliage diamond layer (left=shadow, right=lit)
-        const foliageDiamond = (fy: number, r: number, dark: string, lit: string) => (
+        const foliageDiamond = (
+          fy: number,
+          r: number,
+          dark: string,
+          lit: string
+        ) => (
           <>
             <polygon
               points={`${cx - r},${fy} ${cx},${fy - r / 2} ${cx},${fy + r / 2}`}
@@ -165,7 +170,14 @@ export const ResourceNodesLayer: React.FC<ResourceNodesLayerProps> = ({
             {foliageDiamond(base - 16, 22, '#15803d', '#16a34a')}
             {foliageDiamond(base - 30, 12, '#166534', '#22c55e')}
             {/* Resource bar */}
-            <rect x={cx - 20} y={isoY - 20} width={40} height={5} fill="#052e16" rx={2} />
+            <rect
+              x={cx - 20}
+              y={isoY - 20}
+              width={40}
+              height={5}
+              fill="#052e16"
+              rx={2}
+            />
             <rect
               x={cx - 20}
               y={isoY - 20}
