@@ -364,9 +364,23 @@ export const EnemyGruntsLayer: React.FC<EnemyGruntsLayerProps> = ({
         );
       })}
 
-      {/* Loot Crates */}
+      {/* Loot Crates — isometric 3D wooden chest */}
       {lootCrates.map(crate => {
         const { isoX, isoY } = tileToSvg(crate.x, crate.y);
+        // Offset to center a half-size box within the tile
+        const ox = isoX + TILE_SIZE / 2;
+        const oy = isoY + TILE_SIZE / 4;
+        const w = TILE_SIZE; // half-tile-width crate
+        const h = 14;
+        // Small iso box corners (centered at ox+w/2, oy)
+        const lx2 = ox,
+          ly2 = oy + w / 4;
+        const rx2 = ox + w,
+          ry2 = oy + w / 4;
+        const bx2 = ox + w / 2,
+          by2 = oy + w / 2;
+        const tx2 = ox + w / 2,
+          ty2 = oy;
         const label = [
           crate.gold > 0 && `${crate.gold}🪙`,
           crate.lumber > 0 && `${crate.lumber}🌲`,
@@ -383,54 +397,49 @@ export const EnemyGruntsLayer: React.FC<EnemyGruntsLayerProps> = ({
               commandMove(crate.x, crate.y);
             }}
           >
-            {/* Crate body */}
-            <rect
-              x={isoX + TILE_SIZE / 2 - 12}
-              y={isoY + 8}
-              width={24}
-              height={18}
-              fill="#92400e"
-              stroke="#fbbf24"
-              strokeWidth={2}
-              rx={2}
-            />
-            {/* Cross lines */}
-            <line
-              x1={isoX + TILE_SIZE / 2 - 12}
-              y1={isoY + 17}
-              x2={isoX + TILE_SIZE / 2 + 12}
-              y2={isoY + 17}
-              stroke="#fbbf24"
-              strokeWidth={1}
-            />
-            <line
-              x1={isoX + TILE_SIZE / 2}
-              y1={isoY + 8}
-              x2={isoX + TILE_SIZE / 2}
-              y2={isoY + 26}
-              stroke="#fbbf24"
-              strokeWidth={1}
-            />
-            {/* Glow pulse */}
-            <rect
-              x={isoX + TILE_SIZE / 2 - 14}
-              y={isoY + 6}
-              width={28}
-              height={22}
-              fill="none"
+            {/* Crate left face */}
+            <polygon
+              points={`${lx2},${ly2 - h} ${bx2},${by2 - h} ${bx2},${by2} ${lx2},${ly2}`}
+              fill="#78350f"
               stroke="#fbbf24"
               strokeWidth={1.5}
-              rx={3}
-              opacity={0.5}
+              strokeLinejoin="round"
             />
-            {/* Label */}
+            {/* Crate right face */}
+            <polygon
+              points={`${bx2},${by2 - h} ${rx2},${ry2 - h} ${rx2},${ry2} ${bx2},${by2}`}
+              fill="#92400e"
+              stroke="#fbbf24"
+              strokeWidth={1.5}
+              strokeLinejoin="round"
+            />
+            {/* Crate top — gold lid */}
+            <polygon
+              points={`${lx2},${ly2 - h} ${tx2},${ty2 - h} ${rx2},${ry2 - h} ${bx2},${by2 - h}`}
+              fill="#b45309"
+              stroke="#fbbf24"
+              strokeWidth={1.5}
+              strokeLinejoin="round"
+            />
+            {/* Chest clasp detail */}
+            <circle cx={ox + w / 2} cy={oy - h + 4} r={3} fill="#fbbf24" />
+            {/* Glow ring */}
+            <polygon
+              points={`${lx2},${ly2} ${tx2},${ty2} ${rx2},${ry2} ${bx2},${by2}`}
+              fill="none"
+              stroke="#fbbf24"
+              strokeWidth={1}
+              opacity={0.45}
+            />
+            {/* Resource label */}
             <text
-              x={isoX + TILE_SIZE / 2}
-              y={isoY + 4}
+              x={ox + w / 2}
+              y={oy - h - 4}
               textAnchor="middle"
               fontSize="9"
               fill="#fde68a"
               fontWeight="bold"
+              pointerEvents="none"
             >
               {label}
             </text>
