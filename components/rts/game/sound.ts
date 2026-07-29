@@ -133,6 +133,12 @@ export const Snd = {
     window.setTimeout(() => playTone(900, 0.05, 0.12, 'sine', 300), 60);
     window.setTimeout(() => playTone(600, 0.04, 0.1, 'sine', 200), 130);
   },
+  // Goblin Sapper tick — rhythmic bomb countdown beep
+  sapperTick: () => {
+    playTone(1400, 0.04, 0.18, 'square');
+    window.setTimeout(() => playTone(1400, 0.04, 0.18, 'square'), 200);
+    window.setTimeout(() => playTone(1600, 0.06, 0.2, 'square'), 400);
+  },
 };
 
 // ---------- Ambient audio loop ----------
@@ -315,6 +321,12 @@ export const ENEMY_VOICELINES: Record<string, string[]> = {
     '⚔ WARLORD: Shield Bash!',
     '⚔ WARLORD: Take that, hero!',
     '⚔ WARLORD: Back down, whelp!',
+  ],
+  sapper_incoming: [
+    '💣 SAPPER: Tick tick tick...',
+    '💣 SAPPER: Hehehehe... BOOM!',
+    '💣 SAPPER: Nothing can stop me now!',
+    '💣 SAPPER: Say goodbye to your walls!',
   ],
   witch_doctor: [
     '🔮 WITCH DOCTOR: Hex them all!',

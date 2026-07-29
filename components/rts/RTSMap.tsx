@@ -365,8 +365,6 @@ const RTSMap: React.FC<{
 
   const makeWorker = (id: number, x: number, y: number) =>
     makeUnit(id, x, y, 'farmer');
-  const makeSwordsman = (id: number, x: number, y: number) =>
-    makeUnit(id, x, y, 'swordsman');
 
   const [workers, setWorkers] = useState<WorkerState[]>(() =>
     INITIAL_SAVE?.workers?.length
@@ -1143,7 +1141,6 @@ const RTSMap: React.FC<{
   const gatherTimeoutsRef = useRef<Record<number, number>>({});
   const attackTimeoutsRef = useRef<Record<number, number>>({});
   const repairTimeoutsRef = useRef<Record<number, number>>({});
-  const archerTowerTimerRef = useRef<number | null>(null);
   const watchtowerTimersRef = useRef<Record<number, number>>({});
   const trapTriggeredRef = useRef<Record<number, number>>({});
   const buildingAttackTimeoutsRef = useRef<Record<number, number>>({});
@@ -2157,7 +2154,6 @@ const RTSMap: React.FC<{
   // Shift+right-click: append waypoint to queue
   const commandQueueMove = useCallback((targetX: number, targetY: number) => {
     setWorkers(ws => {
-      const selected = ws.filter(w => w.selected);
       let idx = 0;
       return ws.map(w => {
         if (!w.selected) return w;
@@ -2722,26 +2718,6 @@ const RTSMap: React.FC<{
   useEffect(() => {
     const svgEl = svgRef.current;
 
-    const applyZoom = (newZoom: number, anchorX: number, anchorY: number) => {
-      if (!svgEl) return;
-      const rect = svgEl.getBoundingClientRect();
-      // anchor in SVG element coords (before camera translate)
-      const svgCenterX = rect.left + rect.width / 2;
-      const svgCenterY = rect.top + rect.height / 2;
-      const ax = anchorX - svgCenterX;
-      const ay = anchorY - svgCenterY;
-      setZoom(prevZoom => {
-        const clamped = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, newZoom));
-        const ratio = clamped / prevZoom;
-        // Shift camera so world point under cursor stays fixed
-        setCamera(c => ({
-          x: ax + (c.x - ax) * ratio,
-          y: ay + (c.y - ay) * ratio,
-        }));
-        return clamped;
-      });
-    };
-
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       const delta = e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP;
@@ -2762,14 +2738,6 @@ const RTSMap: React.FC<{
       });
     };
 
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement).tagName === 'INPUT') return;
-      if (e.key === '=' || e.key === '+')
-        applyZoom(999, window.innerWidth / 2, window.innerHeight / 2);
-      if (e.key === '-' || e.key === '_')
-        applyZoom(-999, window.innerWidth / 2, window.innerHeight / 2);
-    };
-    // reuse applyZoom for +/- by clamping to next step
     const onKeyFull = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement).tagName === 'INPUT') return;
       if (e.key === '=' || e.key === '+') {

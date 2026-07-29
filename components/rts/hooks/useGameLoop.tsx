@@ -145,6 +145,7 @@ import type { RTSGameContext } from './context';
 export function useGameLoop(ctx: RTSGameContext) {
   const NIGHT_SPEED_MULT = 1.3;
   const lurkerKillCountRef = useRef(0);
+  const sapperWarnedRef = useRef<Set<number>>(new Set());
   const {
     difficulty,
     onAchievement,
@@ -3936,12 +3937,6 @@ export function useGameLoop(ctx: RTSGameContext) {
           // Demolisher: ranged AoE attack
           if (r.siegeType === 'demolisher') {
             const atkRange = DEMOLISHER_FIRE_RANGE;
-            const target =
-              nearBuilding && buildingDist <= atkRange
-                ? nearBuilding
-                : barnDist <= atkRange
-                  ? null
-                  : null;
             const inRange =
               (nearBuilding && buildingDist <= atkRange) ||
               barnDist <= atkRange;
@@ -4981,6 +4976,17 @@ export function useGameLoop(ctx: RTSGameContext) {
         return alive
           .map(s => {
             const distToTarget = tileDist(s.x, s.y, s.targetX, s.targetY);
+            // Proximity warning when sapper closes within 4 tiles — shown once per sapper
+            if (distToTarget < 4 && !sapperWarnedRef.current.has(s.id)) {
+              sapperWarnedRef.current.add(s.id);
+              addFloatingText(
+                Math.round(s.x),
+                Math.round(s.y),
+                pickAck(ENEMY_VOICELINES.sapper_incoming ?? []),
+                '#fbbf24'
+              );
+              Snd.sapperTick();
+            }
             // Explode on reaching target
             if (distToTarget < 0.8) {
               addFloatingText(
