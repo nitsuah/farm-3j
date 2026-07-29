@@ -79,7 +79,16 @@ export const EnemyBaseLayer: React.FC<EnemyBaseLayerProps> = React.memo(
                 style={{ cursor: 'crosshair' }}
                 onContextMenu={handleAttackEnemyBarn}
               >
-                {isoBox(isoX, isoY, h, '#450a0a', '#7f1d1d', '#991b1b', stroke, sw)}
+                {isoBox(
+                  isoX,
+                  isoY,
+                  h,
+                  '#450a0a',
+                  '#7f1d1d',
+                  '#991b1b',
+                  stroke,
+                  sw
+                )}
                 {/* Gable roof — left slope */}
                 <polygon
                   points={`${lx},${ly - h} ${bx2},${by2 - h} ${ridgeMidX},${ridgeMidY}`}
@@ -159,125 +168,101 @@ export const EnemyBaseLayer: React.FC<EnemyBaseLayerProps> = React.memo(
           .map(t => {
             const { isoX, isoY } = tileToSvg(t.x, t.y);
             const hpPct = t.hp / t.maxHp;
+            const ts = TILE_SIZE;
+            const cx = isoX + ts;
             const isArcher = t.id === -1;
-            const fill1 = isArcher ? '#3b0764' : '#7f1d1d';
-            const fill2 = isArcher ? '#581c87' : '#991b1b';
-            const fill3 = isArcher ? '#7c3aed' : '#b91c1c';
-            const stroke1 = isArcher ? '#a21caf' : '#dc2626';
-            const stroke2 = isArcher ? '#a855f7' : '#ef4444';
-            const label = isArcher ? 'ARCHER' : 'TOWER';
+            const h = isArcher ? 56 : 44;
+            const topDark = isArcher ? '#1e1b4b' : '#3b0000';
+            const leftFill = isArcher ? '#3b0764' : '#7f1d1d';
+            const rightFill = isArcher ? '#581c87' : '#991b1b';
+            const stroke = isArcher ? '#a21caf' : '#dc2626';
+            const accentColor = isArcher ? '#7c3aed' : '#b91c1c';
             const labelColor = isArcher ? '#e879f9' : '#fca5a5';
             const barColor = isArcher ? '#a855f7' : '#ef4444';
+            const label = isArcher ? 'ARCHER TOWER' : 'FORTRESS TOWER';
+            // Top-face corners (all at height h)
+            const topWx = isoX,
+              topWy = isoY + ts / 2 - h;
+            const topNx = cx,
+              topNy = isoY - h;
+            const topEx = isoX + 2 * ts,
+              topEy = isoY + ts / 2 - h;
+            const topSx = cx,
+              topSy = isoY + ts - h;
             return (
               <g
                 key={`etower-${t.id}`}
                 style={{ cursor: 'crosshair' }}
                 onContextMenu={e => handleAttackEnemyTower(t.id, t.x, t.y, e)}
               >
-                {isArcher ? (
+                {/* Tower body */}
+                {isoBox(isoX, isoY, h, topDark, leftFill, rightFill, stroke, 2)}
+                {/* Battlements: 4 small raised blocks at mid-edge positions */}
+                {(
+                  [
+                    [(topWx + topNx) / 2, (topWy + topNy) / 2],
+                    [(topNx + topEx) / 2, (topNy + topEy) / 2],
+                    [(topWx + topSx) / 2, (topWy + topSy) / 2],
+                    [(topSx + topEx) / 2, (topSy + topEy) / 2],
+                  ] as [number, number][]
+                ).map(([bx, by], i) => (
+                  <polygon
+                    key={i}
+                    points={`${bx - 7},${by} ${bx},${by - 5} ${bx + 7},${by} ${bx},${by + 4}`}
+                    fill={accentColor}
+                    stroke={stroke}
+                    strokeWidth={1}
+                  />
+                ))}
+                {/* Arrow slit on left face */}
+                <polygon
+                  points={`${isoX + 20},${topWy + 16} ${isoX + 26},${topWy + 10} ${isoX + 32},${topWy + 16} ${isoX + 26},${topWy + 36}`}
+                  fill="#0f0a1a"
+                  opacity={0.75}
+                />
+                {/* Spire / flag pole for archer tower */}
+                {isArcher && (
                   <>
-                    <rect
-                      x={isoX + TILE_SIZE / 4}
-                      y={isoY - 8}
-                      width={TILE_SIZE * 1.5}
-                      height={TILE_SIZE * 0.85}
-                      fill={fill1}
-                      stroke={stroke1}
-                      strokeWidth={3}
-                      rx={5}
-                    />
-                    <rect
-                      x={isoX + TILE_SIZE / 2 - 5}
-                      y={isoY - 34}
-                      width={10}
-                      height={30}
-                      fill={fill2}
-                      stroke={stroke2}
+                    <line
+                      x1={cx}
+                      y1={topNy}
+                      x2={cx}
+                      y2={topNy - 20}
+                      stroke="#6d28d9"
                       strokeWidth={2}
                     />
-                    <rect
-                      x={isoX + TILE_SIZE / 2 - 14}
-                      y={isoY - 42}
-                      width={10}
-                      height={14}
-                      fill={fill3}
-                      stroke={stroke2}
-                      strokeWidth={2}
-                    />
-                    <rect
-                      x={isoX + TILE_SIZE / 2 + 4}
-                      y={isoY - 42}
-                      width={10}
-                      height={14}
-                      fill={fill3}
-                      stroke={stroke2}
-                      strokeWidth={2}
-                    />
-                  </>
-                ) : (
-                  <>
-                    <rect
-                      x={isoX + TILE_SIZE / 4}
-                      y={isoY}
-                      width={TILE_SIZE / 2}
-                      height={TILE_SIZE * 0.8}
-                      fill={fill1}
-                      stroke={stroke1}
-                      strokeWidth={3}
-                      rx={4}
-                    />
-                    <rect
-                      x={isoX + TILE_SIZE / 4 - 6}
-                      y={isoY - 8}
-                      width={TILE_SIZE / 2 + 12}
-                      height={16}
-                      fill={fill2}
-                      stroke={stroke2}
-                      strokeWidth={2}
-                      rx={3}
-                    />
-                    <rect
-                      x={isoX + TILE_SIZE / 4 + 2}
-                      y={isoY - 20}
-                      width={8}
-                      height={14}
-                      fill={fill3}
-                      stroke={stroke2}
-                      strokeWidth={1.5}
-                    />
-                    <rect
-                      x={isoX + TILE_SIZE / 2 + 2}
-                      y={isoY - 20}
-                      width={8}
-                      height={14}
-                      fill={fill3}
-                      stroke={stroke2}
-                      strokeWidth={1.5}
+                    <polygon
+                      points={`${cx},${topNy - 20} ${cx + 14},${topNy - 14} ${cx},${topNy - 8}`}
+                      fill="#a855f7"
                     />
                   </>
                 )}
+                {/* Emoji icon on top face */}
                 <text
-                  x={isoX + TILE_SIZE}
-                  y={isoY + 38}
+                  x={cx}
+                  y={topNy + 14}
                   textAnchor="middle"
-                  fontSize="16"
+                  fontSize="14"
+                  pointerEvents="none"
                 >
                   🏹
                 </text>
+                {/* Label + HP bar */}
                 <text
-                  x={isoX + TILE_SIZE}
-                  y={isoY - 48}
+                  x={cx}
+                  y={isoY - h - (isArcher ? 24 : 8)}
                   textAnchor="middle"
                   fontSize="8"
                   fill={labelColor}
                   fontWeight="bold"
+                  pointerEvents="none"
                 >
                   {label}
                 </text>
                 <HpBar
-                  x={isoX + TILE_SIZE / 4}
-                  y={isoY - 58}
-                  width={TILE_SIZE / 2}
+                  x={cx - 28}
+                  y={isoY - h - (isArcher ? 36 : 20)}
+                  width={56}
                   height={5}
                   hpPct={hpPct}
                   fill={barColor}
@@ -286,46 +271,53 @@ export const EnemyBaseLayer: React.FC<EnemyBaseLayerProps> = React.memo(
             );
           })}
 
-        {/* Enemy fortification walls */}
+        {/* Enemy fortification walls — isometric stone wall with battlements */}
         {enemyWalls
           .filter(ew => ew.hp > 0 && fogVisible[ew.x]?.[ew.y])
           .map(ew => {
             const { isoX, isoY } = tileToSvg(ew.x, ew.y);
             const hpPct = ew.hp / ew.maxHp;
+            const ts = TILE_SIZE;
+            const cx = isoX + ts;
+            const h = 18;
+            // Front edge of top face (left half, viewer-facing)
+            const topWy = isoY + ts / 2 - h;
+            const topSy = isoY + ts - h;
             return (
               <g
                 key={`ewall-${ew.id}`}
                 style={{ cursor: anySelected ? 'crosshair' : 'default' }}
                 onContextMenu={e => handleAttackEnemyWall(ew.id, ew.x, ew.y, e)}
               >
-                <rect
-                  x={isoX + 8}
-                  y={isoY + 10}
-                  width={TILE_SIZE - 16}
-                  height={TILE_SIZE * 0.6}
-                  fill="#450a0a"
-                  stroke="#7f1d1d"
-                  strokeWidth={3}
-                  rx={2}
-                />
-                {[0.25, 0.5, 0.75].map(f => (
-                  <rect
-                    key={f}
-                    x={isoX + 8 + f * (TILE_SIZE - 16) - 4}
-                    y={isoY + 4}
-                    width={8}
-                    height={12}
-                    fill="#7f1d1d"
-                    stroke="#991b1b"
-                    strokeWidth={1.5}
-                    rx={1}
-                  />
-                ))}
+                {isoBox(
+                  isoX,
+                  isoY,
+                  h,
+                  '#290000',
+                  '#450a0a',
+                  '#600000',
+                  '#7f1d1d',
+                  1.5
+                )}
+                {/* Battlements: 3 merlons along the SW front edge */}
+                {[0.2, 0.5, 0.8].map(f => {
+                  const mx = isoX + f * ts;
+                  const bmy = topWy + f * (topSy - topWy);
+                  return (
+                    <polygon
+                      key={f}
+                      points={`${mx - 6},${bmy + 2} ${mx},${bmy - 4} ${mx + 6},${bmy + 2} ${mx},${bmy + 8}`}
+                      fill="#7f1d1d"
+                      stroke="#991b1b"
+                      strokeWidth={1}
+                    />
+                  );
+                })}
                 <HpBar
-                  x={isoX + 8}
-                  y={isoY - 2}
-                  width={TILE_SIZE - 16}
-                  height={5}
+                  x={cx - 20}
+                  y={isoY - h - 8}
+                  width={40}
+                  height={4}
                   hpPct={hpPct}
                   fill="#ef4444"
                 />
