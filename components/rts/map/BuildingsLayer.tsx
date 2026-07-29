@@ -10,6 +10,7 @@ import {
   TILE_SIZE,
 } from '../game/constants';
 import { HpBar } from './HpBar';
+import { isoBox } from './isoBox';
 import { StructureDamageSmoke } from './StructureDamageSmoke';
 import { StructureFireEffect } from './StructureFireEffect';
 import { tileToSvg } from '../game/map';
@@ -42,54 +43,6 @@ interface BuildingsLayerProps {
   towerGarrison: Record<number, WorkerState[]>;
   trapTriggeredRef: React.RefObject<Record<number, number>>;
   workers: WorkerState[];
-}
-
-// Three-face isometric box sitting on tile at (isoX, isoY).
-// h = height in screen pixels. Render order: left → right → top.
-function isoBox(
-  isoX: number,
-  isoY: number,
-  h: number,
-  topFill: string,
-  leftFill: string,
-  rightFill: string,
-  stroke: string,
-  sw = 1.5
-): React.ReactNode {
-  const ts = TILE_SIZE;
-  const lx = isoX,
-    ly = isoY + ts / 2; // left  corner
-  const rx = isoX + 2 * ts,
-    ry = isoY + ts / 2; // right corner
-  const bx = isoX + ts,
-    by = isoY + ts; // bottom corner
-  const tx2 = isoX + ts,
-    ty2 = isoY; // top   corner
-  return (
-    <>
-      <polygon
-        points={`${lx},${ly - h} ${bx},${by - h} ${bx},${by} ${lx},${ly}`}
-        fill={leftFill}
-        stroke={stroke}
-        strokeWidth={sw}
-        strokeLinejoin="round"
-      />
-      <polygon
-        points={`${bx},${by - h} ${rx},${ry - h} ${rx},${ry} ${bx},${by}`}
-        fill={rightFill}
-        stroke={stroke}
-        strokeWidth={sw}
-        strokeLinejoin="round"
-      />
-      <polygon
-        points={`${lx},${ly - h} ${tx2},${ty2 - h} ${rx},${ry - h} ${bx},${by - h}`}
-        fill={topFill}
-        stroke={stroke}
-        strokeWidth={sw}
-        strokeLinejoin="round"
-      />
-    </>
-  );
 }
 
 export const BuildingsLayer: React.FC<BuildingsLayerProps> = ({

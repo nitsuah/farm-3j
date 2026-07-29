@@ -5,6 +5,7 @@ import { BARN_POS, PLAYER_BARN_MAX_HP, TILE_SIZE } from '../game/constants';
 import { svgToTile, tileDist, tileToSvg } from '../game/map';
 import type { BuildingType, EnemyGrunt } from '../game/types';
 import { HpBar } from './HpBar';
+import { isoBox } from './isoBox';
 import { StructureDamageSmoke } from './StructureDamageSmoke';
 import { StructureFireEffect } from './StructureFireEffect';
 
@@ -71,7 +72,7 @@ export const PlayerBarnLayer: React.FC<PlayerBarnLayerProps> = React.memo(
             );
           })()}
 
-        {/* Player barn */}
+        {/* Player barn — isometric 3D box */}
         {(() => {
           const { isoX, isoY } = tileToSvg(BARN_POS.x, BARN_POS.y);
           const hpPct = playerBarnHp / PLAYER_BARN_MAX_HP;
@@ -81,8 +82,31 @@ export const PlayerBarnLayer: React.FC<PlayerBarnLayerProps> = React.memo(
           );
           const lastStand = hpPct < 0.25;
           const barnDamaged = hpPct < 0.5;
-          const bcx = isoX + TILE_SIZE / 2;
-          const bcy = isoY + TILE_SIZE * 0.3;
+          const ts = TILE_SIZE;
+          const h = 38;
+          // isoBox tile corners
+          const lx = isoX,
+            ly = isoY + ts / 2;
+          const rx2 = isoX + 2 * ts,
+            ry2 = isoY + ts / 2;
+          const bx2 = isoX + ts,
+            by2 = isoY + ts;
+          const tx2 = isoX + ts,
+            ty2 = isoY;
+          // Roof ridge sits above the top face
+          const roofH = 16;
+          const ridgeLx = (lx + tx2) / 2,
+            ridgeLy = (ly - h + ty2 - h) / 2 - roofH;
+          const ridgeRx = (tx2 + rx2) / 2,
+            ridgeRy = (ty2 - h + ry2 - h) / 2 - roofH;
+          const sw = lastStand ? 3 : hasGarrison ? 2.5 : 1.5;
+          const stroke = lastStand
+            ? '#ef4444'
+            : hasGarrison
+              ? '#22d3ee'
+              : '#92400e';
+          const bcx = isoX + ts;
+          const bcy = isoY + ts * 0.4;
           const bt = (Date.now() / 600) % (2 * Math.PI);
           return (
             <g
@@ -109,72 +133,64 @@ export const PlayerBarnLayer: React.FC<PlayerBarnLayerProps> = React.memo(
                 }
               }}
             >
-              {lastStand && (
-                <circle
-                  cx={isoX + TILE_SIZE / 2}
-                  cy={isoY + TILE_SIZE / 2}
-                  r={TILE_SIZE * 0.9}
+              {/* Attack warning ring */}
+              {(lastStand || barnUnderFire) && (
+                <polygon
+                  points={`${lx},${ly} ${tx2},${ty2} ${rx2},${ry2} ${bx2},${by2}`}
                   fill="none"
-                  stroke="#ef4444"
-                  strokeWidth={3}
-                  strokeDasharray="6 3"
+                  stroke={lastStand ? '#ef4444' : '#fbbf24'}
+                  strokeWidth={lastStand ? 4 : 2}
+                  strokeDasharray={lastStand ? '8 4' : '6 3'}
                   opacity={0.7}
                 />
               )}
-              {barnUnderFire && (
-                <circle
-                  cx={isoX + TILE_SIZE / 2}
-                  cy={isoY + TILE_SIZE / 2}
-                  r={TILE_SIZE * 0.7}
-                  fill="none"
-                  stroke="#fbbf24"
-                  strokeWidth={2}
-                  strokeDasharray="4 3"
-                  opacity={0.5}
-                />
+              {/* Main barn walls */}
+              {isoBox(
+                isoX,
+                isoY,
+                h,
+                '#b45309',
+                '#fef3c7',
+                '#fde68a',
+                stroke,
+                sw
               )}
-              <rect
-                x={isoX}
-                y={isoY}
-                width={TILE_SIZE}
-                height={TILE_SIZE}
-                fill="#fde68a"
-                stroke={
-                  lastStand ? '#ef4444' : hasGarrison ? '#22d3ee' : '#b45309'
-                }
-                strokeWidth={lastStand ? 7 : hasGarrison ? 5 : 6}
-                rx={12}
-              />
+              {/* Gable roof — left slope (NW face, viewer-facing) */}
               <polygon
-                points={[
-                  [isoX, isoY],
-                  [isoX + TILE_SIZE / 2, isoY - 32],
-                  [isoX + TILE_SIZE, isoY],
-                ]
-                  .map(p => p.join(','))
-                  .join(' ')}
-                fill="#b91c1c"
-                stroke="#7f1d1d"
-                strokeWidth={4}
+                points={`${lx},${ly - h} ${bx2},${by2 - h} ${ridgeLx + (ridgeRx - ridgeLx) / 2},${(ridgeLy + ridgeRy) / 2 - 2}`}
+                fill="#7c2d12"
+                stroke={stroke}
+                strokeWidth={sw * 0.8}
               />
+              {/* Gable roof — right slope (SE face) */}
+              <polygon
+                points={`${bx2},${by2 - h} ${rx2},${ry2 - h} ${ridgeLx + (ridgeRx - ridgeLx) / 2},${(ridgeLy + ridgeRy) / 2 - 2}`}
+                fill="#9a3412"
+                stroke={stroke}
+                strokeWidth={sw * 0.8}
+              />
+              {/* Barn label */}
               <text
-                x={isoX + TILE_SIZE / 2}
-                y={isoY + 44}
+                x={isoX + ts}
+                y={isoY - h + 12}
                 textAnchor="middle"
-                fontSize="22"
+                fontSize="16"
+                pointerEvents="none"
               >
                 🏚️
               </text>
-              {!lastStand && (
-                <text
-                  x={isoX + TILE_SIZE / 2}
-                  y={isoY - 20}
-                  textAnchor="middle"
-                  fontSize="11"
-                  fill="#ef4444"
-                  fontWeight="bold"
-                />
-              )}
+              {/* Barn name tag */}
+              <text
+                x={isoX + ts}
+                y={isoY - h - roofH - 4}
+                textAnchor="middle"
+                fontSize="9"
+                fill={lastStand ? '#fca5a5' : '#fde68a'}
+                fontWeight="bold"
+                pointerEvents="none"
+              >
+                {lastStand ? '⚔ LAST STAND!' : 'HOME BARN'}
+              </text>
               {barnDamaged && !lastStand && (
                 <StructureDamageSmoke
                   cx={bcx}
@@ -188,39 +204,43 @@ export const PlayerBarnLayer: React.FC<PlayerBarnLayerProps> = React.memo(
                 <StructureFireEffect
                   cx={bcx}
                   cy={bcy}
-                  labelText="⚔ LAST STAND!"
+                  labelText=""
                   labelColor="#ef4444"
-                  labelY={isoY - 20}
+                  labelY={isoY - h - roofH - 4}
                 />
               )}
+              {/* HP bar */}
               <HpBar
-                x={isoX - 8}
-                y={isoY - 14}
-                width={TILE_SIZE + 16}
-                height={8}
+                x={isoX - 4}
+                y={isoY - h - roofH - 16}
+                width={ts * 2 + 8}
+                height={6}
                 hpPct={hpPct}
                 fill={
                   hpPct > 0.5 ? '#4ade80' : hpPct > 0.25 ? '#fbbf24' : '#ef4444'
                 }
-                rx={4}
+                rx={3}
               />
+              {/* Garrison badge */}
               {hasGarrison && (
                 <>
                   <circle
-                    cx={isoX + TILE_SIZE - 6}
-                    cy={isoY + 10}
+                    cx={isoX + ts * 2 - 10}
+                    cy={isoY - h + 8}
                     r={10}
                     fill="#0c4a6e"
                     stroke="#22d3ee"
-                    strokeWidth={2}
+                    strokeWidth={1.5}
+                    pointerEvents="none"
                   />
                   <text
-                    x={isoX + TILE_SIZE - 6}
-                    y={isoY + 14}
+                    x={isoX + ts * 2 - 10}
+                    y={isoY - h + 12}
                     textAnchor="middle"
                     fontSize="10"
                     fill="#7dd3fc"
                     fontWeight="bold"
+                    pointerEvents="none"
                   >
                     {garrisoned.length}
                   </text>
