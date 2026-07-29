@@ -3,6 +3,7 @@ import React, { useMemo } from 'react';
 import { BARN_POS, ENEMY_BARN_POS, GRID_SIZE } from '../game/constants';
 import type {
   EnemyGrunt,
+  EnemyLurker,
   EnemyWarchief,
   EnemyWarlord,
   EnemyTroll,
@@ -16,6 +17,7 @@ import type {
 
 interface MinimapPanelProps {
   enemyGrunts: EnemyGrunt[];
+  enemyLurkers: EnemyLurker[];
   enemySappers: EnemySapper[];
   enemyShamans: EnemyShaman[];
   enemySiege: EnemySiege[];
@@ -43,6 +45,7 @@ const TILE_COLOR: Record<TileType, string> = {
 export const MinimapPanel: React.FC<MinimapPanelProps> = React.memo(
   ({
     enemyGrunts,
+    enemyLurkers,
     enemySappers,
     enemyShamans,
     enemySiege,
@@ -265,6 +268,19 @@ export const MinimapPanel: React.FC<MinimapPanelProps> = React.memo(
                 cy={e.y * CELL + CELL / 2}
                 r={2.5}
                 fill="#fcd34d"
+              />
+            ))}
+          {enemyLurkers
+            .filter(
+              e => e.hp > 0 && fogVisible[Math.round(e.x)]?.[Math.round(e.y)]
+            )
+            .map(e => (
+              <circle
+                key={`mlk-${e.id}`}
+                cx={e.x * CELL + CELL / 2}
+                cy={e.y * CELL + CELL / 2}
+                r={2}
+                fill="#2dd4bf"
               />
             ))}
 

@@ -3909,6 +3909,7 @@ const RTSMap: React.FC<{
         <MinimapPanel
           {...{
             enemyGrunts,
+            enemyLurkers,
             enemySappers,
             enemyShamans,
             enemySiege,
