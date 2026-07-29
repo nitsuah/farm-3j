@@ -1,14 +1,20 @@
 import React, { useState } from 'react';
 
 import type { Upgrades, WorkerState } from './game/types';
+import {
+  LUMBER_SHED_BONUS_MS,
+  GRID_SIZE,
+  BARN_POS,
+  ENEMY_BARN_POS,
+  XP_TO_LEVEL_1,
+  XP_TO_LEVEL_2,
+  XP_TO_LEVEL_3,
+  BUILDING_REQUIRES,
+  BLACKSMITH_STEEL_EDGE_COSTS,
+  BLACKSMITH_IRON_HIDE_COSTS,
+} from './game/constants';
 
 export type { Upgrades, WorkerState };
-
-// Keep in sync with RTSMap.tsx constants
-const LUMBER_SHED_BONUS_MS = 200;
-const MINIMAP_GRID = 25;
-const MINIMAP_BARN = { x: 2, y: 2 };
-const MINIMAP_ENEMY_BARN = { x: 22, y: 22 };
 
 export type BuildingType =
   | 'farmhouse'
@@ -48,21 +54,6 @@ export type FarmhouseAction =
   | 'barracks:warDrums'
   | `upgradeWall:${number}`
   | `build:${BuildingType}`;
-
-// XP thresholds — keep in sync with RTSMap.tsx
-const XP_TO_LEVEL_1 = 40;
-const XP_TO_LEVEL_2 = 120;
-const XP_TO_LEVEL_3 = 280;
-
-// Tech tree: building → required building (keep in sync with RTSMap.tsx BUILDING_REQUIRES)
-const BUILDING_REQUIRES: Partial<Record<BuildingType, BuildingType>> = {
-  barracks: 'farmhouse',
-  stable: 'barracks',
-  blacksmith: 'barracks',
-  siegeWorkshop: 'blacksmith',
-  ballista: 'watchtower',
-  supplyStore: 'market',
-};
 
 export interface PlacedBuilding {
   id: number;
@@ -186,6 +177,8 @@ interface RTSUIProps {
   onUsePotion: () => void;
   shopItems: { itemId: string; cost: number }[];
   onBuyItem: (itemId: string, cost: number) => void;
+  formationMode: 'cluster' | 'line' | 'wedge' | 'box';
+  onCycleFormation: () => void;
   enemyBarnHp: number;
   enemyBarnMaxHp: number;
   playerBarnHp: number;
@@ -209,6 +202,10 @@ interface RTSUIProps {
     fogExplored: boolean[][];
     attackPings: { x: number; y: number; t: number }[];
     enemyWalls: { x: number; y: number }[];
+    lootCrates: { x: number; y: number }[];
+    droppedItems: { x: number; y: number }[];
+    warlords: { x: number; y: number }[];
+    lurkers: { x: number; y: number }[];
   };
 }
 
@@ -273,8 +270,8 @@ export const RTSUI: React.FC<RTSUIProps> = ({
   onMinimapClick,
   stance,
   onToggleStance,
-  underAttack,
-  incomeRate,
+  underAttack: _underAttack,
+  incomeRate: _incomeRate,
   barracksTech,
   onBarracksTech,
   earthquakeCooldown,
@@ -284,6 +281,8 @@ export const RTSUI: React.FC<RTSUIProps> = ({
   onUsePotion,
   shopItems,
   onBuyItem,
+  formationMode,
+  onCycleFormation,
 }) => {
   const HERO_ITEM_DATA_UI: Record<
     string,
@@ -856,6 +855,24 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                   )}
                 </>
               )}
+            </div>
+          )}
+
+          {/* Formation toggle — shown when 2+ units selected */}
+          {selectedCount > 1 && selectedType === 'worker' && (
+            <div className="mt-2 flex items-center gap-2 border-t border-slate-700/50 pt-2">
+              <span className="text-xs text-slate-400">Formation:</span>
+              <button
+                type="button"
+                onClick={onCycleFormation}
+                className="rounded border border-slate-500/60 bg-slate-800/60 px-2 py-1 text-xs text-slate-200 hover:bg-slate-700/60"
+                title="Cycle formation shape: cluster → line → wedge → box"
+              >
+                {formationMode === 'cluster' && '⬡ Cluster'}
+                {formationMode === 'line' && '▬ Line'}
+                {formationMode === 'wedge' && '▲ Wedge'}
+                {formationMode === 'box' && '⬛ Box'}
+              </button>
             </div>
           )}
 
@@ -1614,47 +1631,41 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                       )}
                       {hasBlacksmith && (
                         <div className="grid grid-cols-2 gap-1.5">
-                          <button
-                            type="button"
-                            className="rounded border border-red-700/70 bg-red-950/20 py-2.5 text-xs text-red-100 hover:bg-red-900/40 disabled:opacity-40"
-                            onClick={() => onBlacksmithUpgrade('steelEdge')}
-                            disabled={
-                              blacksmithUpgrades.steelEdge >= 2 ||
-                              (blacksmithUpgrades.steelEdge === 0
-                                ? resources.gold < 80 || resources.stone < 60
-                                : resources.gold < 160 || resources.stone < 120)
-                            }
-                            title="Steel Edge — +5 atk all units per level"
-                          >
-                            ⚔️ Steel {'★'.repeat(blacksmithUpgrades.steelEdge)}
-                            {'☆'.repeat(2 - blacksmithUpgrades.steelEdge)}{' '}
-                            {blacksmithUpgrades.steelEdge >= 2
-                              ? 'MAX'
-                              : blacksmithUpgrades.steelEdge === 0
-                                ? '80🪙'
-                                : '160🪙'}
-                          </button>
-                          <button
-                            type="button"
-                            className="rounded border border-sky-700/70 bg-sky-950/20 py-2.5 text-xs text-sky-100 hover:bg-sky-900/40 disabled:opacity-40"
-                            onClick={() => onBlacksmithUpgrade('ironHide')}
-                            disabled={
-                              blacksmithUpgrades.ironHide >= 2 ||
-                              (blacksmithUpgrades.ironHide === 0
-                                ? resources.gold < 80 || resources.lumber < 50
-                                : resources.gold < 160 ||
-                                  resources.lumber < 100)
-                            }
-                            title="Iron Hide — -2 dmg taken per level"
-                          >
-                            🛡️ Hide {'★'.repeat(blacksmithUpgrades.ironHide)}
-                            {'☆'.repeat(2 - blacksmithUpgrades.ironHide)}{' '}
-                            {blacksmithUpgrades.ironHide >= 2
-                              ? 'MAX'
-                              : blacksmithUpgrades.ironHide === 0
-                                ? '80🪙'
-                                : '160🪙'}
-                          </button>
+                          {(['steelEdge', 'ironHide'] as const).map(upg => {
+                            const lvl = blacksmithUpgrades[upg];
+                            const costs =
+                              upg === 'steelEdge'
+                                ? BLACKSMITH_STEEL_EDGE_COSTS
+                                : BLACKSMITH_IRON_HIDE_COSTS;
+                            const cost = costs[lvl];
+                            const canAffordUpg =
+                              cost !== undefined &&
+                              resources.gold >= cost.gold &&
+                              ('stone' in cost
+                                ? resources.stone >= cost.stone
+                                : resources.lumber >=
+                                  (cost as { lumber: number }).lumber);
+                            const costLabel =
+                              lvl >= 2 ? 'MAX' : cost ? `${cost.gold}🪙` : '';
+                            return (
+                              <button
+                                key={upg}
+                                type="button"
+                                className={`rounded border py-2.5 text-xs hover:opacity-90 disabled:opacity-40 ${upg === 'steelEdge' ? 'border-red-700/70 bg-red-950/20 text-red-100 hover:bg-red-900/40' : 'border-sky-700/70 bg-sky-950/20 text-sky-100 hover:bg-sky-900/40'}`}
+                                onClick={() => onBlacksmithUpgrade(upg)}
+                                disabled={lvl >= 2 || !canAffordUpg}
+                                title={
+                                  upg === 'steelEdge'
+                                    ? 'Steel Edge — +5 atk all units per level'
+                                    : 'Iron Hide — -2 dmg taken per level'
+                                }
+                              >
+                                {upg === 'steelEdge' ? '⚔️ Steel' : '🛡️ Hide'}{' '}
+                                {'★'.repeat(lvl)}
+                                {'☆'.repeat(2 - lvl)} {costLabel}
+                              </button>
+                            );
+                          })}
                         </div>
                       )}
                       {hasBarracks && (
@@ -1763,15 +1774,15 @@ export const RTSUI: React.FC<RTSUIProps> = ({
           </div>
           <svg
             className="mt-1.5 h-24 w-full cursor-crosshair rounded border border-slate-700 bg-slate-800/80"
-            viewBox={`0 0 ${MINIMAP_GRID} ${MINIMAP_GRID}`}
+            viewBox={`0 0 ${GRID_SIZE} ${GRID_SIZE}`}
             preserveAspectRatio="xMidYMid meet"
             onClick={e => {
               const rect = e.currentTarget.getBoundingClientRect();
               const tx = Math.round(
-                ((e.clientX - rect.left) / rect.width) * MINIMAP_GRID
+                ((e.clientX - rect.left) / rect.width) * GRID_SIZE
               );
               const ty = Math.round(
-                ((e.clientY - rect.top) / rect.height) * MINIMAP_GRID
+                ((e.clientY - rect.top) / rect.height) * GRID_SIZE
               );
               onMinimapClick(tx, ty);
             }}
@@ -1848,8 +1859,8 @@ export const RTSUI: React.FC<RTSUIProps> = ({
             ))}
             {/* Player barn */}
             <rect
-              x={MINIMAP_BARN.x - 0.7}
-              y={MINIMAP_BARN.y - 0.7}
+              x={BARN_POS.x - 0.7}
+              y={BARN_POS.y - 0.7}
               width={1.4}
               height={1.4}
               fill="#fbbf24"
@@ -1858,8 +1869,8 @@ export const RTSUI: React.FC<RTSUIProps> = ({
             {/* Enemy barn */}
             {minimapData.enemyBarnAlive && (
               <rect
-                x={MINIMAP_ENEMY_BARN.x - 0.7}
-                y={MINIMAP_ENEMY_BARN.y - 0.7}
+                x={ENEMY_BARN_POS.x - 0.7}
+                y={ENEMY_BARN_POS.y - 0.7}
                 width={1.4}
                 height={1.4}
                 fill="#ef4444"
@@ -1998,6 +2009,48 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                 stroke="#dc2626"
                 strokeWidth={0.1}
                 rx={0.05}
+              />
+            ))}
+            {/* Loot crates — cyan squares */}
+            {minimapData.lootCrates.map((c, i) => (
+              <rect
+                key={`lc${i}`}
+                x={c.x - 0.35}
+                y={c.y - 0.35}
+                width={0.7}
+                height={0.7}
+                fill="#06b6d4"
+                opacity={0.8}
+                rx={0.1}
+              />
+            ))}
+            {/* Dropped hero items — purple diamonds */}
+            {minimapData.droppedItems.map((d, i) => (
+              <polygon
+                key={`di${i}`}
+                points={`${d.x},${d.y - 0.5} ${d.x + 0.4},${d.y} ${d.x},${d.y + 0.5} ${d.x - 0.4},${d.y}`}
+                fill="#a855f7"
+                opacity={0.9}
+              />
+            ))}
+            {/* Warlords — large dark-purple star */}
+            {minimapData.warlords.map((wl, i) => (
+              <polygon
+                key={`warlord${i}`}
+                points={`${wl.x},${wl.y - 1.4} ${wl.x + 0.5},${wl.y - 0.5} ${wl.x + 1.4},${wl.y - 0.4} ${wl.x + 0.7},${wl.y + 0.4} ${wl.x + 0.9},${wl.y + 1.4} ${wl.x},${wl.y + 0.8} ${wl.x - 0.9},${wl.y + 1.4} ${wl.x - 0.7},${wl.y + 0.4} ${wl.x - 1.4},${wl.y - 0.4} ${wl.x - 0.5},${wl.y - 0.5}`}
+                fill="#7c3aed"
+                stroke="#c4b5fd"
+                strokeWidth={0.15}
+              />
+            ))}
+            {/* Night Lurkers — fast teal triangles */}
+            {minimapData.lurkers.map((lk, i) => (
+              <polygon
+                key={`lurker${i}`}
+                points={`${lk.x},${lk.y - 0.9} ${lk.x + 0.8},${lk.y + 0.7} ${lk.x - 0.8},${lk.y + 0.7}`}
+                fill="#0d9488"
+                stroke="#99f6e4"
+                strokeWidth={0.12}
               />
             ))}
             {/* Attack pings — expanding red rings */}

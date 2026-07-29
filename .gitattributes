@@ -1,0 +1,14 @@
+# Force LF line endings for all text files to match prettier endOfLine: lf
+* text=auto eol=lf
+
+# Explicitly binary files — no newline conversion
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary

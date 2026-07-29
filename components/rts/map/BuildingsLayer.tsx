@@ -9,6 +9,10 @@ import {
   POISON_TOWER_RANGE,
   TILE_SIZE,
 } from '../game/constants';
+import { HpBar } from './HpBar';
+import { isoBox } from './isoBox';
+import { StructureDamageSmoke } from './StructureDamageSmoke';
+import { StructureFireEffect } from './StructureFireEffect';
 import { tileToSvg } from '../game/map';
 import type { PlacedBuilding, Resources } from '../game/types';
 
@@ -297,95 +301,120 @@ export const BuildingsLayer: React.FC<BuildingsLayerProps> = ({
           );
         }
         if (b.type === 'windmill') {
+          const isDmg2 = b.hp < b.maxHp;
+          const cx2 = isoX + TILE_SIZE;
+          const h2 = 26;
           return (
             <g key={`building-${b.id}`} pointerEvents="none">
-              <rect
-                x={isoX + TILE_SIZE * 0.3}
-                y={isoY}
-                width={TILE_SIZE * 1.4}
-                height={TILE_SIZE * 0.75}
-                fill="#fef9c3"
-                stroke="#b45309"
-                strokeWidth={3}
-                rx={8}
-              />
-              <line
-                x1={isoX + TILE_SIZE}
-                y1={isoY - 6}
-                x2={isoX + TILE_SIZE}
-                y2={isoY - 30}
-                stroke="#6b7280"
-                strokeWidth={4}
-              />
-              <line
-                x1={isoX + TILE_SIZE - 14}
-                y1={isoY - 18}
-                x2={isoX + TILE_SIZE + 14}
-                y2={isoY - 18}
-                stroke="#6b7280"
-                strokeWidth={4}
-              />
-              <circle
-                cx={isoX + TILE_SIZE}
-                cy={isoY - 18}
-                r={5}
-                fill="#374151"
-              />
+              {isoBox(
+                isoX,
+                isoY,
+                h2,
+                '#fef9c3',
+                '#fde68a',
+                '#fbbf24',
+                isDmg2 ? '#f97316' : '#b45309',
+                2
+              )}
+              {/* Animated windmill sails — SVG animateTransform runs on compositor */}
+              <g>
+                <g>
+                  {/* 4 blades at 0/90/180/270 degrees */}
+                  <polygon
+                    points={`${cx2},${isoY - h2 - 4} ${cx2 - 5},${isoY - h2 - 20} ${cx2 + 5},${isoY - h2 - 20}`}
+                    fill="#d1d5db"
+                    stroke="#6b7280"
+                    strokeWidth={1}
+                  />
+                  <polygon
+                    points={`${cx2},${isoY - h2 - 26} ${cx2 - 5},${isoY - h2 - 10} ${cx2 + 5},${isoY - h2 - 10}`}
+                    fill="#e5e7eb"
+                    stroke="#6b7280"
+                    strokeWidth={1}
+                  />
+                  <polygon
+                    points={`${cx2 + 4},${isoY - h2 - 15} ${cx2 + 20},${isoY - h2 - 10} ${cx2 + 20},${isoY - h2 - 20}`}
+                    fill="#d1d5db"
+                    stroke="#6b7280"
+                    strokeWidth={1}
+                  />
+                  <polygon
+                    points={`${cx2 - 4},${isoY - h2 - 15} ${cx2 - 20},${isoY - h2 - 10} ${cx2 - 20},${isoY - h2 - 20}`}
+                    fill="#e5e7eb"
+                    stroke="#6b7280"
+                    strokeWidth={1}
+                  />
+                  <animateTransform
+                    attributeName="transform"
+                    type="rotate"
+                    from={`0 ${cx2} ${isoY - h2 - 15}`}
+                    to={`360 ${cx2} ${isoY - h2 - 15}`}
+                    dur="3s"
+                    repeatCount="indefinite"
+                  />
+                </g>
+                <circle cx={cx2} cy={isoY - h2 - 15} r={4} fill="#374151" />
+              </g>
               <text
-                x={isoX + TILE_SIZE}
-                y={isoY + TILE_SIZE * 0.52}
+                x={cx2}
+                y={isoY + TILE_SIZE / 2 - h2 / 2}
                 textAnchor="middle"
-                fontSize="20"
+                dominantBaseline="middle"
+                fontSize="18"
               >
                 💨
               </text>
               <text
-                x={isoX + TILE_SIZE}
-                y={isoY - 34}
+                x={cx2}
+                y={isoY - h2 - 34}
                 textAnchor="middle"
-                fontSize="9"
+                fontSize="8"
                 fill="#fde68a"
                 fontWeight="bold"
               >
                 +2🪙/5s
               </text>
+              {isDmg2 && (
+                <text
+                  x={cx2}
+                  y={isoY - h2 - 46}
+                  textAnchor="middle"
+                  fontSize="9"
+                  fill="#f97316"
+                  fontWeight="bold"
+                >
+                  🔧 REPAIR
+                </text>
+              )}
             </g>
           );
         }
         if (b.type === 'market') {
+          const isDmg2 = b.hp < b.maxHp;
           return (
             <g key={`building-${b.id}`} pointerEvents="none">
-              <rect
-                x={isoX + TILE_SIZE * 0.1}
-                y={isoY - 2}
-                width={TILE_SIZE * 1.8}
-                height={TILE_SIZE * 0.82}
-                fill="#fef3c7"
-                stroke="#d97706"
-                strokeWidth={3}
-                rx={5}
-              />
-              {/* Awning */}
-              <rect
-                x={isoX + TILE_SIZE * 0.1}
-                y={isoY - 2}
-                width={TILE_SIZE * 1.8}
-                height={12}
-                fill="#d97706"
-                stroke="none"
-                rx={3}
-              />
+              {isoBox(
+                isoX,
+                isoY,
+                26,
+                '#fef3c7',
+                '#fbbf24',
+                '#d97706',
+                isDmg2 ? '#f97316' : '#92400e',
+                2
+              )}
               <text
                 x={isoX + TILE_SIZE}
-                y={isoY + TILE_SIZE * 0.5}
+                y={isoY + TILE_SIZE / 2 - 13}
                 textAnchor="middle"
+                dominantBaseline="middle"
                 fontSize="20"
               >
                 🏪
               </text>
               <text
                 x={isoX + TILE_SIZE}
-                y={isoY - 6}
+                y={isoY - 30}
                 textAnchor="middle"
                 fontSize="9"
                 fill="#78350f"
@@ -393,98 +422,95 @@ export const BuildingsLayer: React.FC<BuildingsLayerProps> = ({
               >
                 MARKET
               </text>
+              {isDmg2 && (
+                <text
+                  x={isoX + TILE_SIZE}
+                  y={isoY - 42}
+                  textAnchor="middle"
+                  fontSize="9"
+                  fill="#f97316"
+                  fontWeight="bold"
+                >
+                  🔧 REPAIR
+                </text>
+              )}
             </g>
           );
         }
         if (b.type === 'siegeWorkshop') {
+          const isDmg2 = b.hp < b.maxHp;
           return (
             <g key={`building-${b.id}`} pointerEvents="none">
-              <rect
-                x={isoX + TILE_SIZE * 0.15}
-                y={isoY}
-                width={TILE_SIZE * 1.7}
-                height={TILE_SIZE * 0.8}
-                fill="#292524"
-                stroke="#ea580c"
-                strokeWidth={3}
-                rx={5}
-              />
-              <rect
-                x={isoX + TILE_SIZE * 0.15}
-                y={isoY}
-                width={TILE_SIZE * 1.7}
-                height={9}
-                fill="#1c1917"
-                stroke="none"
-              />
-              {/* Gear decoration */}
-              <circle
-                cx={isoX + TILE_SIZE * 0.55}
-                cy={isoY + TILE_SIZE * 0.42}
-                r={12}
-                fill="none"
-                stroke="#ea580c"
-                strokeWidth={3}
-              />
-              <circle
-                cx={isoX + TILE_SIZE * 0.55}
-                cy={isoY + TILE_SIZE * 0.42}
-                r={5}
-                fill="#ea580c"
-              />
+              {isoBox(
+                isoX,
+                isoY,
+                28,
+                '#292524',
+                '#1c1917',
+                '#0c0a09',
+                isDmg2 ? '#f97316' : '#ea580c',
+                2
+              )}
               <text
                 x={isoX + TILE_SIZE}
-                y={isoY + TILE_SIZE * 0.52}
+                y={isoY + TILE_SIZE / 2 - 14}
                 textAnchor="middle"
+                dominantBaseline="middle"
                 fontSize="22"
               >
                 ⚙️
               </text>
               <text
                 x={isoX + TILE_SIZE}
-                y={isoY - 4}
+                y={isoY - 32}
                 textAnchor="middle"
-                fontSize="9"
+                fontSize="8"
                 fill="#fed7aa"
                 fontWeight="bold"
               >
                 SIEGE WORKSHOP
               </text>
+              {isDmg2 && (
+                <text
+                  x={isoX + TILE_SIZE}
+                  y={isoY - 44}
+                  textAnchor="middle"
+                  fontSize="9"
+                  fill="#f97316"
+                  fontWeight="bold"
+                >
+                  🔧 REPAIR
+                </text>
+              )}
             </g>
           );
         }
         if (b.type === 'barracks') {
+          const isDmg2 = b.hp < b.maxHp;
           return (
             <g key={`building-${b.id}`} pointerEvents="none">
-              <rect
-                x={isoX + TILE_SIZE * 0.2}
-                y={isoY - 4}
-                width={TILE_SIZE * 1.6}
-                height={TILE_SIZE * 0.85}
-                fill="#1c1917"
-                stroke="#dc2626"
-                strokeWidth={3}
-                rx={6}
-              />
-              <rect
-                x={isoX + TILE_SIZE * 0.2}
-                y={isoY - 4}
-                width={TILE_SIZE * 1.6}
-                height={8}
-                fill="#292524"
-                stroke="none"
-              />
+              {isoBox(
+                isoX,
+                isoY,
+                30,
+                '#292524',
+                '#1c1917',
+                '#111827',
+                isDmg2 ? '#f97316' : '#dc2626',
+                2
+              )}
               <text
                 x={isoX + TILE_SIZE}
-                y={isoY + TILE_SIZE * 0.5}
+                y={isoY + TILE_SIZE / 2 - 15}
                 textAnchor="middle"
+                dominantBaseline="middle"
                 fontSize="22"
               >
                 ⚔️
               </text>
               <text
                 x={isoX + TILE_SIZE}
-                y={isoY - 8}
+                y={isoY - 34}
                 textAnchor="middle"
                 fontSize="9"
                 fill="#fca5a5"
@@ -492,55 +518,47 @@ export const BuildingsLayer: React.FC<BuildingsLayerProps> = ({
               >
                 BARRACKS
               </text>
+              {isDmg2 && (
+                <text
+                  x={isoX + TILE_SIZE}
+                  y={isoY - 46}
+                  textAnchor="middle"
+                  fontSize="9"
+                  fill="#f97316"
+                  fontWeight="bold"
+                >
+                  🔧 REPAIR
+                </text>
+              )}
             </g>
           );
         }
         if (b.type === 'stable') {
+          const isDmg2 = b.hp < b.maxHp;
           return (
             <g key={`building-${b.id}`} pointerEvents="none">
-              {/* Stable body - brown barn with dark roof */}
-              <rect
-                x={isoX + TILE_SIZE * 0.1}
-                y={isoY}
-                width={TILE_SIZE * 1.8}
-                height={TILE_SIZE * 0.8}
-                fill="#92400e"
-                stroke="#78350f"
-                strokeWidth={3}
-                rx={4}
-              />
-              {/* Roof ridge */}
-              <rect
-                x={isoX + TILE_SIZE * 0.1}
-                y={isoY}
-                width={TILE_SIZE * 1.8}
-                height={10}
-                fill="#451a03"
-                stroke="none"
-                rx={3}
-              />
-              {/* Door */}
-              <rect
-                x={isoX + TILE_SIZE * 0.8}
-                y={isoY + TILE_SIZE * 0.35}
-                width={18}
-                height={28}
-                fill="#1c1917"
-                stroke="#78350f"
-                strokeWidth={1.5}
-                rx={2}
-              />
+              {isoBox(
+                isoX,
+                isoY,
+                28,
+                '#d97706',
+                '#92400e',
+                '#78350f',
+                isDmg2 ? '#f97316' : '#451a03',
+                2
+              )}
               <text
                 x={isoX + TILE_SIZE}
-                y={isoY + TILE_SIZE * 0.52}
+                y={isoY + TILE_SIZE / 2 - 14}
                 textAnchor="middle"
+                dominantBaseline="middle"
                 fontSize="20"
               >
                 🐴
               </text>
               <text
                 x={isoX + TILE_SIZE}
-                y={isoY - 4}
+                y={isoY - 32}
                 textAnchor="middle"
                 fontSize="9"
                 fill="#fde68a"
@@ -548,6 +566,18 @@ export const BuildingsLayer: React.FC<BuildingsLayerProps> = ({
               >
                 STABLE
               </text>
+              {isDmg2 && (
+                <text
+                  x={isoX + TILE_SIZE}
+                  y={isoY - 44}
+                  textAnchor="middle"
+                  fontSize="9"
+                  fill="#f97316"
+                  fontWeight="bold"
+                >
+                  🔧 REPAIR
+                </text>
+              )}
             </g>
           );
         }
@@ -687,7 +717,7 @@ export const BuildingsLayer: React.FC<BuildingsLayerProps> = ({
           const lastTrigger = trapTriggeredRef.current[b.id] ?? 0;
           const isArmed =
             lastTrigger === 0 || Date.now() - lastTrigger >= 30000;
-          const cx2 = isoX + TILE_SIZE / 2;
+          const cx2 = isoX + TILE_SIZE;
           const cy2 = isoY + TILE_SIZE * 0.5;
           return (
             <g key={`building-${b.id}`} pointerEvents="none">
@@ -751,7 +781,7 @@ export const BuildingsLayer: React.FC<BuildingsLayerProps> = ({
           );
         }
         if (b.type === 'ballista') {
-          const cx2 = isoX + TILE_SIZE / 2;
+          const cx2 = isoX + TILE_SIZE;
           const cy2 = isoY + TILE_SIZE * 0.4;
           return (
             <g key={`building-${b.id}`} pointerEvents="none">
@@ -829,7 +859,7 @@ export const BuildingsLayer: React.FC<BuildingsLayerProps> = ({
           );
         }
         if (b.type === 'poisonTower') {
-          const cx2 = isoX + TILE_SIZE / 2;
+          const cx2 = isoX + TILE_SIZE;
           const cy2 = isoY + TILE_SIZE * 0.4;
           return (
             <g key={`building-${b.id}`} pointerEvents="none">
@@ -918,16 +948,108 @@ export const BuildingsLayer: React.FC<BuildingsLayerProps> = ({
             </g>
           );
         }
-        const colors: Record<string, { fill: string; stroke: string }> = {
-          farmhouse: { fill: '#fef3c7', stroke: '#92400e' },
-          lumberShed: { fill: '#a16207', stroke: '#78350f' },
-          watchtower: { fill: '#64748b', stroke: '#1e293b' },
+        // ── Frost Tower ─────────────────────────────────────────────────────────
+        if (b.type === 'frostTower') {
+          const isDmg = b.hp < b.maxHp;
+          const cx2 = isoX + TILE_SIZE;
+          const h = 44;
+          const roofY = isoY + TILE_SIZE / 2 - h; // top-face center y
+          return (
+            <g key={`building-${b.id}`} pointerEvents="none">
+              {isoBox(
+                isoX,
+                isoY,
+                h,
+                '#dbeafe',
+                '#60a5fa',
+                '#1d4ed8',
+                isDmg ? '#f97316' : '#1e3a8a',
+                2
+              )}
+              {/* Central crystal spire */}
+              <polygon
+                points={`${cx2},${roofY - 22} ${cx2 - 7},${roofY + 2} ${cx2 + 7},${roofY + 2}`}
+                fill="#bfdbfe"
+                stroke="#1d4ed8"
+                strokeWidth={1}
+              />
+              {/* Side crystals */}
+              <polygon
+                points={`${cx2 - 18},${roofY - 12} ${cx2 - 26},${roofY + 3} ${cx2 - 10},${roofY + 3}`}
+                fill="#93c5fd"
+                stroke="#1d4ed8"
+                strokeWidth={1}
+              />
+              <polygon
+                points={`${cx2 + 18},${roofY - 12} ${cx2 + 10},${roofY + 3} ${cx2 + 26},${roofY + 3}`}
+                fill="#93c5fd"
+                stroke="#1d4ed8"
+                strokeWidth={1}
+              />
+              {/* Frost aura ring */}
+              <ellipse
+                cx={cx2}
+                cy={isoY + TILE_SIZE / 2}
+                rx={TILE_SIZE * 1.1}
+                ry={TILE_SIZE * 0.55}
+                fill="none"
+                stroke="#93c5fd"
+                strokeWidth={1}
+                strokeDasharray="4 4"
+                opacity={0.25}
+              />
+              <text
+                x={cx2}
+                y={roofY - 26}
+                textAnchor="middle"
+                fontSize="8"
+                fill="#93c5fd"
+                fontWeight="bold"
+              >
+                ❄️ FROST
+              </text>
+              {isDmg && (
+                <text
+                  x={cx2}
+                  y={roofY - 38}
+                  textAnchor="middle"
+                  fontSize="9"
+                  fill="#f97316"
+                  fontWeight="bold"
+                >
+                  🔧 REPAIR
+                </text>
+              )}
+            </g>
+          );
+        }
+
+        // ── Generic isometric box fallback (farmhouse, lumberShed, watchtower, …) ─
+        // Per-type: [topFill, leftFill, rightFill, stroke, heightPx]
+        const ISO_COLORS: Record<
+          string,
+          [string, string, string, string, number]
+        > = {
+          farmhouse: ['#fef3c7', '#fbbf24', '#d97706', '#92400e', 28],
+          lumberShed: ['#d4a76a', '#a16207', '#78350f', '#78350f', 26],
+          watchtower: ['#94a3b8', '#64748b', '#334155', '#1e293b', 44],
         };
-        const c = colors[b.type] ?? { fill: '#374151', stroke: '#1f2937' };
+        const [topFill, leftFill, rightFill, bStroke, boxH] = ISO_COLORS[
+          b.type
+        ] ?? ['#d1d5db', '#9ca3af', '#6b7280', '#4b5563', 24];
+
         const isDamaged = b.hp < b.maxHp;
         const isTower = b.type === 'watchtower';
         const tgCount = isTower ? (towerGarrison[b.id] ?? []).length : 0;
         const canGarrisonTower = isTower && anySelected && tgCount < 3;
+        const strokeColor = isDamaged
+          ? '#f97316'
+          : tgCount > 0
+            ? '#22d3ee'
+            : bStroke;
+        const cx2 = isoX + TILE_SIZE;
+        const emojiY = isoY + TILE_SIZE / 2 - boxH / 2; // center of box face
+
         const onCtxMenu =
           isDamaged && anySelected
             ? (e: React.MouseEvent) => handleRepairBuilding(b.id, b.x, b.y, e)
@@ -949,30 +1071,29 @@ export const BuildingsLayer: React.FC<BuildingsLayerProps> = ({
             }}
             onContextMenu={onCtxMenu}
           >
-            <rect
-              x={isoX + TILE_SIZE / 4}
-              y={isoY}
-              width={TILE_SIZE * 1.5}
-              height={TILE_SIZE * 0.8}
-              fill={c.fill}
-              stroke={
-                isDamaged ? '#f97316' : tgCount > 0 ? '#22d3ee' : c.stroke
-              }
-              strokeWidth={isDamaged ? 4 : 3}
-              rx={8}
-            />
+            {isoBox(
+              isoX,
+              isoY,
+              boxH,
+              topFill,
+              leftFill,
+              rightFill,
+              strokeColor,
+              isDamaged ? 3 : 1.5
+            )}
             <text
-              x={isoX + TILE_SIZE}
-              y={isoY + TILE_SIZE / 2}
+              x={cx2}
+              y={emojiY}
               textAnchor="middle"
+              dominantBaseline="middle"
               fontSize="22"
             >
               {BUILDING_EMOJI[b.type]}
             </text>
             {isDamaged && (
               <text
-                x={isoX + TILE_SIZE}
-                y={isoY - 18}
+                x={cx2}
+                y={isoY - boxH - 4}
                 textAnchor="middle"
                 fontSize="9"
                 fill="#f97316"
@@ -983,8 +1104,8 @@ export const BuildingsLayer: React.FC<BuildingsLayerProps> = ({
             )}
             {isTower && tgCount > 0 && (
               <text
-                x={isoX + TILE_SIZE}
-                y={isoY - 18}
+                x={cx2}
+                y={isoY - boxH - 4}
                 textAnchor="middle"
                 fontSize="9"
                 fill="#22d3ee"
@@ -1005,19 +1126,12 @@ export const BuildingsLayer: React.FC<BuildingsLayerProps> = ({
           const pct = b.hp / b.maxHp;
           return (
             <g key={`bhp-${b.id}`} pointerEvents="none">
-              <rect
+              <HpBar
                 x={isoX + TILE_SIZE * 0.1}
                 y={isoY - 14}
                 width={TILE_SIZE * 1.8}
                 height={6}
-                fill="#1e293b"
-                rx={3}
-              />
-              <rect
-                x={isoX + TILE_SIZE * 0.1}
-                y={isoY - 14}
-                width={TILE_SIZE * 1.8 * pct}
-                height={6}
+                hpPct={pct}
                 fill={
                   pct > 0.5 ? '#4ade80' : pct > 0.25 ? '#fbbf24' : '#ef4444'
                 }
@@ -1036,25 +1150,18 @@ export const BuildingsLayer: React.FC<BuildingsLayerProps> = ({
           return (
             <g key={`bsel-${b.id}`}>
               {isSel && (
-                <rect
-                  x={isoX + TILE_SIZE * 0.05}
-                  y={isoY - 6}
-                  width={TILE_SIZE * 1.9}
-                  height={TILE_SIZE * 0.92}
+                <polygon
+                  points={`${isoX},${isoY + TILE_SIZE / 2} ${isoX + TILE_SIZE},${isoY} ${isoX + 2 * TILE_SIZE},${isoY + TILE_SIZE / 2} ${isoX + TILE_SIZE},${isoY + TILE_SIZE}`}
                   fill="none"
                   stroke="#60a5fa"
-                  strokeWidth={2}
-                  strokeDasharray="5 2"
-                  rx={7}
+                  strokeWidth={2.5}
+                  strokeDasharray="6 3"
                   opacity={0.9}
                   pointerEvents="none"
                 />
               )}
-              <rect
-                x={isoX + TILE_SIZE * 0.05}
-                y={isoY - 6}
-                width={TILE_SIZE * 1.9}
-                height={TILE_SIZE * 0.92}
+              <polygon
+                points={`${isoX},${isoY + TILE_SIZE / 2} ${isoX + TILE_SIZE},${isoY} ${isoX + 2 * TILE_SIZE},${isoY + TILE_SIZE / 2} ${isoX + TILE_SIZE},${isoY + TILE_SIZE}`}
                 fill="transparent"
                 style={{ cursor: 'pointer' }}
                 onClick={e => {
@@ -1077,72 +1184,16 @@ export const BuildingsLayer: React.FC<BuildingsLayerProps> = ({
           const cy = isoY + TILE_SIZE * 0.3;
           const t = (Date.now() / 600) % (2 * Math.PI);
           return (
-            <g key={`fire-${b.id}`} pointerEvents="none">
-              {/* Smoke puffs */}
-              <circle
-                cx={cx - 6}
-                cy={cy - 18 - Math.sin(t) * 4}
-                r={6}
-                fill="#374151"
-                opacity={0.55}
-              />
-              <circle
-                cx={cx + 4}
-                cy={cy - 28 - Math.sin(t + 1) * 5}
-                r={5}
-                fill="#4b5563"
-                opacity={0.4}
-              />
-              <circle
-                cx={cx - 2}
-                cy={cy - 38 - Math.sin(t + 2) * 3}
-                r={4}
-                fill="#1f2937"
-                opacity={0.25}
-              />
-              {/* Flame base */}
-              <ellipse
+            <React.Fragment key={`fire-${b.id}`}>
+              <StructureDamageSmoke
                 cx={cx}
-                cy={cy - 4}
-                rx={9}
-                ry={6}
-                fill="#f97316"
-                opacity={0.85}
+                cy={cy}
+                t={t}
+                colors={['#374151', '#4b5563', '#1f2937']}
+                opacities={[0.55, 0.4, 0.25]}
               />
-              <ellipse
-                cx={cx - 5}
-                cy={cy - 2}
-                rx={5}
-                ry={4}
-                fill="#dc2626"
-                opacity={0.75}
-              />
-              <ellipse
-                cx={cx + 5}
-                cy={cy - 2}
-                rx={5}
-                ry={4}
-                fill="#ef4444"
-                opacity={0.7}
-              />
-              {/* Flame tip */}
-              <ellipse
-                cx={cx}
-                cy={cy - 14}
-                rx={5}
-                ry={10}
-                fill="#fbbf24"
-                opacity={0.9}
-              />
-              <ellipse
-                cx={cx}
-                cy={cy - 18}
-                rx={3}
-                ry={6}
-                fill="#fef08a"
-                opacity={0.8}
-              />
-            </g>
+              <StructureFireEffect cx={cx} cy={cy} />
+            </React.Fragment>
           );
         })}
     </>

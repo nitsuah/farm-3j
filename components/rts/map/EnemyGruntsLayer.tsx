@@ -2,8 +2,14 @@ import React from 'react';
 
 import type { WorkerState } from '../game/types';
 import { HERO_ITEM_DATA, TILE_SIZE } from '../game/constants';
+import { HpBar } from './HpBar';
 import { tileToSvg } from '../game/map';
-import type { DroppedItem, EnemyGrunt, LootCrate } from '../game/types';
+import type {
+  DroppedItem,
+  EnemyGrunt,
+  EnemyLurker,
+  LootCrate,
+} from '../game/types';
 
 interface EnemyGruntsLayerProps {
   anySelected: boolean;
@@ -15,9 +21,11 @@ interface EnemyGruntsLayerProps {
   ) => void;
   droppedItems: DroppedItem[];
   enemyGrunts: EnemyGrunt[];
+  enemyLurkers: EnemyLurker[];
   fogVisible: boolean[][];
   gruntHitRef: React.RefObject<Map<number, number>>;
   handleAttackGrunt: (gruntId: number, e: React.MouseEvent) => void;
+  handleAttackLurker: (lurkerId: number, e: React.MouseEvent) => void;
   lootCrates: LootCrate[];
 }
 
@@ -26,9 +34,11 @@ export const EnemyGruntsLayer: React.FC<EnemyGruntsLayerProps> = ({
   commandMove,
   droppedItems,
   enemyGrunts,
+  enemyLurkers,
   fogVisible,
   gruntHitRef,
   handleAttackGrunt,
+  handleAttackLurker,
   lootCrates,
 }) => {
   return (
@@ -102,21 +112,13 @@ export const EnemyGruntsLayer: React.FC<EnemyGruntsLayerProps> = ({
                 >
                   WAR BULL
                 </text>
-                <rect
+                <HpBar
                   x={isoX + TILE_SIZE / 2 - 20}
                   y={isoY - 5}
                   width={40}
                   height={5}
-                  fill="#1e293b"
-                  rx={2}
-                />
-                <rect
-                  x={isoX + TILE_SIZE / 2 - 20}
-                  y={isoY - 5}
-                  width={40 * hp}
-                  height={5}
+                  hpPct={hp}
                   fill="#dc2626"
-                  rx={2}
                 />
               </>
             ) : g.isSkeleton ? (
@@ -148,19 +150,14 @@ export const EnemyGruntsLayer: React.FC<EnemyGruntsLayerProps> = ({
                 >
                   SKELETON
                 </text>
-                <rect
+                <HpBar
                   x={isoX + TILE_SIZE / 2 - 12}
                   y={isoY - 10}
                   width={24}
                   height={4}
-                  fill="#1e293b"
-                />
-                <rect
-                  x={isoX + TILE_SIZE / 2 - 12}
-                  y={isoY - 10}
-                  width={24 * hp}
-                  height={4}
+                  hpPct={hp}
                   fill="#a855f7"
+                  rx={0}
                 />
               </>
             ) : (
@@ -222,19 +219,14 @@ export const EnemyGruntsLayer: React.FC<EnemyGruntsLayerProps> = ({
                     BERSERK!
                   </text>
                 )}
-                <rect
+                <HpBar
                   x={isoX + TILE_SIZE / 2 - 14}
                   y={isoY - 4}
                   width={28}
                   height={4}
-                  fill="#1e293b"
-                />
-                <rect
-                  x={isoX + TILE_SIZE / 2 - 14}
-                  y={isoY - 4}
-                  width={28 * hp}
-                  height={4}
+                  hpPct={hp}
                   fill="#ef4444"
+                  rx={0}
                 />
               </>
             )}
@@ -256,9 +248,139 @@ export const EnemyGruntsLayer: React.FC<EnemyGruntsLayerProps> = ({
         );
       })}
 
-      {/* Loot Crates */}
+      {/* Night Lurkers */}
+      {enemyLurkers.map(lk => {
+        if (lk.hp <= 0) return null;
+        if (!fogVisible[Math.round(lk.x)]?.[Math.round(lk.y)]) return null;
+        const { isoX, isoY } = tileToSvg(lk.x, lk.y);
+        const cx = isoX + TILE_SIZE / 2;
+        const cy = isoY + 20;
+        const hpPct = lk.hp / lk.maxHp;
+        const isAttacking = lk.state === 'attacking';
+        return (
+          <g
+            key={`lurker-${lk.id}`}
+            style={{ cursor: anySelected ? 'crosshair' : 'default' }}
+            onContextMenu={e => handleAttackLurker(lk.id, e)}
+          >
+            {/* Shadow */}
+            <ellipse
+              cx={cx}
+              cy={cy + 8}
+              rx={14}
+              ry={5}
+              fill="#000"
+              opacity={0.25}
+            />
+            {/* Body — sleek dark teal teardrop */}
+            <ellipse
+              cx={cx}
+              cy={cy}
+              rx={11}
+              ry={14}
+              fill={isAttacking ? '#0f766e' : '#115e59'}
+              stroke="#042f2e"
+              strokeWidth={2}
+            />
+            {/* Wing-cape left */}
+            <path
+              d={`M${cx - 8},${cy - 2} Q${cx - 22},${cy - 12} ${cx - 16},${cy + 10}`}
+              fill="#134e4a"
+              stroke="#042f2e"
+              strokeWidth={1.5}
+            />
+            {/* Wing-cape right */}
+            <path
+              d={`M${cx + 8},${cy - 2} Q${cx + 22},${cy - 12} ${cx + 16},${cy + 10}`}
+              fill="#134e4a"
+              stroke="#042f2e"
+              strokeWidth={1.5}
+            />
+            {/* Glowing teal eyes */}
+            <circle
+              cx={cx - 4}
+              cy={cy - 4}
+              r={3}
+              fill="#2dd4bf"
+              opacity={0.9}
+            />
+            <circle
+              cx={cx + 4}
+              cy={cy - 4}
+              r={3}
+              fill="#2dd4bf"
+              opacity={0.9}
+            />
+            {/* Claw marks on attack */}
+            {isAttacking && (
+              <>
+                <line
+                  x1={cx - 6}
+                  y1={cy + 6}
+                  x2={cx - 2}
+                  y2={cy + 12}
+                  stroke="#5eead4"
+                  strokeWidth={1.5}
+                />
+                <line
+                  x1={cx - 3}
+                  y1={cy + 5}
+                  x2={cx + 1}
+                  y2={cy + 11}
+                  stroke="#5eead4"
+                  strokeWidth={1.5}
+                />
+                <line
+                  x1={cx}
+                  y1={cy + 4}
+                  x2={cx + 4}
+                  y2={cy + 10}
+                  stroke="#5eead4"
+                  strokeWidth={1.5}
+                />
+              </>
+            )}
+            {/* Label */}
+            <text
+              x={cx}
+              y={isoY - 2}
+              textAnchor="middle"
+              fontSize="7"
+              fill="#5eead4"
+              fontWeight="bold"
+            >
+              LURKER
+            </text>
+            <HpBar
+              x={cx - 12}
+              y={isoY - 8}
+              width={24}
+              height={4}
+              hpPct={hpPct}
+              fill="#0d9488"
+              rx={0}
+            />
+          </g>
+        );
+      })}
+
+      {/* Loot Crates — isometric 3D wooden chest */}
       {lootCrates.map(crate => {
         const { isoX, isoY } = tileToSvg(crate.x, crate.y);
+        // Offset to center a half-size box within the tile
+        const ox = isoX + TILE_SIZE / 2;
+        const oy = isoY + TILE_SIZE / 4;
+        const w = TILE_SIZE; // half-tile-width crate
+        const h = 14;
+        // Small iso box corners (centered at ox+w/2, oy)
+        const lx2 = ox,
+          ly2 = oy + w / 4;
+        const rx2 = ox + w,
+          ry2 = oy + w / 4;
+        const bx2 = ox + w / 2,
+          by2 = oy + w / 2;
+        const tx2 = ox + w / 2,
+          ty2 = oy;
         const label = [
           crate.gold > 0 && `${crate.gold}🪙`,
           crate.lumber > 0 && `${crate.lumber}🌲`,
@@ -275,54 +397,49 @@ export const EnemyGruntsLayer: React.FC<EnemyGruntsLayerProps> = ({
               commandMove(crate.x, crate.y);
             }}
           >
-            {/* Crate body */}
-            <rect
-              x={isoX + TILE_SIZE / 2 - 12}
-              y={isoY + 8}
-              width={24}
-              height={18}
-              fill="#92400e"
-              stroke="#fbbf24"
-              strokeWidth={2}
-              rx={2}
-            />
-            {/* Cross lines */}
-            <line
-              x1={isoX + TILE_SIZE / 2 - 12}
-              y1={isoY + 17}
-              x2={isoX + TILE_SIZE / 2 + 12}
-              y2={isoY + 17}
-              stroke="#fbbf24"
-              strokeWidth={1}
-            />
-            <line
-              x1={isoX + TILE_SIZE / 2}
-              y1={isoY + 8}
-              x2={isoX + TILE_SIZE / 2}
-              y2={isoY + 26}
-              stroke="#fbbf24"
-              strokeWidth={1}
-            />
-            {/* Glow pulse */}
-            <rect
-              x={isoX + TILE_SIZE / 2 - 14}
-              y={isoY + 6}
-              width={28}
-              height={22}
-              fill="none"
+            {/* Crate left face */}
+            <polygon
+              points={`${lx2},${ly2 - h} ${bx2},${by2 - h} ${bx2},${by2} ${lx2},${ly2}`}
+              fill="#78350f"
               stroke="#fbbf24"
               strokeWidth={1.5}
-              rx={3}
-              opacity={0.5}
+              strokeLinejoin="round"
             />
-            {/* Label */}
+            {/* Crate right face */}
+            <polygon
+              points={`${bx2},${by2 - h} ${rx2},${ry2 - h} ${rx2},${ry2} ${bx2},${by2}`}
+              fill="#92400e"
+              stroke="#fbbf24"
+              strokeWidth={1.5}
+              strokeLinejoin="round"
+            />
+            {/* Crate top — gold lid */}
+            <polygon
+              points={`${lx2},${ly2 - h} ${tx2},${ty2 - h} ${rx2},${ry2 - h} ${bx2},${by2 - h}`}
+              fill="#b45309"
+              stroke="#fbbf24"
+              strokeWidth={1.5}
+              strokeLinejoin="round"
+            />
+            {/* Chest clasp detail */}
+            <circle cx={ox + w / 2} cy={oy - h + 4} r={3} fill="#fbbf24" />
+            {/* Glow ring */}
+            <polygon
+              points={`${lx2},${ly2} ${tx2},${ty2} ${rx2},${ry2} ${bx2},${by2}`}
+              fill="none"
+              stroke="#fbbf24"
+              strokeWidth={1}
+              opacity={0.45}
+            />
+            {/* Resource label */}
             <text
-              x={isoX + TILE_SIZE / 2}
-              y={isoY + 4}
+              x={ox + w / 2}
+              y={oy - h - 4}
               textAnchor="middle"
               fontSize="9"
               fill="#fde68a"
               fontWeight="bold"
+              pointerEvents="none"
             >
               {label}
             </text>

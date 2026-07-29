@@ -156,6 +156,28 @@ export const WARCHIEF_STOMP_SLOW_MS = 2500;
 export const WARCHIEF_STOMP_COOLDOWN_MS = 12000;
 export const WARCHIEF_GOLD_REWARD = 50;
 export const WARCHIEF_XP_REWARD = 120;
+export const WARLORD_MAX_HP = 500;
+export const WARLORD_SPEED = 0.4;
+export const WARLORD_DMG = 40;
+export const WARLORD_FIRST_WAVE = 20;
+export const WARLORD_WAR_CRY_RADIUS = 4.5;
+export const WARLORD_WAR_CRY_SLOW_MS = 3000;
+export const WARLORD_WAR_CRY_COOLDOWN_MS = 15000;
+export const WARLORD_SHIELD_BASH_RANGE = 1.5;
+export const WARLORD_SHIELD_BASH_STUN_MS = 2500;
+export const WARLORD_SHIELD_BASH_COOLDOWN_MS = 12000;
+export const WARLORD_GOLD_REWARD = 100;
+export const WARLORD_XP_REWARD = 250;
+
+// ---------- Night Lurker ----------
+export const LURKER_MAX_HP = 70;
+export const LURKER_SPEED = 1.4;
+export const LURKER_DAMAGE = 12;
+export const LURKER_ATTACK_MS = 900;
+export const LURKER_FIRST_WAVE = 15;
+export const LURKER_GOLD_REWARD = 35;
+export const LURKER_XP_REWARD = 40;
+
 export const LOOT_CRATE_SPAWN_MS = 45000;
 export const SHAMAN_MAX_HP = 45;
 export const SHAMAN_SPEED = 0.6;
@@ -574,3 +596,13 @@ export const CAVALRY_TRAMPLE_DAMAGE = 6;
 export const CAVALRY_SPRINT_COOLDOWN_S = 20;
 export const CAVALRY_SPRINT_DURATION_MS = 5000;
 export const CAVALRY_SPRINT_SPEED_MULT = 2;
+
+// ---------- Blacksmith upgrade costs [level 0→1, level 1→2] ----------
+export const BLACKSMITH_STEEL_EDGE_COSTS: { gold: number; stone: number }[] = [
+  { gold: 80, stone: 60 },
+  { gold: 160, stone: 120 },
+];
+export const BLACKSMITH_IRON_HIDE_COSTS: { gold: number; lumber: number }[] = [
+  { gold: 80, lumber: 50 },
+  { gold: 160, lumber: 100 },
+];

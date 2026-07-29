@@ -102,6 +102,7 @@ Farm 3J is an interactive farm website with a full-featured isometric **Real-Tim
 - **Pathfinding**: 8-directional A\* with wall avoidance
 - **Audio**: Web Audio API procedural tone synthesis (no audio files)
 - **State**: React useState/useRef + requestAnimationFrame animation loop
+- **Shared SVG Components**: `HpBar`, `StructureDamageSmoke`, `StructureFireEffect` — parameterized primitives reused across all map layers
 
 This repository will stay in sync with your deployed chats on [v0.dev](https://v0.dev).
 Any changes you make to your deployed app will be automatically pushed to this repository from [v0.dev](https://v0.dev).

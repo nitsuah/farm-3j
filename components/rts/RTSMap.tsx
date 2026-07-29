@@ -70,7 +70,9 @@ import type {
   EnemySiege,
   EnemyTower,
   EnemyTroll,
+  EnemyLurker,
   EnemyWarchief,
+  EnemyWarlord,
   EnemyWitchDoctor,
   FloatingText,
   HeroItem,
@@ -91,7 +93,17 @@ import {
   tileToSvg,
 } from './game/map';
 import { aStar } from './game/pathfinding';
-import { loadSave, saveHighScore, writeSave } from './game/persistence';
+import {
+  ALL_ACHIEVEMENTS,
+  unlockAchievement,
+  type Achievement,
+} from './game/achievements';
+import {
+  loadSave,
+  saveHighScore,
+  writeSave,
+  type SaveSlot,
+} from './game/persistence';
 import { makeUnit } from './game/units';
 import {
   ACK_ATTACK,
@@ -99,14 +111,18 @@ import {
   getSoundMuted,
   pickAck,
   setSoundMuted,
+  startAmbient,
+  stopAmbient,
   Snd,
 } from './game/sound';
+import { AchievementPanel } from './hud/AchievementPanel';
 import { AlertsOverlay } from './hud/AlertsOverlay';
 import { BuffIndicators } from './hud/BuffIndicators';
 import { ControlGroupBar } from './hud/ControlGroupBar';
 import { ControlGroupChips } from './hud/ControlGroupChips';
 import { DamageLogPanel } from './hud/DamageLogPanel';
 import { GameOverOverlay } from './hud/GameOverOverlay';
+import { MinimapPanel } from './hud/MinimapPanel';
 import { ResourceBar } from './hud/ResourceBar';
 import { BuildingsLayer } from './map/BuildingsLayer';
 import { EffectsLayer } from './map/EffectsLayer';
@@ -125,6 +141,11 @@ import { useProduction } from './hooks/useProduction';
 import { useTowerCombat } from './hooks/useTowerCombat';
 import { useWaveSpawner } from './hooks/useWaveSpawner';
 import { useWorldTicks } from './hooks/useWorldTicks';
+import {
+  useBotController,
+  type BotCommands,
+  type BotSnapshot,
+} from './hooks/useBotController';
 
 // Re-exported for backwards compatibility — previously defined in this file.
 export { BUILDING_REQUIRES } from './game/constants';
@@ -134,10 +155,11 @@ import type { DifficultyConfig } from './RTSGameRoot';
 const RTSMap: React.FC<{
   onNewGame?: () => void;
   difficulty?: DifficultyConfig;
-}> = ({ onNewGame, difficulty }) => {
+  slot?: SaveSlot;
+}> = ({ onNewGame, difficulty, slot = 0 }) => {
   // Load save once per mount (module-level caching caused stale data after New Game)
   const saveRef = useRef<SaveData | null | undefined>(undefined);
-  if (saveRef.current === undefined) saveRef.current = loadSave();
+  if (saveRef.current === undefined) saveRef.current = loadSave(slot);
   const INITIAL_SAVE = saveRef.current;
 
   const [zoom, setZoom] = useState(1);
@@ -343,8 +365,6 @@ const RTSMap: React.FC<{
 
   const makeWorker = (id: number, x: number, y: number) =>
     makeUnit(id, x, y, 'farmer');
-  const makeSwordsman = (id: number, x: number, y: number) =>
-    makeUnit(id, x, y, 'swordsman');
 
   const [workers, setWorkers] = useState<WorkerState[]>(() =>
     INITIAL_SAVE?.workers?.length
@@ -515,6 +535,19 @@ const RTSMap: React.FC<{
     enemyWarchiefsRef.current = enemyWarchiefs;
   }, [enemyWarchiefs]);
   const warchiefIdRef = useRef(9000);
+  const [enemyWarlords, setEnemyWarlords] = useState<EnemyWarlord[]>([]);
+  const enemyWarlordsRef = useRef<EnemyWarlord[]>([]);
+  useEffect(() => {
+    enemyWarlordsRef.current = enemyWarlords;
+  }, [enemyWarlords]);
+  const warlordIdRef = useRef(10000);
+  const [enemyLurkers, setEnemyLurkers] = useState<EnemyLurker[]>([]);
+  const enemyLurkersRef = useRef<EnemyLurker[]>([]);
+  useEffect(() => {
+    enemyLurkersRef.current = enemyLurkers;
+  }, [enemyLurkers]);
+  const lurkerIdRef = useRef(11000);
+  const lurkerAttackTimeoutsRef = useRef<Record<number, number>>({});
   const [deadGruntPositions, setDeadGruntPositions] = useState<
     { x: number; y: number; t: number }[]
   >([]);
@@ -558,6 +591,12 @@ const RTSMap: React.FC<{
     droppedItemsRef.current = droppedItems;
   }, [droppedItems]);
   const dropItemIdRef = useRef(9000);
+  type FormationMode = 'cluster' | 'line' | 'wedge' | 'box';
+  const [formationMode, setFormationMode] = useState<FormationMode>('cluster');
+  const formationModeRef = useRef<FormationMode>('cluster');
+  useEffect(() => {
+    formationModeRef.current = formationMode;
+  }, [formationMode]);
   const pendingPickupRef = useRef<Set<number>>(new Set());
   const [waveAnnouncement, setWaveAnnouncement] = useState<string | null>(null);
   const [wavePreview, setWavePreview] = useState<string | null>(null);
@@ -887,7 +926,14 @@ const RTSMap: React.FC<{
   const isNightRef = useRef(false);
   useEffect(() => {
     isNightRef.current = dayPhase === 'night';
-  }, [dayPhase]);
+    if (!soundMuted) startAmbient(dayPhase === 'night');
+  }, [dayPhase, soundMuted]);
+
+  // Stop ambient audio when muted or game over
+  useEffect(() => {
+    if (soundMuted || gameOver) stopAmbient();
+    else startAmbient(isNightRef.current);
+  }, [soundMuted, gameOver]);
 
   useEffect(() => {
     if (gameOver) return;
@@ -915,6 +961,11 @@ const RTSMap: React.FC<{
   }, [gameOver]);
 
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle');
+  const [achievementToast, setAchievementToast] = useState<Achievement | null>(
+    null
+  );
+  const [achievementPanelOpen, setAchievementPanelOpen] = useState(false);
+  const sapperKillCountRef = useRef<number>(0);
   const [incomeRate, setIncomeRate] = useState({
     gold: 0,
     lumber: 0,
@@ -945,42 +996,47 @@ const RTSMap: React.FC<{
   }, [triggerUnderAttack]);
 
   const doSave = useCallback(() => {
-    writeSave({
-      version: 1,
-      resources,
-      workers: workersRef.current.map(w => ({
-        id: w.id,
-        x: Math.round(w.x),
-        y: Math.round(w.y),
-        hp: w.hp,
-        maxHp: w.maxHp,
-        unitType: w.unitType,
-        group: w.group,
-        xp: w.xp,
-        level: w.level,
-        gathering: w.gathering,
-        state: w.state,
-      })),
-      trees: treesRef.current,
-      goldMines: goldMinesRef.current,
-      stoneNodes: stoneNodesRef.current,
-      placedBuildings: placedBuildingsRef.current,
-      buildingNextId: buildingIdRef.current,
-      farmhouse,
-      upgrades: upgradesRef.current,
-      wave: waveRef.current,
-      killCount,
-      totalGold,
-      totalLumber,
-      totalStone,
-      playerBarnHp: playerBarnHpRef.current,
-      enemyBarnHp,
-      rallyPoint,
-      fogExplored,
-      guardTowerResearched,
-      barracksTech,
-      blacksmithUpgrades,
-    });
+    writeSave(
+      {
+        version: 1,
+        resources,
+        workers: workersRef.current.map(w => ({
+          id: w.id,
+          x: Math.round(w.x),
+          y: Math.round(w.y),
+          hp: w.hp,
+          maxHp: w.maxHp,
+          unitType: w.unitType,
+          group: w.group,
+          xp: w.xp,
+          level: w.level,
+          gathering: w.gathering,
+          state: w.state,
+        })),
+        trees: treesRef.current,
+        goldMines: goldMinesRef.current,
+        stoneNodes: stoneNodesRef.current,
+        placedBuildings: placedBuildingsRef.current,
+        buildingNextId: buildingIdRef.current,
+        farmhouse,
+        upgrades: upgradesRef.current,
+        wave: waveRef.current,
+        killCount,
+        totalGold,
+        totalLumber,
+        totalStone,
+        playerBarnHp: playerBarnHpRef.current,
+        enemyBarnHp,
+        rallyPoint,
+        fogExplored,
+        guardTowerResearched,
+        barracksTech,
+        blacksmithUpgrades,
+        savedAt: Date.now(),
+        difficultyId: difficulty?.id,
+      },
+      slot
+    );
     setSaveStatus('saved');
     setTimeout(() => setSaveStatus('idle'), 2000);
   }, [
@@ -1004,6 +1060,60 @@ const RTSMap: React.FC<{
     const id = setInterval(doSave, 30000);
     return () => clearInterval(id);
   }, [gameOver, doSave]);
+
+  const triggerAchievement = useCallback((id: string) => {
+    const isNew = unlockAchievement(id);
+    if (!isNew) return;
+    const achv = ALL_ACHIEVEMENTS.find(a => a.id === id);
+    if (!achv) return;
+    Snd.achievementUnlock();
+    setAchievementToast(achv);
+    window.setTimeout(() => setAchievementToast(null), 4500);
+  }, []);
+
+  // Achievement: kill milestones
+  useEffect(() => {
+    if (killCount >= 1) triggerAchievement('first_blood');
+    if (killCount >= 100) triggerAchievement('kill_100');
+    if (killCount >= 500) triggerAchievement('kill_500');
+  }, [killCount, triggerAchievement]);
+
+  // Achievement: wave milestones
+  useEffect(() => {
+    if (wave >= 10) triggerAchievement('wave_10');
+    if (wave >= 20) triggerAchievement('wave_20');
+    if (wave >= 30) triggerAchievement('wave_30');
+    if (wave >= 50) triggerAchievement('wave_50');
+  }, [wave, triggerAchievement]);
+
+  // Achievement: total gold earned
+  useEffect(() => {
+    if (totalGold >= 1000) triggerAchievement('gold_baron');
+  }, [totalGold, triggerAchievement]);
+
+  // Achievement: unit count and veterancy
+  useEffect(() => {
+    if (workers.length >= 6) triggerAchievement('pack_leader');
+    const level3Count = workers.filter(w => w.level >= 3).length;
+    if (level3Count >= 3) triggerAchievement('veteran_corps');
+  }, [workers, triggerAchievement]);
+
+  // Achievement: hero items
+  useEffect(() => {
+    if (heroItems.length >= 3) triggerAchievement('hero_equipped');
+  }, [heroItems, triggerAchievement]);
+
+  // Achievement: buildings — fortified (3 walls) and blacksmith max
+  useEffect(() => {
+    const wallCount = placedBuildings.filter(b => b.type === 'wall').length;
+    if (wallCount >= 3) triggerAchievement('fortified');
+  }, [placedBuildings, triggerAchievement]);
+
+  useEffect(() => {
+    if (blacksmithUpgrades.steelEdge >= 2 || blacksmithUpgrades.ironHide >= 2) {
+      triggerAchievement('blacksmith_max');
+    }
+  }, [blacksmithUpgrades, triggerAchievement]);
 
   // Income rate: snapshot every 30s, publish as per-minute rate
   useEffect(() => {
@@ -1031,7 +1141,6 @@ const RTSMap: React.FC<{
   const gatherTimeoutsRef = useRef<Record<number, number>>({});
   const attackTimeoutsRef = useRef<Record<number, number>>({});
   const repairTimeoutsRef = useRef<Record<number, number>>({});
-  const archerTowerTimerRef = useRef<number | null>(null);
   const watchtowerTimersRef = useRef<Record<number, number>>({});
   const trapTriggeredRef = useRef<Record<number, number>>({});
   const buildingAttackTimeoutsRef = useRef<Record<number, number>>({});
@@ -1237,6 +1346,7 @@ const RTSMap: React.FC<{
 
   const gameCtx = {
     difficulty,
+    onAchievement: triggerAchievement,
     addDmgLog,
     addFloatingText,
     addProjectile,
@@ -1266,8 +1376,10 @@ const RTSMap: React.FC<{
     enemyTowersRef,
     enemyTrollsRef,
     enemyWallIdRef,
+    enemyLurkersRef,
     enemyWallsRef,
     enemyWarchiefsRef,
+    enemyWarlordsRef,
     enemyWitchDoctorsRef,
     farmhouse,
     fogExploredRef,
@@ -1306,6 +1418,7 @@ const RTSMap: React.FC<{
     repairTimeoutsRef,
     sallyForthThresholdsRef,
     sapperIdRef,
+    sapperKillCountRef,
     setCapturedShrines,
     setClearedCamps,
     setDeadGruntPositions,
@@ -1319,8 +1432,10 @@ const RTSMap: React.FC<{
     setEnemySiege,
     setEnemyTowers,
     setEnemyTrolls,
+    setEnemyLurkers,
     setEnemyWalls,
     setEnemyWarchiefs,
+    setEnemyWarlords,
     setEnemyWitchDoctors,
     setFogExplored,
     setFogVisible,
@@ -1368,11 +1483,14 @@ const RTSMap: React.FC<{
     treesRef,
     triggerShakeRef,
     triggerUnderAttackRef,
+    lurkerAttackTimeoutsRef,
+    lurkerIdRef,
     trollAttackTimersRef,
     trollIdRef,
     upgradesRef,
     upkeepMultRef,
     warchiefIdRef,
+    warlordIdRef,
     watchtowerTimersRef,
     wave,
     waveRef,
@@ -1900,17 +2018,58 @@ const RTSMap: React.FC<{
     return pt.matrixTransform(ctm.inverse());
   }, []);
 
-  const FORMATION_OFFSETS = [
-    { dx: 0, dy: 0 },
-    { dx: 1, dy: 0 },
-    { dx: -1, dy: 0 },
-    { dx: 0, dy: 1 },
-    { dx: 0, dy: -1 },
-    { dx: 1, dy: 1 },
-    { dx: -1, dy: 1 },
-    { dx: 1, dy: -1 },
-    { dx: -1, dy: -1 },
-  ];
+  const FORMATION_OFFSETS_BY_MODE: Record<
+    string,
+    { dx: number; dy: number }[]
+  > = {
+    cluster: [
+      { dx: 0, dy: 0 },
+      { dx: 1, dy: 0 },
+      { dx: -1, dy: 0 },
+      { dx: 0, dy: 1 },
+      { dx: 0, dy: -1 },
+      { dx: 1, dy: 1 },
+      { dx: -1, dy: 1 },
+      { dx: 1, dy: -1 },
+      { dx: -1, dy: -1 },
+    ],
+    line: [
+      { dx: 0, dy: 0 },
+      { dx: 1, dy: 0 },
+      { dx: -1, dy: 0 },
+      { dx: 2, dy: 0 },
+      { dx: -2, dy: 0 },
+      { dx: 3, dy: 0 },
+      { dx: -3, dy: 0 },
+      { dx: 4, dy: 0 },
+      { dx: -4, dy: 0 },
+    ],
+    wedge: [
+      { dx: 0, dy: 0 },
+      { dx: -1, dy: 1 },
+      { dx: 1, dy: 1 },
+      { dx: -2, dy: 2 },
+      { dx: 0, dy: 2 },
+      { dx: 2, dy: 2 },
+      { dx: -3, dy: 3 },
+      { dx: -1, dy: 3 },
+      { dx: 1, dy: 3 },
+    ],
+    box: [
+      { dx: 0, dy: 0 },
+      { dx: 1, dy: 0 },
+      { dx: -1, dy: 0 },
+      { dx: 0, dy: 1 },
+      { dx: 1, dy: 1 },
+      { dx: -1, dy: 1 },
+      { dx: 0, dy: 2 },
+      { dx: 1, dy: 2 },
+      { dx: -1, dy: 2 },
+    ],
+  };
+  const getFormationOffsets = () =>
+    FORMATION_OFFSETS_BY_MODE[formationModeRef.current] ??
+    FORMATION_OFFSETS_BY_MODE.cluster!;
 
   /** Issue a move command to selected workers using A*; spreads into formation when pure move */
   const commandMove = useCallback(
@@ -1961,7 +2120,7 @@ const RTSMap: React.FC<{
             return w;
           const isFormation = !gathering && !attacking;
           const offset = isFormation
-            ? (FORMATION_OFFSETS[idx++] ?? { dx: 0, dy: 0 })
+            ? (getFormationOffsets()[idx++] ?? { dx: 0, dy: 0 })
             : { dx: 0, dy: 0 };
           const tx = Math.max(0, Math.min(GRID_SIZE - 1, targetX + offset.dx));
           const ty = Math.max(0, Math.min(GRID_SIZE - 1, targetY + offset.dy));
@@ -1995,11 +2154,10 @@ const RTSMap: React.FC<{
   // Shift+right-click: append waypoint to queue
   const commandQueueMove = useCallback((targetX: number, targetY: number) => {
     setWorkers(ws => {
-      const selected = ws.filter(w => w.selected);
       let idx = 0;
       return ws.map(w => {
         if (!w.selected) return w;
-        const offset = FORMATION_OFFSETS[idx++] ?? { dx: 0, dy: 0 };
+        const offset = getFormationOffsets()[idx++] ?? { dx: 0, dy: 0 };
         const tx = Math.max(0, Math.min(GRID_SIZE - 1, targetX + offset.dx));
         const ty = Math.max(0, Math.min(GRID_SIZE - 1, targetY + offset.dy));
         const dest =
@@ -2373,29 +2531,192 @@ const RTSMap: React.FC<{
 
   useGameLoop(gameCtx);
 
+  // ---------- Bot / Demo mode ----------
+  const isDemo = difficulty?.id === 'demo';
+  const botSnapshotRef = useRef<BotSnapshot | null>(null);
+  useEffect(() => {
+    botSnapshotRef.current = {
+      resources,
+      workers,
+      placedBuildings,
+      tiles,
+      wave,
+      farmhouse,
+      gameOver,
+    };
+  }, [resources, workers, placedBuildings, tiles, wave, farmhouse, gameOver]);
+
+  const botCommands = useMemo<BotCommands>(
+    () => ({
+      orderGather: (workerId, resourceType, resourceIdx) => {
+        const nodes =
+          resourceType === 'gold'
+            ? goldMinesRef.current
+            : resourceType === 'tree'
+              ? treesRef.current
+              : stoneNodesRef.current;
+        const node = nodes[resourceIdx];
+        if (!node) return;
+        setWorkers(ws =>
+          ws.map(w => {
+            if (w.id !== workerId || w.hp <= 0) return w;
+            const dest = { x: node.x, y: node.y };
+            const path = aStar(
+              INITIAL_TILES,
+              { x: Math.round(w.x), y: Math.round(w.y) },
+              dest
+            );
+            return {
+              ...w,
+              movingTo: path[0] ?? dest,
+              path: path.slice(1),
+              gathering: { type: resourceType, idx: resourceIdx },
+              attacking: null,
+              state: 'moving' as const,
+              selected: false,
+            };
+          })
+        );
+      },
+
+      orderAttack: (workerId, target) => {
+        setWorkers(ws =>
+          ws.map(w => {
+            if (w.id !== workerId || w.hp <= 0) return w;
+            return {
+              ...w,
+              attacking: target,
+              gathering: null,
+              movingTo: null,
+              path: [],
+              state: 'attacking' as const,
+              selected: false,
+            };
+          })
+        );
+      },
+
+      orderMove: (workerId, tx, ty) => {
+        setWorkers(ws =>
+          ws.map(w => {
+            if (w.id !== workerId || w.hp <= 0) return w;
+            const dest = { x: tx, y: ty };
+            const path = aStar(
+              INITIAL_TILES,
+              { x: Math.round(w.x), y: Math.round(w.y) },
+              dest
+            );
+            return {
+              ...w,
+              movingTo: path[0] ?? dest,
+              path: path.slice(1),
+              attacking: null,
+              gathering: null,
+              state: 'moving' as const,
+              selected: false,
+            };
+          })
+        );
+      },
+
+      buildAt: (type, tx, ty) => {
+        const snap = botSnapshotRef.current;
+        if (!snap) return false;
+        const cost = BUILDING_COSTS[type];
+        if (!cost) return false;
+        if (
+          snap.resources.gold < cost.gold ||
+          snap.resources.lumber < cost.lumber ||
+          snap.resources.stone < cost.stone
+        )
+          return false;
+        const occupied =
+          (tx === BARN_POS.x && ty === BARN_POS.y) ||
+          (tx === ENEMY_BARN_POS.x && ty === ENEMY_BARN_POS.y) ||
+          tiles[tx]?.[ty] === 'water' ||
+          tiles[tx]?.[ty] === 'tree' ||
+          tiles[tx]?.[ty] === 'rock' ||
+          placedBuildingsRef.current.some(b => b.x === tx && b.y === ty) ||
+          treesRef.current.some(
+            t => t.x === tx && t.y === ty && t.amount > 0
+          ) ||
+          goldMinesRef.current.some(
+            m => m.x === tx && m.y === ty && m.amount > 0
+          ) ||
+          stoneNodesRef.current.some(
+            s => s.x === tx && s.y === ty && s.amount > 0
+          );
+        if (occupied) return false;
+        setResources(r => ({
+          ...r,
+          gold: r.gold - cost.gold,
+          lumber: r.lumber - cost.lumber,
+          stone: r.stone - cost.stone,
+        }));
+        setPlacedBuildings(bs => [
+          ...bs,
+          {
+            id: buildingIdRef.current++,
+            type,
+            x: tx,
+            y: ty,
+            hp: 1,
+            maxHp: BUILDING_MAX_HP[type] ?? 100,
+            constructing: true,
+            constructedAt: Date.now(),
+          },
+        ]);
+        return true;
+      },
+
+      trainFarmer: () => {
+        const snap = botSnapshotRef.current;
+        if (!snap) return false;
+        if (
+          snap.resources.gold < 30 ||
+          snap.resources.food >= snap.resources.foodCap
+        )
+          return false;
+        if (!snap.farmhouse.built) return false;
+        setResources(r => ({ ...r, gold: r.gold - 30, food: r.food + 1 }));
+        setWorkers(ws => {
+          const newId = Math.max(...ws.map(w => w.id), 0) + 1;
+          return [...ws, makeWorker(newId, BARN_POS.x, BARN_POS.y)];
+        });
+        return true;
+      },
+
+      trainSwordsman: () => {
+        const snap = botSnapshotRef.current;
+        if (!snap) return false;
+        if (
+          snap.resources.gold < 50 ||
+          snap.resources.food >= snap.resources.foodCap
+        )
+          return false;
+        setResources(r => ({ ...r, gold: r.gold - 50, food: r.food + 1 }));
+        setTrainingQueue(q => [...q, { type: 'swordsman' }]);
+        return true;
+      },
+    }),
+    // deps intentionally empty — botCommands is stable (useMemo with [] deps above)
+    []
+  );
+
+  useBotController(gameCtx, botCommands, botSnapshotRef, isDemo);
+
+  // Demo mode: auto-restart 5 s after game over so it loops as a showcase
+  useEffect(() => {
+    if (!isDemo || !gameOver) return;
+    const id = window.setTimeout(() => {
+      if (onNewGame) onNewGame();
+    }, 5000);
+    return () => window.clearTimeout(id);
+  }, [isDemo, gameOver, onNewGame]);
+
   // Scroll-wheel zoom anchored to cursor position
   useEffect(() => {
     const svgEl = svgRef.current;
-
-    const applyZoom = (newZoom: number, anchorX: number, anchorY: number) => {
-      if (!svgEl) return;
-      const rect = svgEl.getBoundingClientRect();
-      // anchor in SVG element coords (before camera translate)
-      const svgCenterX = rect.left + rect.width / 2;
-      const svgCenterY = rect.top + rect.height / 2;
-      const ax = anchorX - svgCenterX;
-      const ay = anchorY - svgCenterY;
-      setZoom(prevZoom => {
-        const clamped = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, newZoom));
-        const ratio = clamped / prevZoom;
-        // Shift camera so world point under cursor stays fixed
-        setCamera(c => ({
-          x: ax + (c.x - ax) * ratio,
-          y: ay + (c.y - ay) * ratio,
-        }));
-        return clamped;
-      });
-    };
 
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
@@ -2417,14 +2738,6 @@ const RTSMap: React.FC<{
       });
     };
 
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement).tagName === 'INPUT') return;
-      if (e.key === '=' || e.key === '+')
-        applyZoom(999, window.innerWidth / 2, window.innerHeight / 2);
-      if (e.key === '-' || e.key === '_')
-        applyZoom(-999, window.innerWidth / 2, window.innerHeight / 2);
-    };
-    // reuse applyZoom for +/- by clamping to next step
     const onKeyFull = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement).tagName === 'INPUT') return;
       if (e.key === '=' || e.key === '+') {
@@ -3257,6 +3570,70 @@ const RTSMap: React.FC<{
     [anySelected]
   );
 
+  const handleAttackWarlord = useCallback(
+    (warlordId: number, e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!anySelected) return;
+      const wl = enemyWarlordsRef.current.find(w2 => w2.id === warlordId);
+      if (!wl) return;
+      const tx = Math.round(wl.x),
+        ty = Math.round(wl.y);
+      setWorkers(ws =>
+        ws.map(w => {
+          if (!w.selected) return w;
+          const path = aStar(
+            INITIAL_TILES,
+            { x: Math.round(w.x), y: Math.round(w.y) },
+            { x: tx, y: ty }
+          );
+          const first = path[0] ?? { x: tx, y: ty };
+          return {
+            ...w,
+            movingTo: first,
+            path: path.slice(1),
+            gathering: null,
+            attacking: { targetType: 'warlord' as const, warlordId },
+            state: 'moving',
+          };
+        })
+      );
+    },
+    [anySelected]
+  );
+
+  const handleAttackLurker = useCallback(
+    (lurkerId: number, e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!anySelected) return;
+      const lk = enemyLurkersRef.current.find(l => l.id === lurkerId);
+      if (!lk) return;
+      const tx = Math.round(lk.x),
+        ty = Math.round(lk.y);
+      setWorkers(ws =>
+        ws.map(w => {
+          if (!w.selected) return w;
+          const path = aStar(
+            INITIAL_TILES,
+            { x: Math.round(w.x), y: Math.round(w.y) },
+            { x: tx, y: ty }
+          );
+          const first = path[0] ?? { x: tx, y: ty };
+          return {
+            ...w,
+            movingTo: first,
+            path: path.slice(1),
+            gathering: null,
+            attacking: { targetType: 'lurker' as const, lurkerId },
+            state: 'moving',
+          };
+        })
+      );
+    },
+    [anySelected]
+  );
+
   const handleAttackTroll = useCallback(
     (trollId: number, e: React.MouseEvent) => {
       e.preventDefault();
@@ -3394,6 +3771,14 @@ const RTSMap: React.FC<{
       enemyWalls: enemyWalls
         .filter(ew => ew.hp > 0)
         .map(ew => ({ x: ew.x, y: ew.y })),
+      lootCrates: lootCrates.map(c => ({ x: c.x, y: c.y })),
+      droppedItems: droppedItems.map(d => ({ x: d.x, y: d.y })),
+      warlords: enemyWarlords
+        .filter(wl => wl.hp > 0)
+        .map(wl => ({ x: wl.x, y: wl.y })),
+      lurkers: enemyLurkers
+        .filter(lk => lk.hp > 0)
+        .map(lk => ({ x: lk.x, y: lk.y })),
     }),
     [
       workers,
@@ -3414,6 +3799,10 @@ const RTSMap: React.FC<{
       fogExplored,
       minimapPings,
       enemyWalls,
+      lootCrates,
+      droppedItems,
+      enemyWarlords,
+      enemyLurkers,
     ]
   );
 
@@ -3439,9 +3828,11 @@ const RTSMap: React.FC<{
         {...{
           gameEndTime,
           gameOver,
+          isDemo,
           killCount,
           onNewGame,
           placedBuildings,
+          slot,
           startTimeRef,
           totalGold,
           totalLumber,
@@ -3503,6 +3894,7 @@ const RTSMap: React.FC<{
           saveStatus,
           setGameSpeed,
           setZoom,
+          slot,
           soundMuted,
           startTimeRef,
           toggleMute,
@@ -3513,6 +3905,25 @@ const RTSMap: React.FC<{
         }}
       />
       <ControlGroupChips {...{ controlGroups, setSelectedType, setWorkers }} />
+      {!gameOver && (
+        <MinimapPanel
+          {...{
+            enemyGrunts,
+            enemyLurkers,
+            enemySappers,
+            enemyShamans,
+            enemySiege,
+            enemyTrolls,
+            enemyWarchiefs,
+            enemyWarlords,
+            fogExplored,
+            fogVisible,
+            placedBuildings,
+            tiles,
+            workers,
+          }}
+        />
+      )}
       {/* SVG map */}
       <div
         style={{
@@ -3654,9 +4065,11 @@ const RTSMap: React.FC<{
               commandMove,
               droppedItems,
               enemyGrunts,
+              enemyLurkers,
               fogVisible,
               gruntHitRef,
               handleAttackGrunt,
+              handleAttackLurker,
               lootCrates,
             }}
           />
@@ -3681,9 +4094,11 @@ const RTSMap: React.FC<{
               anySelected,
               enemyTrolls,
               enemyWarchiefs,
+              enemyWarlords,
               fogVisible,
               handleAttackTroll,
               handleAttackWarchief,
+              handleAttackWarlord,
             }}
           />
           <WorkersLayer
@@ -3863,7 +4278,113 @@ const RTSMap: React.FC<{
         onUsePotion={handleUsePotion}
         shopItems={SHOP_ITEMS}
         onBuyItem={handleBuyItem}
+        formationMode={formationMode}
+        onCycleFormation={() =>
+          setFormationMode(m => {
+            const order: FormationMode[] = ['cluster', 'line', 'wedge', 'box'];
+            return order[(order.indexOf(m) + 1) % order.length]!;
+          })
+        }
       />
+      {/* Demo mode indicator */}
+      {isDemo && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '0.4rem',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 200,
+            background: 'rgba(109,40,217,0.85)',
+            border: '1.5px solid #a78bfa',
+            borderRadius: '1rem',
+            color: '#ddd6fe',
+            fontSize: '0.75rem',
+            fontWeight: 700,
+            padding: '0.2rem 0.75rem',
+            letterSpacing: 1,
+            pointerEvents: 'none',
+          }}
+        >
+          🤖 DEMO MODE — AI is playing
+        </div>
+      )}
+      {/* Achievement panel button */}
+      <button
+        onClick={() => setAchievementPanelOpen(o => !o)}
+        style={{
+          position: 'fixed',
+          top: '3.5rem',
+          right: '0.5rem',
+          zIndex: 150,
+          background: achievementPanelOpen
+            ? 'rgba(109,40,217,0.9)'
+            : 'rgba(30,27,75,0.85)',
+          border: '1.5px solid #7c3aed',
+          borderRadius: '0.5rem',
+          color: '#c4b5fd',
+          fontSize: '1.1rem',
+          padding: '0.3rem 0.5rem',
+          cursor: 'pointer',
+          lineHeight: 1,
+        }}
+        title="Achievements"
+      >
+        🏆
+      </button>
+      {/* Achievement panel */}
+      {achievementPanelOpen && (
+        <AchievementPanel onClose={() => setAchievementPanelOpen(false)} />
+      )}
+      {/* Achievement unlock toast */}
+      {achievementToast && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '5.5rem',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 200,
+            background: 'linear-gradient(135deg, #1e1b4b 0%, #4c1d95 100%)',
+            border: '1.5px solid #a855f7',
+            borderRadius: '0.75rem',
+            padding: '0.6rem 1.2rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.6rem',
+            boxShadow: '0 4px 24px rgba(168,85,247,0.5)',
+            pointerEvents: 'none',
+            animation: 'fadeInUp 0.3s ease',
+          }}
+        >
+          <span style={{ fontSize: '1.4rem' }}>{achievementToast.emoji}</span>
+          <div>
+            <div
+              style={{
+                fontSize: '0.6rem',
+                color: '#c4b5fd',
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+                fontWeight: 700,
+              }}
+            >
+              Achievement Unlocked
+            </div>
+            <div
+              style={{
+                fontSize: '0.85rem',
+                color: '#f5f3ff',
+                fontWeight: 700,
+              }}
+            >
+              {achievementToast.name}
+            </div>
+            <div style={{ fontSize: '0.65rem', color: '#ddd6fe' }}>
+              {achievementToast.description}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

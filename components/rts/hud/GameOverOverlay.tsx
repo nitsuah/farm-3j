@@ -1,16 +1,18 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 import type { WorkerState } from '../game/types';
-import { loadHighScores, clearSave } from '../game/persistence';
+import { loadHighScores, clearSave, type SaveSlot } from '../game/persistence';
 import type { PlacedBuilding } from '../game/types';
 import { Stat } from '../ui/Stat';
 
 interface GameOverOverlayProps {
   gameEndTime: number | null;
   gameOver: 'victory' | 'defeat' | null;
+  isDemo?: boolean;
   killCount: number;
   onNewGame?: () => void;
   placedBuildings: PlacedBuilding[];
+  slot: SaveSlot;
   startTimeRef: React.RefObject<number>;
   totalGold: number;
   totalLumber: number;
@@ -22,9 +24,11 @@ interface GameOverOverlayProps {
 export const GameOverOverlay: React.FC<GameOverOverlayProps> = ({
   gameEndTime,
   gameOver,
+  isDemo,
   killCount,
   onNewGame,
   placedBuildings,
+  slot,
   startTimeRef,
   totalGold,
   totalLumber,
@@ -32,6 +36,14 @@ export const GameOverOverlay: React.FC<GameOverOverlayProps> = ({
   wave,
   workers,
 }) => {
+  const [countdown, setCountdown] = useState(5);
+  useEffect(() => {
+    if (!isDemo || !gameOver) return;
+    setCountdown(5);
+    const id = setInterval(() => setCountdown(n => n - 1), 1000);
+    return () => clearInterval(id);
+  }, [isDemo, gameOver]);
+
   return (
     <>
       {/* Victory / Defeat overlay */}
@@ -197,16 +209,29 @@ export const GameOverOverlay: React.FC<GameOverOverlayProps> = ({
                   </div>
                 );
               })()}
+              {isDemo ? (
+                <div
+                  style={{
+                    color: '#a78bfa',
+                    fontSize: 14,
+                    marginBottom: 8,
+                    textAlign: 'center',
+                  }}
+                >
+                  🤖 Demo restarting in{' '}
+                  <strong>{Math.max(0, countdown)}s</strong>…
+                </div>
+              ) : null}
               <button
                 type="button"
                 className="rounded-lg border-2 border-amber-500 bg-amber-500/20 px-8 py-3 text-lg text-amber-200 hover:bg-amber-500/40"
                 onClick={() => {
-                  clearSave();
+                  clearSave(slot);
                   if (onNewGame) onNewGame();
                   else window.location.reload();
                 }}
               >
-                Play Again
+                {isDemo ? '▶ Restart Now' : 'Play Again'}
               </button>
             </div>
           );

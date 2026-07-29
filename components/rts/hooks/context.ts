@@ -10,6 +10,7 @@ import type {
   Upgrades,
   WorkerState,
   EnemyGrunt,
+  EnemyLurker,
   EnemyNecromancer,
   EnemySapper,
   EnemyShaman,
@@ -17,6 +18,7 @@ import type {
   EnemyTower,
   EnemyTroll,
   EnemyWarchief,
+  EnemyWarlord,
   EnemyWitchDoctor,
   HeroItem,
   LootCrate,
@@ -35,6 +37,7 @@ export interface RTSGameContext {
   difficulty?: DifficultyConfig;
 
   // ---------- callbacks ----------
+  onAchievement: (id: string) => void;
   addDmgLog: (source: string, amount: number) => void;
   addFloatingText: (
     tileX: number,
@@ -83,6 +86,8 @@ export interface RTSGameContext {
   setEnemyTrolls: Setter<EnemyTroll[]>;
   setEnemyWalls: Setter<EnemyTower[]>;
   setEnemyWarchiefs: Setter<EnemyWarchief[]>;
+  setEnemyLurkers: Setter<EnemyLurker[]>;
+  setEnemyWarlords: Setter<EnemyWarlord[]>;
   setEnemyWitchDoctors: Setter<EnemyWitchDoctor[]>;
   setFogExplored: Setter<boolean[][]>;
   setFogVisible: Setter<boolean[][]>;
@@ -143,7 +148,11 @@ export interface RTSGameContext {
   enemyTrollsRef: Ref<EnemyTroll[]>;
   enemyWallIdRef: Ref<number>;
   enemyWallsRef: Ref<EnemyTower[]>;
+  enemyLurkersRef: Ref<EnemyLurker[]>;
+  lurkerAttackTimeoutsRef: Ref<Record<number, number>>;
+  lurkerIdRef: Ref<number>;
   enemyWarchiefsRef: Ref<EnemyWarchief[]>;
+  enemyWarlordsRef: Ref<EnemyWarlord[]>;
   enemyWitchDoctorsRef: Ref<EnemyWitchDoctor[]>;
   fogExploredRef: Ref<boolean[][]>;
   fogVisibleRef: Ref<boolean[][]>;
@@ -177,6 +186,7 @@ export interface RTSGameContext {
   repairTimeoutsRef: Ref<Record<number, number>>;
   sallyForthThresholdsRef: Ref<Set<number>>;
   sapperIdRef: Ref<number>;
+  sapperKillCountRef: Ref<number>;
   shamanHealTimersRef: Ref<Record<number, number>>;
   shamanIdRef: Ref<number>;
   shrineCapturingRef: Ref<{
@@ -201,6 +211,7 @@ export interface RTSGameContext {
   upgradesRef: Ref<Upgrades>;
   upkeepMultRef: Ref<number>;
   warchiefIdRef: Ref<number>;
+  warlordIdRef: Ref<number>;
   watchtowerTimersRef: Ref<Record<number, number>>;
   waveRef: Ref<number>;
   waveTimerRemainingRef: Ref<number | null>;

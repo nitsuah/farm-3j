@@ -31,7 +31,9 @@ export interface WorkerState {
     | { targetType: 'sapper'; sapperId: number }
     | { targetType: 'necromancer'; necromancerId: number }
     | { targetType: 'witchDoctor'; witchDoctorId: number }
-    | { targetType: 'warchief'; warchiefId: number };
+    | { targetType: 'warchief'; warchiefId: number }
+    | { targetType: 'warlord'; warlordId: number }
+    | { targetType: 'lurker'; lurkerId: number };
   stunUntil?: number;
   assistBuildId?: number;
   repairing: null | { buildingId: number };
@@ -260,6 +262,30 @@ export interface EnemyWarchief {
   lastStompAt: number;
 }
 
+export interface EnemyLurker {
+  id: number;
+  x: number;
+  y: number;
+  hp: number;
+  maxHp: number;
+  movingTo: { x: number; y: number } | null;
+  path: { x: number; y: number }[];
+  state: 'moving' | 'attacking';
+}
+
+export interface EnemyWarlord {
+  id: number;
+  x: number;
+  y: number;
+  hp: number;
+  maxHp: number;
+  movingTo: { x: number; y: number } | null;
+  path: { x: number; y: number }[];
+  state: 'moving' | 'attacking';
+  lastWarCryAt: number;
+  lastShieldBashAt: number;
+}
+
 export interface NeutralCreep {
   id: number;
   campId: number;
@@ -332,4 +358,7 @@ export interface SaveData {
   guardTowerResearched?: boolean;
   barracksTech?: { veteranTraining: boolean; warDrums: boolean };
   blacksmithUpgrades?: { steelEdge: number; ironHide: number };
+  savedAt?: number;
+  difficultyId?: string;
+  slotName?: string;
 }
