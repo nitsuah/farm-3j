@@ -8,6 +8,7 @@ import {
 import { tileToSvg } from '../game/map';
 import type { EnemyTower } from '../game/types';
 import { HpBar } from './HpBar';
+import { isoBox } from './isoBox';
 import { StructureDamageSmoke } from './StructureDamageSmoke';
 import { StructureFireEffect } from './StructureFireEffect';
 
@@ -53,40 +54,65 @@ export const EnemyBaseLayer: React.FC<EnemyBaseLayerProps> = React.memo(
               ENEMY_BARN_POS.y
             );
             const hpPct = enemyBarnHp / ENEMY_BARN_MAX_HP;
-            const cx = isoX + TILE_SIZE / 2;
-            const cy = isoY + TILE_SIZE * 0.3;
-            const t = (Date.now() / 600) % (2 * Math.PI);
+            const ts = TILE_SIZE;
+            const h = 38;
+            const roofH = 16;
             const damaged = hpPct < 0.5;
             const critical = hpPct < 0.25;
+            const sw = critical ? 3 : 1.5;
+            const stroke = critical ? '#fbbf24' : '#ef4444';
+            // Tile corner coords (same geometry as isoBox)
+            const lx = isoX,
+              ly = isoY + ts / 2;
+            const rx2 = isoX + 2 * ts,
+              ry2 = isoY + ts / 2;
+            const bx2 = isoX + ts,
+              by2 = isoY + ts;
+            // Roof ridge midpoint (gable peak)
+            const ridgeMidX = isoX + ts;
+            const ridgeMidY = isoY + ts / 4 - h - roofH - 2;
+            const cx = isoX + ts;
+            const cy = isoY + ts * 0.4;
+            const t = (Date.now() / 600) % (2 * Math.PI);
             return (
               <g
                 style={{ cursor: 'crosshair' }}
                 onContextMenu={handleAttackEnemyBarn}
               >
-                <rect
-                  x={isoX}
-                  y={isoY}
-                  width={TILE_SIZE}
-                  height={TILE_SIZE}
-                  fill="#7f1d1d"
-                  stroke={critical ? '#fbbf24' : '#ef4444'}
-                  strokeWidth={critical ? 8 : 6}
-                  rx={12}
-                />
+                {isoBox(isoX, isoY, h, '#450a0a', '#7f1d1d', '#991b1b', stroke, sw)}
+                {/* Gable roof — left slope */}
                 <polygon
-                  points={[
-                    [isoX, isoY],
-                    [isoX + TILE_SIZE / 2, isoY - 32],
-                    [isoX + TILE_SIZE, isoY],
-                  ]
-                    .map(p => p.join(','))
-                    .join(' ')}
-                  fill="#991b1b"
-                  stroke="#dc2626"
-                  strokeWidth={4}
+                  points={`${lx},${ly - h} ${bx2},${by2 - h} ${ridgeMidX},${ridgeMidY}`}
+                  fill="#3b0000"
+                  stroke={stroke}
+                  strokeWidth={sw * 0.8}
                 />
-                <text x={cx} y={isoY + 44} textAnchor="middle" fontSize="22">
+                {/* Gable roof — right slope */}
+                <polygon
+                  points={`${bx2},${by2 - h} ${rx2},${ry2 - h} ${ridgeMidX},${ridgeMidY}`}
+                  fill="#4c0519"
+                  stroke={stroke}
+                  strokeWidth={sw * 0.8}
+                />
+                <text
+                  x={cx}
+                  y={isoY - h + 12}
+                  textAnchor="middle"
+                  fontSize="16"
+                  pointerEvents="none"
+                >
                   🏴‍☠️
+                </text>
+                <text
+                  x={cx}
+                  y={isoY - h - roofH - 4}
+                  textAnchor="middle"
+                  fontSize="9"
+                  fill={critical ? '#fde68a' : '#fca5a5'}
+                  fontWeight="bold"
+                  pointerEvents="none"
+                >
+                  {critical ? '☠ COLLAPSING!' : 'ENEMY BASE'}
                 </text>
                 {damaged && (
                   <StructureDamageSmoke
@@ -101,16 +127,16 @@ export const EnemyBaseLayer: React.FC<EnemyBaseLayerProps> = React.memo(
                   <StructureFireEffect
                     cx={cx}
                     cy={cy}
-                    labelText="☠ COLLAPSING!"
+                    labelText=""
                     labelColor="#fbbf24"
-                    labelY={isoY - 20}
+                    labelY={isoY - h - roofH - 4}
                   />
                 )}
                 <HpBar
-                  x={isoX - 8}
-                  y={isoY - 14}
-                  width={TILE_SIZE + 16}
-                  height={8}
+                  x={isoX - 4}
+                  y={isoY - h - roofH - 16}
+                  width={ts * 2 + 8}
+                  height={6}
                   hpPct={hpPct}
                   fill={
                     hpPct > 0.5
@@ -119,18 +145,8 @@ export const EnemyBaseLayer: React.FC<EnemyBaseLayerProps> = React.memo(
                         ? '#fbbf24'
                         : '#ef4444'
                   }
-                  rx={4}
+                  rx={3}
                 />
-                <text
-                  x={cx}
-                  y={isoY - 18}
-                  textAnchor="middle"
-                  fontSize="11"
-                  fill="#fca5a5"
-                  fontWeight="bold"
-                >
-                  ENEMY
-                </text>
               </g>
             );
           })()}
