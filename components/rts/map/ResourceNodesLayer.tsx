@@ -103,10 +103,34 @@ export const ResourceNodesLayer: React.FC<ResourceNodesLayerProps> = ({
         );
       })}
 
-      {/* Trees */}
+      {/* Trees — isometric conifer with 3 layered foliage tiers */}
       {trees.map(({ x, y, amount }, idx) => {
         if (!amount) return null;
         const { isoX, isoY } = tileToSvg(x, y);
+        const ts = TILE_SIZE;
+        const cx = isoX + ts;
+        const floor = isoY + ts / 2;
+        const trunkH = 16;
+        const base = floor - trunkH;
+        // Helper: one foliage diamond layer (left=shadow, right=lit)
+        const foliageDiamond = (fy: number, r: number, dark: string, lit: string) => (
+          <>
+            <polygon
+              points={`${cx - r},${fy} ${cx},${fy - r / 2} ${cx},${fy + r / 2}`}
+              fill={dark}
+            />
+            <polygon
+              points={`${cx},${fy - r / 2} ${cx + r},${fy} ${cx},${fy + r / 2}`}
+              fill={lit}
+            />
+            <polygon
+              points={`${cx - r},${fy} ${cx},${fy - r / 2} ${cx + r},${fy} ${cx},${fy + r / 2}`}
+              fill="none"
+              stroke="#052e16"
+              strokeWidth={1}
+            />
+          </>
+        );
         return (
           <g
             key={`tree-${idx}`}
@@ -117,35 +141,38 @@ export const ResourceNodesLayer: React.FC<ResourceNodesLayerProps> = ({
               commandMove(x, y, { type: 'tree', idx });
             }}
           >
-            <ellipse
-              cx={isoX + TILE_SIZE / 2}
-              cy={isoY + 10}
-              rx={18}
-              ry={28}
-              fill="#166534"
-              stroke="#052e16"
+            {/* Trunk — dark left, lighter right */}
+            <line
+              x1={cx - 2}
+              y1={floor}
+              x2={cx - 2}
+              y2={base}
+              stroke="#451a03"
+              strokeWidth={5}
+              strokeLinecap="round"
+            />
+            <line
+              x1={cx + 2}
+              y1={floor}
+              x2={cx + 2}
+              y2={base}
+              stroke="#78350f"
               strokeWidth={3}
+              strokeLinecap="round"
             />
+            {/* Foliage tiers: bottom=widest, top=narrowest */}
+            {foliageDiamond(base, 32, '#14532d', '#166534')}
+            {foliageDiamond(base - 16, 22, '#15803d', '#16a34a')}
+            {foliageDiamond(base - 30, 12, '#166534', '#22c55e')}
+            {/* Resource bar */}
+            <rect x={cx - 20} y={isoY - 20} width={40} height={5} fill="#052e16" rx={2} />
             <rect
-              x={isoX + TILE_SIZE / 2 - 6}
-              y={isoY + 28}
-              width={12}
-              height={18}
-              fill="#78350f"
-            />
-            <rect
-              x={isoX + TILE_SIZE / 2 - 18}
-              y={isoY - 16}
-              width={36}
-              height={5}
-              fill="#052e16"
-            />
-            <rect
-              x={isoX + TILE_SIZE / 2 - 18}
-              y={isoY - 16}
-              width={36 * (amount / 50)}
+              x={cx - 20}
+              y={isoY - 20}
+              width={40 * (amount / 50)}
               height={5}
               fill="#bbf7d0"
+              rx={2}
             />
           </g>
         );
