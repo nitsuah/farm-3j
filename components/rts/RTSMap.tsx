@@ -2694,7 +2694,7 @@ const RTSMap: React.FC<{
         return true;
       },
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // deps intentionally empty — botCommands is stable (useMemo with [] deps above)
     []
   );
 
