@@ -661,8 +661,7 @@ export function useGameLoop(ctx: RTSGameContext) {
                   state: 'attacking' as const,
                 };
               const nearWLH = enemyWarlordsRef.current.find(
-                wl =>
-                  wl.hp > 0 && tileDist(w.x, w.y, wl.x, wl.y) <= HP_RANGE
+                wl => wl.hp > 0 && tileDist(w.x, w.y, wl.x, wl.y) <= HP_RANGE
               );
               if (nearWLH)
                 return {
@@ -2796,7 +2795,12 @@ export function useGameLoop(ctx: RTSGameContext) {
                         : wl
                     )
                   );
-                  addFloatingText(capturedWLX, capturedWLY, `-${dmg}`, '#ef4444');
+                  addFloatingText(
+                    capturedWLX,
+                    capturedWLY,
+                    `-${dmg}`,
+                    '#ef4444'
+                  );
                   const wlCurrent = enemyWarlordsRef.current.find(
                     wl => wl.id === capturedWLId
                   );
@@ -2813,9 +2817,14 @@ export function useGameLoop(ctx: RTSGameContext) {
                       '#c4b5fd'
                     );
                     // Warlord drops a rare item (always battle_sword or boots_speed)
-                    const wlDropPool: HeroItemId[] = ['battle_sword', 'boots_speed'];
+                    const wlDropPool: HeroItemId[] = [
+                      'battle_sword',
+                      'boots_speed',
+                    ];
                     const wlDrop =
-                      wlDropPool[Math.floor(Math.random() * wlDropPool.length)]!;
+                      wlDropPool[
+                        Math.floor(Math.random() * wlDropPool.length)
+                      ]!;
                     setDroppedItems(ds => [
                       ...ds,
                       {
@@ -2935,7 +2944,12 @@ export function useGameLoop(ctx: RTSGameContext) {
                         : lk
                     )
                   );
-                  addFloatingText(capturedLKX, capturedLKY, `-${dmg}`, '#99f6e4');
+                  addFloatingText(
+                    capturedLKX,
+                    capturedLKY,
+                    `-${dmg}`,
+                    '#99f6e4'
+                  );
                   const lkCurrent = enemyLurkersRef.current.find(
                     lk => lk.id === capturedLKId
                   );
@@ -4529,7 +4543,8 @@ export function useGameLoop(ctx: RTSGameContext) {
             '#c4b5fd'
           );
           const wlDropPool: HeroItemId[] = ['battle_sword', 'boots_speed'];
-          const wlDrop = wlDropPool[Math.floor(Math.random() * wlDropPool.length)]!;
+          const wlDrop =
+            wlDropPool[Math.floor(Math.random() * wlDropPool.length)]!;
           setDroppedItems(ds => [
             ...ds,
             {
@@ -4686,15 +4701,9 @@ export function useGameLoop(ctx: RTSGameContext) {
           // Find nearest alive worker
           const nearestWorker = workersRef.current
             .filter(w => w.hp > 0)
-            .reduce<(typeof workersRef.current)[0] | null>(
-              (best, w) =>
-                !best ||
-                tileDist(lk.x, lk.y, w.x, w.y) <
-                  tileDist(lk.x, lk.y, best.x, best.y)
-                  ? w
-                  : best,
-              null
-            );
+            .reduce<
+              (typeof workersRef.current)[0] | null
+            >((best, w) => (!best || tileDist(lk.x, lk.y, w.x, w.y) < tileDist(lk.x, lk.y, best.x, best.y) ? w : best), null);
           const distToWorker = nearestWorker
             ? tileDist(lk.x, lk.y, nearestWorker.x, nearestWorker.y)
             : 999;
@@ -4707,8 +4716,8 @@ export function useGameLoop(ctx: RTSGameContext) {
               const capturedWX = Math.round(nearestWorker.x),
                 capturedWY = Math.round(nearestWorker.y);
               const capturedLkId = lk.id;
-              lurkerAttackTimeoutsRef.current[capturedLkId] =
-                window.setTimeout(() => {
+              lurkerAttackTimeoutsRef.current[capturedLkId] = window.setTimeout(
+                () => {
                   delete lurkerAttackTimeoutsRef.current[capturedLkId];
                   setWorkers(ws =>
                     ws.map(w => {
@@ -4722,14 +4731,16 @@ export function useGameLoop(ctx: RTSGameContext) {
                       return { ...w, hp: Math.max(0, w.hp - LURKER_DAMAGE) };
                     })
                   );
-                }, LURKER_ATTACK_MS);
+                },
+                LURKER_ATTACK_MS
+              );
             }
             return { ...lk, state: 'attacking' as const };
           }
 
           // Attack barn when adjacent (use negative id to avoid collision with worker-attack keys)
           if (distToBarn <= 1.2) {
-            const barnKey = -(lk.id);
+            const barnKey = -lk.id;
             if (!lurkerAttackTimeoutsRef.current[barnKey]) {
               lurkerAttackTimeoutsRef.current[barnKey] = window.setTimeout(
                 () => {

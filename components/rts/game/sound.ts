@@ -181,25 +181,25 @@ export function startAmbient(isNight: boolean): void {
   _ambientNodes.push(noise, lpf, windGain);
 
   // Periodic bird chirps (day) or cricket pulses (night)
-  _ambientIntervalId = setInterval(() => {
-    if (_soundMuted) return;
-    const ctx2 = getAudioCtx();
-    if (!ctx2) return;
-    if (isNight) {
-      // Cricket-like: rapid high-freq pulse burst
-      const rate = 3800 + Math.random() * 400;
-      for (let i = 0; i < 4; i++) {
-        window.setTimeout(
-          () => playTone(rate, 0.04, 0.015, 'sine'),
-          i * 55
-        );
+  _ambientIntervalId = setInterval(
+    () => {
+      if (_soundMuted) return;
+      const ctx2 = getAudioCtx();
+      if (!ctx2) return;
+      if (isNight) {
+        // Cricket-like: rapid high-freq pulse burst
+        const rate = 3800 + Math.random() * 400;
+        for (let i = 0; i < 4; i++) {
+          window.setTimeout(() => playTone(rate, 0.04, 0.015, 'sine'), i * 55);
+        }
+      } else {
+        // Bird chirp: short ascending sweep
+        const base = 1400 + Math.random() * 600;
+        playTone(base, 0.12, 0.022, 'sine', base * 1.5);
       }
-    } else {
-      // Bird chirp: short ascending sweep
-      const base = 1400 + Math.random() * 600;
-      playTone(base, 0.12, 0.022, 'sine', base * 1.5);
-    }
-  }, isNight ? 800 : 3500 + Math.random() * 2000);
+    },
+    isNight ? 800 : 3500 + Math.random() * 2000
+  );
 }
 
 export function stopAmbient(): void {
@@ -259,12 +259,7 @@ export const ACK_MOVE: Record<string, string[]> = {
     'Advancing!',
   ],
   catapult: ['Repositioning!', 'Loading up!', 'Moving!', 'New angle!'],
-  trebuchet: [
-    'Advancing!',
-    'New position!',
-    'Moving range!',
-    'Changing post!',
-  ],
+  trebuchet: ['Advancing!', 'New position!', 'Moving range!', 'Changing post!'],
 };
 export const ACK_ATTACK: Record<string, string[]> = {
   farmer: [

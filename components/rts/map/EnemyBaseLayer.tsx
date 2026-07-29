@@ -32,280 +32,291 @@ interface EnemyBaseLayerProps {
   ) => void;
 }
 
-export const EnemyBaseLayer: React.FC<EnemyBaseLayerProps> = React.memo(({
-  anySelected,
-  enemyBarnHp,
-  enemyTowers,
-  enemyWalls,
-  fogVisible,
-  handleAttackEnemyBarn,
-  handleAttackEnemyTower,
-  handleAttackEnemyWall,
-}) => {
-  return (
-    <>
-      {/* Enemy barn */}
-      {enemyBarnHp > 0 &&
-        (() => {
-          const { isoX, isoY } = tileToSvg(ENEMY_BARN_POS.x, ENEMY_BARN_POS.y);
-          const hpPct = enemyBarnHp / ENEMY_BARN_MAX_HP;
-          const cx = isoX + TILE_SIZE / 2;
-          const cy = isoY + TILE_SIZE * 0.3;
-          const t = (Date.now() / 600) % (2 * Math.PI);
-          const damaged = hpPct < 0.5;
-          const critical = hpPct < 0.25;
-          return (
-            <g
-              style={{ cursor: 'crosshair' }}
-              onContextMenu={handleAttackEnemyBarn}
-            >
-              <rect
-                x={isoX}
-                y={isoY}
-                width={TILE_SIZE}
-                height={TILE_SIZE}
-                fill="#7f1d1d"
-                stroke={critical ? '#fbbf24' : '#ef4444'}
-                strokeWidth={critical ? 8 : 6}
-                rx={12}
-              />
-              <polygon
-                points={[
-                  [isoX, isoY],
-                  [isoX + TILE_SIZE / 2, isoY - 32],
-                  [isoX + TILE_SIZE, isoY],
-                ]
-                  .map(p => p.join(','))
-                  .join(' ')}
-                fill="#991b1b"
-                stroke="#dc2626"
-                strokeWidth={4}
-              />
-              <text x={cx} y={isoY + 44} textAnchor="middle" fontSize="22">
-                🏴‍☠️
-              </text>
-              {damaged && (
-                <StructureDamageSmoke
-                  cx={cx}
-                  cy={cy}
-                  t={t}
-                  colors={['#374151', '#4b5563', '#1f2937']}
-                  opacities={[0.6, 0.45, 0.3]}
-                />
-              )}
-              {critical && (
-                <StructureFireEffect
-                  cx={cx}
-                  cy={cy}
-                  labelText="☠ COLLAPSING!"
-                  labelColor="#fbbf24"
-                  labelY={isoY - 20}
-                />
-              )}
-              <HpBar
-                x={isoX - 8}
-                y={isoY - 14}
-                width={TILE_SIZE + 16}
-                height={8}
-                hpPct={hpPct}
-                fill={hpPct > 0.5 ? '#4ade80' : hpPct > 0.25 ? '#fbbf24' : '#ef4444'}
-                rx={4}
-              />
-              <text
-                x={cx}
-                y={isoY - 18}
-                textAnchor="middle"
-                fontSize="11"
-                fill="#fca5a5"
-                fontWeight="bold"
+export const EnemyBaseLayer: React.FC<EnemyBaseLayerProps> = React.memo(
+  ({
+    anySelected,
+    enemyBarnHp,
+    enemyTowers,
+    enemyWalls,
+    fogVisible,
+    handleAttackEnemyBarn,
+    handleAttackEnemyTower,
+    handleAttackEnemyWall,
+  }) => {
+    return (
+      <>
+        {/* Enemy barn */}
+        {enemyBarnHp > 0 &&
+          (() => {
+            const { isoX, isoY } = tileToSvg(
+              ENEMY_BARN_POS.x,
+              ENEMY_BARN_POS.y
+            );
+            const hpPct = enemyBarnHp / ENEMY_BARN_MAX_HP;
+            const cx = isoX + TILE_SIZE / 2;
+            const cy = isoY + TILE_SIZE * 0.3;
+            const t = (Date.now() / 600) % (2 * Math.PI);
+            const damaged = hpPct < 0.5;
+            const critical = hpPct < 0.25;
+            return (
+              <g
+                style={{ cursor: 'crosshair' }}
+                onContextMenu={handleAttackEnemyBarn}
               >
-                ENEMY
-              </text>
-            </g>
-          );
-        })()}
-
-      {/* Archer Tower now rendered by the shared enemy tower loop below (id -1) */}
-
-      {/* Enemy fortress towers (wave 5/10/15) + pre-placed Archer Tower (id -1) */}
-      {enemyTowers
-        .filter(t => t.hp > 0 && fogVisible[t.x]?.[t.y])
-        .map(t => {
-          const { isoX, isoY } = tileToSvg(t.x, t.y);
-          const hpPct = t.hp / t.maxHp;
-          const isArcher = t.id === -1;
-          const fill1 = isArcher ? '#3b0764' : '#7f1d1d';
-          const fill2 = isArcher ? '#581c87' : '#991b1b';
-          const fill3 = isArcher ? '#7c3aed' : '#b91c1c';
-          const stroke1 = isArcher ? '#a21caf' : '#dc2626';
-          const stroke2 = isArcher ? '#a855f7' : '#ef4444';
-          const label = isArcher ? 'ARCHER' : 'TOWER';
-          const labelColor = isArcher ? '#e879f9' : '#fca5a5';
-          const barColor = isArcher ? '#a855f7' : '#ef4444';
-          return (
-            <g
-              key={`etower-${t.id}`}
-              style={{ cursor: 'crosshair' }}
-              onContextMenu={e => handleAttackEnemyTower(t.id, t.x, t.y, e)}
-            >
-              {isArcher ? (
-                <>
-                  <rect
-                    x={isoX + TILE_SIZE / 4}
-                    y={isoY - 8}
-                    width={TILE_SIZE * 1.5}
-                    height={TILE_SIZE * 0.85}
-                    fill={fill1}
-                    stroke={stroke1}
-                    strokeWidth={3}
-                    rx={5}
-                  />
-                  <rect
-                    x={isoX + TILE_SIZE / 2 - 5}
-                    y={isoY - 34}
-                    width={10}
-                    height={30}
-                    fill={fill2}
-                    stroke={stroke2}
-                    strokeWidth={2}
-                  />
-                  <rect
-                    x={isoX + TILE_SIZE / 2 - 14}
-                    y={isoY - 42}
-                    width={10}
-                    height={14}
-                    fill={fill3}
-                    stroke={stroke2}
-                    strokeWidth={2}
-                  />
-                  <rect
-                    x={isoX + TILE_SIZE / 2 + 4}
-                    y={isoY - 42}
-                    width={10}
-                    height={14}
-                    fill={fill3}
-                    stroke={stroke2}
-                    strokeWidth={2}
-                  />
-                </>
-              ) : (
-                <>
-                  <rect
-                    x={isoX + TILE_SIZE / 4}
-                    y={isoY}
-                    width={TILE_SIZE / 2}
-                    height={TILE_SIZE * 0.8}
-                    fill={fill1}
-                    stroke={stroke1}
-                    strokeWidth={3}
-                    rx={4}
-                  />
-                  <rect
-                    x={isoX + TILE_SIZE / 4 - 6}
-                    y={isoY - 8}
-                    width={TILE_SIZE / 2 + 12}
-                    height={16}
-                    fill={fill2}
-                    stroke={stroke2}
-                    strokeWidth={2}
-                    rx={3}
-                  />
-                  <rect
-                    x={isoX + TILE_SIZE / 4 + 2}
-                    y={isoY - 20}
-                    width={8}
-                    height={14}
-                    fill={fill3}
-                    stroke={stroke2}
-                    strokeWidth={1.5}
-                  />
-                  <rect
-                    x={isoX + TILE_SIZE / 2 + 2}
-                    y={isoY - 20}
-                    width={8}
-                    height={14}
-                    fill={fill3}
-                    stroke={stroke2}
-                    strokeWidth={1.5}
-                  />
-                </>
-              )}
-              <text
-                x={isoX + TILE_SIZE}
-                y={isoY + 38}
-                textAnchor="middle"
-                fontSize="16"
-              >
-                🏹
-              </text>
-              <text
-                x={isoX + TILE_SIZE}
-                y={isoY - 48}
-                textAnchor="middle"
-                fontSize="8"
-                fill={labelColor}
-                fontWeight="bold"
-              >
-                {label}
-              </text>
-              <HpBar
-                x={isoX + TILE_SIZE / 4}
-                y={isoY - 58}
-                width={TILE_SIZE / 2}
-                height={5}
-                hpPct={hpPct}
-                fill={barColor}
-              />
-            </g>
-          );
-        })}
-
-      {/* Enemy fortification walls */}
-      {enemyWalls
-        .filter(ew => ew.hp > 0 && fogVisible[ew.x]?.[ew.y])
-        .map(ew => {
-          const { isoX, isoY } = tileToSvg(ew.x, ew.y);
-          const hpPct = ew.hp / ew.maxHp;
-          return (
-            <g
-              key={`ewall-${ew.id}`}
-              style={{ cursor: anySelected ? 'crosshair' : 'default' }}
-              onContextMenu={e => handleAttackEnemyWall(ew.id, ew.x, ew.y, e)}
-            >
-              <rect
-                x={isoX + 8}
-                y={isoY + 10}
-                width={TILE_SIZE - 16}
-                height={TILE_SIZE * 0.6}
-                fill="#450a0a"
-                stroke="#7f1d1d"
-                strokeWidth={3}
-                rx={2}
-              />
-              {[0.25, 0.5, 0.75].map(f => (
                 <rect
-                  key={f}
-                  x={isoX + 8 + f * (TILE_SIZE - 16) - 4}
-                  y={isoY + 4}
-                  width={8}
-                  height={12}
+                  x={isoX}
+                  y={isoY}
+                  width={TILE_SIZE}
+                  height={TILE_SIZE}
                   fill="#7f1d1d"
-                  stroke="#991b1b"
-                  strokeWidth={1.5}
-                  rx={1}
+                  stroke={critical ? '#fbbf24' : '#ef4444'}
+                  strokeWidth={critical ? 8 : 6}
+                  rx={12}
                 />
-              ))}
-              <HpBar
-                x={isoX + 8}
-                y={isoY - 2}
-                width={TILE_SIZE - 16}
-                height={5}
-                hpPct={hpPct}
-                fill="#ef4444"
-              />
-            </g>
-          );
-        })}
-    </>
-  );
-});
+                <polygon
+                  points={[
+                    [isoX, isoY],
+                    [isoX + TILE_SIZE / 2, isoY - 32],
+                    [isoX + TILE_SIZE, isoY],
+                  ]
+                    .map(p => p.join(','))
+                    .join(' ')}
+                  fill="#991b1b"
+                  stroke="#dc2626"
+                  strokeWidth={4}
+                />
+                <text x={cx} y={isoY + 44} textAnchor="middle" fontSize="22">
+                  🏴‍☠️
+                </text>
+                {damaged && (
+                  <StructureDamageSmoke
+                    cx={cx}
+                    cy={cy}
+                    t={t}
+                    colors={['#374151', '#4b5563', '#1f2937']}
+                    opacities={[0.6, 0.45, 0.3]}
+                  />
+                )}
+                {critical && (
+                  <StructureFireEffect
+                    cx={cx}
+                    cy={cy}
+                    labelText="☠ COLLAPSING!"
+                    labelColor="#fbbf24"
+                    labelY={isoY - 20}
+                  />
+                )}
+                <HpBar
+                  x={isoX - 8}
+                  y={isoY - 14}
+                  width={TILE_SIZE + 16}
+                  height={8}
+                  hpPct={hpPct}
+                  fill={
+                    hpPct > 0.5
+                      ? '#4ade80'
+                      : hpPct > 0.25
+                        ? '#fbbf24'
+                        : '#ef4444'
+                  }
+                  rx={4}
+                />
+                <text
+                  x={cx}
+                  y={isoY - 18}
+                  textAnchor="middle"
+                  fontSize="11"
+                  fill="#fca5a5"
+                  fontWeight="bold"
+                >
+                  ENEMY
+                </text>
+              </g>
+            );
+          })()}
+
+        {/* Archer Tower now rendered by the shared enemy tower loop below (id -1) */}
+
+        {/* Enemy fortress towers (wave 5/10/15) + pre-placed Archer Tower (id -1) */}
+        {enemyTowers
+          .filter(t => t.hp > 0 && fogVisible[t.x]?.[t.y])
+          .map(t => {
+            const { isoX, isoY } = tileToSvg(t.x, t.y);
+            const hpPct = t.hp / t.maxHp;
+            const isArcher = t.id === -1;
+            const fill1 = isArcher ? '#3b0764' : '#7f1d1d';
+            const fill2 = isArcher ? '#581c87' : '#991b1b';
+            const fill3 = isArcher ? '#7c3aed' : '#b91c1c';
+            const stroke1 = isArcher ? '#a21caf' : '#dc2626';
+            const stroke2 = isArcher ? '#a855f7' : '#ef4444';
+            const label = isArcher ? 'ARCHER' : 'TOWER';
+            const labelColor = isArcher ? '#e879f9' : '#fca5a5';
+            const barColor = isArcher ? '#a855f7' : '#ef4444';
+            return (
+              <g
+                key={`etower-${t.id}`}
+                style={{ cursor: 'crosshair' }}
+                onContextMenu={e => handleAttackEnemyTower(t.id, t.x, t.y, e)}
+              >
+                {isArcher ? (
+                  <>
+                    <rect
+                      x={isoX + TILE_SIZE / 4}
+                      y={isoY - 8}
+                      width={TILE_SIZE * 1.5}
+                      height={TILE_SIZE * 0.85}
+                      fill={fill1}
+                      stroke={stroke1}
+                      strokeWidth={3}
+                      rx={5}
+                    />
+                    <rect
+                      x={isoX + TILE_SIZE / 2 - 5}
+                      y={isoY - 34}
+                      width={10}
+                      height={30}
+                      fill={fill2}
+                      stroke={stroke2}
+                      strokeWidth={2}
+                    />
+                    <rect
+                      x={isoX + TILE_SIZE / 2 - 14}
+                      y={isoY - 42}
+                      width={10}
+                      height={14}
+                      fill={fill3}
+                      stroke={stroke2}
+                      strokeWidth={2}
+                    />
+                    <rect
+                      x={isoX + TILE_SIZE / 2 + 4}
+                      y={isoY - 42}
+                      width={10}
+                      height={14}
+                      fill={fill3}
+                      stroke={stroke2}
+                      strokeWidth={2}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <rect
+                      x={isoX + TILE_SIZE / 4}
+                      y={isoY}
+                      width={TILE_SIZE / 2}
+                      height={TILE_SIZE * 0.8}
+                      fill={fill1}
+                      stroke={stroke1}
+                      strokeWidth={3}
+                      rx={4}
+                    />
+                    <rect
+                      x={isoX + TILE_SIZE / 4 - 6}
+                      y={isoY - 8}
+                      width={TILE_SIZE / 2 + 12}
+                      height={16}
+                      fill={fill2}
+                      stroke={stroke2}
+                      strokeWidth={2}
+                      rx={3}
+                    />
+                    <rect
+                      x={isoX + TILE_SIZE / 4 + 2}
+                      y={isoY - 20}
+                      width={8}
+                      height={14}
+                      fill={fill3}
+                      stroke={stroke2}
+                      strokeWidth={1.5}
+                    />
+                    <rect
+                      x={isoX + TILE_SIZE / 2 + 2}
+                      y={isoY - 20}
+                      width={8}
+                      height={14}
+                      fill={fill3}
+                      stroke={stroke2}
+                      strokeWidth={1.5}
+                    />
+                  </>
+                )}
+                <text
+                  x={isoX + TILE_SIZE}
+                  y={isoY + 38}
+                  textAnchor="middle"
+                  fontSize="16"
+                >
+                  🏹
+                </text>
+                <text
+                  x={isoX + TILE_SIZE}
+                  y={isoY - 48}
+                  textAnchor="middle"
+                  fontSize="8"
+                  fill={labelColor}
+                  fontWeight="bold"
+                >
+                  {label}
+                </text>
+                <HpBar
+                  x={isoX + TILE_SIZE / 4}
+                  y={isoY - 58}
+                  width={TILE_SIZE / 2}
+                  height={5}
+                  hpPct={hpPct}
+                  fill={barColor}
+                />
+              </g>
+            );
+          })}
+
+        {/* Enemy fortification walls */}
+        {enemyWalls
+          .filter(ew => ew.hp > 0 && fogVisible[ew.x]?.[ew.y])
+          .map(ew => {
+            const { isoX, isoY } = tileToSvg(ew.x, ew.y);
+            const hpPct = ew.hp / ew.maxHp;
+            return (
+              <g
+                key={`ewall-${ew.id}`}
+                style={{ cursor: anySelected ? 'crosshair' : 'default' }}
+                onContextMenu={e => handleAttackEnemyWall(ew.id, ew.x, ew.y, e)}
+              >
+                <rect
+                  x={isoX + 8}
+                  y={isoY + 10}
+                  width={TILE_SIZE - 16}
+                  height={TILE_SIZE * 0.6}
+                  fill="#450a0a"
+                  stroke="#7f1d1d"
+                  strokeWidth={3}
+                  rx={2}
+                />
+                {[0.25, 0.5, 0.75].map(f => (
+                  <rect
+                    key={f}
+                    x={isoX + 8 + f * (TILE_SIZE - 16) - 4}
+                    y={isoY + 4}
+                    width={8}
+                    height={12}
+                    fill="#7f1d1d"
+                    stroke="#991b1b"
+                    strokeWidth={1.5}
+                    rx={1}
+                  />
+                ))}
+                <HpBar
+                  x={isoX + 8}
+                  y={isoY - 2}
+                  width={TILE_SIZE - 16}
+                  height={5}
+                  hpPct={hpPct}
+                  fill="#ef4444"
+                />
+              </g>
+            );
+          })}
+      </>
+    );
+  }
+);

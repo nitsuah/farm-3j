@@ -4,7 +4,12 @@ import type { WorkerState } from '../game/types';
 import { HERO_ITEM_DATA, TILE_SIZE } from '../game/constants';
 import { HpBar } from './HpBar';
 import { tileToSvg } from '../game/map';
-import type { DroppedItem, EnemyGrunt, EnemyLurker, LootCrate } from '../game/types';
+import type {
+  DroppedItem,
+  EnemyGrunt,
+  EnemyLurker,
+  LootCrate,
+} from '../game/types';
 
 interface EnemyGruntsLayerProps {
   anySelected: boolean;
@@ -107,7 +112,14 @@ export const EnemyGruntsLayer: React.FC<EnemyGruntsLayerProps> = ({
                 >
                   WAR BULL
                 </text>
-                <HpBar x={isoX + TILE_SIZE / 2 - 20} y={isoY - 5} width={40} height={5} hpPct={hp} fill="#dc2626" />
+                <HpBar
+                  x={isoX + TILE_SIZE / 2 - 20}
+                  y={isoY - 5}
+                  width={40}
+                  height={5}
+                  hpPct={hp}
+                  fill="#dc2626"
+                />
               </>
             ) : g.isSkeleton ? (
               <>
@@ -138,7 +150,15 @@ export const EnemyGruntsLayer: React.FC<EnemyGruntsLayerProps> = ({
                 >
                   SKELETON
                 </text>
-                <HpBar x={isoX + TILE_SIZE / 2 - 12} y={isoY - 10} width={24} height={4} hpPct={hp} fill="#a855f7" rx={0} />
+                <HpBar
+                  x={isoX + TILE_SIZE / 2 - 12}
+                  y={isoY - 10}
+                  width={24}
+                  height={4}
+                  hpPct={hp}
+                  fill="#a855f7"
+                  rx={0}
+                />
               </>
             ) : (
               <>
@@ -199,7 +219,15 @@ export const EnemyGruntsLayer: React.FC<EnemyGruntsLayerProps> = ({
                     BERSERK!
                   </text>
                 )}
-                <HpBar x={isoX + TILE_SIZE / 2 - 14} y={isoY - 4} width={28} height={4} hpPct={hp} fill="#ef4444" rx={0} />
+                <HpBar
+                  x={isoX + TILE_SIZE / 2 - 14}
+                  y={isoY - 4}
+                  width={28}
+                  height={4}
+                  hpPct={hp}
+                  fill="#ef4444"
+                  rx={0}
+                />
               </>
             )}
             {(() => {
@@ -269,14 +297,47 @@ export const EnemyGruntsLayer: React.FC<EnemyGruntsLayerProps> = ({
               strokeWidth={1.5}
             />
             {/* Glowing teal eyes */}
-            <circle cx={cx - 4} cy={cy - 4} r={3} fill="#2dd4bf" opacity={0.9} />
-            <circle cx={cx + 4} cy={cy - 4} r={3} fill="#2dd4bf" opacity={0.9} />
+            <circle
+              cx={cx - 4}
+              cy={cy - 4}
+              r={3}
+              fill="#2dd4bf"
+              opacity={0.9}
+            />
+            <circle
+              cx={cx + 4}
+              cy={cy - 4}
+              r={3}
+              fill="#2dd4bf"
+              opacity={0.9}
+            />
             {/* Claw marks on attack */}
             {isAttacking && (
               <>
-                <line x1={cx - 6} y1={cy + 6} x2={cx - 2} y2={cy + 12} stroke="#5eead4" strokeWidth={1.5} />
-                <line x1={cx - 3} y1={cy + 5} x2={cx + 1} y2={cy + 11} stroke="#5eead4" strokeWidth={1.5} />
-                <line x1={cx} y1={cy + 4} x2={cx + 4} y2={cy + 10} stroke="#5eead4" strokeWidth={1.5} />
+                <line
+                  x1={cx - 6}
+                  y1={cy + 6}
+                  x2={cx - 2}
+                  y2={cy + 12}
+                  stroke="#5eead4"
+                  strokeWidth={1.5}
+                />
+                <line
+                  x1={cx - 3}
+                  y1={cy + 5}
+                  x2={cx + 1}
+                  y2={cy + 11}
+                  stroke="#5eead4"
+                  strokeWidth={1.5}
+                />
+                <line
+                  x1={cx}
+                  y1={cy + 4}
+                  x2={cx + 4}
+                  y2={cy + 10}
+                  stroke="#5eead4"
+                  strokeWidth={1.5}
+                />
               </>
             )}
             {/* Label */}

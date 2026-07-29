@@ -210,8 +210,16 @@ export const GameOverOverlay: React.FC<GameOverOverlayProps> = ({
                 );
               })()}
               {isDemo ? (
-                <div style={{ color: '#a78bfa', fontSize: 14, marginBottom: 8, textAlign: 'center' }}>
-                  🤖 Demo restarting in <strong>{Math.max(0, countdown)}s</strong>…
+                <div
+                  style={{
+                    color: '#a78bfa',
+                    fontSize: 14,
+                    marginBottom: 8,
+                    textAlign: 'center',
+                  }}
+                >
+                  🤖 Demo restarting in{' '}
+                  <strong>{Math.max(0, countdown)}s</strong>…
                 </div>
               ) : null}
               <button

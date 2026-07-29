@@ -998,44 +998,47 @@ const RTSMap: React.FC<{
   }, [triggerUnderAttack]);
 
   const doSave = useCallback(() => {
-    writeSave({
-      version: 1,
-      resources,
-      workers: workersRef.current.map(w => ({
-        id: w.id,
-        x: Math.round(w.x),
-        y: Math.round(w.y),
-        hp: w.hp,
-        maxHp: w.maxHp,
-        unitType: w.unitType,
-        group: w.group,
-        xp: w.xp,
-        level: w.level,
-        gathering: w.gathering,
-        state: w.state,
-      })),
-      trees: treesRef.current,
-      goldMines: goldMinesRef.current,
-      stoneNodes: stoneNodesRef.current,
-      placedBuildings: placedBuildingsRef.current,
-      buildingNextId: buildingIdRef.current,
-      farmhouse,
-      upgrades: upgradesRef.current,
-      wave: waveRef.current,
-      killCount,
-      totalGold,
-      totalLumber,
-      totalStone,
-      playerBarnHp: playerBarnHpRef.current,
-      enemyBarnHp,
-      rallyPoint,
-      fogExplored,
-      guardTowerResearched,
-      barracksTech,
-      blacksmithUpgrades,
-      savedAt: Date.now(),
-      difficultyId: difficulty?.id,
-    }, slot);
+    writeSave(
+      {
+        version: 1,
+        resources,
+        workers: workersRef.current.map(w => ({
+          id: w.id,
+          x: Math.round(w.x),
+          y: Math.round(w.y),
+          hp: w.hp,
+          maxHp: w.maxHp,
+          unitType: w.unitType,
+          group: w.group,
+          xp: w.xp,
+          level: w.level,
+          gathering: w.gathering,
+          state: w.state,
+        })),
+        trees: treesRef.current,
+        goldMines: goldMinesRef.current,
+        stoneNodes: stoneNodesRef.current,
+        placedBuildings: placedBuildingsRef.current,
+        buildingNextId: buildingIdRef.current,
+        farmhouse,
+        upgrades: upgradesRef.current,
+        wave: waveRef.current,
+        killCount,
+        totalGold,
+        totalLumber,
+        totalStone,
+        playerBarnHp: playerBarnHpRef.current,
+        enemyBarnHp,
+        rallyPoint,
+        fogExplored,
+        guardTowerResearched,
+        barracksTech,
+        blacksmithUpgrades,
+        savedAt: Date.now(),
+        difficultyId: difficulty?.id,
+      },
+      slot
+    );
     setSaveStatus('saved');
     setTimeout(() => setSaveStatus('idle'), 2000);
   }, [
@@ -1109,10 +1112,7 @@ const RTSMap: React.FC<{
   }, [placedBuildings, triggerAchievement]);
 
   useEffect(() => {
-    if (
-      blacksmithUpgrades.steelEdge >= 2 ||
-      blacksmithUpgrades.ironHide >= 2
-    ) {
+    if (blacksmithUpgrades.steelEdge >= 2 || blacksmithUpgrades.ironHide >= 2) {
       triggerAchievement('blacksmith_max');
     }
   }, [blacksmithUpgrades, triggerAchievement]);
@@ -2637,13 +2637,19 @@ const RTSMap: React.FC<{
         const occupied =
           (tx === BARN_POS.x && ty === BARN_POS.y) ||
           (tx === ENEMY_BARN_POS.x && ty === ENEMY_BARN_POS.y) ||
-          (tiles[tx]?.[ty] === 'water') ||
-          (tiles[tx]?.[ty] === 'tree') ||
-          (tiles[tx]?.[ty] === 'rock') ||
+          tiles[tx]?.[ty] === 'water' ||
+          tiles[tx]?.[ty] === 'tree' ||
+          tiles[tx]?.[ty] === 'rock' ||
           placedBuildingsRef.current.some(b => b.x === tx && b.y === ty) ||
-          treesRef.current.some(t => t.x === tx && t.y === ty && t.amount > 0) ||
-          goldMinesRef.current.some(m => m.x === tx && m.y === ty && m.amount > 0) ||
-          stoneNodesRef.current.some(s => s.x === tx && s.y === ty && s.amount > 0);
+          treesRef.current.some(
+            t => t.x === tx && t.y === ty && t.amount > 0
+          ) ||
+          goldMinesRef.current.some(
+            m => m.x === tx && m.y === ty && m.amount > 0
+          ) ||
+          stoneNodesRef.current.some(
+            s => s.x === tx && s.y === ty && s.amount > 0
+          );
         if (occupied) return false;
         setResources(r => ({
           ...r,
@@ -2670,7 +2676,10 @@ const RTSMap: React.FC<{
       trainFarmer: () => {
         const snap = botSnapshotRef.current;
         if (!snap) return false;
-        if (snap.resources.gold < 30 || snap.resources.food >= snap.resources.foodCap)
+        if (
+          snap.resources.gold < 30 ||
+          snap.resources.food >= snap.resources.foodCap
+        )
           return false;
         if (!snap.farmhouse.built) return false;
         setResources(r => ({ ...r, gold: r.gold - 30, food: r.food + 1 }));

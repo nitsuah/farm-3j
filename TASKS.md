@@ -5,12 +5,14 @@ Last Updated: 2026-07-04 (iter109 — shared SVG component refactor: HpBar, Stru
 ## Farm RTS — Round 2 (2026 Q3)
 
 ### Technical Cleanup
+
 - [ ] Extract blacksmith upgrade costs to shared config constants (currently hardcoded in RTSUI disable logic)
 - [ ] Continue SVG component extraction — worker body shapes, enemy unit torsos, and building base rects are next candidates
 - [ ] Profile render loop at 30+ units on 25×25 map; investigate canvas/OffscreenCanvas fallback for mobile
 - [ ] Add unit tests for core helpers: `tileDist`, `tileToSvg`, A\* pathfinding, damage formulas
 
 ### Gameplay Features
+
 - [ ] Named unit formations — move selected group in line/wedge/box formation
 - [ ] Enemy hero unit — Warlord (wave 20+, unique abilities, drops loot)
 - [ ] Dropped hero items — equippable pickups from slain elite enemies (Speed Boots, War Banner, Healing Totem)
@@ -19,6 +21,7 @@ Last Updated: 2026-07-04 (iter109 — shared SVG component refactor: HpBar, Stru
 - [ ] Campaign mode Phase 1 — 3 hand-crafted scenarios with scripted objectives
 
 ### Content & Polish
+
 - [ ] Background ambient audio loop with independent volume slider
 - [ ] More unit voice lines and enemy audio cues (Warchief stomp, Sapper countdown)
 - [ ] Minimap: show dropped items and loot crate positions

@@ -1,9 +1,6 @@
 import React from 'react';
 
-import {
-  ALL_ACHIEVEMENTS,
-  getEarnedAchievements,
-} from '../game/achievements';
+import { ALL_ACHIEVEMENTS, getEarnedAchievements } from '../game/achievements';
 
 interface AchievementPanelProps {
   onClose: () => void;
@@ -105,7 +102,13 @@ export const AchievementPanel: React.FC<AchievementPanelProps> = ({
                 opacity: unlocked ? 1 : 0.5,
               }}
             >
-              <span style={{ fontSize: '1.1rem', flexShrink: 0, marginTop: '0.05rem' }}>
+              <span
+                style={{
+                  fontSize: '1.1rem',
+                  flexShrink: 0,
+                  marginTop: '0.05rem',
+                }}
+              >
                 {unlocked ? a.emoji : '🔒'}
               </span>
               <div>

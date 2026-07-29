@@ -16,8 +16,26 @@ export const StructureDamageSmoke: React.FC<StructureDamageSmokeProps> = ({
   opacities = [0.55, 0.4, 0.25],
 }) => (
   <g pointerEvents="none">
-    <circle cx={cx - 8} cy={cy - 18 - Math.sin(t) * 4} r={6} fill={colors[0]} opacity={opacities[0]} />
-    <circle cx={cx + 6} cy={cy - 28 - Math.sin(t + 1) * 5} r={5} fill={colors[1]} opacity={opacities[1]} />
-    <circle cx={cx} cy={cy - 38 - Math.sin(t + 2) * 3} r={4} fill={colors[2]} opacity={opacities[2]} />
+    <circle
+      cx={cx - 8}
+      cy={cy - 18 - Math.sin(t) * 4}
+      r={6}
+      fill={colors[0]}
+      opacity={opacities[0]}
+    />
+    <circle
+      cx={cx + 6}
+      cy={cy - 28 - Math.sin(t + 1) * 5}
+      r={5}
+      fill={colors[1]}
+      opacity={opacities[1]}
+    />
+    <circle
+      cx={cx}
+      cy={cy - 38 - Math.sin(t + 2) * 3}
+      r={4}
+      fill={colors[2]}
+      opacity={opacities[2]}
+    />
   </g>
 );

@@ -85,7 +85,12 @@ function formatDate(ts: number): string {
   });
 }
 
-const DIFF_ICONS: Record<string, string> = { easy: '🌻', normal: '⚔️', hard: '💀', demo: '🤖' };
+const DIFF_ICONS: Record<string, string> = {
+  easy: '🌻',
+  normal: '⚔️',
+  hard: '💀',
+  demo: '🤖',
+};
 
 export const RTSGameRoot: React.FC = () => {
   const [gameKey, setGameKey] = useState(0);
@@ -93,7 +98,11 @@ export const RTSGameRoot: React.FC = () => {
   const [slot, setSlot] = useState<SaveSlot>(0);
   const [pendingSlot, setPendingSlot] = useState<SaveSlot>(0);
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
-  const [slotMetas, setSlotMetas] = useState<(SlotMeta | null)[]>([null, null, null]);
+  const [slotMetas, setSlotMetas] = useState<(SlotMeta | null)[]>([
+    null,
+    null,
+    null,
+  ]);
 
   useEffect(() => {
     setSlotMetas(([0, 1, 2] as SaveSlot[]).map(s => loadSlotMeta(s)));
@@ -127,38 +136,107 @@ export const RTSGameRoot: React.FC = () => {
           <button
             type="button"
             onClick={() => setScreen('slots')}
-            style={{ color: '#64748b', fontSize: 12, background: 'none', border: 'none', cursor: 'pointer', marginBottom: 8 }}
+            style={{
+              color: '#64748b',
+              fontSize: 12,
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              marginBottom: 8,
+            }}
           >
             ← Back to slots
           </button>
           <div style={{ fontSize: 32 }}>⚔️</div>
-          <h1 style={{ color: '#fde68a', fontSize: 28, fontWeight: 800, letterSpacing: 1 }}>
+          <h1
+            style={{
+              color: '#fde68a',
+              fontSize: 28,
+              fontWeight: 800,
+              letterSpacing: 1,
+            }}
+          >
             Select Difficulty
           </h1>
           <p style={{ color: '#94a3b8', fontSize: 13, marginTop: 4 }}>
             Slot {pendingSlot + 1} — new game
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: 16,
+            flexWrap: 'wrap',
+            justifyContent: 'center',
+          }}
+        >
           {(['easy', 'normal', 'hard'] as Difficulty[]).map(d => {
             const cfg = DIFFICULTY_CONFIGS[d];
-            const border = d === 'easy' ? '#4ade80' : d === 'normal' ? '#60a5fa' : '#f87171';
-            const bg = d === 'easy' ? 'rgba(74,222,128,0.08)' : d === 'normal' ? 'rgba(96,165,250,0.08)' : 'rgba(248,113,113,0.08)';
+            const border =
+              d === 'easy' ? '#4ade80' : d === 'normal' ? '#60a5fa' : '#f87171';
+            const bg =
+              d === 'easy'
+                ? 'rgba(74,222,128,0.08)'
+                : d === 'normal'
+                  ? 'rgba(96,165,250,0.08)'
+                  : 'rgba(248,113,113,0.08)';
             return (
               <button
                 key={d}
                 type="button"
-                onClick={() => { setSlot(pendingSlot); setDifficulty(d); }}
-                style={{ background: bg, border: `2px solid ${border}`, borderRadius: 12, padding: '20px 28px', cursor: 'pointer', minWidth: 160, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, color: '#f1f5f9' }}
-                onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.05)')}
-                onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+                onClick={() => {
+                  setSlot(pendingSlot);
+                  setDifficulty(d);
+                }}
+                style={{
+                  background: bg,
+                  border: `2px solid ${border}`,
+                  borderRadius: 12,
+                  padding: '20px 28px',
+                  cursor: 'pointer',
+                  minWidth: 160,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 8,
+                  color: '#f1f5f9',
+                }}
+                onMouseEnter={e =>
+                  (e.currentTarget.style.transform = 'scale(1.05)')
+                }
+                onMouseLeave={e =>
+                  (e.currentTarget.style.transform = 'scale(1)')
+                }
               >
                 <span style={{ fontSize: 32 }}>{cfg.icon}</span>
-                <span style={{ fontSize: 20, fontWeight: 700, color: border }}>{cfg.label}</span>
-                <span style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center', maxWidth: 130 }}>{cfg.desc}</span>
-                <div style={{ fontSize: 11, color: '#64748b', marginTop: 4, textAlign: 'left' }}>
-                  <div>🪙 {cfg.startGold} 🌲 {cfg.startLumber} 🪨 {cfg.startStone}</div>
-                  <div>Enemies: {Math.round(cfg.gruntHpMult * 100)}% HP / {Math.round(cfg.gruntDmgMult * 100)}% dmg</div>
+                <span style={{ fontSize: 20, fontWeight: 700, color: border }}>
+                  {cfg.label}
+                </span>
+                <span
+                  style={{
+                    fontSize: 12,
+                    color: '#94a3b8',
+                    textAlign: 'center',
+                    maxWidth: 130,
+                  }}
+                >
+                  {cfg.desc}
+                </span>
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: '#64748b',
+                    marginTop: 4,
+                    textAlign: 'left',
+                  }}
+                >
+                  <div>
+                    🪙 {cfg.startGold} 🌲 {cfg.startLumber} 🪨 {cfg.startStone}
+                  </div>
+                  <div>
+                    Enemies: {Math.round(cfg.gruntHpMult * 100)}% HP /{' '}
+                    {Math.round(cfg.gruntDmgMult * 100)}% dmg
+                  </div>
                 </div>
               </button>
             );
@@ -170,15 +248,49 @@ export const RTSGameRoot: React.FC = () => {
               <button
                 key="demo"
                 type="button"
-                onClick={() => { setSlot(pendingSlot); setDifficulty('demo'); }}
-                style={{ background: 'rgba(167,139,250,0.08)', border: '2px dashed #a78bfa', borderRadius: 12, padding: '20px 28px', cursor: 'pointer', minWidth: 160, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, color: '#f1f5f9' }}
-                onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.05)')}
-                onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+                onClick={() => {
+                  setSlot(pendingSlot);
+                  setDifficulty('demo');
+                }}
+                style={{
+                  background: 'rgba(167,139,250,0.08)',
+                  border: '2px dashed #a78bfa',
+                  borderRadius: 12,
+                  padding: '20px 28px',
+                  cursor: 'pointer',
+                  minWidth: 160,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 8,
+                  color: '#f1f5f9',
+                }}
+                onMouseEnter={e =>
+                  (e.currentTarget.style.transform = 'scale(1.05)')
+                }
+                onMouseLeave={e =>
+                  (e.currentTarget.style.transform = 'scale(1)')
+                }
               >
                 <span style={{ fontSize: 32 }}>{cfg.icon}</span>
-                <span style={{ fontSize: 20, fontWeight: 700, color: '#a78bfa' }}>{cfg.label}</span>
-                <span style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center', maxWidth: 130 }}>{cfg.desc}</span>
-                <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>AI controls all units</div>
+                <span
+                  style={{ fontSize: 20, fontWeight: 700, color: '#a78bfa' }}
+                >
+                  {cfg.label}
+                </span>
+                <span
+                  style={{
+                    fontSize: 12,
+                    color: '#94a3b8',
+                    textAlign: 'center',
+                    maxWidth: 130,
+                  }}
+                >
+                  {cfg.desc}
+                </span>
+                <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
+                  AI controls all units
+                </div>
               </button>
             );
           })()}
@@ -192,10 +304,19 @@ export const RTSGameRoot: React.FC = () => {
     <div className="relative flex h-screen w-screen flex-col items-center justify-center gap-6 overflow-hidden bg-black">
       <div style={{ textAlign: 'center' }}>
         <div style={{ fontSize: 48, marginBottom: 8 }}>🌾</div>
-        <h1 style={{ color: '#fde68a', fontSize: 32, fontWeight: 800, letterSpacing: 1 }}>
+        <h1
+          style={{
+            color: '#fde68a',
+            fontSize: 32,
+            fontWeight: 800,
+            letterSpacing: 1,
+          }}
+        >
           Farm RTS
         </h1>
-        <p style={{ color: '#94a3b8', fontSize: 14, marginTop: 4 }}>Choose a save slot</p>
+        <p style={{ color: '#94a3b8', fontSize: 14, marginTop: 4 }}>
+          Choose a save slot
+        </p>
       </div>
       <div style={{ display: 'flex', gap: 16 }}>
         {([0, 1, 2] as SaveSlot[]).map(s => {
@@ -204,52 +325,145 @@ export const RTSGameRoot: React.FC = () => {
           return (
             <div
               key={s}
-              style={{ border: '2px solid #334155', borderRadius: 12, padding: '20px 24px', minWidth: 180, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, background: 'rgba(15,23,42,0.8)' }}
+              style={{
+                border: '2px solid #334155',
+                borderRadius: 12,
+                padding: '20px 24px',
+                minWidth: 180,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 10,
+                background: 'rgba(15,23,42,0.8)',
+              }}
             >
-              <div style={{ fontSize: 13, color: '#94a3b8', fontWeight: 600 }}>Slot {s + 1}</div>
+              <div style={{ fontSize: 13, color: '#94a3b8', fontWeight: 600 }}>
+                Slot {s + 1}
+              </div>
               {hasSave ? (
                 <>
                   <div style={{ textAlign: 'center' }}>
                     <div style={{ fontSize: 22, marginBottom: 4 }}>
                       {DIFF_ICONS[meta.difficultyId ?? 'normal'] ?? '⚔️'}
                     </div>
-                    <div style={{ color: '#fde68a', fontWeight: 700, fontSize: 15 }}>Wave {meta.wave}</div>
-                    <div style={{ color: '#64748b', fontSize: 11, marginTop: 2 }}>
-                      {meta.difficultyId ? meta.difficultyId.charAt(0).toUpperCase() + meta.difficultyId.slice(1) : 'Normal'}
+                    <div
+                      style={{
+                        color: '#fde68a',
+                        fontWeight: 700,
+                        fontSize: 15,
+                      }}
+                    >
+                      Wave {meta.wave}
+                    </div>
+                    <div
+                      style={{ color: '#64748b', fontSize: 11, marginTop: 2 }}
+                    >
+                      {meta.difficultyId
+                        ? meta.difficultyId.charAt(0).toUpperCase() +
+                          meta.difficultyId.slice(1)
+                        : 'Normal'}
                     </div>
                     {meta.savedAt > 0 && (
-                      <div style={{ color: '#475569', fontSize: 10, marginTop: 4 }}>{formatDate(meta.savedAt)}</div>
+                      <div
+                        style={{ color: '#475569', fontSize: 10, marginTop: 4 }}
+                      >
+                        {formatDate(meta.savedAt)}
+                      </div>
                     )}
                   </div>
                   <button
                     type="button"
-                    onClick={() => { setSlot(s); setDifficulty(meta.difficultyId as Difficulty ?? 'normal'); }}
-                    style={{ width: '100%', padding: '8px 0', borderRadius: 8, border: '1.5px solid #22c55e', background: 'rgba(34,197,94,0.12)', color: '#86efac', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(34,197,94,0.25)')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'rgba(34,197,94,0.12)')}
+                    onClick={() => {
+                      setSlot(s);
+                      setDifficulty(
+                        (meta.difficultyId as Difficulty) ?? 'normal'
+                      );
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '8px 0',
+                      borderRadius: 8,
+                      border: '1.5px solid #22c55e',
+                      background: 'rgba(34,197,94,0.12)',
+                      color: '#86efac',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                    onMouseEnter={e =>
+                      (e.currentTarget.style.background =
+                        'rgba(34,197,94,0.25)')
+                    }
+                    onMouseLeave={e =>
+                      (e.currentTarget.style.background =
+                        'rgba(34,197,94,0.12)')
+                    }
                   >
                     ▶ Continue
                   </button>
                   <button
                     type="button"
-                    onClick={() => { setPendingSlot(s); setScreen('difficulty'); }}
-                    style={{ width: '100%', padding: '6px 0', borderRadius: 8, border: '1.5px solid #475569', background: 'rgba(71,85,105,0.15)', color: '#94a3b8', fontSize: 12, cursor: 'pointer' }}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(71,85,105,0.35)')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'rgba(71,85,105,0.15)')}
+                    onClick={() => {
+                      setPendingSlot(s);
+                      setScreen('difficulty');
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '6px 0',
+                      borderRadius: 8,
+                      border: '1.5px solid #475569',
+                      background: 'rgba(71,85,105,0.15)',
+                      color: '#94a3b8',
+                      fontSize: 12,
+                      cursor: 'pointer',
+                    }}
+                    onMouseEnter={e =>
+                      (e.currentTarget.style.background =
+                        'rgba(71,85,105,0.35)')
+                    }
+                    onMouseLeave={e =>
+                      (e.currentTarget.style.background =
+                        'rgba(71,85,105,0.15)')
+                    }
                   >
                     🆕 New Game (overwrite)
                   </button>
                 </>
               ) : (
                 <>
-                  <div style={{ color: '#475569', fontSize: 28, margin: '8px 0' }}>—</div>
-                  <div style={{ color: '#475569', fontSize: 12 }}>Empty slot</div>
+                  <div
+                    style={{ color: '#475569', fontSize: 28, margin: '8px 0' }}
+                  >
+                    —
+                  </div>
+                  <div style={{ color: '#475569', fontSize: 12 }}>
+                    Empty slot
+                  </div>
                   <button
                     type="button"
-                    onClick={() => { setPendingSlot(s); setScreen('difficulty'); }}
-                    style={{ width: '100%', padding: '8px 0', borderRadius: 8, border: '1.5px solid #60a5fa', background: 'rgba(96,165,250,0.12)', color: '#93c5fd', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(96,165,250,0.25)')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'rgba(96,165,250,0.12)')}
+                    onClick={() => {
+                      setPendingSlot(s);
+                      setScreen('difficulty');
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '8px 0',
+                      borderRadius: 8,
+                      border: '1.5px solid #60a5fa',
+                      background: 'rgba(96,165,250,0.12)',
+                      color: '#93c5fd',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                    onMouseEnter={e =>
+                      (e.currentTarget.style.background =
+                        'rgba(96,165,250,0.25)')
+                    }
+                    onMouseLeave={e =>
+                      (e.currentTarget.style.background =
+                        'rgba(96,165,250,0.12)')
+                    }
                   >
                     🆕 New Game
                   </button>

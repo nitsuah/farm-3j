@@ -87,7 +87,10 @@ function nearestResource(
   let best: { idx: number; node: ResourceNode } | null = null;
   nodes.forEach((n, idx) => {
     if (n.amount <= 0) return;
-    if (!best || tileDist(wx, wy, n.x, n.y) < tileDist(wx, wy, best.node.x, best.node.y))
+    if (
+      !best ||
+      tileDist(wx, wy, n.x, n.y) < tileDist(wx, wy, best.node.x, best.node.y)
+    )
       best = { idx, node: n };
   });
   return best;
@@ -97,7 +100,10 @@ function hasBuilding(buildings: PlacedBuilding[], type: BuildingType): boolean {
   return buildings.some(b => b.type === type && !b.constructing);
 }
 
-function canAfford(resources: Resources, cost: { gold: number; lumber: number; stone: number }): boolean {
+function canAfford(
+  resources: Resources,
+  cost: { gold: number; lumber: number; stone: number }
+): boolean {
   return (
     resources.gold >= cost.gold &&
     resources.lumber >= cost.lumber &&
@@ -201,37 +207,67 @@ function decideCombat(
 
   for (const unit of idleCombatants) {
     // Priority: sapper > warlord > warchief > lurker > troll > grunt
-    const sapper = sappers.sort((a, b) => tileDist(unit.x, unit.y, a.x, a.y) - tileDist(unit.x, unit.y, b.x, b.y))[0];
+    const sapper = sappers.sort(
+      (a, b) =>
+        tileDist(unit.x, unit.y, a.x, a.y) - tileDist(unit.x, unit.y, b.x, b.y)
+    )[0];
     if (sapper) {
-      commands.orderAttack(unit.id, { targetType: 'sapper', sapperId: sapper.id });
+      commands.orderAttack(unit.id, {
+        targetType: 'sapper',
+        sapperId: sapper.id,
+      });
       botLog('combat', `${unit.unitType} ${unit.id} → sapper ${sapper.id}`);
       continue;
     }
-    const warlord = warlords.sort((a, b) => tileDist(unit.x, unit.y, a.x, a.y) - tileDist(unit.x, unit.y, b.x, b.y))[0];
+    const warlord = warlords.sort(
+      (a, b) =>
+        tileDist(unit.x, unit.y, a.x, a.y) - tileDist(unit.x, unit.y, b.x, b.y)
+    )[0];
     if (warlord) {
-      commands.orderAttack(unit.id, { targetType: 'warlord', warlordId: warlord.id });
+      commands.orderAttack(unit.id, {
+        targetType: 'warlord',
+        warlordId: warlord.id,
+      });
       botLog('combat', `${unit.unitType} ${unit.id} → warlord ${warlord.id}`);
       continue;
     }
-    const warchief = warchiefs.sort((a, b) => tileDist(unit.x, unit.y, a.x, a.y) - tileDist(unit.x, unit.y, b.x, b.y))[0];
+    const warchief = warchiefs.sort(
+      (a, b) =>
+        tileDist(unit.x, unit.y, a.x, a.y) - tileDist(unit.x, unit.y, b.x, b.y)
+    )[0];
     if (warchief) {
-      commands.orderAttack(unit.id, { targetType: 'warchief', warchiefId: warchief.id });
+      commands.orderAttack(unit.id, {
+        targetType: 'warchief',
+        warchiefId: warchief.id,
+      });
       botLog('combat', `${unit.unitType} ${unit.id} → warchief ${warchief.id}`);
       continue;
     }
-    const lurker = lurkers.sort((a, b) => tileDist(unit.x, unit.y, a.x, a.y) - tileDist(unit.x, unit.y, b.x, b.y))[0];
+    const lurker = lurkers.sort(
+      (a, b) =>
+        tileDist(unit.x, unit.y, a.x, a.y) - tileDist(unit.x, unit.y, b.x, b.y)
+    )[0];
     if (lurker) {
-      commands.orderAttack(unit.id, { targetType: 'lurker', lurkerId: lurker.id });
+      commands.orderAttack(unit.id, {
+        targetType: 'lurker',
+        lurkerId: lurker.id,
+      });
       botLog('combat', `${unit.unitType} ${unit.id} → lurker ${lurker.id}`);
       continue;
     }
-    const troll = trolls.sort((a, b) => tileDist(unit.x, unit.y, a.x, a.y) - tileDist(unit.x, unit.y, b.x, b.y))[0];
+    const troll = trolls.sort(
+      (a, b) =>
+        tileDist(unit.x, unit.y, a.x, a.y) - tileDist(unit.x, unit.y, b.x, b.y)
+    )[0];
     if (troll) {
       commands.orderAttack(unit.id, { targetType: 'troll', trollId: troll.id });
       botLog('combat', `${unit.unitType} ${unit.id} → troll ${troll.id}`);
       continue;
     }
-    const grunt = grunts.sort((a, b) => tileDist(unit.x, unit.y, a.x, a.y) - tileDist(unit.x, unit.y, b.x, b.y))[0];
+    const grunt = grunts.sort(
+      (a, b) =>
+        tileDist(unit.x, unit.y, a.x, a.y) - tileDist(unit.x, unit.y, b.x, b.y)
+    )[0];
     if (grunt) {
       commands.orderAttack(unit.id, { targetType: 'grunt', gruntId: grunt.id });
       botLog('combat', `${unit.unitType} ${unit.id} → grunt ${grunt.id}`);
@@ -319,7 +355,9 @@ function decideTraining(
   tick: number
 ): void {
   const { resources, workers, placedBuildings, wave } = snap;
-  const farmerCount = workers.filter(w => w.unitType === 'farmer' && w.hp > 0).length;
+  const farmerCount = workers.filter(
+    w => w.unitType === 'farmer' && w.hp > 0
+  ).length;
   const combatCount = workers.filter(
     w =>
       (w.unitType === 'swordsman' ||
@@ -373,7 +411,8 @@ export function useBotController(
 
     if (typeof window !== 'undefined') {
       (window as unknown as Record<string, unknown>).__farmBotLog = _log;
-      (window as unknown as Record<string, unknown>).__farmBotTick = () => tickRef.current;
+      (window as unknown as Record<string, unknown>).__farmBotTick = () =>
+        tickRef.current;
     }
 
     // Poll at a fine interval (350ms) but only execute when enough scaled

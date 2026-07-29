@@ -13,12 +13,14 @@ Last Updated: 2026-07-04
 ## 2026 Q3: Farm RTS — Round 2
 
 ### Technical Health
+
 - [ ] Continue SVG component extraction — worker body shapes, enemy unit torsos, building base rects are next candidates for shared components (see iter109 pattern)
 - [ ] Extract blacksmith upgrade costs to shared config constants (currently hardcoded in RTSUI disable logic)
 - [ ] Profile render loop on 25×25 map with 30+ units; investigate canvas or OffscreenCanvas fallback if SVG drops below 30fps on mobile
 - [ ] Add unit tests for core game-logic helpers (`tileDist`, `tileToSvg`, pathfinding, damage formulas)
 
 ### Gameplay Features
+
 - [ ] **Named formations** — move a selected group in line, wedge, or box formation; prevents units stacking on the same tile and adds strategic depth to multi-unit control
 - [ ] **Enemy hero unit** — Warlord spawns at wave 20+; unique abilities (War Cry, Shield Bash); harder than Warchief, drops rare item
 - [ ] **Dropped hero items** — slain enemy elites drop equippable items Barnabas can pick up (Speed Boots, War Banner, Healing Totem); persists between hero deaths
@@ -27,6 +29,7 @@ Last Updated: 2026-07-04
 - [ ] **Campaign mode (Phase 1)** — linear sequence of 3 hand-crafted scenarios with scripted objectives beyond simple "defend the barn"
 
 ### Content & Polish
+
 - [ ] Background ambient audio loop (farm sounds, wind, distant battle) with independent volume slider
 - [ ] More unit voice lines and enemy audio cues (Warchief stomp roar, Sapper countdown tick)
 - [ ] Minimap: show dropped hero items and loot crate positions

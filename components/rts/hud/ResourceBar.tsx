@@ -116,7 +116,8 @@ export const ResourceBar: React.FC<ResourceBarProps> = ({
     enemyWarchiefs.length > 0 ||
     enemySappers.length > 0;
 
-  const waveTimerEl = !gameOver &&
+  const waveTimerEl =
+    !gameOver &&
     (nextWaveAt || waveTimerRemainingRef.current !== null) &&
     (() => {
       const secsLeft =
@@ -145,7 +146,8 @@ export const ResourceBar: React.FC<ResourceBarProps> = ({
         top: 0,
         left: 0,
         width: '100%',
-        background: dayPhase === 'night' ? 'rgba(10,8,30,0.97)' : 'rgba(15,23,42,0.97)',
+        background:
+          dayPhase === 'night' ? 'rgba(10,8,30,0.97)' : 'rgba(15,23,42,0.97)',
         color: '#fff',
         zIndex: 20,
         borderBottom: `2px solid ${dayPhase === 'night' ? '#6366f1' : '#d97706'}`,
@@ -162,7 +164,8 @@ export const ResourceBar: React.FC<ResourceBarProps> = ({
         <span
           style={{
             color: dayPhase === 'night' ? '#a5b4fc' : '#fde68a',
-            background: dayPhase === 'night' ? 'rgba(30,20,80,0.7)' : 'transparent',
+            background:
+              dayPhase === 'night' ? 'rgba(30,20,80,0.7)' : 'transparent',
             padding: '0 6px',
             borderRadius: 5,
             fontSize: 13,
@@ -200,17 +203,24 @@ export const ResourceBar: React.FC<ResourceBarProps> = ({
             color: resources.gold < LOW_GOLD_WARNING ? '#ef4444' : '#fde68a',
             fontWeight: resources.gold < LOW_GOLD_WARNING ? 700 : 400,
             fontSize: 13,
-            animation: resources.gold < LOW_GOLD_WARNING ? 'pulse 1s infinite' : 'none',
+            animation:
+              resources.gold < LOW_GOLD_WARNING ? 'pulse 1s infinite' : 'none',
             whiteSpace: 'nowrap',
           }}
         >
           🪙{resources.gold}
           {incomeRate.gold > 0 && (
-            <span style={{ fontSize: 10, color: '#a3e635', marginLeft: 1 }}>+{incomeRate.gold}</span>
+            <span style={{ fontSize: 10, color: '#a3e635', marginLeft: 1 }}>
+              +{incomeRate.gold}
+            </span>
           )}
           {upkeepMult < 1 && (
             <span
-              style={{ fontSize: 9, color: upkeepMult < 0.5 ? '#ef4444' : '#fbbf24', marginLeft: 2 }}
+              style={{
+                fontSize: 9,
+                color: upkeepMult < 0.5 ? '#ef4444' : '#fbbf24',
+                marginLeft: 2,
+              }}
               title={`Upkeep: ${Math.round(upkeepMult * 100)}%`}
             >
               📉{Math.round(upkeepMult * 100)}%
@@ -221,16 +231,22 @@ export const ResourceBar: React.FC<ResourceBarProps> = ({
         {/* Lumber */}
         <span
           style={{
-            color: resources.lumber < LOW_LUMBER_WARNING ? '#ef4444' : '#bbf7d0',
+            color:
+              resources.lumber < LOW_LUMBER_WARNING ? '#ef4444' : '#bbf7d0',
             fontWeight: resources.lumber < LOW_LUMBER_WARNING ? 700 : 400,
             fontSize: 13,
-            animation: resources.lumber < LOW_LUMBER_WARNING ? 'pulse 1s infinite' : 'none',
+            animation:
+              resources.lumber < LOW_LUMBER_WARNING
+                ? 'pulse 1s infinite'
+                : 'none',
             whiteSpace: 'nowrap',
           }}
         >
           🌲{resources.lumber}
           {incomeRate.lumber > 0 && (
-            <span style={{ fontSize: 10, color: '#a3e635', marginLeft: 1 }}>+{incomeRate.lumber}</span>
+            <span style={{ fontSize: 10, color: '#a3e635', marginLeft: 1 }}>
+              +{incomeRate.lumber}
+            </span>
           )}
         </span>
 
@@ -240,13 +256,18 @@ export const ResourceBar: React.FC<ResourceBarProps> = ({
             color: resources.stone < LOW_STONE_WARNING ? '#ef4444' : '#cbd5e1',
             fontWeight: resources.stone < LOW_STONE_WARNING ? 700 : 400,
             fontSize: 13,
-            animation: resources.stone < LOW_STONE_WARNING ? 'pulse 1s infinite' : 'none',
+            animation:
+              resources.stone < LOW_STONE_WARNING
+                ? 'pulse 1s infinite'
+                : 'none',
             whiteSpace: 'nowrap',
           }}
         >
           🪨{resources.stone}
           {incomeRate.stone > 0 && (
-            <span style={{ fontSize: 10, color: '#a3e635', marginLeft: 1 }}>+{incomeRate.stone}</span>
+            <span style={{ fontSize: 10, color: '#a3e635', marginLeft: 1 }}>
+              +{incomeRate.stone}
+            </span>
           )}
         </span>
 
@@ -256,7 +277,10 @@ export const ResourceBar: React.FC<ResourceBarProps> = ({
             color: resources.food >= resources.foodCap ? '#ef4444' : '#fca5a5',
             fontWeight: resources.food >= resources.foodCap ? 700 : 400,
             fontSize: 13,
-            animation: resources.food >= resources.foodCap ? 'pulse 1s infinite' : 'none',
+            animation:
+              resources.food >= resources.foodCap
+                ? 'pulse 1s infinite'
+                : 'none',
             whiteSpace: 'nowrap',
           }}
         >
@@ -269,26 +293,64 @@ export const ResourceBar: React.FC<ResourceBarProps> = ({
 
         {/* Enemy threats */}
         {hasEnemies && (
-          <span style={{ color: '#f97316', fontSize: 11, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+          <span
+            style={{
+              color: '#f97316',
+              fontSize: 11,
+              display: 'flex',
+              gap: 2,
+              alignItems: 'center',
+              flexWrap: 'wrap',
+            }}
+          >
             <span style={{ color: '#ef4444', fontWeight: 700 }}>⚠</span>
             {enemyGrunts.filter(g => !g.isSkeleton).length > 0 && (
-              <span title="Grunts">👹×{enemyGrunts.filter(g => !g.isSkeleton).length}</span>
+              <span title="Grunts">
+                👹×{enemyGrunts.filter(g => !g.isSkeleton).length}
+              </span>
             )}
             {enemyGrunts.filter(g => g.isSkeleton).length > 0 && (
-              <span title="Skeletons" style={{ color: '#a78bfa' }}>💀×{enemyGrunts.filter(g => g.isSkeleton).length}</span>
+              <span title="Skeletons" style={{ color: '#a78bfa' }}>
+                💀×{enemyGrunts.filter(g => g.isSkeleton).length}
+              </span>
             )}
-            {enemyShamans.length > 0 && <span title="Shamans" style={{ color: '#c084fc' }}>🧙×{enemyShamans.length}</span>}
-            {enemyTrolls.length > 0 && <span title="Trolls" style={{ color: '#86efac' }}>🏹×{enemyTrolls.length}</span>}
-            {enemySappers.length > 0 && <span title="Sappers" style={{ color: '#fb923c' }}>💣×{enemySappers.length}</span>}
-            {enemySiege.length > 0 && <span title="Siege" style={{ color: '#fcd34d' }}>💥×{enemySiege.length}</span>}
-            {enemyWarchiefs.length > 0 && <span title="Warchiefs" style={{ color: '#fbbf24', fontWeight: 700 }}>👑×{enemyWarchiefs.length}</span>}
+            {enemyShamans.length > 0 && (
+              <span title="Shamans" style={{ color: '#c084fc' }}>
+                🧙×{enemyShamans.length}
+              </span>
+            )}
+            {enemyTrolls.length > 0 && (
+              <span title="Trolls" style={{ color: '#86efac' }}>
+                🏹×{enemyTrolls.length}
+              </span>
+            )}
+            {enemySappers.length > 0 && (
+              <span title="Sappers" style={{ color: '#fb923c' }}>
+                💣×{enemySappers.length}
+              </span>
+            )}
+            {enemySiege.length > 0 && (
+              <span title="Siege" style={{ color: '#fcd34d' }}>
+                💥×{enemySiege.length}
+              </span>
+            )}
+            {enemyWarchiefs.length > 0 && (
+              <span
+                title="Warchiefs"
+                style={{ color: '#fbbf24', fontWeight: 700 }}
+              >
+                👑×{enemyWarchiefs.length}
+              </span>
+            )}
           </span>
         )}
 
         {/* Speed */}
         <button
           type="button"
-          onClick={() => setGameSpeed(s => (s === 0 ? 1 : s === 1 ? 2 : s === 2 ? 3 : 0))}
+          onClick={() =>
+            setGameSpeed(s => (s === 0 ? 1 : s === 1 ? 2 : s === 2 ? 3 : 0))
+          }
           style={{
             ...btnBase,
             background:
@@ -303,7 +365,13 @@ export const ResourceBar: React.FC<ResourceBarProps> = ({
           }}
           title="Cycle: Pause / 1× / 2× / 3×"
         >
-          {gameSpeed === 0 ? '▶' : gameSpeed === 1 ? '⏸' : gameSpeed === 2 ? '▶▶' : '▶▶▶'}
+          {gameSpeed === 0
+            ? '▶'
+            : gameSpeed === 1
+              ? '⏸'
+              : gameSpeed === 2
+                ? '▶▶'
+                : '▶▶▶'}
         </button>
 
         {/* Zoom */}
@@ -311,14 +379,41 @@ export const ResourceBar: React.FC<ResourceBarProps> = ({
           <button
             type="button"
             onClick={() => setZoom(z => Math.max(ZOOM_MIN, z - ZOOM_STEP))}
-            style={{ ...btnBase, padding: '0 5px', background: 'none', color: '#94a3b8', width: 18, height: 18 }}
-          >−</button>
-          <span style={{ fontSize: 10, color: '#64748b', minWidth: 28, textAlign: 'center' }}>{Math.round(zoom * 100)}%</span>
+            style={{
+              ...btnBase,
+              padding: '0 5px',
+              background: 'none',
+              color: '#94a3b8',
+              width: 18,
+              height: 18,
+            }}
+          >
+            −
+          </button>
+          <span
+            style={{
+              fontSize: 10,
+              color: '#64748b',
+              minWidth: 28,
+              textAlign: 'center',
+            }}
+          >
+            {Math.round(zoom * 100)}%
+          </span>
           <button
             type="button"
             onClick={() => setZoom(z => Math.min(ZOOM_MAX, z + ZOOM_STEP))}
-            style={{ ...btnBase, padding: '0 5px', background: 'none', color: '#94a3b8', width: 18, height: 18 }}
-          >+</button>
+            style={{
+              ...btnBase,
+              padding: '0 5px',
+              background: 'none',
+              color: '#94a3b8',
+              width: 18,
+              height: 18,
+            }}
+          >
+            +
+          </button>
         </span>
 
         {/* Mute */}
@@ -326,7 +421,11 @@ export const ResourceBar: React.FC<ResourceBarProps> = ({
           type="button"
           onClick={toggleMute}
           title={soundMuted ? 'Unmute' : 'Mute'}
-          style={{ ...btnBase, background: 'rgba(255,255,255,0.08)', color: soundMuted ? '#ef4444' : '#94a3b8' }}
+          style={{
+            ...btnBase,
+            background: 'rgba(255,255,255,0.08)',
+            color: soundMuted ? '#ef4444' : '#94a3b8',
+          }}
         >
           {soundMuted ? '🔇' : '🔊'}
         </button>
@@ -337,7 +436,10 @@ export const ResourceBar: React.FC<ResourceBarProps> = ({
           onClick={doSave}
           style={{
             ...btnBase,
-            background: saveStatus === 'saved' ? 'rgba(74,222,128,0.2)' : 'rgba(255,255,255,0.08)',
+            background:
+              saveStatus === 'saved'
+                ? 'rgba(74,222,128,0.2)'
+                : 'rgba(255,255,255,0.08)',
             color: saveStatus === 'saved' ? '#4ade80' : '#94a3b8',
           }}
         >
@@ -347,8 +449,17 @@ export const ResourceBar: React.FC<ResourceBarProps> = ({
         {/* New game */}
         <button
           type="button"
-          onClick={() => { clearSave(slot); if (onNewGame) onNewGame(); else window.location.reload(); }}
-          style={{ ...btnBase, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#fca5a5' }}
+          onClick={() => {
+            clearSave(slot);
+            if (onNewGame) onNewGame();
+            else window.location.reload();
+          }}
+          style={{
+            ...btnBase,
+            background: 'rgba(239,68,68,0.1)',
+            border: '1px solid rgba(239,68,68,0.3)',
+            color: '#fca5a5',
+          }}
         >
           🗑
         </button>
@@ -369,42 +480,83 @@ export const ResourceBar: React.FC<ResourceBarProps> = ({
                     ? 'rgba(248,113,113,0.12)'
                     : 'rgba(96,165,250,0.12)',
               color:
-                difficulty.id === 'easy' ? '#4ade80' : difficulty.id === 'hard' ? '#f87171' : '#60a5fa',
+                difficulty.id === 'easy'
+                  ? '#4ade80'
+                  : difficulty.id === 'hard'
+                    ? '#f87171'
+                    : '#60a5fa',
             }}
           >
             {difficulty.icon} {difficulty.label}
           </span>
         )}
         {wave > 0 && (
-          <span style={{ color: '#f97316', background: 'rgba(249,115,22,0.15)', padding: '0 6px', borderRadius: 4 }}>
+          <span
+            style={{
+              color: '#f97316',
+              background: 'rgba(249,115,22,0.15)',
+              padding: '0 6px',
+              borderRadius: 4,
+            }}
+          >
             Wave {wave}
           </span>
         )}
         {waveTimerEl}
-        {killCount > 0 && <span style={{ color: '#4ade80' }}>☠{killCount}</span>}
-        {!gameOver && (() => {
-          const elapsedMs = Date.now() - startTimeRef.current;
-          const m = Math.floor(elapsedMs / 60000);
-          const s = Math.floor((elapsedMs % 60000) / 1000);
-          return <span style={{ color: '#475569' }}>🕐{m}:{String(s).padStart(2, '0')}</span>;
-        })()}
+        {killCount > 0 && (
+          <span style={{ color: '#4ade80' }}>☠{killCount}</span>
+        )}
+        {!gameOver &&
+          (() => {
+            const elapsedMs = Date.now() - startTimeRef.current;
+            const m = Math.floor(elapsedMs / 60000);
+            const s = Math.floor((elapsedMs % 60000) / 1000);
+            return (
+              <span style={{ color: '#475569' }}>
+                🕐{m}:{String(s).padStart(2, '0')}
+              </span>
+            );
+          })()}
 
         {/* Build/patrol/attack mode hint */}
         {buildMode ? (
-          <span style={{ color: '#fcd34d', background: 'rgba(217,119,6,0.3)', padding: '0 8px', borderRadius: 4 }}>
+          <span
+            style={{
+              color: '#fcd34d',
+              background: 'rgba(217,119,6,0.3)',
+              padding: '0 8px',
+              borderRadius: 4,
+            }}
+          >
             Placing {BUILDING_COSTS[buildMode].label} · Click · Esc cancel
           </span>
         ) : patrolMode ? (
-          <span style={{ color: '#22d3ee', background: 'rgba(6,182,212,0.2)', padding: '0 8px', borderRadius: 4 }}>
+          <span
+            style={{
+              color: '#22d3ee',
+              background: 'rgba(6,182,212,0.2)',
+              padding: '0 8px',
+              borderRadius: 4,
+            }}
+          >
             🔄 Patrol · RClick dest · Esc
           </span>
         ) : attackMoveMode ? (
-          <span style={{ color: '#f87171', background: 'rgba(239,68,68,0.2)', padding: '0 8px', borderRadius: 4 }}>
+          <span
+            style={{
+              color: '#f87171',
+              background: 'rgba(239,68,68,0.2)',
+              padding: '0 8px',
+              borderRadius: 4,
+            }}
+          >
             ⚔️ Atk-Move · RClick dest · Esc
           </span>
         ) : (
           <span style={{ color: '#475569', fontSize: 10, fontWeight: 400 }}>
-            WASD pan · scroll zoom · Ctrl+click sel · P patrol · A atk-move · H hold · C charge · S sprint · F farmer · Q sword · R cav · G garrison · E quake
+            WASD pan · scroll zoom · Ctrl+click sel · P patrol · A atk-move · H
+            hold · C charge · S sprint · F farmer · Q sword · R cav · G garrison
+            · E quake
           </span>
         )}
       </div>

@@ -55,7 +55,6 @@ export type FarmhouseAction =
   | `upgradeWall:${number}`
   | `build:${BuildingType}`;
 
-
 export interface PlacedBuilding {
   id: number;
   type: BuildingType;
@@ -1647,11 +1646,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                                 : resources.lumber >=
                                   (cost as { lumber: number }).lumber);
                             const costLabel =
-                              lvl >= 2
-                                ? 'MAX'
-                                : cost
-                                  ? `${cost.gold}🪙`
-                                  : '';
+                              lvl >= 2 ? 'MAX' : cost ? `${cost.gold}🪙` : '';
                             return (
                               <button
                                 key={upg}

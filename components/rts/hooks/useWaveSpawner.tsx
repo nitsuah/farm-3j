@@ -504,7 +504,10 @@ export function useWaveSpawner(ctx: RTSGameContext) {
     }
 
     // Warlord spawn: wave 20+ every 10 waves
-    if (newWave >= WARLORD_FIRST_WAVE && (newWave - WARLORD_FIRST_WAVE) % 10 === 0) {
+    if (
+      newWave >= WARLORD_FIRST_WAVE &&
+      (newWave - WARLORD_FIRST_WAVE) % 10 === 0
+    ) {
       const wlx = Math.max(0, ENEMY_BARN_POS.x - 2);
       const wly = ENEMY_BARN_POS.y + 2;
       const wlPath = aStar(
@@ -534,9 +537,16 @@ export function useWaveSpawner(ctx: RTSGameContext) {
     }
 
     // Night Lurker spawn: wave 15+ every 2 waves — fast flankers from sides
-    if (newWave >= LURKER_FIRST_WAVE && (newWave - LURKER_FIRST_WAVE) % 2 === 0) {
-      const lurkerCount = 2 + Math.min(3, Math.floor((newWave - LURKER_FIRST_WAVE) / 6));
-      const lurkerPositions = ENEMY_FLANK_POSITIONS.slice(0, Math.min(lurkerCount, ENEMY_FLANK_POSITIONS.length));
+    if (
+      newWave >= LURKER_FIRST_WAVE &&
+      (newWave - LURKER_FIRST_WAVE) % 2 === 0
+    ) {
+      const lurkerCount =
+        2 + Math.min(3, Math.floor((newWave - LURKER_FIRST_WAVE) / 6));
+      const lurkerPositions = ENEMY_FLANK_POSITIONS.slice(
+        0,
+        Math.min(lurkerCount, ENEMY_FLANK_POSITIONS.length)
+      );
       lurkerPositions.forEach(fp => {
         const lkPath = aStar(INITIAL_TILES, fp, BARN_POS, true, wallSet);
         const lurker: EnemyLurker = {
@@ -555,7 +565,13 @@ export function useWaveSpawner(ctx: RTSGameContext) {
       if (newWave >= LURKER_FIRST_WAVE + 10) {
         const lx = Math.max(0, ENEMY_BARN_POS.x - 1);
         const ly = Math.max(0, ENEMY_BARN_POS.y - 1);
-        const lPath = aStar(INITIAL_TILES, { x: lx, y: ly }, BARN_POS, true, wallSet);
+        const lPath = aStar(
+          INITIAL_TILES,
+          { x: lx, y: ly },
+          BARN_POS,
+          true,
+          wallSet
+        );
         const extraLurker: EnemyLurker = {
           id: lurkerIdRef.current++,
           x: lx,
