@@ -30,11 +30,20 @@ describe('computeGruntHp', () => {
     expect(Number.isInteger(result)).toBe(true);
     expect(result).toBe(Math.round(GRUNT_MAX_HP * 1.3));
   });
+
+  it('returns 0 HP when diffHpMult is 0 — documents formula boundary', () => {
+    expect(computeGruntHp(1, 0)).toBe(0);
+  });
 });
 
 describe('computeGruntCount', () => {
   it('returns 1 on wave 1 (base: 1 + floor(1/5) = 1, no double)', () => {
     expect(computeGruntCount(1)).toBe(1);
+  });
+
+  it('wave 0 hits the every-3rd-wave bonus (0 % 3 === 0) — documents known edge case', () => {
+    // Wave counter is always ≥1 in the game; this documents the formula boundary
+    expect(computeGruntCount(0)).toBe(3); // base=1, +2 bonus fires
   });
 
   it('returns base + 2 on every 3rd wave', () => {
@@ -76,6 +85,10 @@ describe('buildWallSet', () => {
     hp: 100,
     maxHp: 100,
     constructing,
+  });
+
+  it('returns an empty set for an empty buildings array', () => {
+    expect(buildWallSet([]).size).toBe(0);
   });
 
   it('returns an empty set when there are no walls', () => {

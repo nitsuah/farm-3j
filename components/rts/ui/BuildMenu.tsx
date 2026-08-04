@@ -144,12 +144,12 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
         className="rounded border border-amber-500/70 bg-amber-500/15 px-2 py-2.5 text-xs text-amber-100 hover:bg-amber-500/30 disabled:opacity-40"
         onClick={() => onFarmhouseAction('build')}
         disabled={
-          resources.gold < (farmhouseUpgradeCosts[0]?.gold ?? 0) ||
-          resources.lumber < (farmhouseUpgradeCosts[0]?.lumber ?? 0)
+          resources.gold < (farmhouseUpgradeCosts[0]?.gold ?? Infinity) ||
+          resources.lumber < (farmhouseUpgradeCosts[0]?.lumber ?? Infinity)
         }
       >
-        Build Barn ({farmhouseUpgradeCosts[0]?.gold}🪙{' '}
-        {farmhouseUpgradeCosts[0]?.lumber}🌲)
+        Build Barn ({farmhouseUpgradeCosts[0]?.gold ?? '?'}🪙{' '}
+        {farmhouseUpgradeCosts[0]?.lumber ?? '?'}🌲)
       </button>
     );
   }

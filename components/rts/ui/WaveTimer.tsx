@@ -26,9 +26,9 @@ export const WaveTimer: React.FC<WaveTimerProps> = ({
   }
 
   const secsLeft =
-    gameSpeed === 0
+    gameSpeed === 0 || nextWaveAt === null
       ? Math.max(0, Math.ceil((waveTimerRemainingRef.current ?? 0) / 1000))
-      : Math.max(0, Math.ceil((nextWaveAt! - Date.now()) / 1000));
+      : Math.max(0, Math.ceil((nextWaveAt - Date.now()) / 1000));
   const urgent = secsLeft <= 5 && gameSpeed > 0;
 
   return (

@@ -58,6 +58,25 @@ describe('findNearestInRange', () => {
     const justOutside = u(5 + 4, 5); // sqrt(16) = 4 → outside range 3
     expect(findNearestInRange([atEdge, justOutside], 5, 5, 3)).toBe(atEdge);
   });
+
+  it('uses Euclidean not Manhattan distance for range check', () => {
+    // Euclidean: sqrt(3^2 + 4^2) = 5 — inside range 5.1
+    // Manhattan: 3 + 4 = 7 — would be outside range 5.1
+    const diagonal = u(5 + 3, 5 + 4);
+    expect(findNearestInRange([diagonal], 5, 5, 5.1)).toBe(diagonal);
+  });
+
+  it('returns first unit in array when two are equidistant (tie-breaking)', () => {
+    const first = u(5, 8); // 3 tiles from (5,5)
+    const second = u(5, 2); // 3 tiles from (5,5)
+    expect(findNearestInRange([first, second], 5, 5, 5)).toBe(first);
+  });
+
+  it('filters units with negative HP (overkill)', () => {
+    const overkilled = u(5, 6, -10);
+    const alive = u(5, 7);
+    expect(findNearestInRange([overkilled, alive], 5, 5, 5)).toBe(alive);
+  });
 });
 
 describe('computeWatchtowerDamage', () => {
@@ -89,6 +108,12 @@ describe('computeWatchtowerRange', () => {
 
   it('adds 0.5 range per garrisoned unit', () => {
     expect(computeWatchtowerRange(false, 4)).toBe(WATCHTOWER_ATTACK_RANGE + 2);
+  });
+
+  it('produces fractional range with odd garrison count', () => {
+    expect(computeWatchtowerRange(false, 1)).toBe(
+      WATCHTOWER_ATTACK_RANGE + 0.5
+    );
   });
 
   it('stacks Guard Tower bonus and garrison range bonus', () => {
