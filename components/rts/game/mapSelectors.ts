@@ -1,10 +1,3 @@
-/**
- * Pure selector functions for the RTS map state.
- *
- * These are extracted from RTSMap.tsx to make map-state queries unit-testable
- * and to decouple rendering logic from data access.
- */
-
 import type { PlacedBuilding, ResourceNode, WorkerState } from './types';
 
 /** Returns true if any worker is currently gathering from the given resource node. */
@@ -38,11 +31,10 @@ export function getActiveNodes(nodes: ResourceNode[]): ResourceNode[] {
   return nodes.filter(n => n.amount > 0);
 }
 
-/** Returns the set of wall tile keys (x,y strings) for fast collision lookup. */
+/** Returns the set of wall tile keys (x,y strings) for fast collision lookup.
+ * Includes walls still under construction — they block pathfinding immediately. */
 export function getWallTileSet(buildings: PlacedBuilding[]): Set<string> {
   return new Set(
-    buildings
-      .filter(b => b.type === 'wall' && !b.constructing)
-      .map(b => `${b.x},${b.y}`)
+    buildings.filter(b => b.type === 'wall').map(b => `${b.x},${b.y}`)
   );
 }

@@ -9,13 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Refactored
 
-- **RTS code modularization** — decomposed five oversized files (15k+ lines total) into domain-specific modules:
-  - `useGameLoop` (5369 lines) split into `useEnemyAI`, `useResourceTick`, `useCombatResolution`, `usePathfinding` hooks + `spawnHelpers.ts` / `towerHelpers.ts` pure-function modules
-  - `RTSMap` rendering coordination extracted to `map/MapRenderer.tsx`; state derivation moved to `game/mapSelectors.ts`
-  - `RTSUI` (2110 lines) decomposed into `ui/BuildMenu`, `ui/WaveTimer`, `ui/HeroPanel` sub-components
+- **RTS code modularization** — broke down the largest files into focused modules:
+  - `RTSUI` (2110 lines) fully decomposed into `ui/BuildMenu`, `ui/WaveTimer`, `ui/HeroPanel` sub-components; all type/constant re-exports preserved for backward compat
   - `HeaderCropRow` background animation extracted to `animations/AnimatedBackground.tsx`
-  - All existing imports preserved via re-exports; no breaking changes
-- **Unit test coverage expanded** — +48 tests (257 total, up from 209) covering all newly extracted pure functions: spawn calculations, tower damage math, range queries, map selectors
+  - Pure combat/spawn helpers extracted to `spawnHelpers.ts` and `towerHelpers.ts`; map-state queries extracted to `game/mapSelectors.ts` — all immediately unit-tested
+  - Domain-specific hook shells scaffolded (`useEnemyAI`, `useResourceTick`, `useCombatResolution`, `usePathfinding`) and `MapRenderer` shell created as migration targets for `useGameLoop` and `RTSMap` in follow-on PRs
+- **Unit test coverage expanded** — +55 tests (264 total, up from 209) covering all newly extracted pure functions: spawn calculations, tower damage math, range queries, map selectors; silent-failure fixes in `WaveTimer` and `BuildMenu`
 
 ### Added
 

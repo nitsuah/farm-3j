@@ -1,6 +1,11 @@
-﻿import React from 'react';
+import React from 'react';
 
-import type { Upgrades, WorkerState, FarmhouseAction } from './game/types';
+import type {
+  Upgrades,
+  WorkerState,
+  FarmhouseAction,
+  HeroItemId,
+} from './game/types';
 import {
   GRID_SIZE,
   BARN_POS,
@@ -10,10 +15,10 @@ import {
   XP_TO_LEVEL_3,
   UPGRADE_COSTS,
   UPGRADE_MAX,
+  HERO_ITEM_DATA,
 } from './game/constants';
 import { BuildMenu } from './ui/BuildMenu';
 import { HeroPanel } from './ui/HeroPanel';
-import { HERO_ITEM_DATA } from './ui/heroItemData';
 
 // Re-export types from canonical locations for backward compatibility
 export type { Upgrades, WorkerState };
@@ -127,10 +132,10 @@ interface RTSUIProps {
   onBarracksTech: (type: 'veteranTraining' | 'warDrums') => void;
   earthquakeCooldown: number;
   onEarthquake: () => void;
-  heroItems: { id: number; itemId: string }[];
+  heroItems: { id: number; itemId: HeroItemId }[];
   onDropItem: (slotId: number) => void;
   onUsePotion: () => void;
-  shopItems: { itemId: string; cost: number }[];
+  shopItems: { itemId: HeroItemId; cost: number }[];
   onBuyItem: (itemId: string, cost: number) => void;
   formationMode: 'cluster' | 'line' | 'wedge' | 'box';
   onCycleFormation: () => void;

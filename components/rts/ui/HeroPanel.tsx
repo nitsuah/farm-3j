@@ -1,5 +1,6 @@
 import React from 'react';
-import { HERO_ITEM_DATA } from './heroItemData';
+import { HERO_ITEM_DATA } from '../game/constants';
+import type { HeroItem } from '../game/types';
 
 export interface HeroPanelProps {
   heroLevel: number;
@@ -13,7 +14,7 @@ export interface HeroPanelProps {
   onHarvestBoon: () => void;
   earthquakeCooldown: number;
   onEarthquake: () => void;
-  heroItems: { id: number; itemId: string }[];
+  heroItems: HeroItem[];
   onDropItem: (slotId: number) => void;
   onUsePotion: () => void;
 }

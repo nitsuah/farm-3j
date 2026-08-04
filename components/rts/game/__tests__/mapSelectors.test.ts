@@ -203,13 +203,14 @@ describe('getWallTileSet', () => {
     expect(set.has('7,2')).toBe(true);
   });
 
-  it('excludes walls that are still constructing', () => {
+  it('includes walls still under construction (they block pathfinding immediately)', () => {
     const buildings = [
       makeBuilding({ id: 1, type: 'wall', x: 5, y: 5, constructing: true }),
       makeBuilding({ id: 2, type: 'wall', x: 6, y: 6 }),
     ];
     const set = getWallTileSet(buildings);
-    expect(set.size).toBe(1);
+    expect(set.size).toBe(2);
+    expect(set.has('5,5')).toBe(true);
     expect(set.has('6,6')).toBe(true);
   });
 });

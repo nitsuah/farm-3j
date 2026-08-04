@@ -378,11 +378,7 @@ export function useWaveSpawner(ctx: RTSGameContext) {
       const sx2 = Math.max(0, ENEMY_BARN_POS.x - 2);
       const sy2 = ENEMY_BARN_POS.y;
       // Target: nearest wall, or barn if no walls
-      const wallSet2 = new Set(
-        placedBuildingsRef.current
-          .filter(b => b.type === 'wall')
-          .map(b => `${b.x},${b.y}`)
-      );
+      const wallSet2 = buildWallSet(placedBuildingsRef.current);
       const nearestWall = placedBuildingsRef.current
         .filter(b => b.type === 'wall' && b.hp > 0)
         .sort(

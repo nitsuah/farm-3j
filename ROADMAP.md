@@ -8,7 +8,7 @@ Last Updated: 2026-08-04
 
 ## 2026 Q2–Q3: Farm RTS MVP ✅ (feature-complete)
 
-> All core gameplay systems shipped. 25×25 map, 10+ enemy unit types, full economy/combat/building loop, fog of war, day/night cycle, hero unit, 20+ buildings, unit veterancy, tech research, save/load, procedural audio, high-score leaderboard, and wave escalation all live. Codebase refactored with shared SVG component layer (HpBar, StructureDamageSmoke, StructureFireEffect) eliminating duplicated render primitives across all map layer files. Major modularization pass completed (2026-08-04): god-hook `useGameLoop` split into domain-specific hooks, `RTSMap` rendering extracted to `MapRenderer` + `mapSelectors`, `RTSUI` decomposed into `BuildMenu`/`WaveTimer`/`HeroPanel` sub-components, pure combat/spawn functions extracted and unit-tested (+48 tests, 257 total).
+> All core gameplay systems shipped. 25×25 map, 10+ enemy unit types, full economy/combat/building loop, fog of war, day/night cycle, hero unit, 20+ buildings, unit veterancy, tech research, save/load, procedural audio, high-score leaderboard, and wave escalation all live. Codebase refactored with shared SVG component layer (HpBar, StructureDamageSmoke, StructureFireEffect) eliminating duplicated render primitives across all map layer files. Modularization Phase 1 completed (2026-08-04): `RTSUI` decomposed into `BuildMenu`/`WaveTimer`/`HeroPanel`; `HeaderCropRow` background extracted; pure functions isolated in `spawnHelpers`, `towerHelpers`, `mapSelectors` with +55 tests (264 total); domain hook shells and `MapRenderer` shell scaffolded as migration targets for `useGameLoop`/`RTSMap` (Phase 2).
 
 ## 2026 Q3: Farm RTS — Round 2
 
