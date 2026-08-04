@@ -4,7 +4,10 @@ import {
   computeWatchtowerDamage,
   computeWatchtowerRange,
 } from '../towerHelpers';
-import { WATCHTOWER_DAMAGE, WATCHTOWER_ATTACK_RANGE } from '../../game/constants';
+import {
+  WATCHTOWER_DAMAGE,
+  WATCHTOWER_ATTACK_RANGE,
+} from '../../game/constants';
 
 // Minimal unit type for findNearestInRange tests
 interface TestUnit {
@@ -33,14 +36,14 @@ describe('findNearestInRange', () => {
   });
 
   it('returns the closest unit when multiple are in range', () => {
-    const close = u(5, 6);  // 1 tile from (5,5)
-    const far   = u(5, 8);  // 3 tiles from (5,5)
+    const close = u(5, 6); // 1 tile from (5,5)
+    const far = u(5, 8); // 3 tiles from (5,5)
     expect(findNearestInRange([far, close], 5, 5, 5)).toBe(close);
   });
 
   it('ignores dead units (hp <= 0)', () => {
-    const dead  = u(5, 6, 0);  // 1 tile, but dead
-    const alive = u(5, 7);     // 2 tiles, alive
+    const dead = u(5, 6, 0); // 1 tile, but dead
+    const alive = u(5, 7); // 2 tiles, alive
     expect(findNearestInRange([dead, alive], 5, 5, 5)).toBe(alive);
   });
 
@@ -51,7 +54,7 @@ describe('findNearestInRange', () => {
 
   it('respects the range boundary exactly', () => {
     // tileDist is Euclidean: sqrt((dx)^2 + (dy)^2)
-    const atEdge    = u(5 + 3, 5); // sqrt(9) = 3 → exactly on boundary
+    const atEdge = u(5 + 3, 5); // sqrt(9) = 3 → exactly on boundary
     const justOutside = u(5 + 4, 5); // sqrt(16) = 4 → outside range 3
     expect(findNearestInRange([atEdge, justOutside], 5, 5, 3)).toBe(atEdge);
   });
@@ -89,6 +92,8 @@ describe('computeWatchtowerRange', () => {
   });
 
   it('stacks Guard Tower bonus and garrison range bonus', () => {
-    expect(computeWatchtowerRange(true, 2)).toBe(WATCHTOWER_ATTACK_RANGE + 1 + 1);
+    expect(computeWatchtowerRange(true, 2)).toBe(
+      WATCHTOWER_ATTACK_RANGE + 1 + 1
+    );
   });
 });

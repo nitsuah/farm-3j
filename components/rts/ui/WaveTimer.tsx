@@ -18,7 +18,10 @@ export const WaveTimer: React.FC<WaveTimerProps> = ({
   waveTimerRemainingRef,
   gameSpeed,
 }) => {
-  if (gameOver !== null || (!nextWaveAt && waveTimerRemainingRef.current === null)) {
+  if (
+    gameOver !== null ||
+    (!nextWaveAt && waveTimerRemainingRef.current === null)
+  ) {
     return null;
   }
 

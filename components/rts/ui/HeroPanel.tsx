@@ -124,9 +124,7 @@ export const HeroPanel: React.FC<HeroPanelProps> = ({
                 {data.consumable ? (
                   <button
                     onClick={
-                      item.itemId === 'healing_potion'
-                        ? onUsePotion
-                        : undefined
+                      item.itemId === 'healing_potion' ? onUsePotion : undefined
                     }
                     className="mt-1 w-full rounded bg-violet-600/40 py-0.5 text-[9px] text-violet-100 hover:bg-violet-600/60 disabled:opacity-40"
                   >

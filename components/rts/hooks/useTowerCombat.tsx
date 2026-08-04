@@ -271,7 +271,12 @@ export function useTowerCombat(ctx: RTSGameContext) {
             .length;
           const dmgT = computeWatchtowerDamage(isGuard, garrisonCount);
           const rangeT = computeWatchtowerRange(isGuard, garrisonCount);
-          const targetT = findNearestInRange<EnemyGrunt>(grunts, tx, ty, rangeT);
+          const targetT = findNearestInRange<EnemyGrunt>(
+            grunts,
+            tx,
+            ty,
+            rangeT
+          );
           if (targetT) {
             gruntHitRef.current.set(targetT.id, Date.now());
             setEnemyGrunts(gs =>

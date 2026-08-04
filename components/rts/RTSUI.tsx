@@ -59,7 +59,6 @@ export interface BuildingCost {
   foodCapBonus: number;
 }
 
-
 interface RTSUIProps {
   selectedType: 'worker' | 'farmhouse' | 'building' | null;
   selectedBuilding: PlacedBuilding | null;
@@ -726,7 +725,6 @@ export const RTSUI: React.FC<RTSUIProps> = ({
               </button>
             </div>
           )}
-
 
           {selectedType === 'building' &&
             selectedBuilding &&

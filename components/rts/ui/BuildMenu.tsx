@@ -172,8 +172,7 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
             className="rounded border border-blue-500/70 bg-blue-500/15 py-2.5 text-xs text-blue-100 hover:bg-blue-500/30 disabled:opacity-40"
             onClick={() => onFarmhouseAction('train')}
             disabled={
-              resources.gold < 30 ||
-              resources.food >= resources.foodCap
+              resources.gold < 30 || resources.food >= resources.foodCap
             }
             title={
               resources.food >= resources.foodCap
@@ -181,8 +180,7 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
                 : 'Train Farmer (30🪙)'
             }
           >
-            🌾 Farmer 30🪙{' '}
-            <span className="text-xs opacity-50">[F]</span>
+            🌾 Farmer 30🪙 <span className="text-xs opacity-50">[F]</span>
           </button>
           {farmhouse.level < farmhouseUpgradeCosts.length && (
             <button
@@ -284,8 +282,7 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
                 title="Train Swordsman — 50🪙, 80HP, +10 dmg"
               >
                 <span>
-                  ⚔️ Swordsman{' '}
-                  <span className="opacity-50">[Q]</span>
+                  ⚔️ Swordsman <span className="opacity-50">[Q]</span>
                 </span>
                 <span className="mt-0.5 text-[10px] text-amber-300/80">
                   50🪙
@@ -413,9 +410,7 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
                     : 'Recruit Barnabas — 150🪙'
                 }
               >
-                {heroRecruited
-                  ? '🦸 Hero Active'
-                  : '🦸 Recruit Hero 150🪙'}
+                {heroRecruited ? '🦸 Hero Active' : '🦸 Recruit Hero 150🪙'}
               </button>
             ))}
           {!hasBarracks && !hasStable && !hasSiegeWorkshop && (
@@ -613,9 +608,7 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
             },
           ];
           const builtTypes = new Set(
-            placedBuildings
-              .filter(b => !b.constructing)
-              .map(b => b.type)
+            placedBuildings.filter(b => !b.constructing).map(b => b.type)
           );
           if (farmhouse.built) builtTypes.add('farmhouse');
           return (
@@ -635,9 +628,7 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
                     className={`flex flex-col items-center rounded border ${b.border} ${b.bg} ${b.hover} ${b.text} py-1.5 text-xs disabled:opacity-40`}
                     onClick={() => onFarmhouseAction(`build:${b.key}`)}
                     disabled={!affordable || !prereqMet}
-                    title={
-                      !prereqMet ? `🔒 Requires ${reqLabel}` : b.desc
-                    }
+                    title={!prereqMet ? `🔒 Requires ${reqLabel}` : b.desc}
                   >
                     <span>
                       {!prereqMet ? '🔒' : b.icon} {b.label}
@@ -680,14 +671,10 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
                 >
                   {meta.icon}
                   {level > 0 && (
-                    <span className="text-purple-300">
-                      {'★'.repeat(level)}
-                    </span>
+                    <span className="text-purple-300">{'★'.repeat(level)}</span>
                   )}{' '}
                   {meta.label}
-                  {maxed && (
-                    <span className="text-purple-400"> ✓</span>
-                  )}
+                  {maxed && <span className="text-purple-400"> ✓</span>}
                 </button>
               );
             })}
@@ -723,8 +710,7 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
                   resources.gold >= cost.gold &&
                   ('stone' in cost
                     ? resources.stone >= cost.stone
-                    : resources.lumber >=
-                      (cost as { lumber: number }).lumber);
+                    : resources.lumber >= (cost as { lumber: number }).lumber);
                 const costLabel =
                   lvl >= 2 ? 'MAX' : cost ? `${cost.gold}🪙` : '';
                 return (
@@ -774,9 +760,7 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
                   resources.lumber < 40
                 }
               >
-                {barracksTech.warDrums
-                  ? '🥁 War Drums ✓'
-                  : '🥁 Drums 120🪙'}
+                {barracksTech.warDrums ? '🥁 War Drums ✓' : '🥁 Drums 120🪙'}
               </button>
             </div>
           )}

@@ -122,9 +122,15 @@ export function AnimatedBackground({
               transform: 'translateX(-50%)',
             }}
           >
-            <span className="text-4xl" style={{ marginLeft: '-20px' }}>☁️</span>
-            <span className="text-4xl" style={{ marginLeft: '-20px' }}>☁️</span>
-            <span className="text-4xl" style={{ marginLeft: '-20px' }}>☁️</span>
+            <span className="text-4xl" style={{ marginLeft: '-20px' }}>
+              ☁️
+            </span>
+            <span className="text-4xl" style={{ marginLeft: '-20px' }}>
+              ☁️
+            </span>
+            <span className="text-4xl" style={{ marginLeft: '-20px' }}>
+              ☁️
+            </span>
           </div>
           <div
             className="absolute top-2 z-0 flex transition-opacity duration-3000"
@@ -134,8 +140,12 @@ export function AnimatedBackground({
               transform: 'translateX(-50%)',
             }}
           >
-            <span className="text-6xl" style={{ marginLeft: '-30px' }}>☁️</span>
-            <span className="text-6xl" style={{ marginLeft: '-30px' }}>☁️</span>
+            <span className="text-6xl" style={{ marginLeft: '-30px' }}>
+              ☁️
+            </span>
+            <span className="text-6xl" style={{ marginLeft: '-30px' }}>
+              ☁️
+            </span>
           </div>
           <div
             className="absolute top-2 z-0 text-4xl transition-opacity duration-3000"
@@ -332,10 +342,14 @@ export function AnimatedBackground({
           <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden">
             {Array.from({ length: 320 }).map((_, i) => {
               const leftPos =
-                (i * 0.35 + Math.sin(i * 0.5) * 15 + Math.cos(i * 0.3) * 10) % 100;
+                (i * 0.35 + Math.sin(i * 0.5) * 15 + Math.cos(i * 0.3) * 10) %
+                100;
               const topStart = 30 + Math.sin(i) * 5;
               const delay =
-                (i * 0.003 + Math.sin(i * 0.7) * 0.4 + Math.cos(i * 1.3) * 0.3) % 1.2;
+                (i * 0.003 +
+                  Math.sin(i * 0.7) * 0.4 +
+                  Math.cos(i * 1.3) * 0.3) %
+                1.2;
               const duration = 1.0 + Math.sin(i * 0.9) * 0.3;
               return (
                 <div
@@ -363,7 +377,14 @@ export function AnimatedBackground({
         style={{ opacity: showRain ? 0.25 : isDarkMode ? 0.25 : 0.6 }}
       >
         {Array.from({ length: 180 }).map((_, i) => {
-          const sizes = ['text-3xl', 'text-4xl', 'text-5xl', 'text-4xl', 'text-3xl', 'text-5xl'];
+          const sizes = [
+            'text-3xl',
+            'text-4xl',
+            'text-5xl',
+            'text-4xl',
+            'text-3xl',
+            'text-5xl',
+          ];
           const size = sizes[i % sizes.length];
           const bottomOffset = Math.round((Math.sin(i) * 5 + 4) * 100) / 100;
           return (
@@ -389,7 +410,8 @@ export function AnimatedBackground({
         {Array.from({ length: 90 }).map((_, i) => {
           const sizes = ['text-2xl', 'text-xl', 'text-2xl', 'text-3xl'];
           const size = sizes[i % sizes.length];
-          const bottomOffset = Math.round((Math.sin(i * 1.5) * 3 + 2) * 100) / 100;
+          const bottomOffset =
+            Math.round((Math.sin(i * 1.5) * 3 + 2) * 100) / 100;
           return (
             <div
               key={i}

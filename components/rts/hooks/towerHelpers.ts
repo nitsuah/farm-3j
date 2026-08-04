@@ -30,8 +30,9 @@ export function computeWatchtowerDamage(
   isGuard: boolean,
   garrisonCount: number
 ): number {
-  return (isGuard ? WATCHTOWER_DAMAGE + 7 : WATCHTOWER_DAMAGE) +
-    garrisonCount * 4;
+  return (
+    (isGuard ? WATCHTOWER_DAMAGE + 7 : WATCHTOWER_DAMAGE) + garrisonCount * 4
+  );
 }
 
 /**

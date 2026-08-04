@@ -14,8 +14,7 @@ export function isNodeBeingGathered(
   nodeIdx: number
 ): boolean {
   return workers.some(
-    w =>
-      w.gathering?.type === nodeType && w.gathering?.idx === nodeIdx
+    w => w.gathering?.type === nodeType && w.gathering?.idx === nodeIdx
   );
 }
 
