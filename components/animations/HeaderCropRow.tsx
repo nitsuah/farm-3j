@@ -13,7 +13,6 @@ export function HeaderCropRow() {
   const [showRain, setShowRain] = useState(false);
   const [isSecondRain, setIsSecondRain] = useState(false);
   const [showBirds, setShowBirds] = useState(false);
-  const [showClouds] = useState(true);
   const [cloudOpacity, setCloudOpacity] = useState(0.8);
   const [cloudPosition, setCloudPosition] = useState(0);
   const [birdPosition, setBirdPosition] = useState(115); // Start from right
