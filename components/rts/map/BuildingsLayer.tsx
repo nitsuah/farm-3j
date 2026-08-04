@@ -1,7 +1,6 @@
 import React from 'react';
 
-import type { FarmhouseAction } from '../RTSUI';
-import type { WorkerState } from '../game/types';
+import type { FarmhouseAction, WorkerState } from '../game/types';
 import {
   BALLISTA_RANGE,
   BUILDING_EMOJI,

@@ -1,6 +1,7 @@
 import React from 'react';
 
 import type { DifficultyConfig } from '../RTSGameRoot';
+import { WaveTimer } from '../ui/WaveTimer';
 
 import {
   BUILDING_COSTS,
@@ -116,28 +117,14 @@ export const ResourceBar: React.FC<ResourceBarProps> = ({
     enemyWarchiefs.length > 0 ||
     enemySappers.length > 0;
 
-  const waveTimerEl =
-    !gameOver &&
-    (nextWaveAt || waveTimerRemainingRef.current !== null) &&
-    (() => {
-      const secsLeft =
-        gameSpeed === 0
-          ? Math.max(0, Math.ceil((waveTimerRemainingRef.current ?? 0) / 1000))
-          : Math.max(0, Math.ceil((nextWaveAt! - Date.now()) / 1000));
-      const urgent = secsLeft <= 5 && gameSpeed > 0;
-      return (
-        <span
-          style={{
-            color: gameSpeed === 0 ? '#64748b' : urgent ? '#ef4444' : '#94a3b8',
-            fontSize: 12,
-            fontWeight: urgent ? 700 : 400,
-            animation: urgent ? 'pulse 0.6s infinite' : 'none',
-          }}
-        >
-          ⏱{secsLeft}s{gameSpeed === 0 ? '⏸' : ''}
-        </span>
-      );
-    })();
+  const waveTimerEl = (
+    <WaveTimer
+      gameOver={gameOver}
+      nextWaveAt={nextWaveAt}
+      waveTimerRemainingRef={waveTimerRemainingRef}
+      gameSpeed={gameSpeed}
+    />
+  );
 
   return (
     <div

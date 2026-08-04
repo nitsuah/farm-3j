@@ -1,7 +1,7 @@
 // Gameplay tuning constants for the RTS mode.
 // Split out of RTSMap.tsx — grouped by system (map, units, enemies, towers, buildings).
 
-import type { BuildingType, HeroItemId } from './types';
+import type { BuildingType, HeroItemId, Upgrades } from './types';
 
 // ---------- Map & core ----------
 export const GRID_SIZE = 25;
@@ -606,3 +606,24 @@ export const BLACKSMITH_IRON_HIDE_COSTS: { gold: number; lumber: number }[] = [
   { gold: 80, lumber: 50 },
   { gold: 160, lumber: 100 },
 ];
+
+// ---------- Farmhouse upgrade research costs ----------
+export const UPGRADE_MAX = 2;
+
+export const UPGRADE_COSTS: Record<
+  keyof Upgrades,
+  { gold: number; lumber: number; stone: number }[]
+> = {
+  sharperTools: [
+    { gold: 75, lumber: 0, stone: 25 },
+    { gold: 150, lumber: 0, stone: 50 },
+  ],
+  swiftHarvest: [
+    { gold: 50, lumber: 75, stone: 0 },
+    { gold: 100, lumber: 150, stone: 0 },
+  ],
+  ironWill: [
+    { gold: 75, lumber: 50, stone: 0 },
+    { gold: 150, lumber: 100, stone: 0 },
+  ],
+};

@@ -1,6 +1,12 @@
 import { useEffect, useRef } from 'react';
 
 import {
+  findNearestInRange,
+  computeWatchtowerDamage,
+  computeWatchtowerRange,
+} from './towerHelpers';
+
+import {
   BALLISTA_ATTACK_MS,
   BARN_COUNTER_DMG,
   BARN_COUNTER_MS,
@@ -30,8 +36,6 @@ import {
   POISON_TOWER_DURATION_MS,
   POISON_TOWER_RANGE,
   WATCHTOWER_ATTACK_MS,
-  WATCHTOWER_ATTACK_RANGE,
-  WATCHTOWER_DAMAGE,
 } from '../game/constants';
 import { tileDist } from '../game/map';
 import type { EnemyGrunt } from '../game/types';
@@ -265,23 +269,9 @@ export function useTowerCombat(ctx: RTSGameContext) {
           const isGuard = guardTowerRef.current;
           const garrisonCount = (towerGarrisonRef.current[towerId] ?? [])
             .length;
-          const dmgT =
-            (isGuard ? WATCHTOWER_DAMAGE + 7 : WATCHTOWER_DAMAGE) +
-            garrisonCount * 4;
-          const rangeT =
-            (isGuard ? WATCHTOWER_ATTACK_RANGE + 1 : WATCHTOWER_ATTACK_RANGE) +
-            garrisonCount * 0.5;
-          const inRangeT = grunts.filter(
-            g => g.hp > 0 && tileDist(g.x, g.y, tx, ty) <= rangeT
-          );
-          const targetT = inRangeT.reduce<EnemyGrunt | null>(
-            (best, g) =>
-              !best ||
-              tileDist(g.x, g.y, tx, ty) < tileDist(best.x, best.y, tx, ty)
-                ? g
-                : best,
-            null
-          );
+          const dmgT = computeWatchtowerDamage(isGuard, garrisonCount);
+          const rangeT = computeWatchtowerRange(isGuard, garrisonCount);
+          const targetT = findNearestInRange<EnemyGrunt>(grunts, tx, ty, rangeT);
           if (targetT) {
             gruntHitRef.current.set(targetT.id, Date.now());
             setEnemyGrunts(gs =>

@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useRef } from 'react';
 
 import {
+  computeGruntHp,
+  computeGruntCount,
+  buildWallSet,
+} from './spawnHelpers';
+
+import {
   BARN_POS,
   BOSS_HP_MULTIPLIER,
   ENEMY_FLANK_POSITIONS,
@@ -13,7 +19,6 @@ import {
   ENEMY_WALL_MAX_HP,
   ENEMY_WALL_SPAWN,
   GRID_SIZE,
-  GRUNT_MAX_HP,
   GRUNT_SPAWN_MS,
   NECROMANCER_FIRST_WAVE,
   NECROMANCER_MAX_HP,
@@ -164,14 +169,8 @@ export function useWaveSpawner(ctx: RTSGameContext) {
     }
 
     const diffHpMult = difficulty?.gruntHpMult ?? 1;
-    const gruntHp = Math.round(
-      (GRUNT_MAX_HP + (newWave - 1) * 10) * diffHpMult
-    );
-    const wallSet = new Set(
-      placedBuildingsRef.current
-        .filter(b => b.type === 'wall')
-        .map(b => `${b.x},${b.y}`)
-    );
+    const gruntHp = computeGruntHp(newWave, diffHpMult);
+    const wallSet = buildWallSet(placedBuildingsRef.current);
 
     // Boss spawn on multiples of 10
     if (isBossWave) {
@@ -200,8 +199,7 @@ export function useWaveSpawner(ctx: RTSGameContext) {
     }
 
     // Scale count: 1-2 early, up to 4-6 by wave 20+; double on every 3rd wave
-    const baseCount = Math.min(6, 1 + Math.floor(newWave / 5));
-    const count = newWave % 3 === 0 ? baseCount + 2 : baseCount;
+    const count = computeGruntCount(newWave);
     for (let i = 0; i < count; i++) {
       const ox = (i % 3) - 1; // spread: -1, 0, +1
       const oy = Math.floor(i / 3) % 2 === 0 ? 1 : -1;

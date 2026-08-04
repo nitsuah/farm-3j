@@ -102,6 +102,26 @@ export interface DroppedItem {
   y: number;
 }
 
+export type FarmhouseAction =
+  | 'build'
+  | 'upgrade'
+  | 'train'
+  | 'recruitHero'
+  | 'trainSwordsman'
+  | 'trainCavalry'
+  | 'trainCatapult'
+  | 'trainTrebuchet'
+  | 'trade:lumberToGold'
+  | 'trade:stoneToGold'
+  | 'trade:stoneToLumber'
+  | 'blacksmith:steelEdge'
+  | 'blacksmith:ironHide'
+  | 'guardTower'
+  | 'barracks:veteranTraining'
+  | 'barracks:warDrums'
+  | `upgradeWall:${number}`
+  | `build:${BuildingType}`;
+
 export type BuildingType =
   | 'farmhouse'
   | 'lumberShed'
