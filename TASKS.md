@@ -1,6 +1,6 @@
 # TASKS
 
-Last Updated: 2026-07-04 (iter109 — shared SVG component refactor: HpBar, StructureDamageSmoke, StructureFireEffect)
+Last Updated: 2026-08-04 (componentize large files — useGameLoop split, RTSMap → MapRenderer, RTSUI → BuildMenu/WaveTimer/HeroPanel, +48 unit tests)
 
 ## Farm RTS — Round 2 (2026 Q3)
 
@@ -9,7 +9,7 @@ Last Updated: 2026-07-04 (iter109 — shared SVG component refactor: HpBar, Stru
 - [ ] Extract blacksmith upgrade costs to shared config constants (currently hardcoded in RTSUI disable logic)
 - [ ] Continue SVG component extraction — worker body shapes, enemy unit torsos, and building base rects are next candidates
 - [ ] Profile render loop at 30+ units on 25×25 map; investigate canvas/OffscreenCanvas fallback for mobile
-- [ ] Add unit tests for core helpers: `tileDist`, `tileToSvg`, A\* pathfinding, damage formulas
+- [ ] Add unit tests for core helpers: `tileDist`, `tileToSvg`, A\* pathfinding (damage formulas ✅ covered by towerHelpers/spawnHelpers tests)
 
 ### Gameplay Features
 
@@ -203,3 +203,4 @@ Last Updated: 2026-07-04 (iter109 — shared SVG component refactor: HpBar, Stru
 - [x] Control group double-tap camera center + HUD bar — double-tapping 1-9 within 500ms centers camera on group centroid; compact group indicator bar at top-center shows group number + alive unit count for all assigned groups (2026-07-02)
 - [x] Sound mute toggle + gold deposit throttle — 🔊/🔇 button in HUD persists mute state to localStorage; gold deposit sound throttled to once per 2s so it doesn't spam with multiple harvesters; all playTone calls check mute flag (2026-07-02)
 - [x] Shared SVG component refactor (iter109) — extracted `HpBar`, `StructureDamageSmoke`, and `StructureFireEffect` into `components/rts/map/`; replaced duplicated inline two-rect HP bars across EnemyBaseLayer, EnemySiegeCastersLayer, EnemyGruntsLayer, EnemyEliteLayer, PlayerBarnLayer, BuildingsLayer, WorkersLayer (17 call sites); replaced near-identical smoke-circle and flame-ellipse blocks in PlayerBarnLayer, EnemyBaseLayer, and BuildingsLayer; components parameterized by center coordinates, colors, opacities, and optional label; type-check and lint clean; visual verified in running dev server (2026-07-04)
+- [x] Componentize large files (2026-08-04) — `useGameLoop` (5369 lines) split into `useEnemyAI`, `useResourceTick`, `useCombatResolution`, `usePathfinding` + pure-function helpers (`spawnHelpers.ts`, `towerHelpers.ts`); `RTSMap` rendering coordination extracted to `map/MapRenderer.tsx` with state derivation in `game/mapSelectors.ts`; `RTSUI` (2110 lines) split into `ui/BuildMenu`, `ui/WaveTimer`, `ui/HeroPanel`; `HeaderCropRow` background extracted to `animations/AnimatedBackground`; all type/constant re-exports preserved for backward compat; +48 unit tests (257 total, up from 209) covering all newly extracted pure functions; TypeScript clean
