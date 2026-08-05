@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 /**
  * AnimatedBackground — extracted from HeaderCropRow.tsx.
@@ -9,50 +9,50 @@
  * theme toggle, crop rows, and tractor.
  */
 
-import React from 'react';
+import React from "react";
 
 const MOUNTAINS = [
-  { size: 'text-5xl', opacity: 'opacity-20', ty: 35, ml: -30 },
-  { size: 'text-6xl', opacity: 'opacity-22', ty: 32, ml: -33 },
-  { size: 'text-7xl', opacity: 'opacity-25', ty: 28, ml: -36 },
-  { size: 'text-5xl', opacity: 'opacity-21', ty: 34, ml: -30 },
-  { size: 'text-6xl', opacity: 'opacity-23', ty: 32, ml: -33 },
-  { size: 'text-8xl', opacity: 'opacity-30', ty: 20, ml: -38 },
-  { size: 'text-7xl', opacity: 'opacity-28', ty: 25, ml: -36 },
-  { size: 'text-6xl', opacity: 'opacity-24', ty: 30, ml: -33 },
-  { size: 'text-9xl', opacity: 'opacity-40', ty: 15, ml: -40 },
-  { size: 'text-8xl', opacity: 'opacity-35', ty: 18, ml: -38 },
-  { size: 'text-6xl', opacity: 'opacity-25', ty: 30, ml: -33 },
-  { size: 'text-7xl', opacity: 'opacity-27', ty: 26, ml: -36 },
-  { size: 'text-8xl', opacity: 'opacity-35', ty: 18, ml: -38 },
-  { size: 'text-5xl', opacity: 'opacity-20', ty: 35, ml: -30 },
-  { size: 'text-7xl', opacity: 'opacity-30', ty: 22, ml: -36 },
-  { size: 'text-6xl', opacity: 'opacity-25', ty: 28, ml: -33 },
-  { size: 'text-8xl', opacity: 'opacity-32', ty: 20, ml: -38 },
-  { size: 'text-5xl', opacity: 'opacity-20', ty: 33, ml: -30 },
-  { size: 'text-7xl', opacity: 'opacity-28', ty: 24, ml: -36 },
-  { size: 'text-6xl', opacity: 'opacity-23', ty: 31, ml: -33 },
-  { size: 'text-8xl', opacity: 'opacity-33', ty: 19, ml: -38 },
-  { size: 'text-7xl', opacity: 'opacity-29', ty: 23, ml: -36 },
-  { size: 'text-5xl', opacity: 'opacity-21', ty: 34, ml: -30 },
-  { size: 'text-6xl', opacity: 'opacity-24', ty: 30, ml: -33 },
-  { size: 'text-9xl', opacity: 'opacity-38', ty: 16, ml: -40 },
-  { size: 'text-8xl', opacity: 'opacity-34', ty: 19, ml: -38 },
-  { size: 'text-7xl', opacity: 'opacity-26', ty: 27, ml: -36 },
-  { size: 'text-6xl', opacity: 'opacity-22', ty: 32, ml: -33 },
-  { size: 'text-5xl', opacity: 'opacity-20', ty: 35, ml: -30 },
+  { size: "text-5xl", opacity: "opacity-20", ty: 35, ml: -30 },
+  { size: "text-6xl", opacity: "opacity-22", ty: 32, ml: -33 },
+  { size: "text-7xl", opacity: "opacity-25", ty: 28, ml: -36 },
+  { size: "text-5xl", opacity: "opacity-21", ty: 34, ml: -30 },
+  { size: "text-6xl", opacity: "opacity-23", ty: 32, ml: -33 },
+  { size: "text-8xl", opacity: "opacity-30", ty: 20, ml: -38 },
+  { size: "text-7xl", opacity: "opacity-28", ty: 25, ml: -36 },
+  { size: "text-6xl", opacity: "opacity-24", ty: 30, ml: -33 },
+  { size: "text-9xl", opacity: "opacity-40", ty: 15, ml: -40 },
+  { size: "text-8xl", opacity: "opacity-35", ty: 18, ml: -38 },
+  { size: "text-6xl", opacity: "opacity-25", ty: 30, ml: -33 },
+  { size: "text-7xl", opacity: "opacity-27", ty: 26, ml: -36 },
+  { size: "text-8xl", opacity: "opacity-35", ty: 18, ml: -38 },
+  { size: "text-5xl", opacity: "opacity-20", ty: 35, ml: -30 },
+  { size: "text-7xl", opacity: "opacity-30", ty: 22, ml: -36 },
+  { size: "text-6xl", opacity: "opacity-25", ty: 28, ml: -33 },
+  { size: "text-8xl", opacity: "opacity-32", ty: 20, ml: -38 },
+  { size: "text-5xl", opacity: "opacity-20", ty: 33, ml: -30 },
+  { size: "text-7xl", opacity: "opacity-28", ty: 24, ml: -36 },
+  { size: "text-6xl", opacity: "opacity-23", ty: 31, ml: -33 },
+  { size: "text-8xl", opacity: "opacity-33", ty: 19, ml: -38 },
+  { size: "text-7xl", opacity: "opacity-29", ty: 23, ml: -36 },
+  { size: "text-5xl", opacity: "opacity-21", ty: 34, ml: -30 },
+  { size: "text-6xl", opacity: "opacity-24", ty: 30, ml: -33 },
+  { size: "text-9xl", opacity: "opacity-38", ty: 16, ml: -40 },
+  { size: "text-8xl", opacity: "opacity-34", ty: 19, ml: -38 },
+  { size: "text-7xl", opacity: "opacity-26", ty: 27, ml: -36 },
+  { size: "text-6xl", opacity: "opacity-22", ty: 32, ml: -33 },
+  { size: "text-5xl", opacity: "opacity-20", ty: 35, ml: -30 },
 ] as const;
 
 const TREE_SIZES = [
-  'text-3xl',
-  'text-4xl',
-  'text-5xl',
-  'text-4xl',
-  'text-3xl',
-  'text-5xl',
+  "text-3xl",
+  "text-4xl",
+  "text-5xl",
+  "text-4xl",
+  "text-3xl",
+  "text-5xl",
 ] as const;
 
-const BUSH_SIZES = ['text-2xl', 'text-xl', 'text-2xl', 'text-3xl'] as const;
+const BUSH_SIZES = ["text-2xl", "text-xl", "text-2xl", "text-3xl"] as const;
 
 export interface AnimatedBackgroundProps {
   showRain: boolean;
@@ -73,7 +73,7 @@ export const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
   birdPosition,
   isDarkMode,
 }) => (
-  <div aria-hidden="true">
+  <div aria-hidden="true" className="pointer-events-none">
     {/* Mountains - behind horizon with varied heights, TIGHT like Smoky Mountains */}
     <div className="absolute right-0 bottom-16 left-0 z-0 flex justify-around">
       {MOUNTAINS.map((m, i) => (
@@ -166,8 +166,8 @@ export const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
           className="absolute top-16 z-0 -translate-x-1/2 text-2xl"
           style={{
             left: `${birdPosition}%`,
-            transition: 'left 0.1s linear',
-            animation: 'birdFly 0.4s ease-in-out infinite',
+            transition: "left 0.1s linear",
+            animation: "birdFly 0.4s ease-in-out infinite",
           }}
         >
           🦅
@@ -176,9 +176,9 @@ export const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
           className="absolute top-20 z-0 -translate-x-1/2 text-xl"
           style={{
             left: `${birdPosition + 5}%`,
-            transition: 'left 0.1s linear',
-            animation: 'birdFly 0.4s ease-in-out infinite',
-            animationDelay: '0.2s',
+            transition: "left 0.1s linear",
+            animation: "birdFly 0.4s ease-in-out infinite",
+            animationDelay: "0.2s",
           }}
         >
           🦅
@@ -196,12 +196,12 @@ export const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
             (i * 7.3 + Math.cos(i * 2) * 4 + Math.sin(i * 1.2) * 3) % 12;
           const size =
             i % 4 === 0
-              ? 'text-[3px]'
+              ? "text-[3px]"
               : i % 4 === 1
-                ? 'text-[4px]'
+                ? "text-[4px]"
                 : i % 4 === 2
-                  ? 'text-[3.5px]'
-                  : 'text-[3px]';
+                  ? "text-[3.5px]"
+                  : "text-[3px]";
           const delay = (i * 0.4) % 2.5;
           return (
             <div
@@ -210,7 +210,7 @@ export const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
               style={{
                 left: `${leftPos}%`,
                 top: `${topPos}%`,
-                animation: 'twinkle 3s ease-in-out infinite',
+                animation: "twinkle 3s ease-in-out infinite",
                 animationDelay: `${delay}s`,
               }}
             >
@@ -233,7 +233,7 @@ export const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
             style={{
               left: `${star.left}%`,
               top: `${star.top}%`,
-              animation: 'twinkle 4s ease-in-out infinite',
+              animation: "twinkle 4s ease-in-out infinite",
               animationDelay: `${i * 0.2}s`,
             }}
           >
@@ -257,10 +257,10 @@ export const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
                   className="text-5xl opacity-90 blur-[2px] brightness-50 contrast-[1.3]"
                   style={{
                     marginLeft:
-                      i % 3 === 0 ? '-30px' : i % 3 === 1 ? '-25px' : '-20px',
-                    marginTop: i % 2 === 0 ? '-15px' : '-10px',
+                      i % 3 === 0 ? "-30px" : i % 3 === 1 ? "-25px" : "-20px",
+                    marginTop: i % 2 === 0 ? "-15px" : "-10px",
                     left: `${leftPos}%`,
-                    position: 'absolute',
+                    position: "absolute",
                   }}
                 >
                   ☁️
@@ -277,10 +277,10 @@ export const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
                   className="translate-x-5 translate-y-[10px] text-5xl opacity-85 blur-[2px] brightness-50 contrast-[1.3]"
                   style={{
                     marginLeft:
-                      i % 3 === 0 ? '-25px' : i % 3 === 1 ? '-20px' : '-15px',
-                    marginTop: i % 2 === 0 ? '-8px' : '-5px',
+                      i % 3 === 0 ? "-25px" : i % 3 === 1 ? "-20px" : "-15px",
+                    marginTop: i % 2 === 0 ? "-8px" : "-5px",
                     left: `${leftPos}%`,
-                    position: 'absolute',
+                    position: "absolute",
                   }}
                 >
                   ☁️
@@ -300,16 +300,16 @@ export const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
               return (
                 <div
                   key={i}
-                  className="absolute top-24 z-[15] flex h-[calc(100%-6rem)] items-start justify-center opacity-0"
+                  className="absolute top-24 z-[15] flex h-[calc(100%_-_6rem)] items-start justify-center opacity-0"
                   style={{
                     left: `${leftPos}%`,
-                    animation: 'lightning 2s ease-in-out infinite',
+                    animation: "lightning 2s ease-in-out infinite",
                     animationDelay: `${delay}s`,
                   }}
                 >
                   <div
                     className="text-6xl leading-none"
-                    style={{ textShadow: '0 0 20px yellow, 0 0 40px yellow' }}
+                    style={{ textShadow: "0 0 20px yellow, 0 0 40px yellow" }}
                   >
                     ⚡
                   </div>
@@ -337,7 +337,7 @@ export const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
                 style={{
                   left: `${leftPos}%`,
                   top: `${topStart}%`,
-                  fontSize: '2px',
+                  fontSize: "2px",
                   animation: `raindrop ${duration}s linear infinite`,
                   animationDelay: `${delay}s`,
                 }}
