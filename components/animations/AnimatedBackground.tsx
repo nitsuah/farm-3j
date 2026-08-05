@@ -163,23 +163,14 @@ export const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
     {showBirds && (
       <>
         <div
-          className="absolute top-16 z-0 -translate-x-1/2 text-2xl"
-          style={{
-            left: `${birdPosition}%`,
-            transition: "left 0.1s linear",
-            animation: "birdFly 0.4s ease-in-out infinite",
-          }}
+          className="absolute top-16 z-0 -translate-x-1/2 text-2xl [transition:left_0.1s_linear] animate-[birdFly_0.4s_ease-in-out_infinite]"
+          style={{ left: `${birdPosition}%` }}
         >
           🦅
         </div>
         <div
-          className="absolute top-20 z-0 -translate-x-1/2 text-xl"
-          style={{
-            left: `${birdPosition + 5}%`,
-            transition: "left 0.1s linear",
-            animation: "birdFly 0.4s ease-in-out infinite",
-            animationDelay: "0.2s",
-          }}
+          className="absolute top-20 z-0 -translate-x-1/2 text-xl [transition:left_0.1s_linear] animate-[birdFly_0.4s_ease-in-out_infinite] [animation-delay:0.2s]"
+          style={{ left: `${birdPosition + 5}%` }}
         >
           🦅
         </div>
@@ -206,11 +197,10 @@ export const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
           return (
             <div
               key={i}
-              className={`absolute ${size}`}
+              className={`absolute ${size} animate-[twinkle_3s_ease-in-out_infinite]`}
               style={{
                 left: `${leftPos}%`,
                 top: `${topPos}%`,
-                animation: "twinkle 3s ease-in-out infinite",
                 animationDelay: `${delay}s`,
               }}
             >
@@ -229,11 +219,10 @@ export const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
         ].map((star, i) => (
           <div
             key={`dipper-${i}`}
-            className="absolute text-[5px]"
+            className="absolute text-[5px] animate-[twinkle_4s_ease-in-out_infinite]"
             style={{
               left: `${star.left}%`,
               top: `${star.top}%`,
-              animation: "twinkle 4s ease-in-out infinite",
               animationDelay: `${i * 0.2}s`,
             }}
           >
@@ -254,13 +243,12 @@ export const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
               return (
                 <div
                   key={i}
-                  className="text-5xl opacity-90 blur-[2px] brightness-50 contrast-[1.3]"
+                  className="absolute text-5xl opacity-90 blur-[2px] brightness-50 contrast-[1.3]"
                   style={{
                     marginLeft:
                       i % 3 === 0 ? "-30px" : i % 3 === 1 ? "-25px" : "-20px",
                     marginTop: i % 2 === 0 ? "-15px" : "-10px",
                     left: `${leftPos}%`,
-                    position: "absolute",
                   }}
                 >
                   ☁️
@@ -274,13 +262,12 @@ export const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
               return (
                 <div
                   key={`second-${i}`}
-                  className="translate-x-5 translate-y-[10px] text-5xl opacity-85 blur-[2px] brightness-50 contrast-[1.3]"
+                  className="absolute translate-x-5 translate-y-[10px] text-5xl opacity-85 blur-[2px] brightness-50 contrast-[1.3]"
                   style={{
                     marginLeft:
                       i % 3 === 0 ? "-25px" : i % 3 === 1 ? "-20px" : "-15px",
                     marginTop: i % 2 === 0 ? "-8px" : "-5px",
                     left: `${leftPos}%`,
-                    position: "absolute",
                   }}
                 >
                   ☁️
@@ -300,10 +287,9 @@ export const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
               return (
                 <div
                   key={i}
-                  className="absolute top-24 z-[15] flex h-[calc(100%_-_6rem)] items-start justify-center opacity-0"
+                  className="absolute top-24 z-[15] flex h-[calc(100%_-_6rem)] items-start justify-center opacity-0 animate-[lightning_2s_ease-in-out_infinite]"
                   style={{
                     left: `${leftPos}%`,
-                    animation: "lightning 2s ease-in-out infinite",
                     animationDelay: `${delay}s`,
                   }}
                 >
@@ -333,11 +319,10 @@ export const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
             return (
               <div
                 key={i}
-                className="absolute text-blue-500 dark:text-blue-300"
+                className="absolute text-[2px] text-blue-500 dark:text-blue-300"
                 style={{
                   left: `${leftPos}%`,
                   top: `${topStart}%`,
-                  fontSize: "2px",
                   animation: `raindrop ${duration}s linear infinite`,
                   animationDelay: `${delay}s`,
                 }}
