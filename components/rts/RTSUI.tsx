@@ -4,6 +4,7 @@ import type {
   Upgrades,
   WorkerState,
   FarmhouseAction,
+  HeroItem,
   HeroItemId,
 } from './game/types';
 import {
@@ -132,7 +133,7 @@ interface RTSUIProps {
   onBarracksTech: (type: 'veteranTraining' | 'warDrums') => void;
   earthquakeCooldown: number;
   onEarthquake: () => void;
-  heroItems: { id: number; itemId: HeroItemId }[];
+  heroItems: HeroItem[];
   onDropItem: (slotId: number) => void;
   onUsePotion: () => void;
   shopItems: { itemId: HeroItemId; cost: number }[];

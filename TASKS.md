@@ -1,6 +1,6 @@
 # TASKS
 
-Last Updated: 2026-08-04 (componentize large files — useGameLoop split, RTSMap → MapRenderer, RTSUI → BuildMenu/WaveTimer/HeroPanel, +48 unit tests)
+Last Updated: 2026-08-04 (componentize large files — useGameLoop split, RTSMap → MapRenderer, RTSUI → BuildMenu/WaveTimer/HeroPanel, +55 unit tests)
 
 ## Farm RTS — Round 2 (2026 Q3)
 

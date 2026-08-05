@@ -73,12 +73,9 @@ export const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
   birdPosition,
   isDarkMode,
 }) => (
-  <>
+  <div aria-hidden="true">
     {/* Mountains - behind horizon with varied heights, TIGHT like Smoky Mountains */}
-    <div
-      className="absolute right-0 bottom-16 left-0 z-0 flex justify-around"
-      style={{ gap: '0', padding: '0' }}
-    >
+    <div className="absolute right-0 bottom-16 left-0 z-0 flex justify-around">
       {MOUNTAINS.map((m, i) => (
         <div
           key={i}
@@ -97,84 +94,64 @@ export const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
     {!showRain && !isDarkMode && (
       <>
         <div
-          className="absolute top-1 z-0 text-5xl transition-opacity duration-3000"
-          style={{
-            opacity: cloudOpacity,
-            left: `${cloudPosition}%`,
-            transform: 'translateX(-50%)',
-          }}
+          className="absolute top-1 z-0 -translate-x-1/2 text-5xl transition-opacity duration-3000"
+          style={{ opacity: cloudOpacity, left: `${cloudPosition}%` }}
         >
           ☁️
         </div>
         <div
-          className="absolute top-0 z-0 text-4xl transition-opacity duration-3000"
+          className="absolute top-0 z-0 -translate-x-1/2 text-4xl transition-opacity duration-3000"
           style={{
             opacity: cloudOpacity * 0.8,
             left: `${(cloudPosition + 25) % 110}%`,
-            transform: 'translateX(-50%)',
           }}
         >
           ☁️
         </div>
         <div
-          className="absolute top-3 z-0 text-3xl transition-opacity duration-3000"
+          className="absolute top-3 z-0 -translate-x-1/2 text-3xl transition-opacity duration-3000"
           style={{
             opacity: cloudOpacity * 0.6,
             left: `${(cloudPosition + 50) % 110}%`,
-            transform: 'translateX(-50%)',
           }}
         >
           ☁️
         </div>
         <div
-          className="absolute top-1 z-0 flex transition-opacity duration-3000"
+          className="absolute top-1 z-0 flex -translate-x-1/2 transition-opacity duration-3000"
           style={{
             opacity: cloudOpacity * 0.7,
             left: `${(cloudPosition + 70) % 110}%`,
-            transform: 'translateX(-50%)',
           }}
         >
-          <span className="text-4xl" style={{ marginLeft: '-20px' }}>
-            ☁️
-          </span>
-          <span className="text-4xl" style={{ marginLeft: '-20px' }}>
-            ☁️
-          </span>
-          <span className="text-4xl" style={{ marginLeft: '-20px' }}>
-            ☁️
-          </span>
+          <span className="-ml-5 text-4xl">☁️</span>
+          <span className="-ml-5 text-4xl">☁️</span>
+          <span className="-ml-5 text-4xl">☁️</span>
         </div>
         <div
-          className="absolute top-2 z-0 flex transition-opacity duration-3000"
+          className="absolute top-2 z-0 flex -translate-x-1/2 transition-opacity duration-3000"
           style={{
             opacity: cloudOpacity * 0.75,
             left: `${(cloudPosition + 90) % 110}%`,
-            transform: 'translateX(-50%)',
           }}
         >
-          <span className="text-6xl" style={{ marginLeft: '-30px' }}>
-            ☁️
-          </span>
-          <span className="text-6xl" style={{ marginLeft: '-30px' }}>
-            ☁️
-          </span>
+          <span className="-ml-[30px] text-6xl">☁️</span>
+          <span className="-ml-[30px] text-6xl">☁️</span>
         </div>
         <div
-          className="absolute top-2 z-0 text-4xl transition-opacity duration-3000"
+          className="absolute top-2 z-0 -translate-x-1/2 text-4xl transition-opacity duration-3000"
           style={{
             opacity: cloudOpacity * 0.65,
             left: `${(cloudPosition + 40) % 110}%`,
-            transform: 'translateX(-50%)',
           }}
         >
           ☁️
         </div>
         <div
-          className="absolute top-3 z-0 text-3xl transition-opacity duration-3000"
+          className="absolute top-3 z-0 -translate-x-1/2 text-3xl transition-opacity duration-3000"
           style={{
             opacity: cloudOpacity * 0.55,
             left: `${(cloudPosition + 15) % 110}%`,
-            transform: 'translateX(-50%)',
           }}
         >
           ☁️
@@ -186,10 +163,9 @@ export const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
     {showBirds && (
       <>
         <div
-          className="absolute top-16 z-0 text-2xl"
+          className="absolute top-16 z-0 -translate-x-1/2 text-2xl"
           style={{
             left: `${birdPosition}%`,
-            transform: 'translateX(-50%)',
             transition: 'left 0.1s linear',
             animation: 'birdFly 0.4s ease-in-out infinite',
           }}
@@ -197,10 +173,9 @@ export const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
           🦅
         </div>
         <div
-          className="absolute top-20 z-0 text-xl"
+          className="absolute top-20 z-0 -translate-x-1/2 text-xl"
           style={{
             left: `${birdPosition + 5}%`,
-            transform: 'translateX(-50%)',
             transition: 'left 0.1s linear',
             animation: 'birdFly 0.4s ease-in-out infinite',
             animationDelay: '0.2s',
@@ -279,9 +254,8 @@ export const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
               return (
                 <div
                   key={i}
-                  className="text-5xl opacity-90"
+                  className="text-5xl opacity-90 blur-[2px] brightness-50 contrast-[1.3]"
                   style={{
-                    filter: 'brightness(0.5) contrast(1.3) blur(2px)',
                     marginLeft:
                       i % 3 === 0 ? '-30px' : i % 3 === 1 ? '-25px' : '-20px',
                     marginTop: i % 2 === 0 ? '-15px' : '-10px',
@@ -300,13 +274,11 @@ export const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
               return (
                 <div
                   key={`second-${i}`}
-                  className="text-5xl opacity-85"
+                  className="translate-x-5 translate-y-[10px] text-5xl opacity-85 blur-[2px] brightness-50 contrast-[1.3]"
                   style={{
-                    filter: 'brightness(0.5) contrast(1.3) blur(2px)',
                     marginLeft:
                       i % 3 === 0 ? '-25px' : i % 3 === 1 ? '-20px' : '-15px',
                     marginTop: i % 2 === 0 ? '-8px' : '-5px',
-                    transform: 'translateX(20px) translateY(10px)',
                     left: `${leftPos}%`,
                     position: 'absolute',
                   }}
@@ -328,14 +300,11 @@ export const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
               return (
                 <div
                   key={i}
-                  className="absolute z-[15] flex items-start justify-center"
+                  className="absolute top-24 z-[15] flex h-[calc(100%-6rem)] items-start justify-center opacity-0"
                   style={{
-                    top: '6rem',
                     left: `${leftPos}%`,
-                    height: 'calc(100% - 6rem)',
                     animation: 'lightning 2s ease-in-out infinite',
                     animationDelay: `${delay}s`,
-                    opacity: 0,
                   }}
                 >
                   <div
@@ -392,11 +361,8 @@ export const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
         return (
           <div
             key={i}
-            className={size}
-            style={{
-              transform: `translateY(${bottomOffset}px)`,
-              marginLeft: '-28px',
-            }}
+            className={`-ml-7 ${size}`}
+            style={{ transform: `translateY(${bottomOffset}px)` }}
           >
             🌲
           </div>
@@ -416,11 +382,8 @@ export const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
         return (
           <div
             key={i}
-            className={size}
-            style={{
-              transform: `translateY(${bottomOffset}px)`,
-              marginLeft: '-22px',
-            }}
+            className={`-ml-[22px] ${size}`}
+            style={{ transform: `translateY(${bottomOffset}px)` }}
           >
             🌳
           </div>
@@ -430,5 +393,5 @@ export const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
 
     {/* Ground/Soil with depth gradient */}
     <div className="absolute right-0 bottom-0 left-0 h-24 bg-gradient-to-b from-amber-700 to-amber-900 dark:from-amber-900 dark:to-black" />
-  </>
+  </div>
 );

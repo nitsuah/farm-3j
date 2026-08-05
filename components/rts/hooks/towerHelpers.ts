@@ -3,7 +3,14 @@
  * Extracted from useTowerCombat.tsx for unit testability.
  */
 
-import { WATCHTOWER_ATTACK_RANGE, WATCHTOWER_DAMAGE } from '../game/constants';
+import {
+  WATCHTOWER_ATTACK_RANGE,
+  WATCHTOWER_DAMAGE,
+  WATCHTOWER_GUARD_DAMAGE_BONUS,
+  WATCHTOWER_GARRISON_DAMAGE_PER,
+  WATCHTOWER_GUARD_RANGE_BONUS,
+  WATCHTOWER_GARRISON_RANGE_PER,
+} from '../game/constants';
 import { tileDist } from '../game/map';
 
 /**
@@ -31,7 +38,10 @@ export function computeWatchtowerDamage(
   garrisonCount: number
 ): number {
   return (
-    (isGuard ? WATCHTOWER_DAMAGE + 7 : WATCHTOWER_DAMAGE) + garrisonCount * 4
+    (isGuard
+      ? WATCHTOWER_DAMAGE + WATCHTOWER_GUARD_DAMAGE_BONUS
+      : WATCHTOWER_DAMAGE) +
+    garrisonCount * WATCHTOWER_GARRISON_DAMAGE_PER
   );
 }
 
@@ -44,7 +54,9 @@ export function computeWatchtowerRange(
   garrisonCount: number
 ): number {
   return (
-    (isGuard ? WATCHTOWER_ATTACK_RANGE + 1 : WATCHTOWER_ATTACK_RANGE) +
-    garrisonCount * 0.5
+    (isGuard
+      ? WATCHTOWER_ATTACK_RANGE + WATCHTOWER_GUARD_RANGE_BONUS
+      : WATCHTOWER_ATTACK_RANGE) +
+    garrisonCount * WATCHTOWER_GARRISON_RANGE_PER
   );
 }

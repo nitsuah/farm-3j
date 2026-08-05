@@ -603,6 +603,8 @@ export function useWaveSpawner(ctx: RTSGameContext) {
       if (gameOverRef.current) return;
       const gruntCount = computeGruntCount(previewWave);
       const parts: string[] = [`${gruntCount} Grunts`];
+      if (previewWave >= 8 && previewWave % 4 === 0)
+        parts.push('2 Flanking Grunts');
       if (previewWave % 10 === 0) parts.push('1 WAR BULL 🐂');
       if (previewWave >= 8 && previewWave % 4 === 0) parts.push('1 Shaman 🧙');
       if (previewWave >= 12 && previewWave % 3 === 2)

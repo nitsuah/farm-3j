@@ -425,7 +425,7 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
       {/* BUILD tab — all buildings with inline costs */}
       {fhTab === 'build' &&
         (() => {
-          type BEntry = {
+          interface BEntry {
             key: BuildingType;
             icon: string;
             label: string;
@@ -434,7 +434,7 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
             hover: string;
             text: string;
             desc: string;
-          };
+          }
           const buildings: BEntry[] = [
             {
               key: 'farmhouse',
@@ -712,7 +712,13 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
                     ? resources.stone >= cost.stone
                     : resources.lumber >= (cost as { lumber: number }).lumber);
                 const costLabel =
-                  lvl >= 2 ? 'MAX' : cost ? `${cost.gold}🪙` : '';
+                  lvl >= 2
+                    ? 'MAX'
+                    : cost
+                      ? 'stone' in cost
+                        ? `${cost.gold}🪙 ${cost.stone}🪨`
+                        : `${cost.gold}🪙 ${(cost as { lumber: number }).lumber}🪵`
+                      : '';
                 return (
                   <button
                     key={upg}
@@ -748,7 +754,7 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
               >
                 {barracksTech.veteranTraining
                   ? '🛡️ Veteran ✓'
-                  : '🛡️ Veteran 100🪙'}
+                  : '🛡️ Veteran 100🪙 60🪵'}
               </button>
               <button
                 type="button"
@@ -760,7 +766,9 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
                   resources.lumber < 40
                 }
               >
-                {barracksTech.warDrums ? '🥁 War Drums ✓' : '🥁 Drums 120🪙'}
+                {barracksTech.warDrums
+                  ? '🥁 War Drums ✓'
+                  : '🥁 Drums 120🪙 40🪵'}
               </button>
             </div>
           )}
