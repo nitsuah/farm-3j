@@ -601,8 +601,7 @@ export function useWaveSpawner(ctx: RTSGameContext) {
     const previewDelay = Math.max(0, nextDelay - 6000);
     previewTimerRef.current = window.setTimeout(() => {
       if (gameOverRef.current) return;
-      const gruntCount =
-        previewWave + 2 + (previewWave % 3 === 0 ? previewWave + 2 : 0);
+      const gruntCount = computeGruntCount(previewWave);
       const parts: string[] = [`${gruntCount} Grunts`];
       if (previewWave % 10 === 0) parts.push('1 WAR BULL 🐂');
       if (previewWave >= 8 && previewWave % 4 === 0) parts.push('1 Shaman 🧙');

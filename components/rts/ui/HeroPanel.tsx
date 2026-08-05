@@ -116,7 +116,7 @@ export const HeroPanel: React.FC<HeroPanelProps> = ({
               <div
                 key={item.id}
                 className="group relative flex flex-col items-center rounded border border-violet-500/40 bg-violet-900/20 p-1.5 text-center"
-                title={`${data.name}\n${data.desc}\n${data.consumable ? 'Click to use' : 'Right-click to drop'}`}
+                title={`${data.name}\n${data.desc}\n${data.consumable ? 'Click to use' : 'Click to drop'}`}
               >
                 <span className="text-lg leading-none">{data.emoji}</span>
                 <span className="mt-0.5 text-[9px] leading-tight text-violet-200">
@@ -124,6 +124,7 @@ export const HeroPanel: React.FC<HeroPanelProps> = ({
                 </span>
                 {data.consumable ? (
                   <button
+                    type="button"
                     onClick={
                       item.itemId === 'healing_potion' ? onUsePotion : undefined
                     }
@@ -133,6 +134,7 @@ export const HeroPanel: React.FC<HeroPanelProps> = ({
                   </button>
                 ) : (
                   <button
+                    type="button"
                     onClick={() => onDropItem(item.id)}
                     className="mt-1 w-full rounded bg-slate-600/40 py-0.5 text-[9px] text-slate-300 hover:bg-slate-600/60"
                   >

@@ -26,7 +26,7 @@ export function hasBuildingType(
   return buildings.some(b => b.type === type && !b.constructing);
 }
 
-/** Returns remaining resource nodes with HP above 0. */
+/** Returns remaining resource nodes with amount above 0. */
 export function getActiveNodes(nodes: ResourceNode[]): ResourceNode[] {
   return nodes.filter(n => n.amount > 0);
 }
