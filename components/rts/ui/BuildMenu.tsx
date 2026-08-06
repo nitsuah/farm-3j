@@ -14,6 +14,7 @@ import {
   BLACKSMITH_IRON_HIDE_COSTS,
   UPGRADE_COSTS,
   UPGRADE_MAX,
+  WATCHTOWER_GARRISON_DAMAGE_PER,
 } from '../game/constants';
 
 // Re-exported from RTSUI for backward compat, but also defined here to avoid circular imports
@@ -60,7 +61,6 @@ export interface BuildMenuProps {
   trainingProgress: number;
   towerGarrison: Record<number, WorkerState[]>;
   onTowerDeploy: (towerId: number, tx: number, ty: number) => void;
-  placedBuildingsList: PlacedBuilding[];
   placedBuildings: PlacedBuilding[];
   heroReviveCountdown: number;
   heroReviveCost: number;
@@ -97,7 +97,6 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
   trainingProgress,
   towerGarrison,
   onTowerDeploy,
-  placedBuildingsList,
   placedBuildings,
   heroReviveCountdown,
   heroReviveCost,
@@ -775,7 +774,7 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
           )}
           {hasWatchtower &&
             (() => {
-              const towers = placedBuildingsList.filter(
+              const towers = placedBuildings.filter(
                 b => b.type === 'watchtower'
               );
               return towers.map(t => {
@@ -787,7 +786,8 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
                     className="flex items-center justify-between rounded border border-cyan-700/50 bg-cyan-900/20 px-2 py-1.5 text-xs text-cyan-200"
                   >
                     <span>
-                      🗼 ({t.x},{t.y}) {tg.length}/3 +{tg.length * 4}dmg
+                      🗼 ({t.x},{t.y}) {tg.length}/3 +
+                      {tg.length * WATCHTOWER_GARRISON_DAMAGE_PER}dmg
                     </span>
                     <button
                       type="button"

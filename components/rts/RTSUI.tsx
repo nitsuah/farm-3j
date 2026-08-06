@@ -6,6 +6,7 @@ import type {
   FarmhouseAction,
   HeroItem,
   HeroItemId,
+  BuildingType,
 } from './game/types';
 import {
   GRID_SIZE,
@@ -17,6 +18,10 @@ import {
   UPGRADE_COSTS,
   UPGRADE_MAX,
   HERO_ITEM_DATA,
+  HERO_MAX_ITEMS,
+  BUILDING_COSTS,
+  BUILDING_EMOJI,
+  BUILDING_DESCS,
 } from './game/constants';
 import { BuildMenu } from './ui/BuildMenu';
 import { HeroPanel } from './ui/HeroPanel';
@@ -24,26 +29,8 @@ import { HeroPanel } from './ui/HeroPanel';
 // Re-export types from canonical locations for backward compatibility
 export type { Upgrades, WorkerState };
 export type { FarmhouseAction };
+export type { BuildingType };
 export { UPGRADE_COSTS, UPGRADE_MAX };
-
-export type BuildingType =
-  | 'farmhouse'
-  | 'lumberShed'
-  | 'watchtower'
-  | 'wall'
-  | 'windmill'
-  | 'barracks'
-  | 'siegeWorkshop'
-  | 'market'
-  | 'blacksmith'
-  | 'granary'
-  | 'stable'
-  | 'spikeTrap'
-  | 'frostTower'
-  | 'ballista'
-  | 'poisonTower'
-  | 'supplyStore'
-  | 'miningCamp';
 
 export interface PlacedBuilding {
   id: number;
@@ -101,7 +88,6 @@ interface RTSUIProps {
   trainingProgress: number;
   towerGarrison: Record<number, WorkerState[]>;
   onTowerDeploy: (towerId: number, tx: number, ty: number) => void;
-  placedBuildingsList: PlacedBuilding[];
   onSwordsmanCharge: () => void;
   onCavalrySprint: () => void;
   onMinimapClick: (tileX: number, tileY: number) => void;
@@ -224,7 +210,6 @@ export const RTSUI: React.FC<RTSUIProps> = ({
   onTowerGarrison,
   onTowerDeploy,
   selectedBuilding,
-  placedBuildingsList,
   placedBuildings,
   onSwordsmanCharge,
   onCavalrySprint,
@@ -445,62 +430,6 @@ export const RTSUI: React.FC<RTSUIProps> = ({
           ) : selectedType === 'building' && selectedBuilding ? (
             (() => {
               const b = selectedBuilding;
-              const BUILDING_LABELS: Record<string, string> = {
-                farmhouse: 'Farmhouse',
-                lumberShed: 'Lumber Shed',
-                watchtower: 'Watchtower',
-                windmill: 'Windmill',
-                barracks: 'Barracks',
-                siegeWorkshop: 'Siege Workshop',
-                market: 'Market',
-                blacksmith: 'Blacksmith',
-                granary: 'Granary',
-                stable: 'Stable',
-                spikeTrap: 'Spike Trap',
-                frostTower: 'Frost Tower',
-                ballista: 'Ballista',
-                poisonTower: 'Poison Tower',
-                wall: 'Wall',
-                supplyStore: 'Farm Supply Store',
-                miningCamp: 'Mining Camp',
-              };
-              const BUILDING_EMOJI_MAP: Record<string, string> = {
-                farmhouse: '🏠',
-                lumberShed: '🪵',
-                watchtower: '🗼',
-                windmill: '💨',
-                barracks: '🏯',
-                siegeWorkshop: '⚙️',
-                market: '🏪',
-                blacksmith: '🔨',
-                granary: '🌾',
-                stable: '🐴',
-                spikeTrap: '🪤',
-                frostTower: '❄️',
-                ballista: '🏹',
-                poisonTower: '☠️',
-                wall: '🧱',
-                supplyStore: '🛒',
-                miningCamp: '⛏️',
-              };
-              const BUILDING_DESCS: Record<string, string> = {
-                watchtower: 'Ranged attack · garrison 3 units',
-                barracks: 'Trains swordsmen · upgrade to guard',
-                frostTower: 'Slows enemies · 5-tile range',
-                ballista: 'High dmg · long range · single target',
-                poisonTower: 'Poisons AoE · 3-tile range',
-                siegeWorkshop: 'Builds catapults & trebuchets',
-                market: 'Passive gold income +2/5s',
-                blacksmith: 'Upgrade unit attack & armor',
-                stable: 'Trains cavalry units',
-                granary: '+15 food cap',
-                lumberShed: 'Lumber drop-off · gather bonus',
-                windmill: '+2🪙 every 5s',
-                spikeTrap: 'Damage grunts that step on it',
-                farmhouse: '+5 food cap per level',
-                supplyStore: 'Hero item shop · buy with gold',
-                miningCamp: 'Gold/stone drop-off site',
-              };
               const hpP = b.hp / b.maxHp;
               const isTower =
                 b.type === 'watchtower' ||
@@ -511,8 +440,8 @@ export const RTSUI: React.FC<RTSUIProps> = ({
               return (
                 <>
                   <div className="mt-1 text-sm font-semibold">
-                    {BUILDING_EMOJI_MAP[b.type]}{' '}
-                    {BUILDING_LABELS[b.type] ?? b.type}
+                    {BUILDING_EMOJI[b.type]}{' '}
+                    {BUILDING_COSTS[b.type]?.label ?? b.type}
                   </div>
                   <div className="mt-1 flex items-center gap-2">
                     <div className="h-2 flex-1 rounded bg-slate-700">
@@ -793,7 +722,8 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                           const data = HERO_ITEM_DATA[s.itemId];
                           if (!data) return null;
                           const canBuy =
-                            resources.gold >= s.cost && heroItems.length < 3;
+                            resources.gold >= s.cost &&
+                            heroItems.length < HERO_MAX_ITEMS;
                           return (
                             <button
                               key={s.itemId}
@@ -856,7 +786,6 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                 trainingProgress={trainingProgress}
                 towerGarrison={towerGarrison}
                 onTowerDeploy={onTowerDeploy}
-                placedBuildingsList={placedBuildingsList}
                 placedBuildings={placedBuildings}
                 heroReviveCountdown={heroReviveCountdown}
                 heroReviveCost={heroReviveCost}

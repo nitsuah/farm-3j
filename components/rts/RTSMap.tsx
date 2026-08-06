@@ -24,6 +24,8 @@ import {
   ZOOM_STEP,
   BARN_POS,
   BARN_VISION,
+  BLACKSMITH_IRON_HIDE_COSTS,
+  BLACKSMITH_STEEL_EDGE_COSTS,
   BUILDING_COSTS,
   BUILDING_MAX_HP,
   BUILDING_REQUIRES,
@@ -3069,9 +3071,8 @@ const RTSMap: React.FC<{
       addFloatingText(BARN_POS.x, BARN_POS.y, '+25🌲', '#4ade80');
     } else if (action === 'blacksmith:steelEdge') {
       const level = blacksmithUpgrades.steelEdge;
-      if (level >= 2) return;
-      const cost =
-        level === 0 ? { gold: 80, stone: 60 } : { gold: 160, stone: 120 };
+      const cost = BLACKSMITH_STEEL_EDGE_COSTS[level];
+      if (!cost) return;
       if (resources.gold < cost.gold || resources.stone < cost.stone) return;
       setResources(r => ({
         ...r,
@@ -3087,9 +3088,8 @@ const RTSMap: React.FC<{
       );
     } else if (action === 'blacksmith:ironHide') {
       const level = blacksmithUpgrades.ironHide;
-      if (level >= 2) return;
-      const cost =
-        level === 0 ? { gold: 80, lumber: 50 } : { gold: 160, lumber: 100 };
+      const cost = BLACKSMITH_IRON_HIDE_COSTS[level];
+      if (!cost) return;
       if (resources.gold < cost.gold || resources.lumber < cost.lumber) return;
       setResources(r => ({
         ...r,
@@ -4254,7 +4254,6 @@ const RTSMap: React.FC<{
         selectedBuilding={
           placedBuildings.find(b => b.id === selectedBuildingId) ?? null
         }
-        placedBuildingsList={placedBuildings}
         onSwordsmanCharge={handleSwordsmanCharge}
         onCavalrySprint={handleCavalrySprint}
         onMinimapClick={(tx, ty) => {

@@ -515,6 +515,25 @@ export const BUILDING_EMOJI: Record<BuildingType, string> = {
   miningCamp: '⛏️',
 };
 
+export const BUILDING_DESCS: Partial<Record<BuildingType, string>> = {
+  watchtower: 'Ranged attack · garrison 3 units',
+  barracks: 'Trains swordsmen · upgrade to guard',
+  frostTower: 'Slows enemies · 5-tile range',
+  ballista: 'High dmg · long range · single target',
+  poisonTower: 'Poisons AoE · 3-tile range',
+  siegeWorkshop: 'Builds catapults & trebuchets',
+  market: 'Passive gold income +2/5s',
+  blacksmith: 'Upgrade unit attack & armor',
+  stable: 'Trains cavalry units',
+  granary: '+15 food cap',
+  lumberShed: 'Lumber drop-off · gather bonus',
+  windmill: '+2🪙 every 5s',
+  spikeTrap: 'Damage grunts that step on it',
+  farmhouse: '+5 food cap per level',
+  supplyStore: 'Hero item shop · buy with gold',
+  miningCamp: 'Gold/stone drop-off site',
+};
+
 export const BUILDING_MAX_HP: Record<BuildingType, number> = {
   farmhouse: 200,
   lumberShed: 150,
