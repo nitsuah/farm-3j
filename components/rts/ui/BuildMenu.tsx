@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 
 import type {
   Upgrades,
@@ -6,7 +6,7 @@ import type {
   FarmhouseAction,
   BuildingType,
   PlacedBuilding,
-} from "../game/types";
+} from '../game/types';
 import {
   LUMBER_SHED_BONUS_MS,
   BUILDING_REQUIRES,
@@ -14,7 +14,7 @@ import {
   BLACKSMITH_IRON_HIDE_COSTS,
   UPGRADE_COSTS,
   UPGRADE_MAX,
-} from "../game/constants";
+} from '../game/constants';
 
 // Re-exported from RTSUI for backward compat, but also defined here to avoid circular imports
 export interface BuildingCost {
@@ -29,9 +29,9 @@ const UPGRADE_META: Record<
   keyof Upgrades,
   { label: string; icon: string; desc: string }
 > = {
-  sharperTools: { label: "Atk", icon: "⚔️", desc: "+5 attack dmg" },
-  swiftHarvest: { label: "Harvest", icon: "🌾", desc: "-200ms gather" },
-  ironWill: { label: "HP", icon: "🛡️", desc: "+25 max HP" },
+  sharperTools: { label: 'Atk', icon: '⚔️', desc: '+5 attack dmg' },
+  swiftHarvest: { label: 'Harvest', icon: '🌾', desc: '-200ms gather' },
+  ironWill: { label: 'HP', icon: '🛡️', desc: '+25 max HP' },
 };
 
 export interface BuildMenuProps {
@@ -56,7 +56,7 @@ export interface BuildMenuProps {
   hasWatchtower: boolean;
   guardTowerResearched: boolean;
   onGuardTower: () => void;
-  trainingQueue: { type: "swordsman" | "cavalry" }[];
+  trainingQueue: { type: 'swordsman' | 'cavalry' }[];
   trainingProgress: number;
   towerGarrison: Record<number, WorkerState[]>;
   onTowerDeploy: (towerId: number, tx: number, ty: number) => void;
@@ -70,12 +70,12 @@ export interface BuildMenuProps {
   garrisonedCount: number;
   onUngarrison: () => void;
   blacksmithUpgrades: { steelEdge: number; ironHide: number };
-  onBlacksmithUpgrade: (type: "steelEdge" | "ironHide") => void;
+  onBlacksmithUpgrade: (type: 'steelEdge' | 'ironHide') => void;
   barracksTech: { veteranTraining: boolean; warDrums: boolean };
-  onBarracksTech: (type: "veteranTraining" | "warDrums") => void;
+  onBarracksTech: (type: 'veteranTraining' | 'warDrums') => void;
 }
 
-type FhTab = "base" | "build" | "train" | "tech";
+type FhTab = 'base' | 'build' | 'train' | 'tech';
 
 export const BuildMenu: React.FC<BuildMenuProps> = ({
   farmhouse,
@@ -111,7 +111,7 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
   barracksTech,
   onBarracksTech,
 }) => {
-  const [fhTab, setFhTab] = useState<FhTab>("base");
+  const [fhTab, setFhTab] = useState<FhTab>('base');
 
   const canAfford = (cost: { gold: number; lumber: number; stone: number }) =>
     resources.gold >= cost.gold &&
@@ -125,13 +125,13 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
       c.stone > 0 && `${c.stone}🪨`,
     ]
       .filter(Boolean)
-      .join(" ");
+      .join(' ');
 
   const tabBtn = (tab: FhTab, label: string) => (
     <button
       type="button"
       onClick={() => setFhTab(tab)}
-      className={`flex-1 rounded-t px-2 py-1 text-xs font-semibold transition-colors ${fhTab === tab ? "bg-amber-700/60 text-amber-100" : "bg-slate-800/60 text-slate-400 hover:bg-slate-700/60"}`}
+      className={`flex-1 rounded-t px-2 py-1 text-xs font-semibold transition-colors ${fhTab === tab ? 'bg-amber-700/60 text-amber-100' : 'bg-slate-800/60 text-slate-400 hover:bg-slate-700/60'}`}
     >
       {label}
     </button>
@@ -142,14 +142,14 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
       <button
         type="button"
         className="rounded border border-amber-500/70 bg-amber-500/15 px-2 py-2.5 text-xs text-amber-100 hover:bg-amber-500/30 disabled:opacity-40"
-        onClick={() => onFarmhouseAction("build")}
+        onClick={() => onFarmhouseAction('build')}
         disabled={
           resources.gold < (farmhouseUpgradeCosts[0]?.gold ?? Infinity) ||
           resources.lumber < (farmhouseUpgradeCosts[0]?.lumber ?? Infinity)
         }
       >
-        Build Barn ({farmhouseUpgradeCosts[0]?.gold ?? "?"}🪙{" "}
-        {farmhouseUpgradeCosts[0]?.lumber ?? "?"}🌲)
+        Build Barn ({farmhouseUpgradeCosts[0]?.gold ?? '?'}🪙{' '}
+        {farmhouseUpgradeCosts[0]?.lumber ?? '?'}🌲)
       </button>
     );
   }
@@ -158,26 +158,26 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
     <>
       {/* Tab bar */}
       <div className="flex gap-0.5 border-b border-slate-700/60">
-        {tabBtn("base", "🏚 Base")}
-        {tabBtn("train", "⚔️ Train")}
-        {tabBtn("build", "🏗 Build")}
-        {tabBtn("tech", "🔬 Tech")}
+        {tabBtn('base', '🏚 Base')}
+        {tabBtn('train', '⚔️ Train')}
+        {tabBtn('build', '🏗 Build')}
+        {tabBtn('tech', '🔬 Tech')}
       </div>
 
       {/* BASE tab — train farmer, garrison, hero, upgrade barn */}
-      {fhTab === "base" && (
+      {fhTab === 'base' && (
         <div className="grid grid-cols-2 gap-1.5 pt-1">
           <button
             type="button"
             className="rounded border border-blue-500/70 bg-blue-500/15 py-2.5 text-xs text-blue-100 hover:bg-blue-500/30 disabled:opacity-40"
-            onClick={() => onFarmhouseAction("train")}
+            onClick={() => onFarmhouseAction('train')}
             disabled={
               resources.gold < 30 || resources.food >= resources.foodCap
             }
             title={
               resources.food >= resources.foodCap
-                ? "Food cap! Build Farmhouse"
-                : "Train Farmer (30🪙)"
+                ? 'Food cap! Build Farmhouse'
+                : 'Train Farmer (30🪙)'
             }
           >
             🌾 Farmer 30🪙 <span className="text-xs opacity-50">[F]</span>
@@ -186,7 +186,7 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
             <button
               type="button"
               className="rounded border border-amber-500/70 bg-amber-500/15 py-2.5 text-xs text-amber-100 hover:bg-amber-500/30 disabled:opacity-40"
-              onClick={() => onFarmhouseAction("upgrade")}
+              onClick={() => onFarmhouseAction('upgrade')}
               disabled={
                 resources.gold <
                   (farmhouseUpgradeCosts[farmhouse.level]?.gold ?? 0) ||
@@ -211,7 +211,7 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
               <button
                 type="button"
                 className="rounded border border-yellow-500/70 bg-yellow-900/20 py-2 text-xs text-yellow-100 hover:bg-yellow-900/40 disabled:opacity-40"
-                onClick={() => onFarmhouseAction("trade:lumberToGold")}
+                onClick={() => onFarmhouseAction('trade:lumberToGold')}
                 disabled={resources.lumber < 50}
                 title="Sell 50🌲 for 30🪙"
               >
@@ -220,7 +220,7 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
               <button
                 type="button"
                 className="rounded border border-yellow-500/70 bg-yellow-900/20 py-2 text-xs text-yellow-100 hover:bg-yellow-900/40 disabled:opacity-40"
-                onClick={() => onFarmhouseAction("trade:stoneToGold")}
+                onClick={() => onFarmhouseAction('trade:stoneToGold')}
                 disabled={resources.stone < 30}
                 title="Sell 30🪨 for 20🪙"
               >
@@ -229,7 +229,7 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
               <button
                 type="button"
                 className="col-span-2 rounded border border-green-600/70 bg-green-900/20 py-2 text-xs text-green-100 hover:bg-green-900/40 disabled:opacity-40"
-                onClick={() => onFarmhouseAction("trade:stoneToLumber")}
+                onClick={() => onFarmhouseAction('trade:stoneToLumber')}
                 disabled={resources.stone < 40}
               >
                 🏪 40🪨→25🌲
@@ -240,7 +240,7 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
       )}
 
       {/* TRAIN tab — military units */}
-      {fhTab === "train" && (
+      {fhTab === 'train' && (
         <div className="flex flex-col gap-1.5 pt-1">
           {(hasBarracks || hasStable) && trainingQueue.length > 0 && (
             <div className="rounded border border-slate-600/60 bg-slate-800/40 px-2 py-1.5">
@@ -260,9 +260,9 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
                 {trainingQueue.map((u, i) => (
                   <span
                     key={i}
-                    className={`rounded px-1 py-0.5 text-sm ${i === 0 ? "bg-emerald-700/40 text-emerald-200" : "bg-slate-700/60 text-slate-400"}`}
+                    className={`rounded px-1 py-0.5 text-sm ${i === 0 ? 'bg-emerald-700/40 text-emerald-200' : 'bg-slate-700/60 text-slate-400'}`}
                   >
-                    {u.type === "swordsman" ? "⚔️" : "🐴"}
+                    {u.type === 'swordsman' ? '⚔️' : '🐴'}
                   </span>
                 ))}
               </div>
@@ -273,7 +273,7 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
               <button
                 type="button"
                 className="flex flex-col items-center rounded border border-rose-500/70 bg-rose-500/15 py-1.5 text-xs text-rose-100 hover:bg-rose-500/30 disabled:opacity-40"
-                onClick={() => onFarmhouseAction("trainSwordsman")}
+                onClick={() => onFarmhouseAction('trainSwordsman')}
                 disabled={
                   resources.gold < 50 ||
                   resources.food >= resources.foodCap ||
@@ -301,7 +301,7 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
               <button
                 type="button"
                 className="flex flex-col items-center rounded border border-amber-500/70 bg-amber-500/15 py-1.5 text-xs text-amber-100 hover:bg-amber-500/30 disabled:opacity-40"
-                onClick={() => onFarmhouseAction("trainCavalry")}
+                onClick={() => onFarmhouseAction('trainCavalry')}
                 disabled={
                   resources.gold < 60 ||
                   resources.food >= resources.foodCap ||
@@ -329,7 +329,7 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
               <button
                 type="button"
                 className="flex flex-col items-center rounded border border-orange-500/70 bg-orange-500/15 py-1.5 text-xs text-orange-100 hover:bg-orange-500/30 disabled:opacity-40"
-                onClick={() => onFarmhouseAction("trainCatapult")}
+                onClick={() => onFarmhouseAction('trainCatapult')}
                 disabled={
                   resources.gold < 150 ||
                   resources.lumber < 80 ||
@@ -355,7 +355,7 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
               <button
                 type="button"
                 className="flex flex-col items-center rounded border border-yellow-700/70 bg-yellow-900/20 py-1.5 text-xs text-yellow-100 hover:bg-yellow-900/40 disabled:opacity-40"
-                onClick={() => onFarmhouseAction("trainTrebuchet")}
+                onClick={() => onFarmhouseAction('trainTrebuchet')}
                 disabled={
                   resources.gold < 200 ||
                   resources.lumber < 80 ||
@@ -406,11 +406,11 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
                 }
                 title={
                   heroRecruited
-                    ? "Barnabas already recruited"
-                    : "Recruit Barnabas — 150🪙"
+                    ? 'Barnabas already recruited'
+                    : 'Recruit Barnabas — 150🪙'
                 }
               >
-                {heroRecruited ? "🦸 Hero Active" : "🦸 Recruit Hero 150🪙"}
+                {heroRecruited ? '🦸 Hero Active' : '🦸 Recruit Hero 150🪙'}
               </button>
             ))}
           {!hasBarracks && !hasStable && !hasSiegeWorkshop && (
@@ -423,7 +423,7 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
       )}
 
       {/* BUILD tab — all buildings with inline costs */}
-      {fhTab === "build" &&
+      {fhTab === 'build' &&
         (() => {
           interface BEntry {
             key: BuildingType;
@@ -437,190 +437,190 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
           }
           const buildings: BEntry[] = [
             {
-              key: "farmhouse",
-              icon: "🏠",
-              label: "Farmhouse",
-              border: "border-green-500/70",
-              bg: "bg-green-500/15",
-              hover: "hover:bg-green-500/30",
-              text: "text-green-100",
-              desc: "+5 food cap",
+              key: 'farmhouse',
+              icon: '🏠',
+              label: 'Farmhouse',
+              border: 'border-green-500/70',
+              bg: 'bg-green-500/15',
+              hover: 'hover:bg-green-500/30',
+              text: 'text-green-100',
+              desc: '+5 food cap',
             },
             {
-              key: "watchtower",
-              icon: "🗼",
-              label: "Watchtower",
-              border: "border-slate-500/70",
-              bg: "bg-slate-500/15",
-              hover: "hover:bg-slate-500/30",
-              text: "text-slate-100",
-              desc: "Vision + arrows",
+              key: 'watchtower',
+              icon: '🗼',
+              label: 'Watchtower',
+              border: 'border-slate-500/70',
+              bg: 'bg-slate-500/15',
+              hover: 'hover:bg-slate-500/30',
+              text: 'text-slate-100',
+              desc: 'Vision + arrows',
             },
             {
-              key: "lumberShed",
-              icon: "🪵",
-              label: "Lumber Shed",
-              border: "border-yellow-700/70",
-              bg: "bg-yellow-900/20",
-              hover: "hover:bg-yellow-900/40",
-              text: "text-yellow-100",
+              key: 'lumberShed',
+              icon: '🪵',
+              label: 'Lumber Shed',
+              border: 'border-yellow-700/70',
+              bg: 'bg-yellow-900/20',
+              hover: 'hover:bg-yellow-900/40',
+              text: 'text-yellow-100',
               desc: `-${LUMBER_SHED_BONUS_MS}ms gather`,
             },
             {
-              key: "wall",
-              icon: "🧱",
-              label: "Wall",
-              border: "border-amber-700/70",
-              bg: "bg-amber-900/20",
-              hover: "hover:bg-amber-900/40",
-              text: "text-amber-100",
-              desc: "Blocks grunts",
+              key: 'wall',
+              icon: '🧱',
+              label: 'Wall',
+              border: 'border-amber-700/70',
+              bg: 'bg-amber-900/20',
+              hover: 'hover:bg-amber-900/40',
+              text: 'text-amber-100',
+              desc: 'Blocks grunts',
             },
             {
-              key: "windmill",
-              icon: "💨",
-              label: "Windmill",
-              border: "border-lime-600/70",
-              bg: "bg-lime-900/20",
-              hover: "hover:bg-lime-900/40",
-              text: "text-lime-100",
-              desc: "+2🪙/5s",
+              key: 'windmill',
+              icon: '💨',
+              label: 'Windmill',
+              border: 'border-lime-600/70',
+              bg: 'bg-lime-900/20',
+              hover: 'hover:bg-lime-900/40',
+              text: 'text-lime-100',
+              desc: '+2🪙/5s',
             },
             {
-              key: "granary",
-              icon: "🌾",
-              label: "Granary",
-              border: "border-yellow-600/70",
-              bg: "bg-yellow-900/20",
-              hover: "hover:bg-yellow-900/40",
-              text: "text-yellow-100",
+              key: 'granary',
+              icon: '🌾',
+              label: 'Granary',
+              border: 'border-yellow-600/70',
+              bg: 'bg-yellow-900/20',
+              hover: 'hover:bg-yellow-900/40',
+              text: 'text-yellow-100',
               desc: `+${buildingCosts.granary.foodCapBonus} pop`,
             },
             {
-              key: "barracks",
-              icon: "🏯",
-              label: "Barracks",
-              border: "border-red-700/70",
-              bg: "bg-red-900/20",
-              hover: "hover:bg-red-900/40",
-              text: "text-red-100",
-              desc: "Unlocks ⚔️ Sword",
+              key: 'barracks',
+              icon: '🏯',
+              label: 'Barracks',
+              border: 'border-red-700/70',
+              bg: 'bg-red-900/20',
+              hover: 'hover:bg-red-900/40',
+              text: 'text-red-100',
+              desc: 'Unlocks ⚔️ Sword',
             },
             {
-              key: "stable",
-              icon: "🐴",
-              label: "Stable",
-              border: "border-amber-500/70",
-              bg: "bg-amber-900/20",
-              hover: "hover:bg-amber-900/40",
-              text: "text-amber-100",
-              desc: "Unlocks 🐴 Cav",
+              key: 'stable',
+              icon: '🐴',
+              label: 'Stable',
+              border: 'border-amber-500/70',
+              bg: 'bg-amber-900/20',
+              hover: 'hover:bg-amber-900/40',
+              text: 'text-amber-100',
+              desc: 'Unlocks 🐴 Cav',
             },
             {
-              key: "siegeWorkshop",
-              icon: "⚙️",
-              label: "Siege Wksp",
-              border: "border-orange-600/70",
-              bg: "bg-orange-900/20",
-              hover: "hover:bg-orange-900/40",
-              text: "text-orange-100",
-              desc: "Unlocks 🪨 Catapult",
+              key: 'siegeWorkshop',
+              icon: '⚙️',
+              label: 'Siege Wksp',
+              border: 'border-orange-600/70',
+              bg: 'bg-orange-900/20',
+              hover: 'hover:bg-orange-900/40',
+              text: 'text-orange-100',
+              desc: 'Unlocks 🪨 Catapult',
             },
             {
-              key: "market",
-              icon: "🏪",
-              label: "Market",
-              border: "border-emerald-600/70",
-              bg: "bg-emerald-900/20",
-              hover: "hover:bg-emerald-900/40",
-              text: "text-emerald-100",
-              desc: "Trade resources",
+              key: 'market',
+              icon: '🏪',
+              label: 'Market',
+              border: 'border-emerald-600/70',
+              bg: 'bg-emerald-900/20',
+              hover: 'hover:bg-emerald-900/40',
+              text: 'text-emerald-100',
+              desc: 'Trade resources',
             },
             {
-              key: "blacksmith",
-              icon: "🔨",
-              label: "Blacksmith",
-              border: "border-red-800/70",
-              bg: "bg-red-950/30",
-              hover: "hover:bg-red-900/40",
-              text: "text-red-100",
-              desc: "Atk + armor upgrades",
+              key: 'blacksmith',
+              icon: '🔨',
+              label: 'Blacksmith',
+              border: 'border-red-800/70',
+              bg: 'bg-red-950/30',
+              hover: 'hover:bg-red-900/40',
+              text: 'text-red-100',
+              desc: 'Atk + armor upgrades',
             },
             {
-              key: "spikeTrap",
-              icon: "🪤",
-              label: "Spike Trap",
-              border: "border-yellow-700/70",
-              bg: "bg-yellow-900/20",
-              hover: "hover:bg-yellow-800/30",
-              text: "text-yellow-200",
-              desc: "20 dmg on step",
+              key: 'spikeTrap',
+              icon: '🪤',
+              label: 'Spike Trap',
+              border: 'border-yellow-700/70',
+              bg: 'bg-yellow-900/20',
+              hover: 'hover:bg-yellow-800/30',
+              text: 'text-yellow-200',
+              desc: '20 dmg on step',
             },
             {
-              key: "frostTower",
-              icon: "❄️",
-              label: "Frost Tower",
-              border: "border-cyan-700/70",
-              bg: "bg-cyan-900/20",
-              hover: "hover:bg-cyan-800/30",
-              text: "text-cyan-200",
-              desc: "Slow + 5 dmg",
+              key: 'frostTower',
+              icon: '❄️',
+              label: 'Frost Tower',
+              border: 'border-cyan-700/70',
+              bg: 'bg-cyan-900/20',
+              hover: 'hover:bg-cyan-800/30',
+              text: 'text-cyan-200',
+              desc: 'Slow + 5 dmg',
             },
             {
-              key: "ballista",
-              icon: "🏹",
-              label: "Ballista",
-              border: "border-yellow-700/70",
-              bg: "bg-yellow-900/20",
-              hover: "hover:bg-yellow-800/30",
-              text: "text-yellow-200",
-              desc: "18 pierce, 6.5 range",
+              key: 'ballista',
+              icon: '🏹',
+              label: 'Ballista',
+              border: 'border-yellow-700/70',
+              bg: 'bg-yellow-900/20',
+              hover: 'hover:bg-yellow-800/30',
+              text: 'text-yellow-200',
+              desc: '18 pierce, 6.5 range',
             },
             {
-              key: "poisonTower",
-              icon: "☠️",
-              label: "Poison Twr",
-              border: "border-green-500/70",
-              bg: "bg-green-500/15",
-              hover: "hover:bg-green-500/30",
-              text: "text-green-100",
-              desc: "8+3/s, 5-tile",
+              key: 'poisonTower',
+              icon: '☠️',
+              label: 'Poison Twr',
+              border: 'border-green-500/70',
+              bg: 'bg-green-500/15',
+              hover: 'hover:bg-green-500/30',
+              text: 'text-green-100',
+              desc: '8+3/s, 5-tile',
             },
             {
-              key: "supplyStore",
-              icon: "🛒",
-              label: "Supply Store",
-              border: "border-violet-600/70",
-              bg: "bg-violet-900/20",
-              hover: "hover:bg-violet-900/40",
-              text: "text-violet-100",
-              desc: "Hero item shop",
+              key: 'supplyStore',
+              icon: '🛒',
+              label: 'Supply Store',
+              border: 'border-violet-600/70',
+              bg: 'bg-violet-900/20',
+              hover: 'hover:bg-violet-900/40',
+              text: 'text-violet-100',
+              desc: 'Hero item shop',
             },
             {
-              key: "miningCamp",
-              icon: "⛏️",
-              label: "Mining Camp",
-              border: "border-yellow-500/70",
-              bg: "bg-yellow-900/20",
-              hover: "hover:bg-yellow-900/40",
-              text: "text-yellow-100",
-              desc: "Gold/stone drop-off",
+              key: 'miningCamp',
+              icon: '⛏️',
+              label: 'Mining Camp',
+              border: 'border-yellow-500/70',
+              bg: 'bg-yellow-900/20',
+              hover: 'hover:bg-yellow-900/40',
+              text: 'text-yellow-100',
+              desc: 'Gold/stone drop-off',
             },
           ];
           const builtTypes = new Set(
-            placedBuildings.filter((b) => !b.constructing).map((b) => b.type),
+            placedBuildings.filter(b => !b.constructing).map(b => b.type)
           );
-          if (farmhouse.built) builtTypes.add("farmhouse");
+          if (farmhouse.built) builtTypes.add('farmhouse');
           return (
             <div className="grid grid-cols-3 gap-1.5 pt-1">
-              {buildings.map((b) => {
+              {buildings.map(b => {
                 const cost = buildingCosts[b.key];
                 const affordable = canAfford(cost);
                 const reqType = BUILDING_REQUIRES[b.key as BuildingType];
                 const prereqMet = !reqType || builtTypes.has(reqType);
                 const reqLabel = reqType
                   ? (buildingCosts[reqType]?.label ?? reqType)
-                  : "";
+                  : '';
                 return (
                   <button
                     key={b.key}
@@ -631,10 +631,10 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
                     title={!prereqMet ? `🔒 Requires ${reqLabel}` : b.desc}
                   >
                     <span>
-                      {!prereqMet ? "🔒" : b.icon} {b.label}
+                      {!prereqMet ? '🔒' : b.icon} {b.label}
                     </span>
                     <span
-                      className={`mt-0.5 text-[10px] ${!prereqMet ? "text-slate-600" : affordable ? "text-amber-300/80" : "text-slate-500"}`}
+                      className={`mt-0.5 text-[10px] ${!prereqMet ? 'text-slate-600' : affordable ? 'text-amber-300/80' : 'text-slate-500'}`}
                     >
                       {!prereqMet ? `Req: ${reqLabel}` : fmtCost(cost)}
                     </span>
@@ -646,10 +646,10 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
         })()}
 
       {/* TECH tab — research + upgrades */}
-      {fhTab === "tech" && (
+      {fhTab === 'tech' && (
         <div className="flex flex-col gap-1.5 pt-1">
           <div className="grid grid-cols-3 gap-1.5">
-            {(Object.keys(UPGRADE_META) as (keyof Upgrades)[]).map((key) => {
+            {(Object.keys(UPGRADE_META) as (keyof Upgrades)[]).map(key => {
               const level = upgrades[key];
               const maxed = level >= UPGRADE_MAX;
               const cost = UPGRADE_COSTS[key][level];
@@ -665,14 +665,14 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
                     maxed
                       ? `${meta.label} maxed`
                       : cost
-                        ? `${meta.desc} · ${cost.gold > 0 ? cost.gold + "🪙" : ""}${cost.lumber > 0 ? cost.lumber + "🌲" : ""}${cost.stone > 0 ? cost.stone + "🪨" : ""}`
-                        : ""
+                        ? `${meta.desc} · ${cost.gold > 0 ? cost.gold + '🪙' : ''}${cost.lumber > 0 ? cost.lumber + '🌲' : ''}${cost.stone > 0 ? cost.stone + '🪨' : ''}`
+                        : ''
                   }
                 >
                   {meta.icon}
                   {level > 0 && (
-                    <span className="text-purple-300">{"★".repeat(level)}</span>
-                  )}{" "}
+                    <span className="text-purple-300">{'★'.repeat(level)}</span>
+                  )}{' '}
                   {meta.label}
                   {maxed && <span className="text-purple-400"> ✓</span>}
                 </button>
@@ -682,7 +682,7 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
           {hasWatchtower && (
             <button
               type="button"
-              className={`rounded border py-2.5 text-xs disabled:opacity-40 ${guardTowerResearched ? "border-cyan-500/50 bg-cyan-900/20 text-cyan-400" : "border-cyan-500/70 bg-cyan-500/15 text-cyan-100 hover:bg-cyan-500/30"}`}
+              className={`rounded border py-2.5 text-xs disabled:opacity-40 ${guardTowerResearched ? 'border-cyan-500/50 bg-cyan-900/20 text-cyan-400' : 'border-cyan-500/70 bg-cyan-500/15 text-cyan-100 hover:bg-cyan-500/30'}`}
               onClick={onGuardTower}
               disabled={
                 guardTowerResearched ||
@@ -692,50 +692,50 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
               title="Guard Tower — +7 dmg, +1 range on all watchtowers (120🪙 80🪨)"
             >
               {guardTowerResearched
-                ? "🏰 Guard Tower ✓"
-                : "🏰 Guard Tower 120🪙 80🪨"}
+                ? '🏰 Guard Tower ✓'
+                : '🏰 Guard Tower 120🪙 80🪨'}
             </button>
           )}
           {hasBlacksmith && (
             <div className="grid grid-cols-2 gap-1.5">
-              {(["steelEdge", "ironHide"] as const).map((upg) => {
+              {(['steelEdge', 'ironHide'] as const).map(upg => {
                 const lvl = blacksmithUpgrades[upg];
                 const costs =
-                  upg === "steelEdge"
+                  upg === 'steelEdge'
                     ? BLACKSMITH_STEEL_EDGE_COSTS
                     : BLACKSMITH_IRON_HIDE_COSTS;
                 const cost = costs[lvl];
                 const canAffordUpg =
                   cost !== undefined &&
                   resources.gold >= cost.gold &&
-                  ("stone" in cost
+                  ('stone' in cost
                     ? resources.stone >= cost.stone
                     : resources.lumber >= (cost as { lumber: number }).lumber);
                 const maxLvl = costs.length;
                 const costLabel =
                   lvl >= maxLvl
-                    ? "MAX"
+                    ? 'MAX'
                     : cost
-                      ? "stone" in cost
+                      ? 'stone' in cost
                         ? `${cost.gold}🪙 ${cost.stone}🪨`
                         : `${cost.gold}🪙 ${(cost as { lumber: number }).lumber}🪵`
-                      : "";
+                      : '';
                 return (
                   <button
                     key={upg}
                     type="button"
-                    className={`rounded border py-2.5 text-xs hover:opacity-90 disabled:opacity-40 ${upg === "steelEdge" ? "border-red-700/70 bg-red-950/20 text-red-100 hover:bg-red-900/40" : "border-sky-700/70 bg-sky-950/20 text-sky-100 hover:bg-sky-900/40"}`}
+                    className={`rounded border py-2.5 text-xs hover:opacity-90 disabled:opacity-40 ${upg === 'steelEdge' ? 'border-red-700/70 bg-red-950/20 text-red-100 hover:bg-red-900/40' : 'border-sky-700/70 bg-sky-950/20 text-sky-100 hover:bg-sky-900/40'}`}
                     onClick={() => onBlacksmithUpgrade(upg)}
                     disabled={lvl >= maxLvl || !canAffordUpg}
                     title={
-                      upg === "steelEdge"
-                        ? "Steel Edge — +5 atk all units per level"
-                        : "Iron Hide — -2 dmg taken per level"
+                      upg === 'steelEdge'
+                        ? 'Steel Edge — +5 atk all units per level'
+                        : 'Iron Hide — -2 dmg taken per level'
                     }
                   >
-                    {upg === "steelEdge" ? "⚔️ Steel" : "🛡️ Hide"}{" "}
-                    {"★".repeat(lvl)}
-                    {"☆".repeat(maxLvl - lvl)} {costLabel}
+                    {upg === 'steelEdge' ? '⚔️ Steel' : '🛡️ Hide'}{' '}
+                    {'★'.repeat(lvl)}
+                    {'☆'.repeat(maxLvl - lvl)} {costLabel}
                   </button>
                 );
               })}
@@ -745,8 +745,8 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
             <div className="grid grid-cols-2 gap-1.5">
               <button
                 type="button"
-                className={`rounded border py-2.5 text-xs disabled:opacity-40 ${barracksTech.veteranTraining ? "border-red-500/40 bg-red-900/20 text-red-400" : "border-red-400/70 bg-red-500/15 text-red-100 hover:bg-red-500/30"}`}
-                onClick={() => onBarracksTech("veteranTraining")}
+                className={`rounded border py-2.5 text-xs disabled:opacity-40 ${barracksTech.veteranTraining ? 'border-red-500/40 bg-red-900/20 text-red-400' : 'border-red-400/70 bg-red-500/15 text-red-100 hover:bg-red-500/30'}`}
+                onClick={() => onBarracksTech('veteranTraining')}
                 disabled={
                   barracksTech.veteranTraining ||
                   resources.gold < 100 ||
@@ -754,13 +754,13 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
                 }
               >
                 {barracksTech.veteranTraining
-                  ? "🛡️ Veteran ✓"
-                  : "🛡️ Veteran 100🪙 60🪵"}
+                  ? '🛡️ Veteran ✓'
+                  : '🛡️ Veteran 100🪙 60🪵'}
               </button>
               <button
                 type="button"
-                className={`rounded border py-2.5 text-xs disabled:opacity-40 ${barracksTech.warDrums ? "border-orange-500/40 bg-orange-900/20 text-orange-400" : "border-orange-400/70 bg-orange-500/15 text-orange-100 hover:bg-orange-500/30"}`}
-                onClick={() => onBarracksTech("warDrums")}
+                className={`rounded border py-2.5 text-xs disabled:opacity-40 ${barracksTech.warDrums ? 'border-orange-500/40 bg-orange-900/20 text-orange-400' : 'border-orange-400/70 bg-orange-500/15 text-orange-100 hover:bg-orange-500/30'}`}
+                onClick={() => onBarracksTech('warDrums')}
                 disabled={
                   barracksTech.warDrums ||
                   resources.gold < 120 ||
@@ -768,17 +768,17 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
                 }
               >
                 {barracksTech.warDrums
-                  ? "🥁 War Drums ✓"
-                  : "🥁 Drums 120🪙 40🪵"}
+                  ? '🥁 War Drums ✓'
+                  : '🥁 Drums 120🪙 40🪵'}
               </button>
             </div>
           )}
           {hasWatchtower &&
             (() => {
               const towers = placedBuildingsList.filter(
-                (b) => b.type === "watchtower",
+                b => b.type === 'watchtower'
               );
-              return towers.map((t) => {
+              return towers.map(t => {
                 const tg = towerGarrison[t.id] ?? [];
                 if (tg.length === 0) return null;
                 return (

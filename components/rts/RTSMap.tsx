@@ -1,11 +1,11 @@
-"use client";
+'use client';
 import React, {
   useState,
   useEffect,
   useRef,
   useCallback,
   useMemo,
-} from "react";
+} from 'react';
 
 import {
   RTSUI,
@@ -14,7 +14,7 @@ import {
   UPGRADE_COSTS,
   UPGRADE_MAX,
   FarmhouseAction,
-} from "./RTSUI";
+} from './RTSUI';
 
 import {
   ARCHER_TOWER_POS,
@@ -59,7 +59,7 @@ import {
   XP_TO_LEVEL_1,
   XP_TO_LEVEL_2,
   XP_TO_LEVEL_3,
-} from "./game/constants";
+} from './game/constants';
 import type {
   BuildingType,
   DroppedItem,
@@ -84,27 +84,27 @@ import type {
   ResourceNode,
   Resources,
   SaveData,
-} from "./game/types";
+} from './game/types';
 import {
   computeVisible,
   INITIAL_TILES,
   svgToTile,
   tileDist,
   tileToSvg,
-} from "./game/map";
-import { aStar } from "./game/pathfinding";
+} from './game/map';
+import { aStar } from './game/pathfinding';
 import {
   ALL_ACHIEVEMENTS,
   unlockAchievement,
   type Achievement,
-} from "./game/achievements";
+} from './game/achievements';
 import {
   loadSave,
   saveHighScore,
   writeSave,
   type SaveSlot,
-} from "./game/persistence";
-import { makeUnit } from "./game/units";
+} from './game/persistence';
+import { makeUnit } from './game/units';
 import {
   ACK_ATTACK,
   ACK_MOVE,
@@ -114,43 +114,43 @@ import {
   startAmbient,
   stopAmbient,
   Snd,
-} from "./game/sound";
-import { AchievementPanel } from "./hud/AchievementPanel";
-import { AlertsOverlay } from "./hud/AlertsOverlay";
-import { BuffIndicators } from "./hud/BuffIndicators";
-import { ControlGroupBar } from "./hud/ControlGroupBar";
-import { ControlGroupChips } from "./hud/ControlGroupChips";
-import { DamageLogPanel } from "./hud/DamageLogPanel";
-import { GameOverOverlay } from "./hud/GameOverOverlay";
-import { MinimapPanel } from "./hud/MinimapPanel";
-import { ResourceBar } from "./hud/ResourceBar";
-import { BuildingsLayer } from "./map/BuildingsLayer";
-import { EffectsLayer } from "./map/EffectsLayer";
-import { EnemyBaseLayer } from "./map/EnemyBaseLayer";
-import { EnemyEliteLayer } from "./map/EnemyEliteLayer";
-import { EnemyGruntsLayer } from "./map/EnemyGruntsLayer";
-import { EnemySiegeCastersLayer } from "./map/EnemySiegeCastersLayer";
-import { NeutralLayer } from "./map/NeutralLayer";
-import { OverlayRingsLayer } from "./map/OverlayRingsLayer";
-import { PlayerBarnLayer } from "./map/PlayerBarnLayer";
-import { ResourceNodesLayer } from "./map/ResourceNodesLayer";
-import { TerrainLayer } from "./map/TerrainLayer";
-import { WorkersLayer } from "./map/WorkersLayer";
-import { useGameLoop } from "./hooks/useGameLoop";
-import { useProduction } from "./hooks/useProduction";
-import { useTowerCombat } from "./hooks/useTowerCombat";
-import { useWaveSpawner } from "./hooks/useWaveSpawner";
-import { useWorldTicks } from "./hooks/useWorldTicks";
+} from './game/sound';
+import { AchievementPanel } from './hud/AchievementPanel';
+import { AlertsOverlay } from './hud/AlertsOverlay';
+import { BuffIndicators } from './hud/BuffIndicators';
+import { ControlGroupBar } from './hud/ControlGroupBar';
+import { ControlGroupChips } from './hud/ControlGroupChips';
+import { DamageLogPanel } from './hud/DamageLogPanel';
+import { GameOverOverlay } from './hud/GameOverOverlay';
+import { MinimapPanel } from './hud/MinimapPanel';
+import { ResourceBar } from './hud/ResourceBar';
+import { BuildingsLayer } from './map/BuildingsLayer';
+import { EffectsLayer } from './map/EffectsLayer';
+import { EnemyBaseLayer } from './map/EnemyBaseLayer';
+import { EnemyEliteLayer } from './map/EnemyEliteLayer';
+import { EnemyGruntsLayer } from './map/EnemyGruntsLayer';
+import { EnemySiegeCastersLayer } from './map/EnemySiegeCastersLayer';
+import { NeutralLayer } from './map/NeutralLayer';
+import { OverlayRingsLayer } from './map/OverlayRingsLayer';
+import { PlayerBarnLayer } from './map/PlayerBarnLayer';
+import { ResourceNodesLayer } from './map/ResourceNodesLayer';
+import { TerrainLayer } from './map/TerrainLayer';
+import { WorkersLayer } from './map/WorkersLayer';
+import { useGameLoop } from './hooks/useGameLoop';
+import { useProduction } from './hooks/useProduction';
+import { useTowerCombat } from './hooks/useTowerCombat';
+import { useWaveSpawner } from './hooks/useWaveSpawner';
+import { useWorldTicks } from './hooks/useWorldTicks';
 import {
   useBotController,
   type BotCommands,
   type BotSnapshot,
-} from "./hooks/useBotController";
+} from './hooks/useBotController';
 
 // Re-exported for backwards compatibility — previously defined in this file.
-export { BUILDING_REQUIRES } from "./game/constants";
+export { BUILDING_REQUIRES } from './game/constants';
 
-import type { DifficultyConfig } from "./RTSGameRoot";
+import type { DifficultyConfig } from './RTSGameRoot';
 
 const RTSMap: React.FC<{
   onNewGame?: () => void;
@@ -172,7 +172,7 @@ const RTSMap: React.FC<{
     if (screenShakeTimerRef.current) clearTimeout(screenShakeTimerRef.current);
     screenShakeTimerRef.current = window.setTimeout(
       () => setScreenShake(0),
-      350,
+      350
     );
   }, []);
   const triggerShakeRef = useRef(triggerShake);
@@ -197,7 +197,7 @@ const RTSMap: React.FC<{
   const fogExploredRef = useRef(fogExplored);
   // fogVisible: currently-visible tiles (for rendering enemy units in/out of fog)
   const [fogVisible, setFogVisible] = useState<boolean[][]>(() =>
-    computeVisible([{ x: BARN_POS.x, y: BARN_POS.y, r: BARN_VISION }]),
+    computeVisible([{ x: BARN_POS.x, y: BARN_POS.y, r: BARN_VISION }])
   );
   const fogVisibleRef = useRef(fogVisible);
   const [dragBox, setDragBox] = useState<{
@@ -207,7 +207,7 @@ const RTSMap: React.FC<{
   const isDraggingRef = useRef(false);
   const [buildMode, setBuildMode] = useState<BuildingType | null>(null);
   const [ghostTile, setGhostTile] = useState<{ x: number; y: number } | null>(
-    null,
+    null
   );
   const [placedBuildings, setPlacedBuildings] = useState<PlacedBuilding[]>(() =>
     (INITIAL_SAVE?.placedBuildings ?? []).map((b: PlacedBuilding) =>
@@ -217,8 +217,8 @@ const RTSMap: React.FC<{
             ...b,
             hp: BUILDING_MAX_HP[b.type] ?? 100,
             maxHp: BUILDING_MAX_HP[b.type] ?? 100,
-          },
-    ),
+          }
+    )
   );
   const buildingIdRef = useRef(INITIAL_SAVE?.buildingNextId ?? 1);
   const placedBuildingsRef = useRef(placedBuildings);
@@ -232,7 +232,7 @@ const RTSMap: React.FC<{
     fogVisibleRef.current = fogVisible;
   }, [fogVisible]);
   const [controlGroups, setControlGroups] = useState<Record<number, number[]>>(
-    {},
+    {}
   );
   const [resources, setResources] = useState<Resources>(
     () =>
@@ -242,7 +242,7 @@ const RTSMap: React.FC<{
         stone: difficulty?.startStone ?? 30,
         food: 5,
         foodCap: 10,
-      },
+      }
   );
 
   const DEFAULT_TREES: ResourceNode[] = [
@@ -314,12 +314,12 @@ const RTSMap: React.FC<{
     { x: 12, y: 23, amount: 250 }, // enemy-side west
   ];
   const [trees, setTrees] = useState<ResourceNode[]>(
-    () => INITIAL_SAVE?.trees ?? DEFAULT_TREES,
+    () => INITIAL_SAVE?.trees ?? DEFAULT_TREES
   );
   const [goldMines, setGoldMines] = useState<ResourceNode[]>(
     () =>
       INITIAL_SAVE?.goldMines ??
-      (INITIAL_SAVE?.goldMine ? [INITIAL_SAVE.goldMine] : DEFAULT_GOLD_MINES),
+      (INITIAL_SAVE?.goldMine ? [INITIAL_SAVE.goldMine] : DEFAULT_GOLD_MINES)
   );
   const [stoneNodes, setStoneNodes] = useState<ResourceNode[]>(
     () =>
@@ -348,7 +348,7 @@ const RTSMap: React.FC<{
         { x: 20, y: 20, amount: 160 },
         { x: 24, y: 18, amount: 160 },
         { x: 18, y: 24, amount: 160 },
-      ],
+      ]
   );
   const treesRef = useRef(trees);
   const goldMinesRef = useRef(goldMines);
@@ -364,11 +364,11 @@ const RTSMap: React.FC<{
   }, [stoneNodes]);
 
   const makeWorker = (id: number, x: number, y: number) =>
-    makeUnit(id, x, y, "farmer");
+    makeUnit(id, x, y, 'farmer');
 
   const [workers, setWorkers] = useState<WorkerState[]>(() =>
     INITIAL_SAVE?.workers?.length
-      ? INITIAL_SAVE.workers.map((w) => ({
+      ? INITIAL_SAVE.workers.map(w => ({
           ...makeUnit(w.id, w.x, w.y, w.unitType),
           hp: w.hp,
           maxHp: w.maxHp,
@@ -377,11 +377,11 @@ const RTSMap: React.FC<{
           level: w.level ?? 0,
           gathering: w.gathering ?? null,
           state:
-            w.state === "gathering" ||
-            w.state === "moving" ||
-            w.state === "returning"
-              ? (w.state as WorkerState["state"])
-              : "idle",
+            w.state === 'gathering' ||
+            w.state === 'moving' ||
+            w.state === 'returning'
+              ? (w.state as WorkerState['state'])
+              : 'idle',
         }))
       : (() => {
           // WC3/AoE style: workers start pre-assigned to harvest nearby resources
@@ -392,27 +392,27 @@ const RTSMap: React.FC<{
             id: number,
             sx: number,
             sy: number,
-            gtype: "gold" | "tree",
+            gtype: 'gold' | 'tree',
             idx: number,
-            dest: { x: number; y: number },
+            dest: { x: number; y: number }
           ) => ({
-            ...makeUnit(id, sx, sy, "farmer"),
+            ...makeUnit(id, sx, sy, 'farmer'),
             gathering: { type: gtype, idx } as {
-              type: "gold" | "tree";
+              type: 'gold' | 'tree';
               idx: number;
             },
             movingTo: dest,
             path: [] as { x: number; y: number }[],
-            state: "moving" as const,
+            state: 'moving' as const,
           });
           return [
-            { ...makeUnit(1, 3, 3, "farmer"), selected: true }, // idle, player's first unit to control
-            mkGatherer(2, 4, 3, "gold", 0, goldMine), // → gold mine
-            mkGatherer(3, 3, 4, "gold", 0, goldMine), // → gold mine
-            mkGatherer(4, 4, 4, "tree", 0, tree0), // → lumber
-            mkGatherer(5, 5, 3, "tree", 1, tree1), // → lumber
+            { ...makeUnit(1, 3, 3, 'farmer'), selected: true }, // idle, player's first unit to control
+            mkGatherer(2, 4, 3, 'gold', 0, goldMine), // → gold mine
+            mkGatherer(3, 3, 4, 'gold', 0, goldMine), // → gold mine
+            mkGatherer(4, 4, 4, 'tree', 0, tree0), // → lumber
+            mkGatherer(5, 5, 3, 'tree', 1, tree1), // → lumber
           ];
-        })(),
+        })()
   );
   const workersRef = useRef(workers);
   useEffect(() => {
@@ -429,7 +429,7 @@ const RTSMap: React.FC<{
 
   const makeCreeps = () => {
     let id = 1;
-    return CREEP_CAMPS.flatMap((camp) => [
+    return CREEP_CAMPS.flatMap(camp => [
       {
         id: id++,
         campId: camp.id,
@@ -439,7 +439,7 @@ const RTSMap: React.FC<{
         homeY: camp.y,
         hp: CREEP_MAX_HP,
         maxHp: CREEP_MAX_HP,
-        state: "idle" as const,
+        state: 'idle' as const,
         targetWorkerId: null,
       },
       {
@@ -451,20 +451,20 @@ const RTSMap: React.FC<{
         homeY: camp.y,
         hp: CREEP_MAX_HP,
         maxHp: CREEP_MAX_HP,
-        state: "idle" as const,
+        state: 'idle' as const,
         targetWorkerId: null,
       },
     ]);
   };
   const [neutralCreeps, setNeutralCreeps] = useState<NeutralCreep[]>(() =>
-    makeCreeps(),
+    makeCreeps()
   );
   const neutralCreepsRef = useRef(neutralCreeps);
   useEffect(() => {
     neutralCreepsRef.current = neutralCreeps;
   }, [neutralCreeps]);
   const [clearedCamps, setClearedCamps] = useState<Set<number>>(
-    () => new Set(),
+    () => new Set()
   );
   const campClearedAtRef = useRef<Record<number, number>>({}); // campId → timestamp cleared
   const creepAttackTimeoutsRef = useRef<Record<number, number>>({});
@@ -474,7 +474,7 @@ const RTSMap: React.FC<{
   const waveRef = useRef(INITIAL_SAVE?.wave ?? 0);
   const [, setTick] = useState(0);
   useEffect(() => {
-    const id = window.setInterval(() => setTick((t) => t + 1), 1000);
+    const id = window.setInterval(() => setTick(t => t + 1), 1000);
     return () => clearInterval(id);
   }, []);
 
@@ -552,7 +552,7 @@ const RTSMap: React.FC<{
     { x: number; y: number; t: number }[]
   >([]);
   const deadGruntPositionsRef = useRef<{ x: number; y: number; t: number }[]>(
-    [],
+    []
   );
   useEffect(() => {
     deadGruntPositionsRef.current = deadGruntPositions;
@@ -591,9 +591,9 @@ const RTSMap: React.FC<{
     droppedItemsRef.current = droppedItems;
   }, [droppedItems]);
   const dropItemIdRef = useRef(9000);
-  type FormationMode = "cluster" | "line" | "wedge" | "box";
-  const [formationMode, setFormationMode] = useState<FormationMode>("cluster");
-  const formationModeRef = useRef<FormationMode>("cluster");
+  type FormationMode = 'cluster' | 'line' | 'wedge' | 'box';
+  const [formationMode, setFormationMode] = useState<FormationMode>('cluster');
+  const formationModeRef = useRef<FormationMode>('cluster');
   useEffect(() => {
     formationModeRef.current = formationMode;
   }, [formationMode]);
@@ -601,7 +601,7 @@ const RTSMap: React.FC<{
   const [waveAnnouncement, setWaveAnnouncement] = useState<string | null>(null);
   const [wavePreview, setWavePreview] = useState<string | null>(null);
   const previewTimerRef = useRef<number | null>(null);
-  const gameOverRef = useRef<"victory" | "defeat" | null>(null);
+  const gameOverRef = useRef<'victory' | 'defeat' | null>(null);
   const spawnTimerRef = useRef<number | null>(null);
   const [nextWaveAt, setNextWaveAt] = useState<number | null>(null);
   const nextWaveAtRef = useRef<number | null>(null);
@@ -620,10 +620,10 @@ const RTSMap: React.FC<{
       x: BARN_POS.x + (i % 3) - 1,
       y: BARN_POS.y + Math.floor(i / 3) + 1,
       facing: 1 as const,
-    })),
+    }))
   );
   const [capturedShrines, setCapturedShrines] = useState<Set<number>>(
-    new Set(),
+    new Set()
   );
   const capturedShrinesRef = useRef<Set<number>>(new Set());
   useEffect(() => {
@@ -664,14 +664,14 @@ const RTSMap: React.FC<{
   >([]);
   const [damageLogOpen, setDamageLogOpen] = useState(false);
   const addDmgLog = useCallback((source: string, amount: number) => {
-    setDamageLog((prev) => [
+    setDamageLog(prev => [
       ...prev.slice(-49),
       { source, amount, t: Date.now() },
     ]);
   }, []);
 
   const [enemyBarnHp, setEnemyBarnHp] = useState(
-    () => INITIAL_SAVE?.enemyBarnHp ?? ENEMY_BARN_MAX_HP,
+    () => INITIAL_SAVE?.enemyBarnHp ?? ENEMY_BARN_MAX_HP
   );
   const enemyBarnHpRef = useRef(INITIAL_SAVE?.enemyBarnHp ?? ENEMY_BARN_MAX_HP);
   useEffect(() => {
@@ -680,15 +680,15 @@ const RTSMap: React.FC<{
   const sallyForthThresholdsRef = useRef<Set<number>>(new Set([150, 100, 50])); // barn HP thresholds that trigger sally
   const lastStandEnrageRef = useRef(false); // one-shot: enrage all grunts when enemy barn hits 50%
   const [playerBarnHp, setPlayerBarnHp] = useState(
-    () => INITIAL_SAVE?.playerBarnHp ?? PLAYER_BARN_MAX_HP,
+    () => INITIAL_SAVE?.playerBarnHp ?? PLAYER_BARN_MAX_HP
   );
   const playerBarnHpRef = useRef(
-    INITIAL_SAVE?.playerBarnHp ?? PLAYER_BARN_MAX_HP,
+    INITIAL_SAVE?.playerBarnHp ?? PLAYER_BARN_MAX_HP
   );
   useEffect(() => {
     playerBarnHpRef.current = playerBarnHp;
   }, [playerBarnHp]);
-  const [gameOver, setGameOver] = useState<"victory" | "defeat" | null>(null);
+  const [gameOver, setGameOver] = useState<'victory' | 'defeat' | null>(null);
   useEffect(() => {
     gameOverRef.current = gameOver;
   }, [gameOver]);
@@ -716,8 +716,8 @@ const RTSMap: React.FC<{
   useEffect(() => {
     if (heroAbilityCooldown <= 0) return;
     const id = setInterval(
-      () => setHeroAbilityCooldown((c) => Math.max(0, c - 1)),
-      1000,
+      () => setHeroAbilityCooldown(c => Math.max(0, c - 1)),
+      1000
     );
     return () => clearInterval(id);
   }, [heroAbilityCooldown > 0]);
@@ -725,8 +725,8 @@ const RTSMap: React.FC<{
   useEffect(() => {
     if (heroShoutCooldown <= 0) return;
     const id = setInterval(
-      () => setHeroShoutCooldown((c) => Math.max(0, c - 1)),
-      1000,
+      () => setHeroShoutCooldown(c => Math.max(0, c - 1)),
+      1000
     );
     return () => clearInterval(id);
   }, [heroShoutCooldown > 0]);
@@ -738,19 +738,19 @@ const RTSMap: React.FC<{
   // Tick down per-unit cooldowns every second
   useEffect(() => {
     const id = setInterval(() => {
-      setWorkers((ws) => {
+      setWorkers(ws => {
         const hasCooldown = ws.some(
-          (w) => w.chargeCooldown > 0 || w.sprintCooldown > 0,
+          w => w.chargeCooldown > 0 || w.sprintCooldown > 0
         );
         if (!hasCooldown) return ws;
-        return ws.map((w) =>
+        return ws.map(w =>
           w.chargeCooldown > 0 || w.sprintCooldown > 0
             ? {
                 ...w,
                 chargeCooldown: Math.max(0, w.chargeCooldown - 1),
                 sprintCooldown: Math.max(0, w.sprintCooldown - 1),
               }
-            : w,
+            : w
         );
       });
     }, 1000);
@@ -772,30 +772,30 @@ const RTSMap: React.FC<{
   useEffect(() => {
     if (harvestBoonCooldown <= 0) return;
     const id = setInterval(
-      () => setHarvestBoonCooldown((c) => Math.max(0, c - 1)),
-      1000,
+      () => setHarvestBoonCooldown(c => Math.max(0, c - 1)),
+      1000
     );
     return () => clearInterval(id);
   }, [harvestBoonCooldown > 0]);
   useEffect(() => {
     if (earthquakeCooldown <= 0) return;
     const id = setInterval(
-      () => setEarthquakeCooldown((c) => Math.max(0, c - 1)),
-      1000,
+      () => setEarthquakeCooldown(c => Math.max(0, c - 1)),
+      1000
     );
     return () => clearInterval(id);
   }, [earthquakeCooldown > 0]);
   const [killCount, setKillCount] = useState(
-    () => INITIAL_SAVE?.killCount ?? 0,
+    () => INITIAL_SAVE?.killCount ?? 0
   );
   const [totalGold, setTotalGold] = useState(
-    () => INITIAL_SAVE?.totalGold ?? 0,
+    () => INITIAL_SAVE?.totalGold ?? 0
   );
   const [totalLumber, setTotalLumber] = useState(
-    () => INITIAL_SAVE?.totalLumber ?? 0,
+    () => INITIAL_SAVE?.totalLumber ?? 0
   );
   const [totalStone, setTotalStone] = useState(
-    () => INITIAL_SAVE?.totalStone ?? 0,
+    () => INITIAL_SAVE?.totalStone ?? 0
   );
   const startTimeRef = useRef(Date.now());
   const [gameEndTime, setGameEndTime] = useState<number | null>(null);
@@ -811,13 +811,13 @@ const RTSMap: React.FC<{
         time: Math.floor((endTime - startTimeRef.current) / 1000),
         date: new Date().toLocaleDateString(),
       });
-      if (gameOver === "victory") Snd.victory();
+      if (gameOver === 'victory') Snd.victory();
       else Snd.defeat();
     }
   }, [gameOver, gameEndTime, wave, killCount, totalGold]);
 
   const [farmhouse, setFarmhouse] = useState<{ built: boolean; level: number }>(
-    () => INITIAL_SAVE?.farmhouse ?? { built: false, level: 0 },
+    () => INITIAL_SAVE?.farmhouse ?? { built: false, level: 0 }
   );
   const farmhouseUpgradeCosts = [
     { gold: 50, lumber: 50 },
@@ -831,13 +831,13 @@ const RTSMap: React.FC<{
   ];
   const maxFarmhouseLevel = farmhouseUpgradeCosts.length - 1;
   const [selectedType, setSelectedType] = useState<
-    "worker" | "farmhouse" | "building" | null
-  >("worker");
+    'worker' | 'farmhouse' | 'building' | null
+  >('worker');
   const [selectedBuildingId, setSelectedBuildingId] = useState<number | null>(
-    null,
+    null
   );
   const [rallyPoint, setRallyPoint] = useState<{ x: number; y: number } | null>(
-    () => INITIAL_SAVE?.rallyPoint ?? null,
+    () => INITIAL_SAVE?.rallyPoint ?? null
   );
   const rallyPointRef = useRef(rallyPoint);
   useEffect(() => {
@@ -853,8 +853,8 @@ const RTSMap: React.FC<{
   useEffect(() => {
     attackMoveModeRef.current = attackMoveMode;
   }, [attackMoveMode]);
-  const [stance, setStance] = useState<"aggressive" | "passive">("aggressive");
-  const stanceRef = useRef<"aggressive" | "passive">("aggressive");
+  const [stance, setStance] = useState<'aggressive' | 'passive'>('aggressive');
+  const stanceRef = useRef<'aggressive' | 'passive'>('aggressive');
   useEffect(() => {
     stanceRef.current = stance;
   }, [stance]);
@@ -864,7 +864,7 @@ const RTSMap: React.FC<{
         sharperTools: 0,
         swiftHarvest: 0,
         ironWill: 0,
-      },
+      }
   );
   const upgradesRef = useRef(upgrades);
   useEffect(() => {
@@ -872,14 +872,14 @@ const RTSMap: React.FC<{
   }, [upgrades]);
 
   const [blacksmithUpgrades, setBlacksmithUpgrades] = useState(
-    () => INITIAL_SAVE?.blacksmithUpgrades ?? { steelEdge: 0, ironHide: 0 },
+    () => INITIAL_SAVE?.blacksmithUpgrades ?? { steelEdge: 0, ironHide: 0 }
   );
   const blacksmithUpgradesRef = useRef(blacksmithUpgrades);
   useEffect(() => {
     blacksmithUpgradesRef.current = blacksmithUpgrades;
   }, [blacksmithUpgrades]);
   const [guardTowerResearched, setGuardTowerResearched] = useState(
-    () => INITIAL_SAVE?.guardTowerResearched ?? false,
+    () => INITIAL_SAVE?.guardTowerResearched ?? false
   );
   const guardTowerRef = useRef(guardTowerResearched);
   useEffect(() => {
@@ -887,7 +887,7 @@ const RTSMap: React.FC<{
   }, [guardTowerResearched]);
   const [barracksTech, setBarracksTech] = useState(
     () =>
-      INITIAL_SAVE?.barracksTech ?? { veteranTraining: false, warDrums: false },
+      INITIAL_SAVE?.barracksTech ?? { veteranTraining: false, warDrums: false }
   );
   const barracksTechRef = useRef(barracksTech);
   useEffect(() => {
@@ -906,10 +906,10 @@ const RTSMap: React.FC<{
 
   // Unit training queue (barracks + stable)
   const [trainingQueue, setTrainingQueue] = useState<
-    { type: "swordsman" | "cavalry" }[]
+    { type: 'swordsman' | 'cavalry' }[]
   >([]);
   const [trainingProgress, setTrainingProgress] = useState(0); // 0-1 for first item
-  const trainingQueueRef = useRef<{ type: "swordsman" | "cavalry" }[]>([]);
+  const trainingQueueRef = useRef<{ type: 'swordsman' | 'cavalry' }[]>([]);
   const trainingElapsedRef = useRef(0);
   useEffect(() => {
     trainingQueueRef.current = trainingQueue;
@@ -918,15 +918,15 @@ const RTSMap: React.FC<{
   // Day/Night cycle
   const DAY_DURATION_MS = 60000;
   const NIGHT_DURATION_MS = 45000;
-  const [dayPhase, setDayPhase] = useState<"day" | "night">("day");
+  const [dayPhase, setDayPhase] = useState<'day' | 'night'>('day');
   const [dayProgress, setDayProgress] = useState(0); // 0-1 through current phase
   const [phaseAnnouncement, setPhaseAnnouncement] = useState<string | null>(
-    null,
+    null
   );
   const isNightRef = useRef(false);
   useEffect(() => {
-    isNightRef.current = dayPhase === "night";
-    if (!soundMuted) startAmbient(dayPhase === "night");
+    isNightRef.current = dayPhase === 'night';
+    if (!soundMuted) startAmbient(dayPhase === 'night');
   }, [dayPhase, soundMuted]);
 
   // Stop ambient audio when muted or game over
@@ -938,21 +938,21 @@ const RTSMap: React.FC<{
   useEffect(() => {
     if (gameOver) return;
     let phaseStart = Date.now();
-    let currentPhase: "day" | "night" = "day";
+    let currentPhase: 'day' | 'night' = 'day';
     const tick = setInterval(() => {
       if (gameOverRef.current) return;
       const elapsed = Date.now() - phaseStart;
       const duration =
-        currentPhase === "day" ? DAY_DURATION_MS : NIGHT_DURATION_MS;
+        currentPhase === 'day' ? DAY_DURATION_MS : NIGHT_DURATION_MS;
       setDayProgress(Math.min(1, elapsed / duration));
       if (elapsed >= duration) {
-        currentPhase = currentPhase === "day" ? "night" : "day";
+        currentPhase = currentPhase === 'day' ? 'night' : 'day';
         setDayPhase(currentPhase);
         phaseStart = Date.now();
         const msg =
-          currentPhase === "night"
-            ? "🌙 Night Falls! Grunts grow stronger…"
-            : "☀️ Dawn Breaks!";
+          currentPhase === 'night'
+            ? '🌙 Night Falls! Grunts grow stronger…'
+            : '☀️ Dawn Breaks!';
         setPhaseAnnouncement(msg);
         setTimeout(() => setPhaseAnnouncement(null), 2500);
       }
@@ -960,9 +960,9 @@ const RTSMap: React.FC<{
     return () => clearInterval(tick);
   }, [gameOver]);
 
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saved">("idle");
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle');
   const [achievementToast, setAchievementToast] = useState<Achievement | null>(
-    null,
+    null
   );
   const [achievementPanelOpen, setAchievementPanelOpen] = useState(false);
   const sapperKillCountRef = useRef<number>(0);
@@ -982,11 +982,11 @@ const RTSMap: React.FC<{
     if (underAttackTimerRef.current) clearTimeout(underAttackTimerRef.current);
     underAttackTimerRef.current = window.setTimeout(
       () => setUnderAttack(false),
-      4000,
+      4000
     );
     if (pos)
-      setMinimapPings((prev) => [
-        ...prev.filter((p) => Date.now() - p.t < 3000),
+      setMinimapPings(prev => [
+        ...prev.filter(p => Date.now() - p.t < 3000),
         { x: pos.x, y: pos.y, t: Date.now() },
       ]);
   }, []);
@@ -1000,7 +1000,7 @@ const RTSMap: React.FC<{
       {
         version: 1,
         resources,
-        workers: workersRef.current.map((w) => ({
+        workers: workersRef.current.map(w => ({
           id: w.id,
           x: Math.round(w.x),
           y: Math.round(w.y),
@@ -1035,10 +1035,10 @@ const RTSMap: React.FC<{
         savedAt: Date.now(),
         difficultyId: difficulty?.id,
       },
-      slot,
+      slot
     );
-    setSaveStatus("saved");
-    setTimeout(() => setSaveStatus("idle"), 2000);
+    setSaveStatus('saved');
+    setTimeout(() => setSaveStatus('idle'), 2000);
   }, [
     resources,
     farmhouse,
@@ -1064,7 +1064,7 @@ const RTSMap: React.FC<{
   const triggerAchievement = useCallback((id: string) => {
     const isNew = unlockAchievement(id);
     if (!isNew) return;
-    const achv = ALL_ACHIEVEMENTS.find((a) => a.id === id);
+    const achv = ALL_ACHIEVEMENTS.find(a => a.id === id);
     if (!achv) return;
     Snd.achievementUnlock();
     setAchievementToast(achv);
@@ -1073,45 +1073,45 @@ const RTSMap: React.FC<{
 
   // Achievement: kill milestones
   useEffect(() => {
-    if (killCount >= 1) triggerAchievement("first_blood");
-    if (killCount >= 100) triggerAchievement("kill_100");
-    if (killCount >= 500) triggerAchievement("kill_500");
+    if (killCount >= 1) triggerAchievement('first_blood');
+    if (killCount >= 100) triggerAchievement('kill_100');
+    if (killCount >= 500) triggerAchievement('kill_500');
   }, [killCount, triggerAchievement]);
 
   // Achievement: wave milestones
   useEffect(() => {
-    if (wave >= 10) triggerAchievement("wave_10");
-    if (wave >= 20) triggerAchievement("wave_20");
-    if (wave >= 30) triggerAchievement("wave_30");
-    if (wave >= 50) triggerAchievement("wave_50");
+    if (wave >= 10) triggerAchievement('wave_10');
+    if (wave >= 20) triggerAchievement('wave_20');
+    if (wave >= 30) triggerAchievement('wave_30');
+    if (wave >= 50) triggerAchievement('wave_50');
   }, [wave, triggerAchievement]);
 
   // Achievement: total gold earned
   useEffect(() => {
-    if (totalGold >= 1000) triggerAchievement("gold_baron");
+    if (totalGold >= 1000) triggerAchievement('gold_baron');
   }, [totalGold, triggerAchievement]);
 
   // Achievement: unit count and veterancy
   useEffect(() => {
-    if (workers.length >= 6) triggerAchievement("pack_leader");
-    const level3Count = workers.filter((w) => w.level >= 3).length;
-    if (level3Count >= 3) triggerAchievement("veteran_corps");
+    if (workers.length >= 6) triggerAchievement('pack_leader');
+    const level3Count = workers.filter(w => w.level >= 3).length;
+    if (level3Count >= 3) triggerAchievement('veteran_corps');
   }, [workers, triggerAchievement]);
 
   // Achievement: hero items
   useEffect(() => {
-    if (heroItems.length >= 3) triggerAchievement("hero_equipped");
+    if (heroItems.length >= 3) triggerAchievement('hero_equipped');
   }, [heroItems, triggerAchievement]);
 
   // Achievement: buildings — fortified (3 walls) and blacksmith max
   useEffect(() => {
-    const wallCount = placedBuildings.filter((b) => b.type === "wall").length;
-    if (wallCount >= 3) triggerAchievement("fortified");
+    const wallCount = placedBuildings.filter(b => b.type === 'wall').length;
+    if (wallCount >= 3) triggerAchievement('fortified');
   }, [placedBuildings, triggerAchievement]);
 
   useEffect(() => {
     if (blacksmithUpgrades.steelEdge >= 2 || blacksmithUpgrades.ironHide >= 2) {
-      triggerAchievement("blacksmith_max");
+      triggerAchievement('blacksmith_max');
     }
   }, [blacksmithUpgrades, triggerAchievement]);
 
@@ -1134,8 +1134,8 @@ const RTSMap: React.FC<{
     const handler = () => {
       if (!gameOverRef.current) doSave();
     };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
   }, [doSave]);
 
   const gatherTimeoutsRef = useRef<Record<number, number>>({});
@@ -1158,9 +1158,9 @@ const RTSMap: React.FC<{
   useEffect(() => {
     const id = setInterval(() => {
       const now = Date.now();
-      setFloatingTexts((ts) => {
+      setFloatingTexts(ts => {
         if (ts.length === 0) return ts; // avoid new empty array reference every 100ms
-        const filtered = ts.filter((t) => now - t.createdAt < 1200);
+        const filtered = ts.filter(t => now - t.createdAt < 1200);
         return filtered.length === ts.length ? ts : filtered;
       });
     }, 100);
@@ -1170,7 +1170,7 @@ const RTSMap: React.FC<{
   const addFloatingText = useCallback(
     (tileX: number, tileY: number, text: string, color: string) => {
       const { isoX, isoY } = tileToSvg(tileX, tileY);
-      setFloatingTexts((ts) => [
+      setFloatingTexts(ts => [
         ...ts,
         {
           id: floatingTextIdRef.current++,
@@ -1182,7 +1182,7 @@ const RTSMap: React.FC<{
         },
       ]);
     },
-    [],
+    []
   );
 
   // Creep camp respawn: cleared camps respawn after 3 minutes (WC3-style)
@@ -1191,24 +1191,24 @@ const RTSMap: React.FC<{
     const id = setInterval(() => {
       if (gameOverRef.current || gameSpeedRef.current === 0) return;
       const now = Date.now();
-      const toRespawn = CREEP_CAMPS.filter((camp) => {
+      const toRespawn = CREEP_CAMPS.filter(camp => {
         const clearedAt = campClearedAtRef.current[camp.id];
         return clearedAt && now - clearedAt >= CAMP_RESPAWN_MS;
       });
       if (toRespawn.length === 0) return;
-      toRespawn.forEach((camp) => {
+      toRespawn.forEach(camp => {
         delete campClearedAtRef.current[camp.id];
-        addFloatingText(camp.x, camp.y, "⚠ Creeps Respawned!", "#f87171");
+        addFloatingText(camp.x, camp.y, '⚠ Creeps Respawned!', '#f87171');
       });
-      setClearedCamps((s) => {
+      setClearedCamps(s => {
         const n = new Set(s);
-        toRespawn.forEach((c) => n.delete(c.id));
+        toRespawn.forEach(c => n.delete(c.id));
         return n;
       });
-      setNeutralCreeps((cs) => {
-        const respawnedIds = new Set(toRespawn.map((c) => c.id));
-        const existing = cs.filter((c) => !respawnedIds.has(c.campId));
-        const newCreeps = toRespawn.flatMap((camp) => [
+      setNeutralCreeps(cs => {
+        const respawnedIds = new Set(toRespawn.map(c => c.id));
+        const existing = cs.filter(c => !respawnedIds.has(c.campId));
+        const newCreeps = toRespawn.flatMap(camp => [
           {
             id: creepIdCounterRef.current++,
             campId: camp.id,
@@ -1218,7 +1218,7 @@ const RTSMap: React.FC<{
             homeY: camp.y,
             hp: CREEP_MAX_HP,
             maxHp: CREEP_MAX_HP,
-            state: "idle" as const,
+            state: 'idle' as const,
             targetWorkerId: null,
           },
           {
@@ -1230,7 +1230,7 @@ const RTSMap: React.FC<{
             homeY: camp.y,
             hp: CREEP_MAX_HP,
             maxHp: CREEP_MAX_HP,
-            state: "idle" as const,
+            state: 'idle' as const,
             targetWorkerId: null,
           },
         ]);
@@ -1249,15 +1249,15 @@ const RTSMap: React.FC<{
     const id = setInterval(() => {
       const remaining = Math.max(
         0,
-        Math.ceil((heroReviveAt - Date.now()) / 1000),
+        Math.ceil((heroReviveAt - Date.now()) / 1000)
       );
       setHeroReviveCountdown(remaining);
       if (remaining <= 0) {
         clearInterval(id);
         setHeroReviveAt(null);
-        setWorkers((ws) => {
-          const newId = Math.max(...ws.map((w) => w.id), 0) + 1;
-          const hero = makeUnit(newId, BARN_POS.x, BARN_POS.y, "hero");
+        setWorkers(ws => {
+          const newId = Math.max(...ws.map(w => w.id), 0) + 1;
+          const hero = makeUnit(newId, BARN_POS.x, BARN_POS.y, 'hero');
           const saved = heroXpRef.current;
           return [
             ...ws,
@@ -1275,8 +1275,8 @@ const RTSMap: React.FC<{
         addFloatingText(
           BARN_POS.x,
           BARN_POS.y,
-          "🦸 Barnabas Returns!",
-          "#fbbf24",
+          '🦸 Barnabas Returns!',
+          '#fbbf24'
         );
       }
     }, 500);
@@ -1286,13 +1286,13 @@ const RTSMap: React.FC<{
   // Detect hero death → start auto-revive timer
   useEffect(() => {
     if (!heroRecruited || heroReviveAt !== null || gameOver) return;
-    const hero = workers.find((w) => w.unitType === "hero");
+    const hero = workers.find(w => w.unitType === 'hero');
     if (!hero || hero.hp > 0) return;
     heroXpRef.current = { xp: hero.xp, level: hero.level };
     const reviveDelay = Math.min(60000, 20000 + waveRef.current * 2000);
     setHeroReviveAt(Date.now() + reviveDelay);
-    setWorkers((ws) => ws.filter((w) => w.unitType !== "hero"));
-    addFloatingText(hero.x, hero.y, "🦸 Barnabas Fallen!", "#f97316");
+    setWorkers(ws => ws.filter(w => w.unitType !== 'hero'));
+    addFloatingText(hero.x, hero.y, '🦸 Barnabas Fallen!', '#f97316');
   }, [workers, heroRecruited, heroReviveAt, gameOver, addFloatingText]);
 
   // Projectile system — flying arrows/rocks/ice bolts
@@ -1307,8 +1307,8 @@ const RTSMap: React.FC<{
   useEffect(() => {
     const id = setInterval(() => {
       const now = Date.now();
-      setProjectiles((ps) =>
-        ps.filter((p) => now - p.createdAt < p.duration + 100),
+      setProjectiles(ps =>
+        ps.filter(p => now - p.createdAt < p.duration + 100)
       );
       if (moveRing && now - moveRing.born > 700) setMoveRing(null);
     }, 200);
@@ -1320,12 +1320,12 @@ const RTSMap: React.FC<{
       fromTY: number,
       toTX: number,
       toTY: number,
-      type: Projectile["type"],
-      duration: number,
+      type: Projectile['type'],
+      duration: number
     ) => {
       const { isoX: fx, isoY: fy } = tileToSvg(fromTX, fromTY);
       const { isoX: tx2, isoY: ty2 } = tileToSvg(toTX, toTY);
-      setProjectiles((ps) => [
+      setProjectiles(ps => [
         ...ps,
         {
           id: projIdRef.current++,
@@ -1339,7 +1339,7 @@ const RTSMap: React.FC<{
         },
       ]);
     },
-    [],
+    []
   );
 
   // Fog of war: updated in the animate loop to avoid useEffect cascade
@@ -1509,28 +1509,28 @@ const RTSMap: React.FC<{
   const handleTowerGarrison = useCallback(
     (towerId: number, tx: number, ty: number) => {
       const TOWER_CAP = 3;
-      setWorkers((ws) => {
+      setWorkers(ws => {
         const current = towerGarrisonRef.current[towerId] ?? [];
         const slots = TOWER_CAP - current.length;
         if (slots <= 0) return ws;
         const selected = ws
           .filter(
-            (w) =>
+            w =>
               w.selected &&
-              w.unitType !== "catapult" &&
-              w.unitType !== "trebuchet",
+              w.unitType !== 'catapult' &&
+              w.unitType !== 'trebuchet'
           )
           .slice(0, slots);
         if (selected.length === 0) return ws;
-        const ids = new Set(selected.map((w) => w.id));
-        setTowerGarrison((tg) => ({
+        const ids = new Set(selected.map(w => w.id));
+        setTowerGarrison(tg => ({
           ...tg,
           [towerId]: [
             ...(tg[towerId] ?? []),
-            ...selected.map((w) => ({
+            ...selected.map(w => ({
               ...w,
               selected: false,
-              state: "idle" as const,
+              state: 'idle' as const,
               movingTo: null,
               path: [],
               gathering: null,
@@ -1542,24 +1542,24 @@ const RTSMap: React.FC<{
             })),
           ],
         }));
-        setResources((r) => ({ ...r, food: r.food - selected.length }));
-        addFloatingText(tx, ty, `+${selected.length} 🏰`, "#22d3ee");
-        return ws.filter((w) => !ids.has(w.id));
+        setResources(r => ({ ...r, food: r.food - selected.length }));
+        addFloatingText(tx, ty, `+${selected.length} 🏰`, '#22d3ee');
+        return ws.filter(w => !ids.has(w.id));
       });
     },
-    [addFloatingText],
+    [addFloatingText]
   );
 
   const handleTowerDeploy = useCallback(
     (towerId: number, tx: number, ty: number) => {
       const units = towerGarrisonRef.current[towerId] ?? [];
       if (units.length === 0) return;
-      setTowerGarrison((tg) => {
+      setTowerGarrison(tg => {
         const next = { ...tg };
         delete next[towerId];
         return next;
       });
-      setWorkers((ws) => [
+      setWorkers(ws => [
         ...ws,
         ...units.map((u, i) => ({
           ...u,
@@ -1568,25 +1568,25 @@ const RTSMap: React.FC<{
           selected: false,
         })),
       ]);
-      setResources((r) => ({ ...r, food: r.food + units.length }));
+      setResources(r => ({ ...r, food: r.food + units.length }));
     },
-    [],
+    []
   );
 
   const handleGarrison = useCallback(() => {
-    setWorkers((ws) => {
+    setWorkers(ws => {
       const slots = GARRISON_CAP - garrisonedRef.current.length;
       if (slots <= 0) return ws;
-      const toGarrison = ws.filter((w) => w.selected).slice(0, slots);
+      const toGarrison = ws.filter(w => w.selected).slice(0, slots);
       if (toGarrison.length === 0) return ws;
       Snd.garrison();
-      const ids = new Set(toGarrison.map((w) => w.id));
-      setGarrisoned((g) => [
+      const ids = new Set(toGarrison.map(w => w.id));
+      setGarrisoned(g => [
         ...g,
-        ...toGarrison.map((w) => ({
+        ...toGarrison.map(w => ({
           ...w,
           selected: false,
-          state: "idle" as const,
+          state: 'idle' as const,
           movingTo: null,
           path: [],
           gathering: null,
@@ -1595,8 +1595,8 @@ const RTSMap: React.FC<{
           patrol: null,
         })),
       ]);
-      setResources((r) => ({ ...r, food: r.food - toGarrison.length }));
-      return ws.filter((w) => !ids.has(w.id));
+      setResources(r => ({ ...r, food: r.food - toGarrison.length }));
+      return ws.filter(w => !ids.has(w.id));
     });
   }, []);
 
@@ -1604,44 +1604,40 @@ const RTSMap: React.FC<{
     const units = garrisonedRef.current;
     if (units.length === 0) return;
     setGarrisoned([]);
-    setWorkers((ws) => {
-      const newId = Math.max(
-        ...ws.map((w) => w.id),
-        ...units.map((u) => u.id),
-        0,
-      );
+    setWorkers(ws => {
+      const newId = Math.max(...ws.map(w => w.id), ...units.map(u => u.id), 0);
       void newId;
       const deployed = units.map((u, i) => ({
         ...u,
         x: BARN_POS.x + (i % 3) - 1,
         y: BARN_POS.y + Math.floor(i / 3) + 1,
       }));
-      setResources((r) => ({ ...r, food: r.food + units.length }));
+      setResources(r => ({ ...r, food: r.food + units.length }));
       return [...ws, ...deployed];
     });
   }, []);
 
   const handleHeroAbility = useCallback(() => {
     if (heroAbilityCooldown > 0) return;
-    const hero = workersRef.current.find((w) => w.unitType === "hero");
+    const hero = workersRef.current.find(w => w.unitType === 'hero');
     if (!hero) return;
     const hx = Math.round(hero.x),
       hy = Math.round(hero.y);
-    setEnemyGrunts((gs) =>
-      gs.map((g) => {
+    setEnemyGrunts(gs =>
+      gs.map(g => {
         if (tileDist(g.x, g.y, hx, hy) <= HERO_ABILITY_RADIUS) {
           addFloatingText(
             Math.round(g.x),
             Math.round(g.y),
             `-${HERO_ABILITY_DAMAGE}🗡️`,
-            "#f59e0b",
+            '#f59e0b'
           );
           return { ...g, hp: Math.max(0, g.hp - HERO_ABILITY_DAMAGE) };
         }
         return g;
-      }),
+      })
     );
-    addFloatingText(hx, hy, "⚡ Rallying Cry!", "#fbbf24");
+    addFloatingText(hx, hy, '⚡ Rallying Cry!', '#fbbf24');
     Snd.ability();
     setHeroAbilityCooldown(HERO_ABILITY_COOLDOWN_S);
   }, [heroAbilityCooldown, addFloatingText]);
@@ -1649,7 +1645,7 @@ const RTSMap: React.FC<{
   const handleBattleShout = useCallback(() => {
     if (heroShoutCooldown > 0) return;
     const hero = workersRef.current.find(
-      (w) => w.unitType === "hero" && w.hp > 0 && w.level >= 2,
+      w => w.unitType === 'hero' && w.hp > 0 && w.level >= 2
     );
     if (!hero) return;
     const until = Date.now() + HERO_SHOUT_DURATION_MS;
@@ -1657,23 +1653,23 @@ const RTSMap: React.FC<{
     addFloatingText(
       Math.round(hero.x),
       Math.round(hero.y),
-      "📯 Battle Shout!",
-      "#fb923c",
+      '📯 Battle Shout!',
+      '#fb923c'
     );
     Snd.ability();
     workersRef.current
       .filter(
-        (w) =>
+        w =>
           w.hp > 0 &&
           w.id !== hero.id &&
-          tileDist(w.x, w.y, hero.x, hero.y) <= HERO_SHOUT_RADIUS,
+          tileDist(w.x, w.y, hero.x, hero.y) <= HERO_SHOUT_RADIUS
       )
-      .forEach((w) => {
+      .forEach(w => {
         addFloatingText(
           Math.round(w.x),
           Math.round(w.y),
-          "⚡ HASTED!",
-          "#fbbf24",
+          '⚡ HASTED!',
+          '#fbbf24'
         );
       });
     setHeroShoutCooldown(HERO_SHOUT_COOLDOWN_S);
@@ -1681,19 +1677,19 @@ const RTSMap: React.FC<{
 
   const handleHarvestBoon = useCallback(() => {
     if (harvestBoonCooldown > 0 || harvestBoonActive) return;
-    const hero = workersRef.current.find((w) => w.unitType === "hero");
+    const hero = workersRef.current.find(w => w.unitType === 'hero');
     if (!hero) return;
     setHarvestBoonActive(true);
     harvestBoonRef.current = true;
     addFloatingText(
       Math.round(hero.x),
       Math.round(hero.y),
-      "🌾 Harvest Boon!",
-      "#86efac",
+      '🌾 Harvest Boon!',
+      '#86efac'
     );
-    workers.forEach((w) => {
-      if (w.unitType === "farmer")
-        addFloatingText(Math.round(w.x), Math.round(w.y), "⚡", "#86efac");
+    workers.forEach(w => {
+      if (w.unitType === 'farmer')
+        addFloatingText(Math.round(w.x), Math.round(w.y), '⚡', '#86efac');
     });
     setHarvestBoonCooldown(40);
     window.setTimeout(() => {
@@ -1703,20 +1699,20 @@ const RTSMap: React.FC<{
   }, [harvestBoonCooldown, harvestBoonActive, addFloatingText, workers]);
 
   const SHOP_ITEMS: { itemId: HeroItemId; cost: number }[] = [
-    { itemId: "boots_speed", cost: 75 },
-    { itemId: "battle_sword", cost: 100 },
-    { itemId: "shield_pendant", cost: 80 },
-    { itemId: "healing_potion", cost: 50 },
+    { itemId: 'boots_speed', cost: 75 },
+    { itemId: 'battle_sword', cost: 100 },
+    { itemId: 'shield_pendant', cost: 80 },
+    { itemId: 'healing_potion', cost: 50 },
   ];
 
   const handleBuyItem = useCallback(
     (itemId: HeroItemId, cost: number) => {
       if (resources.gold < cost) return;
       if (heroItemsRef.current.length >= HERO_MAX_ITEMS) return;
-      if (itemId === "tome_xp") {
-        setWorkers((ws) =>
-          ws.map((w) => {
-            if (w.unitType !== "hero") return w;
+      if (itemId === 'tome_xp') {
+        setWorkers(ws =>
+          ws.map(w => {
+            if (w.unitType !== 'hero') return w;
             const newXp = w.xp + 80;
             const newLevel =
               newXp >= XP_TO_LEVEL_3
@@ -1731,7 +1727,7 @@ const RTSMap: React.FC<{
                 Math.round(w.x),
                 Math.round(w.y),
                 `⭐ Level ${newLevel}!`,
-                "#fbbf24",
+                '#fbbf24'
               );
               return {
                 ...w,
@@ -1740,41 +1736,41 @@ const RTSMap: React.FC<{
                 maxHp: w.maxHp + VETERAN_HP_BONUS,
                 hp: Math.min(
                   w.hp + VETERAN_HP_BONUS,
-                  w.maxHp + VETERAN_HP_BONUS,
+                  w.maxHp + VETERAN_HP_BONUS
                 ),
               };
             }
             return { ...w, xp: newXp };
-          }),
+          })
         );
       } else {
-        setHeroItems((hi) => [...hi, { id: dropItemIdRef.current++, itemId }]);
+        setHeroItems(hi => [...hi, { id: dropItemIdRef.current++, itemId }]);
       }
-      setResources((r) => ({ ...r, gold: r.gold - cost }));
+      setResources(r => ({ ...r, gold: r.gold - cost }));
       const hero = workersRef.current.find(
-        (w) => w.unitType === "hero" && w.hp > 0,
+        w => w.unitType === 'hero' && w.hp > 0
       );
       if (hero)
         addFloatingText(
           Math.round(hero.x),
           Math.round(hero.y),
           `${HERO_ITEM_DATA[itemId].emoji} Purchased!`,
-          "#c084fc",
+          '#c084fc'
         );
       Snd.ability();
     },
-    [resources.gold, addFloatingText],
+    [resources.gold, addFloatingText]
   );
 
   const handleDropItem = useCallback(
     (itemSlotId: number) => {
-      const item = heroItems.find((it) => it.id === itemSlotId);
+      const item = heroItems.find(it => it.id === itemSlotId);
       if (!item) return;
       const hero = workersRef.current.find(
-        (w) => w.unitType === "hero" && w.hp > 0,
+        w => w.unitType === 'hero' && w.hp > 0
       );
       if (!hero) return;
-      setDroppedItems((ds) => [
+      setDroppedItems(ds => [
         ...ds,
         {
           id: dropItemIdRef.current++,
@@ -1783,29 +1779,27 @@ const RTSMap: React.FC<{
           y: Math.round(hero.y) + 1,
         },
       ]);
-      setHeroItems((hi) => hi.filter((it) => it.id !== itemSlotId));
+      setHeroItems(hi => hi.filter(it => it.id !== itemSlotId));
     },
-    [heroItems],
+    [heroItems]
   );
 
   const handleUsePotion = useCallback(() => {
-    const potionIdx = heroItems.findIndex(
-      (it) => it.itemId === "healing_potion",
-    );
+    const potionIdx = heroItems.findIndex(it => it.itemId === 'healing_potion');
     if (potionIdx < 0) return;
     const hero = workersRef.current.find(
-      (w) => w.unitType === "hero" && w.hp > 0,
+      w => w.unitType === 'hero' && w.hp > 0
     );
     if (!hero) return;
     const healAmt = 75;
-    setWorkers((ws) =>
-      ws.map((w) =>
-        w.unitType === "hero"
+    setWorkers(ws =>
+      ws.map(w =>
+        w.unitType === 'hero'
           ? { ...w, hp: Math.min(w.maxHp, w.hp + healAmt) }
-          : w,
-      ),
+          : w
+      )
     );
-    setHeroItems((hi) => {
+    setHeroItems(hi => {
       const next = [...hi];
       next.splice(potionIdx, 1);
       return next;
@@ -1814,7 +1808,7 @@ const RTSMap: React.FC<{
       Math.round(hero.x),
       Math.round(hero.y),
       `🧪 +${healAmt} HP`,
-      "#4ade80",
+      '#4ade80'
     );
     Snd.ability();
   }, [heroItems, addFloatingText]);
@@ -1822,53 +1816,53 @@ const RTSMap: React.FC<{
   const handleEarthquake = useCallback(() => {
     if (earthquakeCooldown > 0) return;
     const hero = workersRef.current.find(
-      (w) => w.unitType === "hero" && w.hp > 0 && w.level >= 3,
+      w => w.unitType === 'hero' && w.hp > 0 && w.level >= 3
     );
     if (!hero) return;
     const hx = Math.round(hero.x),
       hy = Math.round(hero.y);
     const now = Date.now();
     const stunUntil = now + EARTHQUAKE_STUN_MS;
-    setEnemyGrunts((gs) =>
-      gs.map((g) =>
+    setEnemyGrunts(gs =>
+      gs.map(g =>
         tileDist(g.x, g.y, hx, hy) <= EARTHQUAKE_RADIUS
           ? {
               ...g,
               hp: Math.max(0, g.hp - EARTHQUAKE_DAMAGE),
               frozenUntil: stunUntil,
             }
-          : g,
-      ),
+          : g
+      )
     );
-    setEnemyShamans((ss) =>
-      ss.map((s) =>
+    setEnemyShamans(ss =>
+      ss.map(s =>
         tileDist(s.x, s.y, hx, hy) <= EARTHQUAKE_RADIUS
           ? { ...s, hp: Math.max(0, s.hp - EARTHQUAKE_DAMAGE) }
-          : s,
-      ),
+          : s
+      )
     );
-    setEnemyTrolls((ts) =>
-      ts.map((t) =>
+    setEnemyTrolls(ts =>
+      ts.map(t =>
         tileDist(t.x, t.y, hx, hy) <= EARTHQUAKE_RADIUS
           ? { ...t, hp: Math.max(0, t.hp - EARTHQUAKE_DAMAGE) }
-          : t,
-      ),
+          : t
+      )
     );
-    setEnemySiege((rs) =>
-      rs.map((r) =>
+    setEnemySiege(rs =>
+      rs.map(r =>
         tileDist(r.x, r.y, hx, hy) <= EARTHQUAKE_RADIUS
           ? { ...r, hp: Math.max(0, r.hp - EARTHQUAKE_DAMAGE) }
-          : r,
-      ),
+          : r
+      )
     );
-    setEnemyWarchiefs((ws2) =>
-      ws2.map((wc) =>
+    setEnemyWarchiefs(ws2 =>
+      ws2.map(wc =>
         tileDist(wc.x, wc.y, hx, hy) <= EARTHQUAKE_RADIUS
           ? { ...wc, hp: Math.max(0, wc.hp - EARTHQUAKE_DAMAGE) }
-          : wc,
-      ),
+          : wc
+      )
     );
-    addFloatingText(hx, hy, "🌋 EARTHQUAKE!", "#f59e0b");
+    addFloatingText(hx, hy, '🌋 EARTHQUAKE!', '#f59e0b');
     setEarthquakeEffect({ x: hx, y: hy, at: now });
     Snd.ability();
     setEarthquakeCooldown(EARTHQUAKE_COOLDOWN_S);
@@ -1876,20 +1870,20 @@ const RTSMap: React.FC<{
 
   const handleSwordsmanCharge = useCallback(() => {
     const swords = workersRef.current.filter(
-      (w) => w.selected && w.unitType === "swordsman" && w.chargeCooldown <= 0,
+      w => w.selected && w.unitType === 'swordsman' && w.chargeCooldown <= 0
     );
     if (swords.length === 0) return;
-    const allGrunts = enemyGruntsRef.current.filter((g) => g.hp > 0);
+    const allGrunts = enemyGruntsRef.current.filter(g => g.hp > 0);
     if (allGrunts.length === 0) return;
     Snd.charge();
-    swords.forEach((sw) => {
+    swords.forEach(sw => {
       const nearest = allGrunts.reduce<EnemyGrunt | null>(
         (best, g) =>
           !best ||
           tileDist(sw.x, sw.y, g.x, g.y) < tileDist(best.x, best.y, sw.x, sw.y)
             ? g
             : best,
-        null,
+        null
       );
       if (!nearest) return;
       const dmg =
@@ -1903,54 +1897,49 @@ const RTSMap: React.FC<{
         Math.round(nearest.x),
         Math.round(nearest.y),
         `⚔️-${dmg}`,
-        "#ef4444",
+        '#ef4444'
       );
       addFloatingText(
         Math.round(sw.x),
         Math.round(sw.y),
-        "⚡ Charge!",
-        "#fbbf24",
+        '⚡ Charge!',
+        '#fbbf24'
       );
-      setEnemyGrunts((gs) =>
-        gs.map((g) =>
-          g.id === nearest.id ? { ...g, hp: Math.max(0, g.hp - dmg) } : g,
-        ),
+      setEnemyGrunts(gs =>
+        gs.map(g =>
+          g.id === nearest.id ? { ...g, hp: Math.max(0, g.hp - dmg) } : g
+        )
       );
     });
-    setWorkers((ws) =>
-      ws.map((w) =>
-        swords.some((s) => s.id === w.id)
+    setWorkers(ws =>
+      ws.map(w =>
+        swords.some(s => s.id === w.id)
           ? { ...w, chargeCooldown: SWORDSMAN_CHARGE_COOLDOWN_S }
-          : w,
-      ),
+          : w
+      )
     );
   }, [addFloatingText]);
 
   const handleCavalrySprint = useCallback(() => {
     const cav = workersRef.current.filter(
-      (w) => w.selected && w.unitType === "cavalry" && w.sprintCooldown <= 0,
+      w => w.selected && w.unitType === 'cavalry' && w.sprintCooldown <= 0
     );
     if (cav.length === 0) return;
     Snd.charge();
-    const ids = new Set(cav.map((w) => w.id));
-    setWorkers((ws) =>
-      ws.map((w) =>
+    const ids = new Set(cav.map(w => w.id));
+    setWorkers(ws =>
+      ws.map(w =>
         ids.has(w.id)
           ? { ...w, sprinting: true, sprintCooldown: CAVALRY_SPRINT_COOLDOWN_S }
-          : w,
-      ),
+          : w
+      )
     );
-    cav.forEach((c) =>
-      addFloatingText(
-        Math.round(c.x),
-        Math.round(c.y),
-        "🐴 Sprint!",
-        "#f59e0b",
-      ),
+    cav.forEach(c =>
+      addFloatingText(Math.round(c.x), Math.round(c.y), '🐴 Sprint!', '#f59e0b')
     );
     window.setTimeout(() => {
-      setWorkers((ws) =>
-        ws.map((w) => (ids.has(w.id) ? { ...w, sprinting: false } : w)),
+      setWorkers(ws =>
+        ws.map(w => (ids.has(w.id) ? { ...w, sprinting: false } : w))
       );
     }, CAVALRY_SPRINT_DURATION_MS);
   }, [addFloatingText]);
@@ -1959,8 +1948,8 @@ const RTSMap: React.FC<{
   useEffect(() => {
     if (gameOver) return;
     const id = setInterval(() => {
-      setChickens((cs) =>
-        cs.map((c) => {
+      setChickens(cs =>
+        cs.map(c => {
           const dirs = [
             { dx: 1, dy: 0 },
             { dx: -1, dy: 0 },
@@ -1975,8 +1964,8 @@ const RTSMap: React.FC<{
             if (nx < 0 || ny < 0 || nx >= GRID_SIZE || ny >= GRID_SIZE)
               continue;
             if (
-              INITIAL_TILES[nx]?.[ny] === "water" ||
-              INITIAL_TILES[nx]?.[ny] === "tree"
+              INITIAL_TILES[nx]?.[ny] === 'water' ||
+              INITIAL_TILES[nx]?.[ny] === 'tree'
             )
               continue;
             // Stay within 5 tiles of barn
@@ -1991,7 +1980,7 @@ const RTSMap: React.FC<{
             return { ...c, x: nx, y: ny, facing };
           }
           return c;
-        }),
+        })
       );
     }, 2000);
     return () => clearInterval(id);
@@ -2000,19 +1989,18 @@ const RTSMap: React.FC<{
   const isTileOccupied = useCallback(
     (x: number, y: number): boolean => {
       if (x < 0 || y < 0 || x >= GRID_SIZE || y >= GRID_SIZE) return true;
-      if (tiles[x]?.[y] === "water") return true;
+      if (tiles[x]?.[y] === 'water') return true;
       if (x === BARN_POS.x && y === BARN_POS.y) return true;
       if (x === ENEMY_BARN_POS.x && y === ENEMY_BARN_POS.y) return true;
-      if (trees.some((t) => t.x === x && t.y === y && t.amount > 0))
+      if (trees.some(t => t.x === x && t.y === y && t.amount > 0)) return true;
+      if (goldMines.some(m => m.x === x && m.y === y && m.amount > 0))
         return true;
-      if (goldMines.some((m) => m.x === x && m.y === y && m.amount > 0))
+      if (stoneNodes.some(s => s.x === x && s.y === y && s.amount > 0))
         return true;
-      if (stoneNodes.some((s) => s.x === x && s.y === y && s.amount > 0))
-        return true;
-      if (placedBuildings.some((b) => b.x === x && b.y === y)) return true;
+      if (placedBuildings.some(b => b.x === x && b.y === y)) return true;
       return false;
     },
-    [tiles, trees, goldMines, stoneNodes, placedBuildings],
+    [tiles, trees, goldMines, stoneNodes, placedBuildings]
   );
 
   const clientToSvg = useCallback((cx: number, cy: number) => {
@@ -2084,8 +2072,8 @@ const RTSMap: React.FC<{
     (
       targetX: number,
       targetY: number,
-      gathering?: WorkerState["gathering"],
-      attacking?: WorkerState["attacking"],
+      gathering?: WorkerState['gathering'],
+      attacking?: WorkerState['attacking']
     ) => {
       // Flash move-target ring at destination (only for pure moves, not gather/attack)
       if (!gathering && !attacking) {
@@ -2097,8 +2085,8 @@ const RTSMap: React.FC<{
         });
         Snd.move();
       }
-      setWorkers((ws) => {
-        const selected = ws.filter((w) => w.selected);
+      setWorkers(ws => {
+        const selected = ws.filter(w => w.selected);
         // Voice acknowledgement — pick one speaker from selected units
         const speaker = selected[Math.floor(Math.random() * selected.length)];
         if (speaker) {
@@ -2111,19 +2099,19 @@ const RTSMap: React.FC<{
               Math.round(speaker.x),
               Math.round(speaker.y),
               ack,
-              "#fde68a",
+              '#fde68a'
             );
         }
         let idx = 0;
-        return ws.map((w) => {
+        return ws.map(w => {
           if (!w.selected) return w;
           if (
             gathering &&
-            (w.unitType === "swordsman" ||
-              w.unitType === "catapult" ||
-              w.unitType === "trebuchet" ||
-              w.unitType === "hero" ||
-              w.unitType === "cavalry")
+            (w.unitType === 'swordsman' ||
+              w.unitType === 'catapult' ||
+              w.unitType === 'trebuchet' ||
+              w.unitType === 'hero' ||
+              w.unitType === 'cavalry')
           )
             return w;
           const isFormation = !gathering && !attacking;
@@ -2133,7 +2121,7 @@ const RTSMap: React.FC<{
           const tx = Math.max(0, Math.min(GRID_SIZE - 1, targetX + offset.dx));
           const ty = Math.max(0, Math.min(GRID_SIZE - 1, targetY + offset.dy));
           const dest =
-            INITIAL_TILES[tx]?.[ty] === "water"
+            INITIAL_TILES[tx]?.[ty] === 'water'
               ? { x: targetX, y: targetY }
               : { x: tx, y: ty };
           const startTile = { x: Math.round(w.x), y: Math.round(w.y) };
@@ -2151,29 +2139,29 @@ const RTSMap: React.FC<{
             patrol: null,
             holdPosition: false,
             waypoints: [],
-            state: "moving",
+            state: 'moving',
           };
         });
       });
     },
-    [addFloatingText],
+    [addFloatingText]
   );
 
   // Shift+right-click: append waypoint to queue
   const commandQueueMove = useCallback((targetX: number, targetY: number) => {
-    setWorkers((ws) => {
+    setWorkers(ws => {
       let idx = 0;
-      return ws.map((w) => {
+      return ws.map(w => {
         if (!w.selected) return w;
         const offset = getFormationOffsets()[idx++] ?? { dx: 0, dy: 0 };
         const tx = Math.max(0, Math.min(GRID_SIZE - 1, targetX + offset.dx));
         const ty = Math.max(0, Math.min(GRID_SIZE - 1, targetY + offset.dy));
         const dest =
-          INITIAL_TILES[tx]?.[ty] === "water"
+          INITIAL_TILES[tx]?.[ty] === 'water'
             ? { x: targetX, y: targetY }
             : { x: tx, y: ty };
         // If unit is idle or has no movingTo, start moving immediately; otherwise append waypoint
-        if (!w.movingTo && w.state !== "moving") {
+        if (!w.movingTo && w.state !== 'moving') {
           const startTile = { x: Math.round(w.x), y: Math.round(w.y) };
           const rawPath = aStar(INITIAL_TILES, startTile, dest);
           return {
@@ -2185,7 +2173,7 @@ const RTSMap: React.FC<{
             repairing: null,
             patrol: null,
             waypoints: [],
-            state: "moving" as const,
+            state: 'moving' as const,
           };
         }
         return { ...w, waypoints: [...(w.waypoints ?? []), dest] };
@@ -2205,7 +2193,7 @@ const RTSMap: React.FC<{
         end: { x: coords.x, y: coords.y },
       });
     },
-    [clientToSvg, buildMode],
+    [clientToSvg, buildMode]
   );
 
   const handleSvgMouseMove = useCallback(
@@ -2221,11 +2209,11 @@ const RTSMap: React.FC<{
       if (!isDraggingRef.current) return;
       const coords = clientToSvg(e.clientX, e.clientY);
       if (coords)
-        setDragBox((db) =>
-          db ? { ...db, end: { x: coords.x, y: coords.y } } : null,
+        setDragBox(db =>
+          db ? { ...db, end: { x: coords.x, y: coords.y } } : null
         );
     },
-    [clientToSvg, buildMode],
+    [clientToSvg, buildMode]
   );
 
   const handleSvgMouseUp = useCallback(
@@ -2241,13 +2229,13 @@ const RTSMap: React.FC<{
               resources.lumber >= cost.lumber &&
               resources.stone >= cost.stone
             ) {
-              setResources((r) => ({
+              setResources(r => ({
                 ...r,
                 gold: r.gold - cost.gold,
                 lumber: r.lumber - cost.lumber,
                 stone: r.stone - cost.stone,
               }));
-              setPlacedBuildings((bs) => {
+              setPlacedBuildings(bs => {
                 const maxHp = BUILDING_MAX_HP[buildMode];
                 return [
                   ...bs,
@@ -2272,7 +2260,7 @@ const RTSMap: React.FC<{
       }
       if (!isDraggingRef.current) return;
       isDraggingRef.current = false;
-      setDragBox((db) => {
+      setDragBox(db => {
         if (!db) return null;
         const coords = clientToSvg(e.clientX, e.clientY);
         const end = coords ?? db.end;
@@ -2284,84 +2272,84 @@ const RTSMap: React.FC<{
             maxX = Math.max(db.start.x, end.x);
           const minY = Math.min(db.start.y, end.y),
             maxY = Math.max(db.start.y, end.y);
-          setWorkers((ws) => {
-            const hit = ws.filter((w) => {
+          setWorkers(ws => {
+            const hit = ws.filter(w => {
               const { isoX, isoY } = tileToSvg(w.x, w.y);
               const wx = isoX + TILE_SIZE / 2,
                 wy = isoY + 18;
               return wx >= minX && wx <= maxX && wy >= minY && wy <= maxY;
             });
             if (hit.length === 0) return ws;
-            setSelectedType("worker");
-            const hitIds = new Set(hit.map((w) => w.id));
-            return ws.map((w) => ({ ...w, selected: hitIds.has(w.id) }));
+            setSelectedType('worker');
+            const hitIds = new Set(hit.map(w => w.id));
+            return ws.map(w => ({ ...w, selected: hitIds.has(w.id) }));
           });
         }
         return null;
       });
     },
-    [clientToSvg, buildMode, isTileOccupied],
+    [clientToSvg, buildMode, isTileOccupied]
   );
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      if (e.key === 'Escape') {
         setBuildMode(null);
         setGhostTile(null);
         setPatrolMode(false);
         setAttackMoveMode(false);
       }
       if (
-        e.key === " " &&
+        e.key === ' ' &&
         !e.ctrlKey &&
         !e.metaKey &&
-        (e.target as HTMLElement).tagName !== "INPUT"
+        (e.target as HTMLElement).tagName !== 'INPUT'
       ) {
         e.preventDefault();
-        if (!gameOverRef.current) setGameSpeed((s) => (s === 0 ? 1 : 0));
+        if (!gameOverRef.current) setGameSpeed(s => (s === 0 ? 1 : 0));
       }
-      if ((e.key === "p" || e.key === "P") && !e.ctrlKey && !e.metaKey) {
-        setWorkers((ws) => {
-          if (ws.some((w) => w.selected)) {
-            setPatrolMode((m) => !m);
+      if ((e.key === 'p' || e.key === 'P') && !e.ctrlKey && !e.metaKey) {
+        setWorkers(ws => {
+          if (ws.some(w => w.selected)) {
+            setPatrolMode(m => !m);
           }
           return ws;
         });
       }
-      if ((e.key === "a" || e.key === "A") && !e.ctrlKey && !e.metaKey) {
-        setWorkers((ws) => {
+      if ((e.key === 'a' || e.key === 'A') && !e.ctrlKey && !e.metaKey) {
+        setWorkers(ws => {
           if (
             ws.some(
-              (w) =>
+              w =>
                 w.selected &&
-                w.unitType !== "farmer" &&
-                w.unitType !== "catapult" &&
-                w.unitType !== "trebuchet",
+                w.unitType !== 'farmer' &&
+                w.unitType !== 'catapult' &&
+                w.unitType !== 'trebuchet'
             )
           ) {
-            setAttackMoveMode((m) => !m);
+            setAttackMoveMode(m => !m);
           }
           return ws;
         });
       }
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, []);
 
   // Ctrl+A: select all living units
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.key === "a" || e.key === "A") && (e.ctrlKey || e.metaKey)) {
+      if ((e.key === 'a' || e.key === 'A') && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
-        setWorkers((ws) =>
-          ws.map((w) => (w.hp > 0 ? { ...w, selected: true } : w)),
+        setWorkers(ws =>
+          ws.map(w => (w.hp > 0 ? { ...w, selected: true } : w))
         );
-        setSelectedType("worker");
+        setSelectedType('worker');
       }
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, []);
 
   // Command hotkeys: F=train farmer, Q=train swordsman, R=cavalry, Delete=stop, G=garrison
@@ -2369,26 +2357,26 @@ const RTSMap: React.FC<{
     const onKey = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (
-        (e.target as HTMLElement).tagName === "INPUT" ||
-        (e.target as HTMLElement).tagName === "TEXTAREA"
+        (e.target as HTMLElement).tagName === 'INPUT' ||
+        (e.target as HTMLElement).tagName === 'TEXTAREA'
       )
         return;
-      if (e.key === "f" || e.key === "F") {
+      if (e.key === 'f' || e.key === 'F') {
         e.preventDefault();
-        handleFarmhouseAction("train");
+        handleFarmhouseAction('train');
       }
-      if (e.key === "q" || e.key === "Q") {
+      if (e.key === 'q' || e.key === 'Q') {
         e.preventDefault();
-        handleFarmhouseAction("trainSwordsman");
+        handleFarmhouseAction('trainSwordsman');
       }
-      if (e.key === "r" || e.key === "R") {
+      if (e.key === 'r' || e.key === 'R') {
         e.preventDefault();
-        handleFarmhouseAction("trainCavalry");
+        handleFarmhouseAction('trainCavalry');
       }
-      if (e.key === "Delete" || e.key === "Backspace") {
+      if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault();
-        setWorkers((ws) =>
-          ws.map((w) =>
+        setWorkers(ws =>
+          ws.map(w =>
             w.selected
               ? {
                   ...w,
@@ -2402,32 +2390,32 @@ const RTSMap: React.FC<{
                   patrol: null,
                   holdPosition: false,
                   waypoints: [],
-                  state: "idle" as const,
+                  state: 'idle' as const,
                 }
-              : w,
-          ),
+              : w
+          )
         );
       }
-      if (e.key === "g" || e.key === "G") {
+      if (e.key === 'g' || e.key === 'G') {
         e.preventDefault();
         handleGarrison();
       }
-      if (e.key === "e" || e.key === "E") {
+      if (e.key === 'e' || e.key === 'E') {
         e.preventDefault();
         handleEarthquake();
       }
-      if (e.key === "c" || e.key === "C") {
+      if (e.key === 'c' || e.key === 'C') {
         e.preventDefault();
         handleSwordsmanCharge();
       }
-      if (e.key === "s" || e.key === "S") {
+      if (e.key === 's' || e.key === 'S') {
         e.preventDefault();
         handleCavalrySprint();
       }
-      if (e.key === "h" || e.key === "H") {
+      if (e.key === 'h' || e.key === 'H') {
         e.preventDefault();
-        setWorkers((ws) =>
-          ws.map((w) =>
+        setWorkers(ws =>
+          ws.map(w =>
             w.selected
               ? {
                   ...w,
@@ -2438,22 +2426,22 @@ const RTSMap: React.FC<{
                   attackMove: false,
                   attackMoveTarget: null,
                   waypoints: [],
-                  state: "idle" as const,
+                  state: 'idle' as const,
                 }
-              : w,
-          ),
+              : w
+          )
         );
       }
-      if (e.key === "Tab") {
+      if (e.key === 'Tab') {
         e.preventDefault();
-        setWorkers((ws) => {
+        setWorkers(ws => {
           const idleWorkers = ws.filter(
-            (w) =>
+            w =>
               w.hp > 0 &&
-              w.state === "idle" &&
+              w.state === 'idle' &&
               !w.gathering &&
               !w.attacking &&
-              !w.repairing,
+              !w.repairing
           );
           if (idleWorkers.length === 0) return ws;
           const idx = idleWorkerIndexRef.current % idleWorkers.length;
@@ -2470,13 +2458,13 @@ const RTSMap: React.FC<{
               y: rect.height / 2 - isoY - 18,
             });
           }
-          setSelectedType("worker");
-          return ws.map((w) => ({ ...w, selected: w.id === target.id }));
+          setSelectedType('worker');
+          return ws.map(w => ({ ...w, selected: w.id === target.id }));
         });
       }
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, []);
 
   useEffect(() => {
@@ -2485,32 +2473,32 @@ const RTSMap: React.FC<{
       if (isNaN(num) || num < 1 || num > 9) return;
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
-        const ids = workers.filter((w) => w.selected).map((w) => w.id);
+        const ids = workers.filter(w => w.selected).map(w => w.id);
         if (!ids.length) return;
-        setControlGroups((cg) => ({ ...cg, [num]: ids }));
-        setWorkers((ws) =>
-          ws.map((w) =>
+        setControlGroups(cg => ({ ...cg, [num]: ids }));
+        setWorkers(ws =>
+          ws.map(w =>
             w.selected
               ? { ...w, group: num }
               : w.group === num
                 ? { ...w, group: null }
-                : w,
-          ),
+                : w
+          )
         );
       } else {
-        setControlGroups((cg) => {
+        setControlGroups(cg => {
           const ids = cg[num];
           if (!ids?.length) return cg;
-          setSelectedType("worker");
-          setWorkers((ws) =>
-            ws.map((w) => ({ ...w, selected: ids.includes(w.id) })),
+          setSelectedType('worker');
+          setWorkers(ws =>
+            ws.map(w => ({ ...w, selected: ids.includes(w.id) }))
           );
           // Double-tap: center camera on group centroid
           const now = Date.now();
           const last = lastGroupKeyRef.current;
           if (last && last.num === num && now - last.t < 500) {
             const units = workersRef.current.filter(
-              (w) => ids.includes(w.id) && w.hp > 0,
+              w => ids.includes(w.id) && w.hp > 0
             );
             if (units.length > 0) {
               const cx = units.reduce((s, u) => s + u.x, 0) / units.length;
@@ -2533,14 +2521,14 @@ const RTSMap: React.FC<{
         });
       }
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, [workers]);
 
   useGameLoop(gameCtx);
 
   // ---------- Bot / Demo mode ----------
-  const isDemo = difficulty?.id === "demo";
+  const isDemo = difficulty?.id === 'demo';
   const botSnapshotRef = useRef<BotSnapshot | null>(null);
   useEffect(() => {
     botSnapshotRef.current = {
@@ -2558,21 +2546,21 @@ const RTSMap: React.FC<{
     () => ({
       orderGather: (workerId, resourceType, resourceIdx) => {
         const nodes =
-          resourceType === "gold"
+          resourceType === 'gold'
             ? goldMinesRef.current
-            : resourceType === "tree"
+            : resourceType === 'tree'
               ? treesRef.current
               : stoneNodesRef.current;
         const node = nodes[resourceIdx];
         if (!node) return;
-        setWorkers((ws) =>
-          ws.map((w) => {
+        setWorkers(ws =>
+          ws.map(w => {
             if (w.id !== workerId || w.hp <= 0) return w;
             const dest = { x: node.x, y: node.y };
             const path = aStar(
               INITIAL_TILES,
               { x: Math.round(w.x), y: Math.round(w.y) },
-              dest,
+              dest
             );
             return {
               ...w,
@@ -2580,16 +2568,16 @@ const RTSMap: React.FC<{
               path: path.slice(1),
               gathering: { type: resourceType, idx: resourceIdx },
               attacking: null,
-              state: "moving" as const,
+              state: 'moving' as const,
               selected: false,
             };
-          }),
+          })
         );
       },
 
       orderAttack: (workerId, target) => {
-        setWorkers((ws) =>
-          ws.map((w) => {
+        setWorkers(ws =>
+          ws.map(w => {
             if (w.id !== workerId || w.hp <= 0) return w;
             return {
               ...w,
@@ -2597,22 +2585,22 @@ const RTSMap: React.FC<{
               gathering: null,
               movingTo: null,
               path: [],
-              state: "attacking" as const,
+              state: 'attacking' as const,
               selected: false,
             };
-          }),
+          })
         );
       },
 
       orderMove: (workerId, tx, ty) => {
-        setWorkers((ws) =>
-          ws.map((w) => {
+        setWorkers(ws =>
+          ws.map(w => {
             if (w.id !== workerId || w.hp <= 0) return w;
             const dest = { x: tx, y: ty };
             const path = aStar(
               INITIAL_TILES,
               { x: Math.round(w.x), y: Math.round(w.y) },
-              dest,
+              dest
             );
             return {
               ...w,
@@ -2620,10 +2608,10 @@ const RTSMap: React.FC<{
               path: path.slice(1),
               attacking: null,
               gathering: null,
-              state: "moving" as const,
+              state: 'moving' as const,
               selected: false,
             };
-          }),
+          })
         );
       },
 
@@ -2641,27 +2629,27 @@ const RTSMap: React.FC<{
         const occupied =
           (tx === BARN_POS.x && ty === BARN_POS.y) ||
           (tx === ENEMY_BARN_POS.x && ty === ENEMY_BARN_POS.y) ||
-          tiles[tx]?.[ty] === "water" ||
-          tiles[tx]?.[ty] === "tree" ||
-          tiles[tx]?.[ty] === "rock" ||
-          placedBuildingsRef.current.some((b) => b.x === tx && b.y === ty) ||
+          tiles[tx]?.[ty] === 'water' ||
+          tiles[tx]?.[ty] === 'tree' ||
+          tiles[tx]?.[ty] === 'rock' ||
+          placedBuildingsRef.current.some(b => b.x === tx && b.y === ty) ||
           treesRef.current.some(
-            (t) => t.x === tx && t.y === ty && t.amount > 0,
+            t => t.x === tx && t.y === ty && t.amount > 0
           ) ||
           goldMinesRef.current.some(
-            (m) => m.x === tx && m.y === ty && m.amount > 0,
+            m => m.x === tx && m.y === ty && m.amount > 0
           ) ||
           stoneNodesRef.current.some(
-            (s) => s.x === tx && s.y === ty && s.amount > 0,
+            s => s.x === tx && s.y === ty && s.amount > 0
           );
         if (occupied) return false;
-        setResources((r) => ({
+        setResources(r => ({
           ...r,
           gold: r.gold - cost.gold,
           lumber: r.lumber - cost.lumber,
           stone: r.stone - cost.stone,
         }));
-        setPlacedBuildings((bs) => [
+        setPlacedBuildings(bs => [
           ...bs,
           {
             id: buildingIdRef.current++,
@@ -2686,9 +2674,9 @@ const RTSMap: React.FC<{
         )
           return false;
         if (!snap.farmhouse.built) return false;
-        setResources((r) => ({ ...r, gold: r.gold - 30, food: r.food + 1 }));
-        setWorkers((ws) => {
-          const newId = Math.max(...ws.map((w) => w.id), 0) + 1;
+        setResources(r => ({ ...r, gold: r.gold - 30, food: r.food + 1 }));
+        setWorkers(ws => {
+          const newId = Math.max(...ws.map(w => w.id), 0) + 1;
           return [...ws, makeWorker(newId, BARN_POS.x, BARN_POS.y)];
         });
         return true;
@@ -2702,13 +2690,13 @@ const RTSMap: React.FC<{
           snap.resources.food >= snap.resources.foodCap
         )
           return false;
-        setResources((r) => ({ ...r, gold: r.gold - 50, food: r.food + 1 }));
-        setTrainingQueue((q) => [...q, { type: "swordsman" }]);
+        setResources(r => ({ ...r, gold: r.gold - 50, food: r.food + 1 }));
+        setTrainingQueue(q => [...q, { type: 'swordsman' }]);
         return true;
       },
     }),
     // deps intentionally empty — botCommands is stable (useMemo with [] deps above)
-    [],
+    []
   );
 
   useBotController(gameCtx, botCommands, botSnapshotRef, isDemo);
@@ -2729,7 +2717,7 @@ const RTSMap: React.FC<{
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       const delta = e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP;
-      setZoom((prev) => {
+      setZoom(prev => {
         const next = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, prev + delta));
         if (!svgEl) return next;
         const rect = svgEl.getBoundingClientRect();
@@ -2738,7 +2726,7 @@ const RTSMap: React.FC<{
         const ax = e.clientX - svgCenterX;
         const ay = e.clientY - svgCenterY;
         const ratio = next / prev;
-        setCamera((c) => ({
+        setCamera(c => ({
           x: ax + (c.x - ax) * ratio,
           y: ay + (c.y - ay) * ratio,
         }));
@@ -2747,26 +2735,26 @@ const RTSMap: React.FC<{
     };
 
     const onKeyFull = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement).tagName === "INPUT") return;
-      if (e.key === "=" || e.key === "+") {
-        setZoom((prev) => {
+      if ((e.target as HTMLElement).tagName === 'INPUT') return;
+      if (e.key === '=' || e.key === '+') {
+        setZoom(prev => {
           const next = Math.min(ZOOM_MAX, prev + ZOOM_STEP);
           return next;
         });
       }
-      if (e.key === "-" || e.key === "_") {
-        setZoom((prev) => {
+      if (e.key === '-' || e.key === '_') {
+        setZoom(prev => {
           const next = Math.max(ZOOM_MIN, prev - ZOOM_STEP);
           return next;
         });
       }
     };
 
-    window.addEventListener("wheel", onWheel, { passive: false });
-    window.addEventListener("keydown", onKeyFull);
+    window.addEventListener('wheel', onWheel, { passive: false });
+    window.addEventListener('keydown', onKeyFull);
     return () => {
-      window.removeEventListener("wheel", onWheel);
-      window.removeEventListener("keydown", onKeyFull);
+      window.removeEventListener('wheel', onWheel);
+      window.removeEventListener('keydown', onKeyFull);
     };
   }, []);
 
@@ -2787,51 +2775,51 @@ const RTSMap: React.FC<{
       const dt = Math.min((now - last) / 1000, 0.05);
       last = now;
       if (held.size > 0) {
-        const up = held.has("ArrowUp") || held.has("w") || held.has("W");
-        const down = held.has("ArrowDown") || held.has("s") || held.has("S");
-        const left = held.has("ArrowLeft") || held.has("a") || held.has("A");
-        const right = held.has("ArrowRight") || held.has("d") || held.has("D");
+        const up = held.has('ArrowUp') || held.has('w') || held.has('W');
+        const down = held.has('ArrowDown') || held.has('s') || held.has('S');
+        const left = held.has('ArrowLeft') || held.has('a') || held.has('A');
+        const right = held.has('ArrowRight') || held.has('d') || held.has('D');
         const dx = (left ? 1 : 0) - (right ? 1 : 0);
         const dy = (up ? 1 : 0) - (down ? 1 : 0);
         if (dx !== 0 || dy !== 0) {
-          setCamera((c) => ({
+          setCamera(c => ({
             x: Math.max(
               bounds.minX,
-              Math.min(bounds.maxX, c.x + dx * PAN_SPEED * dt),
+              Math.min(bounds.maxX, c.x + dx * PAN_SPEED * dt)
             ),
             y: Math.max(
               bounds.minY,
-              Math.min(bounds.maxY, c.y + dy * PAN_SPEED * dt),
+              Math.min(bounds.maxY, c.y + dy * PAN_SPEED * dt)
             ),
           }));
         }
       }
       rafId = requestAnimationFrame(tick);
     };
-    rafId = requestAnimationFrame((t) => {
+    rafId = requestAnimationFrame(t => {
       last = t;
       rafId = requestAnimationFrame(tick);
     });
 
     const onKeyDown = (e: KeyboardEvent) => {
       const panKeys = [
-        "ArrowUp",
-        "ArrowDown",
-        "ArrowLeft",
-        "ArrowRight",
-        "w",
-        "W",
-        "a",
-        "A",
-        "s",
-        "S",
-        "d",
-        "D",
+        'ArrowUp',
+        'ArrowDown',
+        'ArrowLeft',
+        'ArrowRight',
+        'w',
+        'W',
+        'a',
+        'A',
+        's',
+        'S',
+        'd',
+        'D',
       ];
       if (!panKeys.includes(e.key)) return;
       if (
-        (e.target as HTMLElement).tagName === "INPUT" ||
-        (e.target as HTMLElement).tagName === "TEXTAREA"
+        (e.target as HTMLElement).tagName === 'INPUT' ||
+        (e.target as HTMLElement).tagName === 'TEXTAREA'
       )
         return;
       e.preventDefault();
@@ -2840,14 +2828,14 @@ const RTSMap: React.FC<{
     const onKeyUp = (e: KeyboardEvent) => held.delete(e.key);
     const onBlur = () => held.clear();
 
-    window.addEventListener("keydown", onKeyDown);
-    window.addEventListener("keyup", onKeyUp);
-    window.addEventListener("blur", onBlur);
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', onBlur);
     return () => {
       cancelAnimationFrame(rafId);
-      window.removeEventListener("keydown", onKeyDown);
-      window.removeEventListener("keyup", onKeyUp);
-      window.removeEventListener("blur", onBlur);
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', onBlur);
     };
   }, []);
 
@@ -2885,62 +2873,62 @@ const RTSMap: React.FC<{
         else if (my > vh - EDGE_ZONE) dy = -1;
       }
       if (dx !== 0 || dy !== 0) {
-        setCamera((c) => ({
+        setCamera(c => ({
           x: Math.max(
             bounds.minX,
-            Math.min(bounds.maxX, c.x + dx * PAN_SPEED * dt),
+            Math.min(bounds.maxX, c.x + dx * PAN_SPEED * dt)
           ),
           y: Math.max(
             bounds.minY,
-            Math.min(bounds.maxY, c.y + dy * PAN_SPEED * dt),
+            Math.min(bounds.maxY, c.y + dy * PAN_SPEED * dt)
           ),
         }));
       }
       rafId = requestAnimationFrame(tick);
     };
-    rafId = requestAnimationFrame((t) => {
+    rafId = requestAnimationFrame(t => {
       last = t;
       rafId = requestAnimationFrame(tick);
     });
 
-    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener('mousemove', onMouseMove);
     return () => {
       cancelAnimationFrame(rafId);
-      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener('mousemove', onMouseMove);
     };
   }, []);
 
-  const selectedWorkers = workers.filter((w) => w.selected);
+  const selectedWorkers = workers.filter(w => w.selected);
   const anySelected = selectedWorkers.length > 0;
   const viewBoxW = GRID_SIZE * TILE_SIZE * 2 + 200;
   const viewBoxH = GRID_SIZE * TILE_SIZE + 200;
 
   const handleFarmhouseAction = (action: FarmhouseAction) => {
-    if (action === "build" || action === "upgrade") {
+    if (action === 'build' || action === 'upgrade') {
       const level = farmhouse.built ? farmhouse.level : 0;
       const cost = farmhouseUpgradeCosts[level];
       if (!cost || (farmhouse.built && farmhouse.level >= maxFarmhouseLevel))
         return;
       if (resources.gold < cost.gold || resources.lumber < cost.lumber) return;
-      setResources((r) => ({
+      setResources(r => ({
         ...r,
         gold: r.gold - cost.gold,
         lumber: r.lumber - cost.lumber,
       }));
-      setFarmhouse((fh) =>
+      setFarmhouse(fh =>
         fh.built
           ? { built: true, level: fh.level + 1 }
-          : { built: true, level: 1 },
+          : { built: true, level: 1 }
       );
-      setResources((r) => ({
+      setResources(r => ({
         ...r,
         foodCap: FOOD_CAP_BASE + (farmhouse.level + 1) * FOOD_CAP_PER_LEVEL,
       }));
-    } else if (action === "train") {
+    } else if (action === 'train') {
       if (resources.gold < 30 || resources.food >= resources.foodCap) return;
-      setResources((r) => ({ ...r, gold: r.gold - 30, food: r.food + 1 }));
-      setWorkers((ws) => {
-        const newId = Math.max(...ws.map((w) => w.id), 0) + 1;
+      setResources(r => ({ ...r, gold: r.gold - 30, food: r.food + 1 }));
+      setWorkers(ws => {
+        const newId = Math.max(...ws.map(w => w.id), 0) + 1;
         const rp = rallyPoint;
         if (rp) {
           const path = aStar(INITIAL_TILES, BARN_POS, rp);
@@ -2950,13 +2938,13 @@ const RTSMap: React.FC<{
               ...makeWorker(newId, BARN_POS.x, BARN_POS.y),
               movingTo: path[0] ?? rp,
               path: path.slice(1),
-              state: "moving" as const,
+              state: 'moving' as const,
             },
           ];
         }
         return [...ws, makeWorker(newId, BARN_POS.x, BARN_POS.y)];
       });
-    } else if (action === "recruitHero") {
+    } else if (action === 'recruitHero') {
       if (
         heroRecruited ||
         resources.gold < 150 ||
@@ -2964,10 +2952,10 @@ const RTSMap: React.FC<{
       )
         return;
       setHeroRecruited(true);
-      setResources((r) => ({ ...r, gold: r.gold - 150, food: r.food + 1 }));
-      setWorkers((ws) => {
-        const newId = Math.max(...ws.map((w) => w.id), 0) + 1;
-        const hero = makeUnit(newId, BARN_POS.x, BARN_POS.y, "hero");
+      setResources(r => ({ ...r, gold: r.gold - 150, food: r.food + 1 }));
+      setWorkers(ws => {
+        const newId = Math.max(...ws.map(w => w.id), 0) + 1;
+        const hero = makeUnit(newId, BARN_POS.x, BARN_POS.y, 'hero');
         const rp = rallyPoint;
         if (rp) {
           const path = aStar(INITIAL_TILES, BARN_POS, rp);
@@ -2977,61 +2965,61 @@ const RTSMap: React.FC<{
               ...hero,
               movingTo: path[0] ?? rp,
               path: path.slice(1),
-              state: "moving",
+              state: 'moving',
             },
           ];
         }
         return [...ws, hero];
       });
-    } else if (action === "trainSwordsman") {
+    } else if (action === 'trainSwordsman') {
       if (
         resources.gold < 50 ||
         resources.food >= resources.foodCap ||
         trainingQueue.length >= 5
       )
         return;
-      setResources((r) => ({ ...r, gold: r.gold - 50, food: r.food + 1 }));
-      setTrainingQueue((q) => [...q, { type: "swordsman" }]);
-    } else if (action === "trainCavalry") {
+      setResources(r => ({ ...r, gold: r.gold - 50, food: r.food + 1 }));
+      setTrainingQueue(q => [...q, { type: 'swordsman' }]);
+    } else if (action === 'trainCavalry') {
       if (
         resources.gold < 60 ||
         resources.food >= resources.foodCap ||
         trainingQueue.length >= 5
       )
         return;
-      setResources((r) => ({ ...r, gold: r.gold - 60, food: r.food + 1 }));
-      setTrainingQueue((q) => [...q, { type: "cavalry" }]);
-    } else if (action === "trainCatapult") {
+      setResources(r => ({ ...r, gold: r.gold - 60, food: r.food + 1 }));
+      setTrainingQueue(q => [...q, { type: 'cavalry' }]);
+    } else if (action === 'trainCatapult') {
       if (
         resources.gold < 150 ||
         resources.lumber < 80 ||
         resources.food >= resources.foodCap
       )
         return;
-      setResources((r) => ({
+      setResources(r => ({
         ...r,
         gold: r.gold - 150,
         lumber: r.lumber - 80,
         food: r.food + 1,
       }));
-      setWorkers((ws) => {
-        const newId = Math.max(...ws.map((w) => w.id), 0) + 1;
+      setWorkers(ws => {
+        const newId = Math.max(...ws.map(w => w.id), 0) + 1;
         const rp = rallyPoint;
         if (rp) {
           const path = aStar(INITIAL_TILES, BARN_POS, rp);
           return [
             ...ws,
             {
-              ...makeUnit(newId, BARN_POS.x, BARN_POS.y, "catapult"),
+              ...makeUnit(newId, BARN_POS.x, BARN_POS.y, 'catapult'),
               movingTo: path[0] ?? rp,
               path: path.slice(1),
-              state: "moving" as const,
+              state: 'moving' as const,
             },
           ];
         }
-        return [...ws, makeUnit(newId, BARN_POS.x, BARN_POS.y, "catapult")];
+        return [...ws, makeUnit(newId, BARN_POS.x, BARN_POS.y, 'catapult')];
       });
-    } else if (action === "trainTrebuchet") {
+    } else if (action === 'trainTrebuchet') {
       if (
         resources.gold < 200 ||
         resources.lumber < 80 ||
@@ -3039,140 +3027,140 @@ const RTSMap: React.FC<{
         resources.food >= resources.foodCap
       )
         return;
-      setResources((r) => ({
+      setResources(r => ({
         ...r,
         gold: r.gold - 200,
         lumber: r.lumber - 80,
         stone: r.stone - 60,
         food: r.food + 1,
       }));
-      setWorkers((ws) => {
-        const newId = Math.max(...ws.map((w) => w.id), 0) + 1;
+      setWorkers(ws => {
+        const newId = Math.max(...ws.map(w => w.id), 0) + 1;
         const rp = rallyPoint;
         if (rp) {
           const path = aStar(INITIAL_TILES, BARN_POS, rp);
           return [
             ...ws,
             {
-              ...makeUnit(newId, BARN_POS.x, BARN_POS.y, "trebuchet"),
+              ...makeUnit(newId, BARN_POS.x, BARN_POS.y, 'trebuchet'),
               movingTo: path[0] ?? rp,
               path: path.slice(1),
-              state: "moving" as const,
+              state: 'moving' as const,
             },
           ];
         }
-        return [...ws, makeUnit(newId, BARN_POS.x, BARN_POS.y, "trebuchet")];
+        return [...ws, makeUnit(newId, BARN_POS.x, BARN_POS.y, 'trebuchet')];
       });
-    } else if (action === "trade:lumberToGold") {
+    } else if (action === 'trade:lumberToGold') {
       if (resources.lumber < 50) return;
-      setResources((r) => ({ ...r, lumber: r.lumber - 50, gold: r.gold + 30 }));
-      addFloatingText(BARN_POS.x, BARN_POS.y, "+30🪙", "#fbbf24");
-    } else if (action === "trade:stoneToGold") {
+      setResources(r => ({ ...r, lumber: r.lumber - 50, gold: r.gold + 30 }));
+      addFloatingText(BARN_POS.x, BARN_POS.y, '+30🪙', '#fbbf24');
+    } else if (action === 'trade:stoneToGold') {
       if (resources.stone < 30) return;
-      setResources((r) => ({ ...r, stone: r.stone - 30, gold: r.gold + 20 }));
-      addFloatingText(BARN_POS.x, BARN_POS.y, "+20🪙", "#fbbf24");
-    } else if (action === "trade:stoneToLumber") {
+      setResources(r => ({ ...r, stone: r.stone - 30, gold: r.gold + 20 }));
+      addFloatingText(BARN_POS.x, BARN_POS.y, '+20🪙', '#fbbf24');
+    } else if (action === 'trade:stoneToLumber') {
       if (resources.stone < 40) return;
-      setResources((r) => ({
+      setResources(r => ({
         ...r,
         stone: r.stone - 40,
         lumber: r.lumber + 25,
       }));
-      addFloatingText(BARN_POS.x, BARN_POS.y, "+25🌲", "#4ade80");
-    } else if (action === "blacksmith:steelEdge") {
+      addFloatingText(BARN_POS.x, BARN_POS.y, '+25🌲', '#4ade80');
+    } else if (action === 'blacksmith:steelEdge') {
       const level = blacksmithUpgrades.steelEdge;
       if (level >= 2) return;
       const cost =
         level === 0 ? { gold: 80, stone: 60 } : { gold: 160, stone: 120 };
       if (resources.gold < cost.gold || resources.stone < cost.stone) return;
-      setResources((r) => ({
+      setResources(r => ({
         ...r,
         gold: r.gold - cost.gold,
         stone: r.stone - cost.stone,
       }));
-      setBlacksmithUpgrades((u) => ({ ...u, steelEdge: u.steelEdge + 1 }));
+      setBlacksmithUpgrades(u => ({ ...u, steelEdge: u.steelEdge + 1 }));
       addFloatingText(
         BARN_POS.x,
         BARN_POS.y,
         `⚔️ Steel Edge ${level + 1}!`,
-        "#f59e0b",
+        '#f59e0b'
       );
-    } else if (action === "blacksmith:ironHide") {
+    } else if (action === 'blacksmith:ironHide') {
       const level = blacksmithUpgrades.ironHide;
       if (level >= 2) return;
       const cost =
         level === 0 ? { gold: 80, lumber: 50 } : { gold: 160, lumber: 100 };
       if (resources.gold < cost.gold || resources.lumber < cost.lumber) return;
-      setResources((r) => ({
+      setResources(r => ({
         ...r,
         gold: r.gold - cost.gold,
         lumber: r.lumber - cost.lumber,
       }));
-      setBlacksmithUpgrades((u) => ({ ...u, ironHide: u.ironHide + 1 }));
+      setBlacksmithUpgrades(u => ({ ...u, ironHide: u.ironHide + 1 }));
       addFloatingText(
         BARN_POS.x,
         BARN_POS.y,
         `🛡️ Iron Hide ${level + 1}!`,
-        "#38bdf8",
+        '#38bdf8'
       );
-    } else if (action === "guardTower") {
+    } else if (action === 'guardTower') {
       if (guardTowerResearched || resources.gold < 120 || resources.stone < 80)
         return;
-      setResources((r) => ({ ...r, gold: r.gold - 120, stone: r.stone - 80 }));
+      setResources(r => ({ ...r, gold: r.gold - 120, stone: r.stone - 80 }));
       setGuardTowerResearched(true);
-      addFloatingText(BARN_POS.x, BARN_POS.y, "🏰 Guard Tower!", "#22d3ee");
-    } else if (action === "barracks:veteranTraining") {
+      addFloatingText(BARN_POS.x, BARN_POS.y, '🏰 Guard Tower!', '#22d3ee');
+    } else if (action === 'barracks:veteranTraining') {
       if (
         barracksTech.veteranTraining ||
         resources.gold < 100 ||
         resources.lumber < 60
       )
         return;
-      setResources((r) => ({
+      setResources(r => ({
         ...r,
         gold: r.gold - 100,
         lumber: r.lumber - 60,
       }));
-      setBarracksTech((t) => ({ ...t, veteranTraining: true }));
+      setBarracksTech(t => ({ ...t, veteranTraining: true }));
       // Apply +20 maxHp to all existing combat units
-      setWorkers((ws) =>
-        ws.map((w) =>
-          w.unitType === "swordsman" ||
-          w.unitType === "cavalry" ||
-          w.unitType === "hero"
+      setWorkers(ws =>
+        ws.map(w =>
+          w.unitType === 'swordsman' ||
+          w.unitType === 'cavalry' ||
+          w.unitType === 'hero'
             ? { ...w, maxHp: w.maxHp + 20, hp: w.hp + 20 }
-            : w,
-        ),
+            : w
+        )
       );
       addFloatingText(
         BARN_POS.x,
         BARN_POS.y,
-        "🛡️ Veteran Training!",
-        "#f87171",
+        '🛡️ Veteran Training!',
+        '#f87171'
       );
-    } else if (action === "barracks:warDrums") {
+    } else if (action === 'barracks:warDrums') {
       if (
         barracksTech.warDrums ||
         resources.gold < 120 ||
         resources.lumber < 40
       )
         return;
-      setResources((r) => ({
+      setResources(r => ({
         ...r,
         gold: r.gold - 120,
         lumber: r.lumber - 40,
       }));
-      setBarracksTech((t) => ({ ...t, warDrums: true }));
-      addFloatingText(BARN_POS.x, BARN_POS.y, "🥁 War Drums!", "#fb923c");
-    } else if (action.startsWith("upgradeWall:")) {
-      const bid = parseInt(action.split(":")[1] ?? "0");
+      setBarracksTech(t => ({ ...t, warDrums: true }));
+      addFloatingText(BARN_POS.x, BARN_POS.y, '🥁 War Drums!', '#fb923c');
+    } else if (action.startsWith('upgradeWall:')) {
+      const bid = parseInt(action.split(':')[1] ?? '0');
       const wall = placedBuildings.find(
-        (b) => b.id === bid && b.type === "wall" && !b.upgraded,
+        b => b.id === bid && b.type === 'wall' && !b.upgraded
       );
       if (!wall || resources.gold < 50 || resources.stone < 20) return;
-      setResources((r) => ({ ...r, gold: r.gold - 50, stone: r.stone - 20 }));
-      setPlacedBuildings((bs) =>
-        bs.map((b) =>
+      setResources(r => ({ ...r, gold: r.gold - 50, stone: r.stone - 20 }));
+      setPlacedBuildings(bs =>
+        bs.map(b =>
           b.id === bid
             ? {
                 ...b,
@@ -3180,33 +3168,33 @@ const RTSMap: React.FC<{
                 maxHp: 350,
                 hp: Math.min(b.hp + 230, 350),
               }
-            : b,
-        ),
+            : b
+        )
       );
-      addFloatingText(wall.x, wall.y, "🪨 Stone Wall!", "#94a3b8");
-    } else if (action.startsWith("build:")) {
-      const btype = action.split(":")[1] as BuildingType;
+      addFloatingText(wall.x, wall.y, '🪨 Stone Wall!', '#94a3b8');
+    } else if (action.startsWith('build:')) {
+      const btype = action.split(':')[1] as BuildingType;
       if (BUILDING_COSTS[btype]) {
         const req = BUILDING_REQUIRES[btype];
         const prereqMet =
           !req ||
-          (req === "farmhouse"
+          (req === 'farmhouse'
             ? farmhouse.built
-            : placedBuildings.some((b) => b.type === req && !b.constructing));
+            : placedBuildings.some(b => b.type === req && !b.constructing));
         if (prereqMet) setBuildMode(btype);
       }
     }
   };
 
-  const handleWorkerCommand = (cmd: "stop" | "gather" | "attack") => {
-    if (cmd === "stop") {
+  const handleWorkerCommand = (cmd: 'stop' | 'gather' | 'attack') => {
+    if (cmd === 'stop') {
       Object.values(gatherTimeoutsRef.current).forEach(clearTimeout);
       Object.values(attackTimeoutsRef.current).forEach(clearTimeout);
       gatherTimeoutsRef.current = {};
       attackTimeoutsRef.current = {};
       setPatrolMode(false);
-      setWorkers((ws) =>
-        ws.map((w) =>
+      setWorkers(ws =>
+        ws.map(w =>
           w.selected
             ? {
                 ...w,
@@ -3220,10 +3208,10 @@ const RTSMap: React.FC<{
                 patrol: null,
                 holdPosition: false,
                 waypoints: [],
-                state: "idle",
+                state: 'idle',
               }
-            : w,
-        ),
+            : w
+        )
       );
     }
   };
@@ -3239,21 +3227,21 @@ const RTSMap: React.FC<{
       resources.stone < cost.stone
     )
       return;
-    setResources((r) => ({
+    setResources(r => ({
       ...r,
       gold: r.gold - cost.gold,
       lumber: r.lumber - cost.lumber,
       stone: r.stone - cost.stone,
     }));
-    setUpgrades((u) => ({ ...u, [type]: u[type] + 1 }));
-    if (type === "ironWill") {
+    setUpgrades(u => ({ ...u, [type]: u[type] + 1 }));
+    if (type === 'ironWill') {
       const hpBonus = 25;
-      setWorkers((ws) =>
-        ws.map((w) => ({
+      setWorkers(ws =>
+        ws.map(w => ({
           ...w,
           maxHp: w.maxHp + hpBonus,
           hp: Math.min(w.hp + hpBonus, w.maxHp + hpBonus),
-        })),
+        }))
       );
     }
   };
@@ -3265,9 +3253,9 @@ const RTSMap: React.FC<{
       if (anySelected) {
         // Send selected farmers to assist
         const target = { x: bx, y: by };
-        setWorkers((ws) =>
-          ws.map((w) => {
-            if (!w.selected || w.unitType !== "farmer") return w;
+        setWorkers(ws =>
+          ws.map(w => {
+            if (!w.selected || w.unitType !== 'farmer') return w;
             const start = { x: Math.round(w.x), y: Math.round(w.y) };
             const path = aStar(INITIAL_TILES, start, target);
             return {
@@ -3279,38 +3267,38 @@ const RTSMap: React.FC<{
               repairing: null,
               assistBuildId: buildingId,
               patrol: null,
-              state: "moving" as const,
+              state: 'moving' as const,
             };
-          }),
+          })
         );
-        addFloatingText(bx, by, "🔨 Assist!", "#fbbf24");
+        addFloatingText(bx, by, '🔨 Assist!', '#fbbf24');
       } else {
         // Cancel construction — 50% resource refund
-        setPlacedBuildings((bs) => {
-          const b = bs.find((x) => x.id === buildingId);
+        setPlacedBuildings(bs => {
+          const b = bs.find(x => x.id === buildingId);
           if (!b) return bs;
           const cost = BUILDING_COSTS[b.type];
           if (cost) {
-            setResources((r) => ({
+            setResources(r => ({
               ...r,
               gold: r.gold + Math.floor(cost.gold * 0.5),
               lumber: r.lumber + Math.floor(cost.lumber * 0.5),
               stone: r.stone + Math.floor(cost.stone * 0.5),
             }));
           }
-          setWorkers((ws) =>
-            ws.map((w) =>
+          setWorkers(ws =>
+            ws.map(w =>
               w.assistBuildId === buildingId
-                ? { ...w, assistBuildId: undefined, state: "idle" as const }
-                : w,
-            ),
+                ? { ...w, assistBuildId: undefined, state: 'idle' as const }
+                : w
+            )
           );
-          addFloatingText(bx, by, "❌ Cancelled", "#f87171");
-          return bs.filter((x) => x.id !== buildingId);
+          addFloatingText(bx, by, '❌ Cancelled', '#f87171');
+          return bs.filter(x => x.id !== buildingId);
         });
       }
     },
-    [anySelected, addFloatingText],
+    [anySelected, addFloatingText]
   );
 
   const handleRepairBuilding = useCallback(
@@ -3319,12 +3307,12 @@ const RTSMap: React.FC<{
       e.stopPropagation();
       if (!anySelected) return;
       const target = { x: bx, y: by };
-      setWorkers((ws) =>
-        ws.map((w) => {
+      setWorkers(ws =>
+        ws.map(w => {
           if (
             !w.selected ||
-            w.unitType === "catapult" ||
-            w.unitType === "trebuchet"
+            w.unitType === 'catapult' ||
+            w.unitType === 'trebuchet'
           )
             return w;
           const start = { x: Math.round(w.x), y: Math.round(w.y) };
@@ -3337,58 +3325,58 @@ const RTSMap: React.FC<{
             attacking: null,
             repairing: { buildingId },
             patrol: null,
-            state: "moving" as const,
+            state: 'moving' as const,
           };
-        }),
+        })
       );
     },
-    [anySelected],
+    [anySelected]
   );
 
   const handleAttackEnemyBarn = (e: React.MouseEvent) => {
     e.preventDefault();
     if (enemyBarnHp <= 0 || !anySelected) return;
     const adjTile = { x: ENEMY_BARN_POS.x - 1, y: ENEMY_BARN_POS.y };
-    commandMove(adjTile.x, adjTile.y, null, { targetType: "enemyBarn" });
+    commandMove(adjTile.x, adjTile.y, null, { targetType: 'enemyBarn' });
   };
 
   const handleAttackEnemyTower = (
     towerId: number,
     tx: number,
     ty: number,
-    e: React.MouseEvent,
+    e: React.MouseEvent
   ) => {
     e.preventDefault();
     if (!anySelected) return;
     const adj = { x: Math.max(0, tx - 1), y: ty };
-    commandMove(adj.x, adj.y, null, { targetType: "enemyTower", towerId });
+    commandMove(adj.x, adj.y, null, { targetType: 'enemyTower', towerId });
   };
 
   const handleAttackEnemyWall = (
     wallId: number,
     tx: number,
     ty: number,
-    e: React.MouseEvent,
+    e: React.MouseEvent
   ) => {
     e.preventDefault();
     if (!anySelected) return;
-    setWorkers((ws) =>
-      ws.map((w) => {
+    setWorkers(ws =>
+      ws.map(w => {
         if (!w.selected) return w;
         const path = aStar(
           INITIAL_TILES,
           { x: Math.round(w.x), y: Math.round(w.y) },
-          { x: tx, y: ty },
+          { x: tx, y: ty }
         );
         return {
           ...w,
           movingTo: path[0] ?? { x: tx, y: ty },
           path: path.slice(1),
           gathering: null,
-          attacking: { targetType: "enemyWall" as const, wallId },
-          state: "moving" as const,
+          attacking: { targetType: 'enemyWall' as const, wallId },
+          state: 'moving' as const,
         };
-      }),
+      })
     );
   };
 
@@ -3397,17 +3385,17 @@ const RTSMap: React.FC<{
       e.preventDefault();
       e.stopPropagation();
       if (!anySelected) return;
-      const grunt = enemyGruntsRef.current.find((g) => g.id === gruntId);
+      const grunt = enemyGruntsRef.current.find(g => g.id === gruntId);
       if (!grunt) return;
       const tx = Math.round(grunt.x),
         ty = Math.round(grunt.y);
-      setWorkers((ws) =>
-        ws.map((w) => {
+      setWorkers(ws =>
+        ws.map(w => {
           if (!w.selected) return w;
           const path = aStar(
             INITIAL_TILES,
             { x: Math.round(w.x), y: Math.round(w.y) },
-            { x: tx, y: ty },
+            { x: tx, y: ty }
           );
           const first = path[0] ?? { x: tx, y: ty };
           return {
@@ -3415,13 +3403,13 @@ const RTSMap: React.FC<{
             movingTo: first,
             path: path.slice(1),
             gathering: null,
-            attacking: { targetType: "grunt" as const, gruntId },
-            state: "moving",
+            attacking: { targetType: 'grunt' as const, gruntId },
+            state: 'moving',
           };
-        }),
+        })
       );
     },
-    [anySelected],
+    [anySelected]
   );
 
   const handleAttackSiege = useCallback(
@@ -3429,17 +3417,17 @@ const RTSMap: React.FC<{
       e.preventDefault();
       e.stopPropagation();
       if (!anySelected) return;
-      const ram = enemySiegeRef.current.find((r) => r.id === siegeId);
+      const ram = enemySiegeRef.current.find(r => r.id === siegeId);
       if (!ram) return;
       const tx = Math.round(ram.x),
         ty = Math.round(ram.y);
-      setWorkers((ws) =>
-        ws.map((w) => {
+      setWorkers(ws =>
+        ws.map(w => {
           if (!w.selected) return w;
           const path = aStar(
             INITIAL_TILES,
             { x: Math.round(w.x), y: Math.round(w.y) },
-            { x: tx, y: ty },
+            { x: tx, y: ty }
           );
           const first = path[0] ?? { x: tx, y: ty };
           return {
@@ -3447,13 +3435,13 @@ const RTSMap: React.FC<{
             movingTo: first,
             path: path.slice(1),
             gathering: null,
-            attacking: { targetType: "siege" as const, siegeId },
-            state: "moving",
+            attacking: { targetType: 'siege' as const, siegeId },
+            state: 'moving',
           };
-        }),
+        })
       );
     },
-    [anySelected],
+    [anySelected]
   );
 
   const handleAttackShaman = useCallback(
@@ -3461,17 +3449,17 @@ const RTSMap: React.FC<{
       e.preventDefault();
       e.stopPropagation();
       if (!anySelected) return;
-      const shaman = enemyShamansRef.current.find((s) => s.id === shamanId);
+      const shaman = enemyShamansRef.current.find(s => s.id === shamanId);
       if (!shaman) return;
       const tx = Math.round(shaman.x),
         ty = Math.round(shaman.y);
-      setWorkers((ws) =>
-        ws.map((w) => {
+      setWorkers(ws =>
+        ws.map(w => {
           if (!w.selected) return w;
           const path = aStar(
             INITIAL_TILES,
             { x: Math.round(w.x), y: Math.round(w.y) },
-            { x: tx, y: ty },
+            { x: tx, y: ty }
           );
           const first = path[0] ?? { x: tx, y: ty };
           return {
@@ -3479,13 +3467,13 @@ const RTSMap: React.FC<{
             movingTo: first,
             path: path.slice(1),
             gathering: null,
-            attacking: { targetType: "shaman" as const, shamanId },
-            state: "moving",
+            attacking: { targetType: 'shaman' as const, shamanId },
+            state: 'moving',
           };
-        }),
+        })
       );
     },
-    [anySelected],
+    [anySelected]
   );
 
   const handleAttackNecromancer = useCallback(
@@ -3493,17 +3481,17 @@ const RTSMap: React.FC<{
       e.preventDefault();
       e.stopPropagation();
       if (!anySelected) return;
-      const necro = enemyNecromancersRef.current.find((n) => n.id === necroId);
+      const necro = enemyNecromancersRef.current.find(n => n.id === necroId);
       if (!necro) return;
       const tx = Math.round(necro.x),
         ty = Math.round(necro.y);
-      setWorkers((ws) =>
-        ws.map((w) => {
+      setWorkers(ws =>
+        ws.map(w => {
           if (!w.selected) return w;
           const path = aStar(
             INITIAL_TILES,
             { x: Math.round(w.x), y: Math.round(w.y) },
-            { x: tx, y: ty },
+            { x: tx, y: ty }
           );
           const first = path[0] ?? { x: tx, y: ty };
           return {
@@ -3512,15 +3500,15 @@ const RTSMap: React.FC<{
             path: path.slice(1),
             gathering: null,
             attacking: {
-              targetType: "necromancer" as const,
+              targetType: 'necromancer' as const,
               necromancerId: necroId,
             },
-            state: "moving",
+            state: 'moving',
           };
-        }),
+        })
       );
     },
-    [anySelected],
+    [anySelected]
   );
 
   const handleAttackWitchDoctor = useCallback(
@@ -3528,17 +3516,17 @@ const RTSMap: React.FC<{
       e.preventDefault();
       e.stopPropagation();
       if (!anySelected) return;
-      const wd = enemyWitchDoctorsRef.current.find((d) => d.id === wdId);
+      const wd = enemyWitchDoctorsRef.current.find(d => d.id === wdId);
       if (!wd) return;
       const tx = Math.round(wd.x),
         ty = Math.round(wd.y);
-      setWorkers((ws) =>
-        ws.map((w) => {
+      setWorkers(ws =>
+        ws.map(w => {
           if (!w.selected) return w;
           const path = aStar(
             INITIAL_TILES,
             { x: Math.round(w.x), y: Math.round(w.y) },
-            { x: tx, y: ty },
+            { x: tx, y: ty }
           );
           const first = path[0] ?? { x: tx, y: ty };
           return {
@@ -3547,15 +3535,15 @@ const RTSMap: React.FC<{
             path: path.slice(1),
             gathering: null,
             attacking: {
-              targetType: "witchDoctor" as const,
+              targetType: 'witchDoctor' as const,
               witchDoctorId: wdId,
             },
-            state: "moving",
+            state: 'moving',
           };
-        }),
+        })
       );
     },
-    [anySelected],
+    [anySelected]
   );
 
   const handleAttackWarchief = useCallback(
@@ -3563,17 +3551,17 @@ const RTSMap: React.FC<{
       e.preventDefault();
       e.stopPropagation();
       if (!anySelected) return;
-      const wc = enemyWarchiefsRef.current.find((w2) => w2.id === warchiefId);
+      const wc = enemyWarchiefsRef.current.find(w2 => w2.id === warchiefId);
       if (!wc) return;
       const tx = Math.round(wc.x),
         ty = Math.round(wc.y);
-      setWorkers((ws) =>
-        ws.map((w) => {
+      setWorkers(ws =>
+        ws.map(w => {
           if (!w.selected) return w;
           const path = aStar(
             INITIAL_TILES,
             { x: Math.round(w.x), y: Math.round(w.y) },
-            { x: tx, y: ty },
+            { x: tx, y: ty }
           );
           const first = path[0] ?? { x: tx, y: ty };
           return {
@@ -3581,13 +3569,13 @@ const RTSMap: React.FC<{
             movingTo: first,
             path: path.slice(1),
             gathering: null,
-            attacking: { targetType: "warchief" as const, warchiefId },
-            state: "moving",
+            attacking: { targetType: 'warchief' as const, warchiefId },
+            state: 'moving',
           };
-        }),
+        })
       );
     },
-    [anySelected],
+    [anySelected]
   );
 
   const handleAttackWarlord = useCallback(
@@ -3595,17 +3583,17 @@ const RTSMap: React.FC<{
       e.preventDefault();
       e.stopPropagation();
       if (!anySelected) return;
-      const wl = enemyWarlordsRef.current.find((w2) => w2.id === warlordId);
+      const wl = enemyWarlordsRef.current.find(w2 => w2.id === warlordId);
       if (!wl) return;
       const tx = Math.round(wl.x),
         ty = Math.round(wl.y);
-      setWorkers((ws) =>
-        ws.map((w) => {
+      setWorkers(ws =>
+        ws.map(w => {
           if (!w.selected) return w;
           const path = aStar(
             INITIAL_TILES,
             { x: Math.round(w.x), y: Math.round(w.y) },
-            { x: tx, y: ty },
+            { x: tx, y: ty }
           );
           const first = path[0] ?? { x: tx, y: ty };
           return {
@@ -3613,13 +3601,13 @@ const RTSMap: React.FC<{
             movingTo: first,
             path: path.slice(1),
             gathering: null,
-            attacking: { targetType: "warlord" as const, warlordId },
-            state: "moving",
+            attacking: { targetType: 'warlord' as const, warlordId },
+            state: 'moving',
           };
-        }),
+        })
       );
     },
-    [anySelected],
+    [anySelected]
   );
 
   const handleAttackLurker = useCallback(
@@ -3627,17 +3615,17 @@ const RTSMap: React.FC<{
       e.preventDefault();
       e.stopPropagation();
       if (!anySelected) return;
-      const lk = enemyLurkersRef.current.find((l) => l.id === lurkerId);
+      const lk = enemyLurkersRef.current.find(l => l.id === lurkerId);
       if (!lk) return;
       const tx = Math.round(lk.x),
         ty = Math.round(lk.y);
-      setWorkers((ws) =>
-        ws.map((w) => {
+      setWorkers(ws =>
+        ws.map(w => {
           if (!w.selected) return w;
           const path = aStar(
             INITIAL_TILES,
             { x: Math.round(w.x), y: Math.round(w.y) },
-            { x: tx, y: ty },
+            { x: tx, y: ty }
           );
           const first = path[0] ?? { x: tx, y: ty };
           return {
@@ -3645,13 +3633,13 @@ const RTSMap: React.FC<{
             movingTo: first,
             path: path.slice(1),
             gathering: null,
-            attacking: { targetType: "lurker" as const, lurkerId },
-            state: "moving",
+            attacking: { targetType: 'lurker' as const, lurkerId },
+            state: 'moving',
           };
-        }),
+        })
       );
     },
-    [anySelected],
+    [anySelected]
   );
 
   const handleAttackTroll = useCallback(
@@ -3659,17 +3647,17 @@ const RTSMap: React.FC<{
       e.preventDefault();
       e.stopPropagation();
       if (!anySelected) return;
-      const troll = enemyTrollsRef.current.find((t) => t.id === trollId);
+      const troll = enemyTrollsRef.current.find(t => t.id === trollId);
       if (!troll) return;
       const tx = Math.round(troll.x),
         ty = Math.round(troll.y);
-      setWorkers((ws) =>
-        ws.map((w) => {
+      setWorkers(ws =>
+        ws.map(w => {
           if (!w.selected) return w;
           const path = aStar(
             INITIAL_TILES,
             { x: Math.round(w.x), y: Math.round(w.y) },
-            { x: tx, y: ty },
+            { x: tx, y: ty }
           );
           const first = path[0] ?? { x: tx, y: ty };
           return {
@@ -3677,13 +3665,13 @@ const RTSMap: React.FC<{
             movingTo: first,
             path: path.slice(1),
             gathering: null,
-            attacking: { targetType: "troll" as const, trollId },
-            state: "moving",
+            attacking: { targetType: 'troll' as const, trollId },
+            state: 'moving',
           };
-        }),
+        })
       );
     },
-    [anySelected],
+    [anySelected]
   );
 
   const handleAttackSapper = useCallback(
@@ -3691,17 +3679,17 @@ const RTSMap: React.FC<{
       e.preventDefault();
       e.stopPropagation();
       if (!anySelected) return;
-      const sapper = enemySappersRef.current.find((s) => s.id === sapperId);
+      const sapper = enemySappersRef.current.find(s => s.id === sapperId);
       if (!sapper) return;
       const tx = Math.round(sapper.x),
         ty = Math.round(sapper.y);
-      setWorkers((ws) =>
-        ws.map((w) => {
+      setWorkers(ws =>
+        ws.map(w => {
           if (!w.selected) return w;
           const path = aStar(
             INITIAL_TILES,
             { x: Math.round(w.x), y: Math.round(w.y) },
-            { x: tx, y: ty },
+            { x: tx, y: ty }
           );
           const first = path[0] ?? { x: tx, y: ty };
           return {
@@ -3709,13 +3697,13 @@ const RTSMap: React.FC<{
             movingTo: first,
             path: path.slice(1),
             gathering: null,
-            attacking: { targetType: "sapper" as const, sapperId },
-            state: "moving",
+            attacking: { targetType: 'sapper' as const, sapperId },
+            state: 'moving',
           };
-        }),
+        })
       );
     },
-    [anySelected],
+    [anySelected]
   );
 
   const handleAttackCreep = useCallback(
@@ -3723,17 +3711,17 @@ const RTSMap: React.FC<{
       e.preventDefault();
       e.stopPropagation();
       if (!anySelected) return;
-      const creep = neutralCreepsRef.current.find((c) => c.id === creepId);
+      const creep = neutralCreepsRef.current.find(c => c.id === creepId);
       if (!creep) return;
       const tx = Math.round(creep.x),
         ty = Math.round(creep.y);
-      setWorkers((ws) =>
-        ws.map((w) => {
+      setWorkers(ws =>
+        ws.map(w => {
           if (!w.selected) return w;
           const path = aStar(
             INITIAL_TILES,
             { x: Math.round(w.x), y: Math.round(w.y) },
-            { x: tx, y: ty },
+            { x: tx, y: ty }
           );
           const first = path[0] ?? { x: tx, y: ty };
           // Reuse grunt attack state but target creep — we handle damage via attackTimeoutsRef with a creep target type
@@ -3742,69 +3730,63 @@ const RTSMap: React.FC<{
             movingTo: first,
             path: path.slice(1),
             gathering: null,
-            attacking: { targetType: "creep" as const, creepId },
-            state: "moving",
+            attacking: { targetType: 'creep' as const, creepId },
+            state: 'moving',
           };
-        }),
+        })
       );
     },
-    [anySelected],
+    [anySelected]
   );
 
   const minimapData = useMemo(
     () => ({
-      workers: workers.map((w) => ({ x: w.x, y: w.y, selected: w.selected })),
-      grunts: enemyGrunts.map((g) => ({ x: g.x, y: g.y })),
+      workers: workers.map(w => ({ x: w.x, y: w.y, selected: w.selected })),
+      grunts: enemyGrunts.map(g => ({ x: g.x, y: g.y })),
       enemyBarnAlive: enemyBarnHp > 0,
-      buildings: placedBuildings.map((b) => ({ x: b.x, y: b.y, type: b.type })),
-      creepCamps: CREEP_CAMPS.map((c) => ({
+      buildings: placedBuildings.map(b => ({ x: b.x, y: b.y, type: b.type })),
+      creepCamps: CREEP_CAMPS.map(c => ({
         x: c.x,
         y: c.y,
         cleared: clearedCamps.has(c.id),
       })),
       enemyTowers: enemyTowers
-        .filter((t) => t.hp > 0)
-        .map((t) => ({ x: t.x, y: t.y })),
+        .filter(t => t.hp > 0)
+        .map(t => ({ x: t.x, y: t.y })),
       goldNodes: goldMines
-        .filter((m) => m.amount > 0)
-        .map((m) => ({ x: m.x, y: m.y })),
+        .filter(m => m.amount > 0)
+        .map(m => ({ x: m.x, y: m.y })),
       stoneNodes: stoneNodes
-        .filter((n) => n.amount > 0)
-        .map((n) => ({ x: n.x, y: n.y })),
-      treeNodes: trees
-        .filter((t) => t.amount > 0)
-        .map((t) => ({ x: t.x, y: t.y })),
-      warRams: enemySiege
-        .filter((r) => r.hp > 0)
-        .map((r) => ({ x: r.x, y: r.y })),
+        .filter(n => n.amount > 0)
+        .map(n => ({ x: n.x, y: n.y })),
+      treeNodes: trees.filter(t => t.amount > 0).map(t => ({ x: t.x, y: t.y })),
+      warRams: enemySiege.filter(r => r.hp > 0).map(r => ({ x: r.x, y: r.y })),
       shamans: enemyShamans
-        .filter((s) => s.hp > 0)
-        .map((s) => ({ x: s.x, y: s.y })),
-      trolls: enemyTrolls
-        .filter((t) => t.hp > 0)
-        .map((t) => ({ x: t.x, y: t.y })),
+        .filter(s => s.hp > 0)
+        .map(s => ({ x: s.x, y: s.y })),
+      trolls: enemyTrolls.filter(t => t.hp > 0).map(t => ({ x: t.x, y: t.y })),
       sappers: enemySappers
-        .filter((s) => s.hp > 0 && !s.exploded)
-        .map((s) => ({ x: s.x, y: s.y })),
+        .filter(s => s.hp > 0 && !s.exploded)
+        .map(s => ({ x: s.x, y: s.y })),
       witchDoctors: enemyWitchDoctors
-        .filter((d) => d.hp > 0)
-        .map((d) => ({ x: d.x, y: d.y })),
+        .filter(d => d.hp > 0)
+        .map(d => ({ x: d.x, y: d.y })),
       warchiefs: enemyWarchiefs
-        .filter((wc2) => wc2.hp > 0)
-        .map((wc2) => ({ x: wc2.x, y: wc2.y })),
+        .filter(wc2 => wc2.hp > 0)
+        .map(wc2 => ({ x: wc2.x, y: wc2.y })),
       fogExplored,
-      attackPings: minimapPings.filter((p) => Date.now() - p.t < 2500),
+      attackPings: minimapPings.filter(p => Date.now() - p.t < 2500),
       enemyWalls: enemyWalls
-        .filter((ew) => ew.hp > 0)
-        .map((ew) => ({ x: ew.x, y: ew.y })),
-      lootCrates: lootCrates.map((c) => ({ x: c.x, y: c.y })),
-      droppedItems: droppedItems.map((d) => ({ x: d.x, y: d.y })),
+        .filter(ew => ew.hp > 0)
+        .map(ew => ({ x: ew.x, y: ew.y })),
+      lootCrates: lootCrates.map(c => ({ x: c.x, y: c.y })),
+      droppedItems: droppedItems.map(d => ({ x: d.x, y: d.y })),
       warlords: enemyWarlords
-        .filter((wl) => wl.hp > 0)
-        .map((wl) => ({ x: wl.x, y: wl.y })),
+        .filter(wl => wl.hp > 0)
+        .map(wl => ({ x: wl.x, y: wl.y })),
       lurkers: enemyLurkers
-        .filter((lk) => lk.hp > 0)
-        .map((lk) => ({ x: lk.x, y: lk.y })),
+        .filter(lk => lk.hp > 0)
+        .map(lk => ({ x: lk.x, y: lk.y })),
     }),
     [
       workers,
@@ -3829,7 +3811,7 @@ const RTSMap: React.FC<{
       droppedItems,
       enemyWarlords,
       enemyLurkers,
-    ],
+    ]
   );
 
   return (
@@ -3842,7 +3824,7 @@ const RTSMap: React.FC<{
             }
           : undefined
       }
-      onContextMenu={(e) => {
+      onContextMenu={e => {
         if (buildMode) {
           e.preventDefault();
           setBuildMode(null);
@@ -3953,13 +3935,13 @@ const RTSMap: React.FC<{
       {/* SVG map */}
       <div
         style={{
-          position: "absolute",
+          position: 'absolute',
           inset: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
           zIndex: 1,
-          pointerEvents: "none",
+          pointerEvents: 'none',
         }}
       >
         <svg
@@ -3969,11 +3951,11 @@ const RTSMap: React.FC<{
           height="100%"
           preserveAspectRatio="xMidYMid meet"
           style={{
-            display: "block",
-            pointerEvents: "auto",
+            display: 'block',
+            pointerEvents: 'auto',
             transform: `translate(${camera.x}px,${camera.y}px) scale(${zoom})`,
-            userSelect: "none",
-            cursor: buildMode ? "crosshair" : "default",
+            userSelect: 'none',
+            cursor: buildMode ? 'crosshair' : 'default',
           }}
           onMouseDown={handleSvgMouseDown}
           onMouseMove={handleSvgMouseMove}
@@ -4173,10 +4155,10 @@ const RTSMap: React.FC<{
         onFarmhouseAction={handleFarmhouseAction}
         onWorkerCommand={handleWorkerCommand}
         patrolMode={patrolMode}
-        onPatrolCommand={() => setPatrolMode((m) => !m)}
+        onPatrolCommand={() => setPatrolMode(m => !m)}
         onHoldPosition={() =>
-          setWorkers((ws) =>
-            ws.map((w) =>
+          setWorkers(ws =>
+            ws.map(w =>
               w.selected
                 ? {
                     ...w,
@@ -4187,10 +4169,10 @@ const RTSMap: React.FC<{
                     attackMove: false,
                     attackMoveTarget: null,
                     waypoints: [],
-                    state: "idle",
+                    state: 'idle',
                   }
-                : w,
-            ),
+                : w
+            )
           )
         }
         buildMode={buildMode}
@@ -4198,10 +4180,10 @@ const RTSMap: React.FC<{
         onResearch={handleResearch}
         stance={stance}
         onToggleStance={() =>
-          setStance((s) => (s === "aggressive" ? "passive" : "aggressive"))
+          setStance(s => (s === 'aggressive' ? 'passive' : 'aggressive'))
         }
         hasBarracks={placedBuildings.some(
-          (b) => b.type === "barracks" && !b.constructing,
+          b => b.type === 'barracks' && !b.constructing
         )}
         garrisonedCount={garrisoned.length}
         garrisonCap={GARRISON_CAP}
@@ -4213,12 +4195,12 @@ const RTSMap: React.FC<{
         onInstantRevive={() => {
           const cost = Math.min(200, 80 + wave * 5);
           if (resources.gold < cost) return;
-          setResources((r) => ({ ...r, gold: r.gold - cost }));
+          setResources(r => ({ ...r, gold: r.gold - cost }));
           setHeroReviveAt(null);
           const saved = heroXpRef.current;
-          setWorkers((ws) => {
-            const newId = Math.max(...ws.map((w) => w.id), 0) + 1;
-            const hero = makeUnit(newId, BARN_POS.x, BARN_POS.y, "hero");
+          setWorkers(ws => {
+            const newId = Math.max(...ws.map(w => w.id), 0) + 1;
+            const hero = makeUnit(newId, BARN_POS.x, BARN_POS.y, 'hero');
             return [
               ...ws,
               saved
@@ -4232,7 +4214,7 @@ const RTSMap: React.FC<{
                 : hero,
             ];
           });
-          addFloatingText(BARN_POS.x, BARN_POS.y, "🦸 Revived!", "#fbbf24");
+          addFloatingText(BARN_POS.x, BARN_POS.y, '🦸 Revived!', '#fbbf24');
         }}
         heroAbilityCooldown={heroAbilityCooldown}
         onHeroAbility={handleHeroAbility}
@@ -4242,35 +4224,35 @@ const RTSMap: React.FC<{
         harvestBoonCooldown={harvestBoonCooldown}
         harvestBoonActive={harvestBoonActive}
         onHarvestBoon={handleHarvestBoon}
-        onRecruitHero={() => handleFarmhouseAction("recruitHero")}
+        onRecruitHero={() => handleFarmhouseAction('recruitHero')}
         hasSiegeWorkshop={placedBuildings.some(
-          (b) => b.type === "siegeWorkshop" && !b.constructing,
+          b => b.type === 'siegeWorkshop' && !b.constructing
         )}
         hasMarket={placedBuildings.some(
-          (b) => b.type === "market" && !b.constructing,
+          b => b.type === 'market' && !b.constructing
         )}
         hasBlacksmith={placedBuildings.some(
-          (b) => b.type === "blacksmith" && !b.constructing,
+          b => b.type === 'blacksmith' && !b.constructing
         )}
         blacksmithUpgrades={blacksmithUpgrades}
-        onBlacksmithUpgrade={(type) =>
+        onBlacksmithUpgrade={type =>
           handleFarmhouseAction(`blacksmith:${type}`)
         }
         hasStable={placedBuildings.some(
-          (b) => b.type === "stable" && !b.constructing,
+          b => b.type === 'stable' && !b.constructing
         )}
         hasWatchtower={placedBuildings.some(
-          (b) => b.type === "watchtower" && !b.constructing,
+          b => b.type === 'watchtower' && !b.constructing
         )}
         guardTowerResearched={guardTowerResearched}
-        onGuardTower={() => handleFarmhouseAction("guardTower")}
+        onGuardTower={() => handleFarmhouseAction('guardTower')}
         trainingQueue={trainingQueue}
         trainingProgress={trainingProgress}
         towerGarrison={towerGarrison}
         onTowerGarrison={handleTowerGarrison}
         onTowerDeploy={handleTowerDeploy}
         selectedBuilding={
-          placedBuildings.find((b) => b.id === selectedBuildingId) ?? null
+          placedBuildings.find(b => b.id === selectedBuildingId) ?? null
         }
         placedBuildingsList={placedBuildings}
         onSwordsmanCharge={handleSwordsmanCharge}
@@ -4296,7 +4278,7 @@ const RTSMap: React.FC<{
         underAttack={underAttack}
         incomeRate={incomeRate}
         barracksTech={barracksTech}
-        onBarracksTech={(type) => handleFarmhouseAction(`barracks:${type}`)}
+        onBarracksTech={type => handleFarmhouseAction(`barracks:${type}`)}
         earthquakeCooldown={earthquakeCooldown}
         onEarthquake={handleEarthquake}
         heroItems={heroItems}
@@ -4306,8 +4288,8 @@ const RTSMap: React.FC<{
         onBuyItem={handleBuyItem}
         formationMode={formationMode}
         onCycleFormation={() =>
-          setFormationMode((m) => {
-            const order: FormationMode[] = ["cluster", "line", "wedge", "box"];
+          setFormationMode(m => {
+            const order: FormationMode[] = ['cluster', 'line', 'wedge', 'box'];
             return order[(order.indexOf(m) + 1) % order.length]!;
           })
         }
@@ -4316,20 +4298,20 @@ const RTSMap: React.FC<{
       {isDemo && (
         <div
           style={{
-            position: "fixed",
-            top: "0.4rem",
-            left: "50%",
-            transform: "translateX(-50%)",
+            position: 'fixed',
+            top: '0.4rem',
+            left: '50%',
+            transform: 'translateX(-50%)',
             zIndex: 200,
-            background: "rgba(109,40,217,0.85)",
-            border: "1.5px solid #a78bfa",
-            borderRadius: "1rem",
-            color: "#ddd6fe",
-            fontSize: "0.75rem",
+            background: 'rgba(109,40,217,0.85)',
+            border: '1.5px solid #a78bfa',
+            borderRadius: '1rem',
+            color: '#ddd6fe',
+            fontSize: '0.75rem',
             fontWeight: 700,
-            padding: "0.2rem 0.75rem",
+            padding: '0.2rem 0.75rem',
             letterSpacing: 1,
-            pointerEvents: "none",
+            pointerEvents: 'none',
           }}
         >
           🤖 DEMO MODE — AI is playing
@@ -4337,21 +4319,21 @@ const RTSMap: React.FC<{
       )}
       {/* Achievement panel button */}
       <button
-        onClick={() => setAchievementPanelOpen((o) => !o)}
+        onClick={() => setAchievementPanelOpen(o => !o)}
         style={{
-          position: "fixed",
-          top: "3.5rem",
-          right: "0.5rem",
+          position: 'fixed',
+          top: '3.5rem',
+          right: '0.5rem',
           zIndex: 150,
           background: achievementPanelOpen
-            ? "rgba(109,40,217,0.9)"
-            : "rgba(30,27,75,0.85)",
-          border: "1.5px solid #7c3aed",
-          borderRadius: "0.5rem",
-          color: "#c4b5fd",
-          fontSize: "1.1rem",
-          padding: "0.3rem 0.5rem",
-          cursor: "pointer",
+            ? 'rgba(109,40,217,0.9)'
+            : 'rgba(30,27,75,0.85)',
+          border: '1.5px solid #7c3aed',
+          borderRadius: '0.5rem',
+          color: '#c4b5fd',
+          fontSize: '1.1rem',
+          padding: '0.3rem 0.5rem',
+          cursor: 'pointer',
           lineHeight: 1,
         }}
         title="Achievements"
@@ -4366,31 +4348,31 @@ const RTSMap: React.FC<{
       {achievementToast && (
         <div
           style={{
-            position: "fixed",
-            bottom: "5.5rem",
-            left: "50%",
-            transform: "translateX(-50%)",
+            position: 'fixed',
+            bottom: '5.5rem',
+            left: '50%',
+            transform: 'translateX(-50%)',
             zIndex: 200,
-            background: "linear-gradient(135deg, #1e1b4b 0%, #4c1d95 100%)",
-            border: "1.5px solid #a855f7",
-            borderRadius: "0.75rem",
-            padding: "0.6rem 1.2rem",
-            display: "flex",
-            alignItems: "center",
-            gap: "0.6rem",
-            boxShadow: "0 4px 24px rgba(168,85,247,0.5)",
-            pointerEvents: "none",
-            animation: "fadeInUp 0.3s ease",
+            background: 'linear-gradient(135deg, #1e1b4b 0%, #4c1d95 100%)',
+            border: '1.5px solid #a855f7',
+            borderRadius: '0.75rem',
+            padding: '0.6rem 1.2rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.6rem',
+            boxShadow: '0 4px 24px rgba(168,85,247,0.5)',
+            pointerEvents: 'none',
+            animation: 'fadeInUp 0.3s ease',
           }}
         >
-          <span style={{ fontSize: "1.4rem" }}>{achievementToast.emoji}</span>
+          <span style={{ fontSize: '1.4rem' }}>{achievementToast.emoji}</span>
           <div>
             <div
               style={{
-                fontSize: "0.6rem",
-                color: "#c4b5fd",
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
+                fontSize: '0.6rem',
+                color: '#c4b5fd',
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
                 fontWeight: 700,
               }}
             >
@@ -4398,14 +4380,14 @@ const RTSMap: React.FC<{
             </div>
             <div
               style={{
-                fontSize: "0.85rem",
-                color: "#f5f3ff",
+                fontSize: '0.85rem',
+                color: '#f5f3ff',
                 fontWeight: 700,
               }}
             >
               {achievementToast.name}
             </div>
-            <div style={{ fontSize: "0.65rem", color: "#ddd6fe" }}>
+            <div style={{ fontSize: '0.65rem', color: '#ddd6fe' }}>
               {achievementToast.description}
             </div>
           </div>

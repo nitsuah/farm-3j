@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 
 import type {
   Upgrades,
@@ -6,7 +6,7 @@ import type {
   FarmhouseAction,
   HeroItem,
   HeroItemId,
-} from "./game/types";
+} from './game/types';
 import {
   GRID_SIZE,
   BARN_POS,
@@ -17,9 +17,9 @@ import {
   UPGRADE_COSTS,
   UPGRADE_MAX,
   HERO_ITEM_DATA,
-} from "./game/constants";
-import { BuildMenu } from "./ui/BuildMenu";
-import { HeroPanel } from "./ui/HeroPanel";
+} from './game/constants';
+import { BuildMenu } from './ui/BuildMenu';
+import { HeroPanel } from './ui/HeroPanel';
 
 // Re-export types from canonical locations for backward compatibility
 export type { Upgrades, WorkerState };
@@ -27,23 +27,23 @@ export type { FarmhouseAction };
 export { UPGRADE_COSTS, UPGRADE_MAX };
 
 export type BuildingType =
-  | "farmhouse"
-  | "lumberShed"
-  | "watchtower"
-  | "wall"
-  | "windmill"
-  | "barracks"
-  | "siegeWorkshop"
-  | "market"
-  | "blacksmith"
-  | "granary"
-  | "stable"
-  | "spikeTrap"
-  | "frostTower"
-  | "ballista"
-  | "poisonTower"
-  | "supplyStore"
-  | "miningCamp";
+  | 'farmhouse'
+  | 'lumberShed'
+  | 'watchtower'
+  | 'wall'
+  | 'windmill'
+  | 'barracks'
+  | 'siegeWorkshop'
+  | 'market'
+  | 'blacksmith'
+  | 'granary'
+  | 'stable'
+  | 'spikeTrap'
+  | 'frostTower'
+  | 'ballista'
+  | 'poisonTower'
+  | 'supplyStore'
+  | 'miningCamp';
 
 export interface PlacedBuilding {
   id: number;
@@ -66,7 +66,7 @@ export interface BuildingCost {
 }
 
 interface RTSUIProps {
-  selectedType: "worker" | "farmhouse" | "building" | null;
+  selectedType: 'worker' | 'farmhouse' | 'building' | null;
   selectedBuilding: PlacedBuilding | null;
   onTowerGarrison: (towerId: number, tx: number, ty: number) => void;
   selectedWorkers: WorkerState[];
@@ -92,12 +92,12 @@ interface RTSUIProps {
   hasMarket: boolean;
   hasBlacksmith: boolean;
   blacksmithUpgrades: { steelEdge: number; ironHide: number };
-  onBlacksmithUpgrade: (type: "steelEdge" | "ironHide") => void;
+  onBlacksmithUpgrade: (type: 'steelEdge' | 'ironHide') => void;
   hasStable: boolean;
   hasWatchtower: boolean;
   guardTowerResearched: boolean;
   onGuardTower: () => void;
-  trainingQueue: { type: "swordsman" | "cavalry" }[];
+  trainingQueue: { type: 'swordsman' | 'cavalry' }[];
   trainingProgress: number;
   towerGarrison: Record<number, WorkerState[]>;
   onTowerDeploy: (towerId: number, tx: number, ty: number) => void;
@@ -118,19 +118,19 @@ interface RTSUIProps {
   placedBuildings: PlacedBuilding[];
   buildingCosts: Record<BuildingType, BuildingCost>;
   onFarmhouseAction: (action: FarmhouseAction) => void;
-  onWorkerCommand: (cmd: "stop" | "gather" | "attack") => void;
+  onWorkerCommand: (cmd: 'stop' | 'gather' | 'attack') => void;
   patrolMode: boolean;
   onPatrolCommand: () => void;
   onHoldPosition: () => void;
   buildMode: BuildingType | null;
   upgrades: Upgrades;
   onResearch: (type: keyof Upgrades) => void;
-  stance: "aggressive" | "passive";
+  stance: 'aggressive' | 'passive';
   onToggleStance: () => void;
   underAttack: boolean;
   incomeRate: { gold: number; lumber: number; stone: number };
   barracksTech: { veteranTraining: boolean; warDrums: boolean };
-  onBarracksTech: (type: "veteranTraining" | "warDrums") => void;
+  onBarracksTech: (type: 'veteranTraining' | 'warDrums') => void;
   earthquakeCooldown: number;
   onEarthquake: () => void;
   heroItems: HeroItem[];
@@ -138,7 +138,7 @@ interface RTSUIProps {
   onUsePotion: () => void;
   shopItems: { itemId: HeroItemId; cost: number }[];
   onBuyItem: (itemId: HeroItemId, cost: number) => void;
-  formationMode: "cluster" | "line" | "wedge" | "box";
+  formationMode: 'cluster' | 'line' | 'wedge' | 'box';
   onCycleFormation: () => void;
   enemyBarnHp: number;
   enemyBarnMaxHp: number;
@@ -245,68 +245,68 @@ export const RTSUI: React.FC<RTSUIProps> = ({
   formationMode,
   onCycleFormation,
 }) => {
-  const isHeroSelected = selectedWorkers.some((w) => w.unitType === "hero");
+  const isHeroSelected = selectedWorkers.some(w => w.unitType === 'hero');
   const heroLevel =
-    selectedWorkers.find((w) => w.unitType === "hero")?.level ?? 0;
+    selectedWorkers.find(w => w.unitType === 'hero')?.level ?? 0;
   const selectedCount = selectedWorkers.length;
   const firstWorker = selectedWorkers[0] ?? null;
-  const anyFarmers = selectedWorkers.some((w) => w.unitType === "farmer");
+  const anyFarmers = selectedWorkers.some(w => w.unitType === 'farmer');
   const allSwordsmen =
     selectedWorkers.length > 0 &&
-    selectedWorkers.every((w) => w.unitType === "swordsman");
+    selectedWorkers.every(w => w.unitType === 'swordsman');
   const allSameType =
     selectedWorkers.length > 0 &&
-    selectedWorkers.every((w) => w.unitType === firstWorker?.unitType);
+    selectedWorkers.every(w => w.unitType === firstWorker?.unitType);
 
   const stateLabel = (w: WorkerState) => {
-    if (w.patrol) return "🔄 Patrolling";
-    if (w.state === "idle") return "Idle";
-    if (w.state === "moving") return "Moving";
-    if (w.state === "gathering") return "Gathering";
-    if (w.state === "returning") return "Returning";
-    if (w.state === "attacking") return "⚔️ Attacking";
-    if (w.state === "repairing") return "🔧 Repairing";
+    if (w.patrol) return '🔄 Patrolling';
+    if (w.state === 'idle') return 'Idle';
+    if (w.state === 'moving') return 'Moving';
+    if (w.state === 'gathering') return 'Gathering';
+    if (w.state === 'returning') return 'Returning';
+    if (w.state === 'attacking') return '⚔️ Attacking';
+    if (w.state === 'repairing') return '🔧 Repairing';
     return w.state;
   };
 
   const hpPct = (hp: number, max: number) => Math.max(0, hp / max);
   const hpColor = (pct: number) =>
-    pct > 0.5 ? "#4ade80" : pct > 0.25 ? "#fbbf24" : "#ef4444";
+    pct > 0.5 ? '#4ade80' : pct > 0.25 ? '#fbbf24' : '#ef4444';
 
   return (
     <div
       className="absolute bottom-0 left-0 z-30 w-full border-t-4 border-amber-600 bg-slate-950/95 px-2 py-2 md:px-4 md:py-3"
-      style={{ maxHeight: "40vh", overflowY: "auto" }}
+      style={{ maxHeight: '40vh', overflowY: 'auto' }}
     >
       <div className="grid h-full grid-cols-1 items-stretch gap-2 md:grid-cols-[200px_1fr_200px] md:gap-3 landscape:grid-cols-[140px_1fr_140px]">
         {/* Unit / building info */}
         <div className="rounded border border-amber-700/60 bg-slate-900/80 p-3 text-amber-100">
           <div className="text-xs tracking-wide text-amber-300/90 uppercase">
-            {selectedType === "farmhouse"
-              ? "Building"
-              : selectedType === "building"
-                ? "Structure"
-                : "Selection"}
+            {selectedType === 'farmhouse'
+              ? 'Building'
+              : selectedType === 'building'
+                ? 'Structure'
+                : 'Selection'}
           </div>
-          {selectedType === "worker" && firstWorker ? (
+          {selectedType === 'worker' && firstWorker ? (
             <>
               <div className="mt-1 text-sm font-semibold">
-                {firstWorker.unitType === "hero"
-                  ? "🦸 Barnabas"
-                  : firstWorker.unitType === "catapult"
-                    ? "🪨 Catapult"
-                    : firstWorker.unitType === "trebuchet"
-                      ? "🏰 Trebuchet"
+                {firstWorker.unitType === 'hero'
+                  ? '🦸 Barnabas'
+                  : firstWorker.unitType === 'catapult'
+                    ? '🪨 Catapult'
+                    : firstWorker.unitType === 'trebuchet'
+                      ? '🏰 Trebuchet'
                       : !allSameType
-                        ? "⚔️/🌾 Mixed"
-                        : firstWorker.unitType === "cavalry"
-                          ? "🐴 Cavalry"
+                        ? '⚔️/🌾 Mixed'
+                        : firstWorker.unitType === 'cavalry'
+                          ? '🐴 Cavalry'
                           : allSwordsmen
-                            ? "⚔️ Swordsman"
-                            : "Farmer"}
-                {selectedCount > 1 && firstWorker.unitType !== "hero"
+                            ? '⚔️ Swordsman'
+                            : 'Farmer'}
+                {selectedCount > 1 && firstWorker.unitType !== 'hero'
                   ? ` ×${selectedCount}`
-                  : ""}
+                  : ''}
                 {firstWorker.group !== null && selectedCount === 1 && (
                   <span className="ml-2 rounded bg-amber-900/60 px-1.5 text-xs text-amber-300">
                     G{firstWorker.group}
@@ -323,7 +323,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                         style={{
                           width: `${hpPct(firstWorker.hp, firstWorker.maxHp) * 100}%`,
                           background: hpColor(
-                            hpPct(firstWorker.hp, firstWorker.maxHp),
+                            hpPct(firstWorker.hp, firstWorker.maxHp)
                           ),
                         }}
                       />
@@ -336,10 +336,10 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                     {stateLabel(firstWorker)}
                     {!firstWorker.patrol && firstWorker.gathering
                       ? ` (${firstWorker.gathering.type})`
-                      : ""}
+                      : ''}
                     {!firstWorker.patrol && firstWorker.attacking
-                      ? ` → ${firstWorker.attacking.targetType === "enemyBarn" ? "enemy barn" : firstWorker.attacking.targetType === "grunt" ? "grunt" : firstWorker.attacking.targetType === "shaman" ? "shaman" : firstWorker.attacking.targetType === "troll" ? "troll archer" : firstWorker.attacking.targetType === "sapper" ? "sapper" : firstWorker.attacking.targetType === "siege" ? "siege engine" : firstWorker.attacking.targetType === "enemyTower" ? "enemy tower" : "target"}`
-                      : ""}
+                      ? ` → ${firstWorker.attacking.targetType === 'enemyBarn' ? 'enemy barn' : firstWorker.attacking.targetType === 'grunt' ? 'grunt' : firstWorker.attacking.targetType === 'shaman' ? 'shaman' : firstWorker.attacking.targetType === 'troll' ? 'troll archer' : firstWorker.attacking.targetType === 'sapper' ? 'sapper' : firstWorker.attacking.targetType === 'siege' ? 'siege engine' : firstWorker.attacking.targetType === 'enemyTower' ? 'enemy tower' : 'target'}`
+                      : ''}
                   </div>
                   <div className="mt-0.5 text-xs text-amber-200">
                     {firstWorker.carrying.gold > 0 &&
@@ -351,7 +351,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                     {!firstWorker.carrying.gold &&
                       !firstWorker.carrying.lumber &&
                       !firstWorker.carrying.stone &&
-                      "Empty"}
+                      'Empty'}
                   </div>
                   {(() => {
                     const lvl = firstWorker.level;
@@ -372,7 +372,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                           ? 100
                           : Math.min(100, ((xp - lo) / (hi - lo)) * 100);
                     const stars =
-                      "⭐".repeat(lvl) + "☆".repeat(Math.max(0, 3 - lvl));
+                      '⭐'.repeat(lvl) + '☆'.repeat(Math.max(0, 3 - lvl));
                     return (
                       <div className="mt-0.5 flex items-center gap-1.5">
                         <span className="text-xs text-yellow-300">{stars}</span>
@@ -383,7 +383,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                           />
                         </div>
                         <span className="text-xs text-yellow-400/70">
-                          {lvl >= 3 ? "MAX" : `${xp - lo}/${hi - lo}xp`}
+                          {lvl >= 3 ? 'MAX' : `${xp - lo}/${hi - lo}xp`}
                         </span>
                       </div>
                     );
@@ -392,17 +392,16 @@ export const RTSUI: React.FC<RTSUIProps> = ({
               )}
               {selectedCount > 1 && (
                 <div className="mt-0.5 text-xs text-slate-300">
-                  {selectedWorkers.filter((w) => w.state === "idle").length}{" "}
-                  idle ·{" "}
-                  {selectedWorkers.filter((w) => w.state !== "idle").length}{" "}
+                  {selectedWorkers.filter(w => w.state === 'idle').length} idle
+                  · {selectedWorkers.filter(w => w.state !== 'idle').length}{' '}
                   working
                 </div>
               )}
             </>
-          ) : selectedType === "farmhouse" ? (
+          ) : selectedType === 'farmhouse' ? (
             <>
               <div className="mt-1 text-sm font-semibold">
-                Barn {farmhouse.built ? `(Lv ${farmhouse.level})` : ""}
+                Barn {farmhouse.built ? `(Lv ${farmhouse.level})` : ''}
               </div>
               {/* Player barn HP */}
               <div className="mt-1 flex items-center gap-2">
@@ -421,7 +420,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
               </div>
               {farmhouse.built && (
                 <div className="mt-0.5 text-xs text-slate-400">
-                  Storage: {farmhouseStorage[farmhouse.level - 1]?.gold ?? "?"}
+                  Storage: {farmhouseStorage[farmhouse.level - 1]?.gold ?? '?'}
                   🪙 Pop: {resources.food}/{resources.foodCap}
                 </div>
               )}
@@ -443,76 +442,76 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                 </div>
               )}
             </>
-          ) : selectedType === "building" && selectedBuilding ? (
+          ) : selectedType === 'building' && selectedBuilding ? (
             (() => {
               const b = selectedBuilding;
               const BUILDING_LABELS: Record<string, string> = {
-                farmhouse: "Farmhouse",
-                lumberShed: "Lumber Shed",
-                watchtower: "Watchtower",
-                windmill: "Windmill",
-                barracks: "Barracks",
-                siegeWorkshop: "Siege Workshop",
-                market: "Market",
-                blacksmith: "Blacksmith",
-                granary: "Granary",
-                stable: "Stable",
-                spikeTrap: "Spike Trap",
-                frostTower: "Frost Tower",
-                ballista: "Ballista",
-                poisonTower: "Poison Tower",
-                wall: "Wall",
-                supplyStore: "Farm Supply Store",
-                miningCamp: "Mining Camp",
+                farmhouse: 'Farmhouse',
+                lumberShed: 'Lumber Shed',
+                watchtower: 'Watchtower',
+                windmill: 'Windmill',
+                barracks: 'Barracks',
+                siegeWorkshop: 'Siege Workshop',
+                market: 'Market',
+                blacksmith: 'Blacksmith',
+                granary: 'Granary',
+                stable: 'Stable',
+                spikeTrap: 'Spike Trap',
+                frostTower: 'Frost Tower',
+                ballista: 'Ballista',
+                poisonTower: 'Poison Tower',
+                wall: 'Wall',
+                supplyStore: 'Farm Supply Store',
+                miningCamp: 'Mining Camp',
               };
               const BUILDING_EMOJI_MAP: Record<string, string> = {
-                farmhouse: "🏠",
-                lumberShed: "🪵",
-                watchtower: "🗼",
-                windmill: "💨",
-                barracks: "🏯",
-                siegeWorkshop: "⚙️",
-                market: "🏪",
-                blacksmith: "🔨",
-                granary: "🌾",
-                stable: "🐴",
-                spikeTrap: "🪤",
-                frostTower: "❄️",
-                ballista: "🏹",
-                poisonTower: "☠️",
-                wall: "🧱",
-                supplyStore: "🛒",
-                miningCamp: "⛏️",
+                farmhouse: '🏠',
+                lumberShed: '🪵',
+                watchtower: '🗼',
+                windmill: '💨',
+                barracks: '🏯',
+                siegeWorkshop: '⚙️',
+                market: '🏪',
+                blacksmith: '🔨',
+                granary: '🌾',
+                stable: '🐴',
+                spikeTrap: '🪤',
+                frostTower: '❄️',
+                ballista: '🏹',
+                poisonTower: '☠️',
+                wall: '🧱',
+                supplyStore: '🛒',
+                miningCamp: '⛏️',
               };
               const BUILDING_DESCS: Record<string, string> = {
-                watchtower: "Ranged attack · garrison 3 units",
-                barracks: "Trains swordsmen · upgrade to guard",
-                frostTower: "Slows enemies · 5-tile range",
-                ballista: "High dmg · long range · single target",
-                poisonTower: "Poisons AoE · 3-tile range",
-                siegeWorkshop: "Builds catapults & trebuchets",
-                market: "Passive gold income +2/5s",
-                blacksmith: "Upgrade unit attack & armor",
-                stable: "Trains cavalry units",
-                granary: "+15 food cap",
-                lumberShed: "Lumber drop-off · gather bonus",
-                windmill: "+2🪙 every 5s",
-                spikeTrap: "Damage grunts that step on it",
-                farmhouse: "+5 food cap per level",
-                supplyStore: "Hero item shop · buy with gold",
-                miningCamp: "Gold/stone drop-off site",
+                watchtower: 'Ranged attack · garrison 3 units',
+                barracks: 'Trains swordsmen · upgrade to guard',
+                frostTower: 'Slows enemies · 5-tile range',
+                ballista: 'High dmg · long range · single target',
+                poisonTower: 'Poisons AoE · 3-tile range',
+                siegeWorkshop: 'Builds catapults & trebuchets',
+                market: 'Passive gold income +2/5s',
+                blacksmith: 'Upgrade unit attack & armor',
+                stable: 'Trains cavalry units',
+                granary: '+15 food cap',
+                lumberShed: 'Lumber drop-off · gather bonus',
+                windmill: '+2🪙 every 5s',
+                spikeTrap: 'Damage grunts that step on it',
+                farmhouse: '+5 food cap per level',
+                supplyStore: 'Hero item shop · buy with gold',
+                miningCamp: 'Gold/stone drop-off site',
               };
               const hpP = b.hp / b.maxHp;
               const isTower =
-                b.type === "watchtower" ||
-                b.type === "frostTower" ||
-                b.type === "ballista" ||
-                b.type === "poisonTower";
+                b.type === 'watchtower' ||
+                b.type === 'frostTower' ||
+                b.type === 'ballista' ||
+                b.type === 'poisonTower';
               const tgUnits = isTower ? (towerGarrison[b.id] ?? []) : [];
               return (
                 <>
                   <div className="mt-1 text-sm font-semibold">
-                    {BUILDING_EMOJI_MAP[b.type]}{" "}
+                    {BUILDING_EMOJI_MAP[b.type]}{' '}
                     {BUILDING_LABELS[b.type] ?? b.type}
                   </div>
                   <div className="mt-1 flex items-center gap-2">
@@ -523,10 +522,10 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                           width: `${hpP * 100}%`,
                           background:
                             hpP > 0.5
-                              ? "#4ade80"
+                              ? '#4ade80'
                               : hpP > 0.25
-                                ? "#fbbf24"
-                                : "#ef4444",
+                                ? '#fbbf24'
+                                : '#ef4444',
                         }}
                       />
                     </div>
@@ -559,10 +558,10 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                 {buildingCosts[buildMode].gold}🪙
                 {buildingCosts[buildMode].lumber > 0
                   ? ` ${buildingCosts[buildMode].lumber}🌲`
-                  : ""}
+                  : ''}
                 {buildingCosts[buildMode].stone > 0
                   ? ` ${buildingCosts[buildMode].stone}🪨`
-                  : ""}
+                  : ''}
               </div>
             </>
           ) : (
@@ -576,7 +575,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
             Commands
           </div>
 
-          {selectedType === "worker" && selectedCount > 0 && (
+          {selectedType === 'worker' && selectedCount > 0 && (
             <div className="grid grid-cols-3 gap-1.5">
               <button
                 type="button"
@@ -599,25 +598,25 @@ export const RTSUI: React.FC<RTSUIProps> = ({
               <button
                 type="button"
                 className="rounded border border-red-500/70 bg-red-500/15 py-2.5 text-xs text-red-100 hover:bg-red-500/30"
-                onClick={() => onWorkerCommand("stop")}
+                onClick={() => onWorkerCommand('stop')}
               >
                 Stop
               </button>
               <button
                 type="button"
                 className="rounded border border-orange-500/70 bg-orange-500/15 py-2.5 text-xs text-orange-100 hover:bg-orange-500/30"
-                onClick={() => onWorkerCommand("attack")}
+                onClick={() => onWorkerCommand('attack')}
                 title="Right-click enemy to attack"
               >
                 ⚔️ Attack
               </button>
               <button
                 type="button"
-                className={`rounded border py-2.5 text-xs hover:opacity-90 ${patrolMode ? "border-cyan-400 bg-cyan-500/30 text-cyan-100" : "border-cyan-500/70 bg-cyan-500/15 text-cyan-100 hover:bg-cyan-500/30"}`}
+                className={`rounded border py-2.5 text-xs hover:opacity-90 ${patrolMode ? 'border-cyan-400 bg-cyan-500/30 text-cyan-100' : 'border-cyan-500/70 bg-cyan-500/15 text-cyan-100 hover:bg-cyan-500/30'}`}
                 onClick={onPatrolCommand}
                 title="Patrol [P]"
               >
-                {patrolMode ? "🔄 Set Route…" : "🔄 Patrol"}
+                {patrolMode ? '🔄 Set Route…' : '🔄 Patrol'}
               </button>
               <button
                 type="button"
@@ -629,10 +628,10 @@ export const RTSUI: React.FC<RTSUIProps> = ({
               </button>
               <button
                 type="button"
-                className={`rounded border py-2.5 text-xs hover:opacity-90 ${stance === "aggressive" ? "border-red-400/70 bg-red-500/20 text-red-100" : "border-slate-500/70 bg-slate-700/30 text-slate-300"}`}
+                className={`rounded border py-2.5 text-xs hover:opacity-90 ${stance === 'aggressive' ? 'border-red-400/70 bg-red-500/20 text-red-100' : 'border-slate-500/70 bg-slate-700/30 text-slate-300'}`}
                 onClick={onToggleStance}
               >
-                {stance === "aggressive" ? "⚔️ Aggro" : "🛡 Passive"}
+                {stance === 'aggressive' ? '⚔️ Aggro' : '🛡 Passive'}
               </button>
               <button
                 type="button"
@@ -643,54 +642,54 @@ export const RTSUI: React.FC<RTSUIProps> = ({
               >
                 🏰 Garrison ({garrisonedCount}/{garrisonCap})
               </button>
-              {selectedWorkers.some((w) => w.unitType === "cavalry") &&
+              {selectedWorkers.some(w => w.unitType === 'cavalry') &&
                 (() => {
                   const sprintReady = selectedWorkers.some(
-                    (w) => w.unitType === "cavalry" && w.sprintCooldown <= 0,
+                    w => w.unitType === 'cavalry' && w.sprintCooldown <= 0
                   );
                   const maxCd = Math.max(
                     ...selectedWorkers
-                      .filter((w) => w.unitType === "cavalry")
-                      .map((w) => w.sprintCooldown),
+                      .filter(w => w.unitType === 'cavalry')
+                      .map(w => w.sprintCooldown)
                   );
                   const anySprinting = selectedWorkers.some(
-                    (w) => w.unitType === "cavalry" && w.sprinting,
+                    w => w.unitType === 'cavalry' && w.sprinting
                   );
                   return (
                     <button
                       type="button"
-                      className={`col-span-3 rounded border py-2.5 text-xs font-semibold disabled:opacity-40 ${anySprinting ? "border-amber-400 bg-amber-500/30 text-amber-100" : sprintReady ? "border-amber-500/70 bg-amber-500/20 text-amber-100 hover:bg-amber-500/30" : "border-amber-800/50 bg-amber-900/20 text-amber-600"}`}
+                      className={`col-span-3 rounded border py-2.5 text-xs font-semibold disabled:opacity-40 ${anySprinting ? 'border-amber-400 bg-amber-500/30 text-amber-100' : sprintReady ? 'border-amber-500/70 bg-amber-500/20 text-amber-100 hover:bg-amber-500/30' : 'border-amber-800/50 bg-amber-900/20 text-amber-600'}`}
                       onClick={onCavalrySprint}
                       disabled={!sprintReady || anySprinting}
                       title="Sprint [S] — 2× speed for 5s; 20s cooldown; passive trample dmg while moving"
                     >
                       {anySprinting
-                        ? "🐴 Sprinting!"
+                        ? '🐴 Sprinting!'
                         : sprintReady
-                          ? "🐴 Sprint [S]"
+                          ? '🐴 Sprint [S]'
                           : `🐴 Sprint ${maxCd}s`}
                     </button>
                   );
                 })()}
-              {selectedWorkers.some((w) => w.unitType === "swordsman") &&
+              {selectedWorkers.some(w => w.unitType === 'swordsman') &&
                 (() => {
                   const chargeReady = selectedWorkers.some(
-                    (w) => w.unitType === "swordsman" && w.chargeCooldown <= 0,
+                    w => w.unitType === 'swordsman' && w.chargeCooldown <= 0
                   );
                   const maxCd = Math.max(
                     ...selectedWorkers
-                      .filter((w) => w.unitType === "swordsman")
-                      .map((w) => w.chargeCooldown),
+                      .filter(w => w.unitType === 'swordsman')
+                      .map(w => w.chargeCooldown)
                   );
                   return (
                     <button
                       type="button"
-                      className={`col-span-3 rounded border py-2.5 text-xs font-semibold disabled:opacity-40 ${chargeReady ? "border-red-400 bg-red-500/20 text-red-100 hover:bg-red-500/30" : "border-red-800/50 bg-red-900/20 text-red-600"}`}
+                      className={`col-span-3 rounded border py-2.5 text-xs font-semibold disabled:opacity-40 ${chargeReady ? 'border-red-400 bg-red-500/20 text-red-100 hover:bg-red-500/30' : 'border-red-800/50 bg-red-900/20 text-red-600'}`}
                       onClick={onSwordsmanCharge}
                       disabled={!chargeReady}
                       title="Charge [C] — instant 2× damage to nearest grunt; 12s cooldown"
                     >
-                      {chargeReady ? "⚡ Charge [C]" : `⚡ Charge ${maxCd}s`}
+                      {chargeReady ? '⚡ Charge [C]' : `⚡ Charge ${maxCd}s`}
                     </button>
                   );
                 })()}
@@ -716,7 +715,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
           )}
 
           {/* Formation toggle — shown when 2+ units selected */}
-          {selectedCount > 1 && selectedType === "worker" && (
+          {selectedCount > 1 && selectedType === 'worker' && (
             <div className="mt-2 flex items-center gap-2 border-t border-slate-700/50 pt-2">
               <span className="text-xs text-slate-400">Formation:</span>
               <button
@@ -725,24 +724,24 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                 className="rounded border border-slate-500/60 bg-slate-800/60 px-2 py-1 text-xs text-slate-200 hover:bg-slate-700/60"
                 title="Cycle formation shape: cluster → line → wedge → box"
               >
-                {formationMode === "cluster" && "⬡ Cluster"}
-                {formationMode === "line" && "▬ Line"}
-                {formationMode === "wedge" && "▲ Wedge"}
-                {formationMode === "box" && "⬛ Box"}
+                {formationMode === 'cluster' && '⬡ Cluster'}
+                {formationMode === 'line' && '▬ Line'}
+                {formationMode === 'wedge' && '▲ Wedge'}
+                {formationMode === 'box' && '⬛ Box'}
               </button>
             </div>
           )}
 
-          {selectedType === "building" &&
+          {selectedType === 'building' &&
             selectedBuilding &&
             (() => {
               const b = selectedBuilding;
-              const isTower = b.type === "watchtower";
+              const isTower = b.type === 'watchtower';
               const tgUnits = towerGarrison[b.id] ?? [];
               const isAttackTower =
-                b.type === "frostTower" ||
-                b.type === "ballista" ||
-                b.type === "poisonTower";
+                b.type === 'frostTower' ||
+                b.type === 'ballista' ||
+                b.type === 'poisonTower';
               return (
                 <div className="grid grid-cols-2 gap-1.5">
                   {isTower && (
@@ -772,7 +771,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                       Auto-attacks nearby enemies
                     </div>
                   )}
-                  {b.type === "barracks" && (
+                  {b.type === 'barracks' && (
                     <>
                       <div className="col-span-2 py-1 text-center text-xs text-slate-400">
                         Train units from Barn → Train tab
@@ -784,13 +783,13 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                       🔧 Damaged — right-click with workers to repair
                     </div>
                   )}
-                  {b.type === "supplyStore" && (
+                  {b.type === 'supplyStore' && (
                     <div className="col-span-2">
                       <div className="mb-1 text-xs font-semibold text-violet-300">
                         🛒 Shop — Hero Items
                       </div>
                       <div className="grid grid-cols-2 gap-1">
-                        {shopItems.map((s) => {
+                        {shopItems.map(s => {
                           const data = HERO_ITEM_DATA[s.itemId];
                           if (!data) return null;
                           const canBuy =
@@ -799,7 +798,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                             <button
                               key={s.itemId}
                               type="button"
-                              className={`flex flex-col items-center rounded border py-1.5 text-[10px] ${canBuy ? "cursor-pointer border-violet-500/60 bg-violet-900/20 text-violet-100 hover:bg-violet-900/40" : "cursor-not-allowed border-slate-700/40 bg-slate-800/30 text-slate-500 opacity-50"}`}
+                              className={`flex flex-col items-center rounded border py-1.5 text-[10px] ${canBuy ? 'cursor-pointer border-violet-500/60 bg-violet-900/20 text-violet-100 hover:bg-violet-900/40' : 'cursor-not-allowed border-slate-700/40 bg-slate-800/30 text-slate-500 opacity-50'}`}
                               onClick={() =>
                                 canBuy && onBuyItem(s.itemId, s.cost)
                               }
@@ -822,10 +821,10 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                       )}
                     </div>
                   )}
-                  {b.type !== "watchtower" &&
+                  {b.type !== 'watchtower' &&
                     !isAttackTower &&
-                    b.type !== "barracks" &&
-                    b.type !== "supplyStore" &&
+                    b.type !== 'barracks' &&
+                    b.type !== 'supplyStore' &&
                     b.hp >= b.maxHp && (
                       <div className="col-span-2 py-1 text-center text-xs text-slate-500">
                         No actions available
@@ -835,7 +834,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
               );
             })()}
 
-          {selectedType === "farmhouse" && (
+          {selectedType === 'farmhouse' && (
             <div className="flex flex-col gap-1">
               <BuildMenu
                 farmhouse={farmhouse}
@@ -903,7 +902,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                 className="h-2 rounded transition-all"
                 style={{
                   width: `${hpPct(enemyBarnHp, enemyBarnMaxHp) * 100}%`,
-                  background: "#ef4444",
+                  background: '#ef4444',
                 }}
               />
             </div>
@@ -915,13 +914,13 @@ export const RTSUI: React.FC<RTSUIProps> = ({
             className="mt-1.5 h-24 w-full cursor-crosshair rounded border border-slate-700 bg-slate-800/80"
             viewBox={`0 0 ${GRID_SIZE} ${GRID_SIZE}`}
             preserveAspectRatio="xMidYMid meet"
-            onClick={(e) => {
+            onClick={e => {
               const rect = e.currentTarget.getBoundingClientRect();
               const tx = Math.round(
-                ((e.clientX - rect.left) / rect.width) * GRID_SIZE,
+                ((e.clientX - rect.left) / rect.width) * GRID_SIZE
               );
               const ty = Math.round(
-                ((e.clientY - rect.top) / rect.height) * GRID_SIZE,
+                ((e.clientY - rect.top) / rect.height) * GRID_SIZE
               );
               onMinimapClick(tx, ty);
             }}
@@ -962,7 +961,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
             ))}
             {/* Creep camps (not cleared) */}
             {minimapData.creepCamps
-              .filter((c) => !c.cleared)
+              .filter(c => !c.cleared)
               .map((c, i) => (
                 <g key={`cc${i}`}>
                   <line
@@ -1036,7 +1035,7 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                 cx={w.x}
                 cy={w.y}
                 r={0.55}
-                fill={w.selected ? "#38bdf8" : "#4ade80"}
+                fill={w.selected ? '#38bdf8' : '#4ade80'}
               />
             ))}
             {/* Grunts */}
@@ -1133,8 +1132,8 @@ export const RTSUI: React.FC<RTSUIProps> = ({
                     fill="#0f172a"
                     opacity={0.75}
                   />
-                ),
-              ),
+                )
+              )
             )}
             {/* Enemy fortification walls */}
             {minimapData.enemyWalls.map((ew, i) => (
@@ -1211,19 +1210,19 @@ export const RTSUI: React.FC<RTSUIProps> = ({
           </svg>
           <div className="mt-0.5 flex flex-wrap gap-x-2 text-[10px] text-slate-500">
             <span>
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-green-600 align-middle" />{" "}
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-green-600 align-middle" />{' '}
               trees
             </span>
             <span>
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-yellow-600 align-middle" />{" "}
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-yellow-600 align-middle" />{' '}
               gold
             </span>
             <span>
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-gray-500 align-middle" />{" "}
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-gray-500 align-middle" />{' '}
               stone
             </span>
             <span>
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-400 align-middle" />{" "}
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-400 align-middle" />{' '}
               buildings
             </span>
             <span className="text-purple-400">✕ creeps</span>
