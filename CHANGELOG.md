@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Refactored
+
+- **RTS code modularization** — broke down the largest files into focused modules:
+  - `RTSUI` (2110 lines) fully decomposed into `ui/BuildMenu`, `ui/WaveTimer`, `ui/HeroPanel` sub-components; all type/constant re-exports preserved for backward compat
+  - `HeaderCropRow` background animation extracted to `animations/AnimatedBackground.tsx`
+  - Pure combat/spawn helpers extracted to `spawnHelpers.ts` and `towerHelpers.ts`; map-state queries extracted to `game/mapSelectors.ts` — all immediately unit-tested
+  - Domain-specific hook shells scaffolded (`useEnemyAI`, `useResourceTick`, `useCombatResolution`, `usePathfinding`) and `MapRenderer` shell created as migration targets for `useGameLoop` and `RTSMap` in follow-on PRs
+- **Unit test coverage expanded** — +55 tests (264 total, up from 209) covering all newly extracted pure functions: spawn calculations, tower damage math, range queries, map selectors; silent-failure fixes in `WaveTimer` and `BuildMenu`
+
 ### Added
 
 - **Farm Tycoon Phase 1 MVP**: Complete interactive farm simulation game

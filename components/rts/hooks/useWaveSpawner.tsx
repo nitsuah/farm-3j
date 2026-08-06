@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useRef } from 'react';
 
 import {
+  computeGruntHp,
+  computeGruntCount,
+  buildWallSet,
+} from './spawnHelpers';
+
+import {
   BARN_POS,
   BOSS_HP_MULTIPLIER,
   ENEMY_FLANK_POSITIONS,
@@ -13,7 +19,6 @@ import {
   ENEMY_WALL_MAX_HP,
   ENEMY_WALL_SPAWN,
   GRID_SIZE,
-  GRUNT_MAX_HP,
   GRUNT_SPAWN_MS,
   NECROMANCER_FIRST_WAVE,
   NECROMANCER_MAX_HP,
@@ -163,15 +168,9 @@ export function useWaveSpawner(ctx: RTSGameContext) {
       });
     }
 
-    const diffHpMult = difficulty?.gruntHpMult ?? 1;
-    const gruntHp = Math.round(
-      (GRUNT_MAX_HP + (newWave - 1) * 10) * diffHpMult
-    );
-    const wallSet = new Set(
-      placedBuildingsRef.current
-        .filter(b => b.type === 'wall')
-        .map(b => `${b.x},${b.y}`)
-    );
+    const diffHpMult: number = difficulty?.gruntHpMult ?? 1;
+    const gruntHp: number = computeGruntHp(newWave, diffHpMult);
+    const wallSet: Set<string> = buildWallSet(placedBuildingsRef.current);
 
     // Boss spawn on multiples of 10
     if (isBossWave) {
@@ -200,8 +199,7 @@ export function useWaveSpawner(ctx: RTSGameContext) {
     }
 
     // Scale count: 1-2 early, up to 4-6 by wave 20+; double on every 3rd wave
-    const baseCount = Math.min(6, 1 + Math.floor(newWave / 5));
-    const count = newWave % 3 === 0 ? baseCount + 2 : baseCount;
+    const count: number = computeGruntCount(newWave);
     for (let i = 0; i < count; i++) {
       const ox = (i % 3) - 1; // spread: -1, 0, +1
       const oy = Math.floor(i / 3) % 2 === 0 ? 1 : -1;
@@ -380,11 +378,7 @@ export function useWaveSpawner(ctx: RTSGameContext) {
       const sx2 = Math.max(0, ENEMY_BARN_POS.x - 2);
       const sy2 = ENEMY_BARN_POS.y;
       // Target: nearest wall, or barn if no walls
-      const wallSet2 = new Set(
-        placedBuildingsRef.current
-          .filter(b => b.type === 'wall')
-          .map(b => `${b.x},${b.y}`)
-      );
+      const wallSet2 = buildWallSet(placedBuildingsRef.current);
       const nearestWall = placedBuildingsRef.current
         .filter(b => b.type === 'wall' && b.hp > 0)
         .sort(
@@ -607,9 +601,10 @@ export function useWaveSpawner(ctx: RTSGameContext) {
     const previewDelay = Math.max(0, nextDelay - 6000);
     previewTimerRef.current = window.setTimeout(() => {
       if (gameOverRef.current) return;
-      const gruntCount =
-        previewWave + 2 + (previewWave % 3 === 0 ? previewWave + 2 : 0);
+      const gruntCount = computeGruntCount(previewWave);
       const parts: string[] = [`${gruntCount} Grunts`];
+      if (previewWave >= 8 && previewWave % 4 === 0)
+        parts.push('2 Flanking Grunts');
       if (previewWave % 10 === 0) parts.push('1 WAR BULL 🐂');
       if (previewWave >= 8 && previewWave % 4 === 0) parts.push('1 Shaman 🧙');
       if (previewWave >= 12 && previewWave % 3 === 2)

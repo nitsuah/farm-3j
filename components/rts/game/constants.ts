@@ -1,7 +1,7 @@
 // Gameplay tuning constants for the RTS mode.
 // Split out of RTSMap.tsx — grouped by system (map, units, enemies, towers, buildings).
 
-import type { BuildingType, HeroItemId } from './types';
+import type { BuildingType, HeroItemId, Upgrades } from './types';
 
 // ---------- Map & core ----------
 export const GRID_SIZE = 25;
@@ -18,6 +18,10 @@ export const WATCHTOWER_VISION = 7;
 export const WATCHTOWER_ATTACK_RANGE = 5;
 export const WATCHTOWER_DAMAGE = 8;
 export const WATCHTOWER_ATTACK_MS = 2000;
+export const WATCHTOWER_GUARD_DAMAGE_BONUS = 7;
+export const WATCHTOWER_GARRISON_DAMAGE_PER = 4;
+export const WATCHTOWER_GUARD_RANGE_BONUS = 1;
+export const WATCHTOWER_GARRISON_RANGE_PER = 0.5;
 export const ENEMY_BARN_POS = { x: 22, y: 22 };
 export const ENEMY_BARN_MAX_HP = 200;
 export const PLAYER_BARN_MAX_HP = 300;
@@ -26,6 +30,10 @@ export const ATTACK_INTERVAL_MS = 1200;
 export const ENEMY_COUNTER_DAMAGE = 8;
 export const WORKER_MAX_HP = 50;
 export const GRUNT_MAX_HP = 60;
+export const GRUNT_HP_PER_WAVE = 10;
+export const GRUNT_COUNT_CAP = 6;
+export const GRUNT_COUNT_BASE = 1;
+export const GRUNT_DOUBLE_ASSAULT_BONUS = 2;
 export const GRUNT_DAMAGE = 12;
 export const GRUNT_ATTACK_MS = 1500;
 export const BOSS_HP_MULTIPLIER = 3;
@@ -511,6 +519,25 @@ export const BUILDING_EMOJI: Record<BuildingType, string> = {
   miningCamp: '⛏️',
 };
 
+export const BUILDING_DESCS: Partial<Record<BuildingType, string>> = {
+  watchtower: 'Ranged attack · garrison 3 units',
+  barracks: 'Trains swordsmen · upgrade to guard',
+  frostTower: 'Slows enemies · 5-tile range',
+  ballista: 'High dmg · long range · single target',
+  poisonTower: 'Poisons AoE · 3-tile range',
+  siegeWorkshop: 'Builds catapults & trebuchets',
+  market: 'Passive gold income +2/5s',
+  blacksmith: 'Upgrade unit attack & armor',
+  stable: 'Trains cavalry units',
+  granary: '+15 food cap',
+  lumberShed: 'Lumber drop-off · gather bonus',
+  windmill: '+2🪙 every 5s',
+  spikeTrap: 'Damage grunts that step on it',
+  farmhouse: '+5 food cap per level',
+  supplyStore: 'Hero item shop · buy with gold',
+  miningCamp: 'Gold/stone drop-off site',
+};
+
 export const BUILDING_MAX_HP: Record<BuildingType, number> = {
   farmhouse: 200,
   lumberShed: 150,
@@ -606,3 +633,24 @@ export const BLACKSMITH_IRON_HIDE_COSTS: { gold: number; lumber: number }[] = [
   { gold: 80, lumber: 50 },
   { gold: 160, lumber: 100 },
 ];
+
+// ---------- Farmhouse upgrade research costs ----------
+export const UPGRADE_MAX = 2;
+
+export const UPGRADE_COSTS: Record<
+  keyof Upgrades,
+  { gold: number; lumber: number; stone: number }[]
+> = {
+  sharperTools: [
+    { gold: 75, lumber: 0, stone: 25 },
+    { gold: 150, lumber: 0, stone: 50 },
+  ],
+  swiftHarvest: [
+    { gold: 50, lumber: 75, stone: 0 },
+    { gold: 100, lumber: 150, stone: 0 },
+  ],
+  ironWill: [
+    { gold: 75, lumber: 50, stone: 0 },
+    { gold: 150, lumber: 100, stone: 0 },
+  ],
+};

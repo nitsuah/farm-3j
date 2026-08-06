@@ -77,6 +77,14 @@ export interface Upgrades {
   ironWill: number;
 }
 
+export interface BuildingCost {
+  gold: number;
+  lumber: number;
+  stone: number;
+  label: string;
+  foodCapBonus: number;
+}
+
 export type UnitType =
   | 'farmer'
   | 'swordsman'
@@ -101,6 +109,26 @@ export interface DroppedItem {
   x: number;
   y: number;
 }
+
+export type FarmhouseAction =
+  | 'build'
+  | 'upgrade'
+  | 'train'
+  | 'recruitHero'
+  | 'trainSwordsman'
+  | 'trainCavalry'
+  | 'trainCatapult'
+  | 'trainTrebuchet'
+  | 'trade:lumberToGold'
+  | 'trade:stoneToGold'
+  | 'trade:stoneToLumber'
+  | 'blacksmith:steelEdge'
+  | 'blacksmith:ironHide'
+  | 'guardTower'
+  | 'barracks:veteranTraining'
+  | 'barracks:warDrums'
+  | `upgradeWall:${number}`
+  | `build:${BuildingType}`;
 
 export type BuildingType =
   | 'farmhouse'

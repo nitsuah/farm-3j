@@ -24,6 +24,8 @@ import {
   ZOOM_STEP,
   BARN_POS,
   BARN_VISION,
+  BLACKSMITH_IRON_HIDE_COSTS,
+  BLACKSMITH_STEEL_EDGE_COSTS,
   BUILDING_COSTS,
   BUILDING_MAX_HP,
   BUILDING_REQUIRES,
@@ -1706,11 +1708,10 @@ const RTSMap: React.FC<{
   ];
 
   const handleBuyItem = useCallback(
-    (itemId: string, cost: number) => {
-      const id = itemId as HeroItemId;
+    (itemId: HeroItemId, cost: number) => {
       if (resources.gold < cost) return;
       if (heroItemsRef.current.length >= HERO_MAX_ITEMS) return;
-      if (id === 'tome_xp') {
+      if (itemId === 'tome_xp') {
         setWorkers(ws =>
           ws.map(w => {
             if (w.unitType !== 'hero') return w;
@@ -1745,10 +1746,7 @@ const RTSMap: React.FC<{
           })
         );
       } else {
-        setHeroItems(hi => [
-          ...hi,
-          { id: dropItemIdRef.current++, itemId: id },
-        ]);
+        setHeroItems(hi => [...hi, { id: dropItemIdRef.current++, itemId }]);
       }
       setResources(r => ({ ...r, gold: r.gold - cost }));
       const hero = workersRef.current.find(
@@ -1758,7 +1756,7 @@ const RTSMap: React.FC<{
         addFloatingText(
           Math.round(hero.x),
           Math.round(hero.y),
-          `${HERO_ITEM_DATA[id].emoji} Purchased!`,
+          `${HERO_ITEM_DATA[itemId].emoji} Purchased!`,
           '#c084fc'
         );
       Snd.ability();
@@ -3065,13 +3063,16 @@ const RTSMap: React.FC<{
       addFloatingText(BARN_POS.x, BARN_POS.y, '+20🪙', '#fbbf24');
     } else if (action === 'trade:stoneToLumber') {
       if (resources.stone < 40) return;
-      setResources(r => ({ ...r, stone: r.stone - 40, lumber: r.lumber + 25 }));
+      setResources(r => ({
+        ...r,
+        stone: r.stone - 40,
+        lumber: r.lumber + 25,
+      }));
       addFloatingText(BARN_POS.x, BARN_POS.y, '+25🌲', '#4ade80');
     } else if (action === 'blacksmith:steelEdge') {
       const level = blacksmithUpgrades.steelEdge;
-      if (level >= 2) return;
-      const cost =
-        level === 0 ? { gold: 80, stone: 60 } : { gold: 160, stone: 120 };
+      const cost = BLACKSMITH_STEEL_EDGE_COSTS[level];
+      if (!cost) return;
       if (resources.gold < cost.gold || resources.stone < cost.stone) return;
       setResources(r => ({
         ...r,
@@ -3087,9 +3088,8 @@ const RTSMap: React.FC<{
       );
     } else if (action === 'blacksmith:ironHide') {
       const level = blacksmithUpgrades.ironHide;
-      if (level >= 2) return;
-      const cost =
-        level === 0 ? { gold: 80, lumber: 50 } : { gold: 160, lumber: 100 };
+      const cost = BLACKSMITH_IRON_HIDE_COSTS[level];
+      if (!cost) return;
       if (resources.gold < cost.gold || resources.lumber < cost.lumber) return;
       setResources(r => ({
         ...r,
@@ -3116,7 +3116,11 @@ const RTSMap: React.FC<{
         resources.lumber < 60
       )
         return;
-      setResources(r => ({ ...r, gold: r.gold - 100, lumber: r.lumber - 60 }));
+      setResources(r => ({
+        ...r,
+        gold: r.gold - 100,
+        lumber: r.lumber - 60,
+      }));
       setBarracksTech(t => ({ ...t, veteranTraining: true }));
       // Apply +20 maxHp to all existing combat units
       setWorkers(ws =>
@@ -3141,7 +3145,11 @@ const RTSMap: React.FC<{
         resources.lumber < 40
       )
         return;
-      setResources(r => ({ ...r, gold: r.gold - 120, lumber: r.lumber - 40 }));
+      setResources(r => ({
+        ...r,
+        gold: r.gold - 120,
+        lumber: r.lumber - 40,
+      }));
       setBarracksTech(t => ({ ...t, warDrums: true }));
       addFloatingText(BARN_POS.x, BARN_POS.y, '🥁 War Drums!', '#fb923c');
     } else if (action.startsWith('upgradeWall:')) {
@@ -4246,7 +4254,6 @@ const RTSMap: React.FC<{
         selectedBuilding={
           placedBuildings.find(b => b.id === selectedBuildingId) ?? null
         }
-        placedBuildingsList={placedBuildings}
         onSwordsmanCharge={handleSwordsmanCharge}
         onCavalrySprint={handleCavalrySprint}
         onMinimapClick={(tx, ty) => {

@@ -1,6 +1,6 @@
 # ROADMAP
 
-Last Updated: 2026-07-04
+Last Updated: 2026-08-04
 
 ## 2026 Q1 ✅
 
@@ -8,7 +8,7 @@ Last Updated: 2026-07-04
 
 ## 2026 Q2–Q3: Farm RTS MVP ✅ (feature-complete)
 
-> All core gameplay systems shipped. 25×25 map, 10+ enemy unit types, full economy/combat/building loop, fog of war, day/night cycle, hero unit, 20+ buildings, unit veterancy, tech research, save/load, procedural audio, high-score leaderboard, and wave escalation all live. Codebase refactored with shared SVG component layer (HpBar, StructureDamageSmoke, StructureFireEffect) eliminating duplicated render primitives across all map layer files.
+> All core gameplay systems shipped. 25×25 map, 10+ enemy unit types, full economy/combat/building loop, fog of war, day/night cycle, hero unit, 20+ buildings, unit veterancy, tech research, save/load, procedural audio, high-score leaderboard, and wave escalation all live. Codebase refactored with shared SVG component layer (HpBar, StructureDamageSmoke, StructureFireEffect) eliminating duplicated render primitives across all map layer files. Modularization Phase 1 completed (2026-08-04): `RTSUI` decomposed into `BuildMenu`/`WaveTimer`/`HeroPanel`; `HeaderCropRow` background extracted; pure functions isolated in `spawnHelpers`, `towerHelpers`, `mapSelectors` with +55 tests (264 total); domain hook shells and `MapRenderer` shell scaffolded as migration targets for `useGameLoop`/`RTSMap` (Phase 2).
 
 ## 2026 Q3: Farm RTS — Round 2
 
@@ -17,7 +17,7 @@ Last Updated: 2026-07-04
 - [ ] Continue SVG component extraction — worker body shapes, enemy unit torsos, building base rects are next candidates for shared components (see iter109 pattern)
 - [ ] Extract blacksmith upgrade costs to shared config constants (currently hardcoded in RTSUI disable logic)
 - [ ] Profile render loop on 25×25 map with 30+ units; investigate canvas or OffscreenCanvas fallback if SVG drops below 30fps on mobile
-- [ ] Add unit tests for core game-logic helpers (`tileDist`, `tileToSvg`, pathfinding, damage formulas)
+- [ ] Add unit tests for remaining core helpers: `tileDist`, `tileToSvg`, A\* pathfinding (damage formulas ✅ covered in towerHelpers/spawnHelpers; map selectors ✅ covered in mapSelectors tests)
 
 ### Gameplay Features
 
