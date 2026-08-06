@@ -6,6 +6,7 @@ import type {
   FarmhouseAction,
   BuildingType,
   PlacedBuilding,
+  BuildingCost,
 } from '../game/types';
 import {
   LUMBER_SHED_BONUS_MS,
@@ -16,15 +17,6 @@ import {
   UPGRADE_MAX,
   WATCHTOWER_GARRISON_DAMAGE_PER,
 } from '../game/constants';
-
-// Re-exported from RTSUI for backward compat, but also defined here to avoid circular imports
-export interface BuildingCost {
-  gold: number;
-  lumber: number;
-  stone: number;
-  label: string;
-  foodCapBonus: number;
-}
 
 const UPGRADE_META: Record<
   keyof Upgrades,

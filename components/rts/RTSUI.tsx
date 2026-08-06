@@ -7,6 +7,7 @@ import type {
   HeroItem,
   HeroItemId,
   BuildingType,
+  BuildingCost,
 } from './game/types';
 import {
   GRID_SIZE,
@@ -30,6 +31,7 @@ import { HeroPanel } from './ui/HeroPanel';
 export type { Upgrades, WorkerState };
 export type { FarmhouseAction };
 export type { BuildingType };
+export type { BuildingCost };
 export { UPGRADE_COSTS, UPGRADE_MAX };
 
 export interface PlacedBuilding {
@@ -42,14 +44,6 @@ export interface PlacedBuilding {
   upgraded?: boolean;
   constructing?: boolean;
   constructedAt?: number;
-}
-
-export interface BuildingCost {
-  gold: number;
-  lumber: number;
-  stone: number;
-  label: string;
-  foodCapBonus: number;
 }
 
 interface RTSUIProps {

@@ -20,7 +20,7 @@ import { tileDist } from '../game/map';
 export function findNearestInRange<
   T extends { x: number; y: number; hp: number },
 >(units: T[], tx: number, ty: number, range: number): T | null {
-  const inRange = units.filter(
+  const inRange: T[] = units.filter(
     u => u.hp > 0 && tileDist(u.x, u.y, tx, ty) <= range
   );
   if (inRange.length === 0) return null;

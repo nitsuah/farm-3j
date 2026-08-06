@@ -21,10 +21,10 @@
 
 import React from 'react';
 
+import { GRID_SIZE, TILE_SIZE } from '../game/constants';
+
 /** Placeholder prop type — will expand as logic is migrated from RTSMap.tsx. */
 export interface MapRendererProps {
-  /** Inline style applied to the root SVG element. */
-  style?: React.CSSProperties;
   className?: string;
 }
 
@@ -32,16 +32,12 @@ export interface MapRendererProps {
  * Renders the isometric SVG game view.
  * @see RTSMap.tsx for the current rendering implementation.
  */
-export const MapRenderer: React.FC<MapRendererProps> = ({
-  style,
-  className,
-}) => {
+export const MapRenderer: React.FC<MapRendererProps> = ({ className }) => {
   // TODO: migrate isometric rendering logic from RTSMap.tsx
   return (
     <svg
-      style={style}
       className={className}
-      viewBox="0 0 800 600"
+      viewBox={`0 0 ${GRID_SIZE * TILE_SIZE * 2 + 200} ${GRID_SIZE * TILE_SIZE + 200}`}
       xmlns="http://www.w3.org/2000/svg"
     >
       {/* placeholder — real content migrated from RTSMap.tsx */}

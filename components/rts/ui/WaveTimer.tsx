@@ -33,12 +33,13 @@ export const WaveTimer: React.FC<WaveTimerProps> = ({
 
   return (
     <span
-      style={{
-        color: gameSpeed === 0 ? '#64748b' : urgent ? '#ef4444' : '#94a3b8',
-        fontSize: 12,
-        fontWeight: urgent ? 700 : 400,
-        animation: urgent ? 'pulse 0.6s infinite' : 'none',
-      }}
+      className={`text-xs ${
+        gameSpeed === 0
+          ? 'font-normal text-slate-500'
+          : urgent
+            ? 'animate-[pulse_0.6s_infinite] font-bold text-red-500'
+            : 'font-normal text-slate-400'
+      }`}
     >
       ⏱{secsLeft}s{gameSpeed === 0 ? '⏸' : ''}
     </span>

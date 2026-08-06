@@ -77,6 +77,14 @@ export interface Upgrades {
   ironWill: number;
 }
 
+export interface BuildingCost {
+  gold: number;
+  lumber: number;
+  stone: number;
+  label: string;
+  foodCapBonus: number;
+}
+
 export type UnitType =
   | 'farmer'
   | 'swordsman'

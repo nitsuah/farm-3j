@@ -168,9 +168,9 @@ export function useWaveSpawner(ctx: RTSGameContext) {
       });
     }
 
-    const diffHpMult = difficulty?.gruntHpMult ?? 1;
-    const gruntHp = computeGruntHp(newWave, diffHpMult);
-    const wallSet = buildWallSet(placedBuildingsRef.current);
+    const diffHpMult: number = difficulty?.gruntHpMult ?? 1;
+    const gruntHp: number = computeGruntHp(newWave, diffHpMult);
+    const wallSet: Set<string> = buildWallSet(placedBuildingsRef.current);
 
     // Boss spawn on multiples of 10
     if (isBossWave) {
@@ -199,7 +199,7 @@ export function useWaveSpawner(ctx: RTSGameContext) {
     }
 
     // Scale count: 1-2 early, up to 4-6 by wave 20+; double on every 3rd wave
-    const count = computeGruntCount(newWave);
+    const count: number = computeGruntCount(newWave);
     for (let i = 0; i < count; i++) {
       const ox = (i % 3) - 1; // spread: -1, 0, +1
       const oy = Math.floor(i / 3) % 2 === 0 ? 1 : -1;

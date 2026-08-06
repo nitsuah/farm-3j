@@ -76,7 +76,7 @@ describe('buildWallSet', () => {
     type: PlacedBuilding['type'],
     x: number,
     y: number,
-    constructing = false
+    constructing: boolean = false
   ): PlacedBuilding => ({
     id,
     type,

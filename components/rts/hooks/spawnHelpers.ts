@@ -4,7 +4,13 @@
  * without requiring a full React hook environment.
  */
 
-import { GRUNT_MAX_HP } from '../game/constants';
+import {
+  GRUNT_MAX_HP,
+  GRUNT_HP_PER_WAVE,
+  GRUNT_COUNT_CAP,
+  GRUNT_COUNT_BASE,
+  GRUNT_DOUBLE_ASSAULT_BONUS,
+} from '../game/constants';
 import type { PlacedBuilding } from '../game/types';
 
 /**
@@ -12,7 +18,9 @@ import type { PlacedBuilding } from '../game/types';
  * Scales linearly: base HP + 10 per wave (after wave 1), then multiplied by difficulty.
  */
 export function computeGruntHp(wave: number, diffHpMult: number): number {
-  return Math.round((GRUNT_MAX_HP + (wave - 1) * 10) * diffHpMult);
+  return Math.round(
+    (GRUNT_MAX_HP + (wave - 1) * GRUNT_HP_PER_WAVE) * diffHpMult
+  );
 }
 
 /**
@@ -20,8 +28,11 @@ export function computeGruntHp(wave: number, diffHpMult: number): number {
  * Doubles on every 3rd wave as a "double assault".
  */
 export function computeGruntCount(wave: number): number {
-  const baseCount = Math.min(6, 1 + Math.floor(wave / 5));
-  return wave % 3 === 0 ? baseCount + 2 : baseCount;
+  const baseCount: number = Math.min(
+    GRUNT_COUNT_CAP,
+    GRUNT_COUNT_BASE + Math.floor(wave / 5)
+  );
+  return wave % 3 === 0 ? baseCount + GRUNT_DOUBLE_ASSAULT_BONUS : baseCount;
 }
 
 /**
