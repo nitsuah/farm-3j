@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 import type { WorkerState } from '../game/types';
-import { loadHighScores, clearSave, type SaveSlot } from '../game/persistence';
+import { loadHighScoresSync, clearSave, type SaveSlot } from '../game/persistence';
 import type { PlacedBuilding } from '../game/types';
 import { Stat } from '../ui/Stat';
 
@@ -142,7 +142,7 @@ export const GameOverOverlay: React.FC<GameOverOverlayProps> = ({
               </div>
               {/* High score table */}
               {(() => {
-                const scores = loadHighScores();
+                const scores = loadHighScoresSync();
                 if (scores.length === 0) return null;
                 return (
                   <div

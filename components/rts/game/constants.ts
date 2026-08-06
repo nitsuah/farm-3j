@@ -46,7 +46,8 @@ export const REPAIR_AMOUNT = 2;
 export const REPAIR_RADIUS = 3;
 export const GARRISON_CAP = 5;
 export const GARRISON_HEAL_MS = 1000;
-export const GARRISON_HEAL_AMOUNT = 5;
+export const GARRISON_HEAL_AMOUNT = 8;
+export const GARRISON_BARN_HEAL_PER_UNIT = 4; // barn HP restored per garrisoned unit per tick
 export const GARRISON_ARMOR_PER_UNIT = 2;
 
 // ---------- Hero ----------

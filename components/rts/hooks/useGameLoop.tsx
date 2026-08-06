@@ -3800,6 +3800,32 @@ export function useGameLoop(ctx: RTSGameContext) {
             };
           }
           if (g.state === 'attacking') {
+            // Require the grunt to be within melee range of the barn before it can deal damage.
+            // Without this check a grunt stuck in 'attacking' state (e.g. after destroying a
+            // building) would damage the barn from arbitrary distances.
+            const barnMeleeRange = 2.0;
+            const distToBarnNow = tileDist(g.x, g.y, BARN_POS.x, BARN_POS.y);
+            if (distToBarnNow > barnMeleeRange) {
+              // Not close enough — re-path to the barn and clear the stale attacking state
+              const wallSet3 = new Set(
+                placedBuildingsRef.current
+                  .filter(b => b.type === 'wall')
+                  .map(b => `${b.x},${b.y}`)
+              );
+              const pBarn = aStar(
+                INITIAL_TILES,
+                { x: Math.round(g.x), y: Math.round(g.y) },
+                BARN_POS,
+                true,
+                wallSet3
+              );
+              return {
+                ...g,
+                movingTo: pBarn[0] ?? BARN_POS,
+                path: pBarn.slice(1),
+                state: 'moving' as const,
+              };
+            }
             if (!gruntAttackTimeoutsRef.current[g.id]) {
               gruntAttackTimeoutsRef.current[g.id] = window.setTimeout(() => {
                 delete gruntAttackTimeoutsRef.current[g.id];

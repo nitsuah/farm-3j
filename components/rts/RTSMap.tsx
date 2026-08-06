@@ -102,6 +102,7 @@ import {
 } from './game/achievements';
 import {
   loadSave,
+  loadSaveSync,
   saveHighScore,
   writeSave,
   type SaveSlot,
@@ -161,8 +162,15 @@ const RTSMap: React.FC<{
 }> = ({ onNewGame, difficulty, slot = 0 }) => {
   // Load save once per mount (module-level caching caused stale data after New Game)
   const saveRef = useRef<SaveData | null | undefined>(undefined);
-  if (saveRef.current === undefined) saveRef.current = loadSave(slot);
+  if (saveRef.current === undefined) saveRef.current = loadSaveSync(slot);
   const INITIAL_SAVE = saveRef.current;
+
+  // Background cloud-save sync: if a newer cloud save exists, mirror it to localStorage
+  // for the next session (does not affect the current game state).
+  useEffect(() => {
+    void loadSave(slot);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [zoom, setZoom] = useState(1);
   const tiles = useMemo(() => INITIAL_TILES, []);
@@ -805,7 +813,7 @@ const RTSMap: React.FC<{
     if (gameOver && !gameEndTime) {
       const endTime = Date.now();
       setGameEndTime(endTime);
-      saveHighScore({
+      void saveHighScore({
         wave,
         kills: killCount,
         result: gameOver,
