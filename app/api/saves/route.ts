@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
   if (!sql) return unavailable();
   let body: Partial<SavePostBody>;
   try {
-    const raw = await req.json();
+    const raw: unknown = await req.json();
     if (typeof raw !== 'object' || raw === null) {
       return NextResponse.json({ error: 'invalid body' }, { status: 400 });
     }
