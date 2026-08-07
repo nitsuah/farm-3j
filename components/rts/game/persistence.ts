@@ -180,7 +180,11 @@ export async function loadSave(slot: SaveSlot): Promise<SaveData | null> {
       const d = (await r.json()) as SaveData | null;
       if (d && isValidSave(d)) {
         // Mirror to localStorage so the game can access it synchronously
-        try { localStorage.setItem(SLOT_KEYS[slot], JSON.stringify(d)); } catch { /* ignore */ }
+        try {
+          localStorage.setItem(SLOT_KEYS[slot], JSON.stringify(d));
+        } catch {
+          /* ignore */
+        }
         return d;
       }
     }

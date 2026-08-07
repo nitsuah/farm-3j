@@ -47,61 +47,193 @@ const UNIT_ROSTER = [
 ];
 
 const ENEMY_ROSTER = [
-  { emoji: '👹', name: 'Grunt', desc: 'Basic melee raider. Attacks your barn and buildings. Scales in HP per wave. Boss variants appear periodically.' },
-  { emoji: '🧙', name: 'Shaman', desc: 'Heals nearby allies. Priority target — kill first to deny enemy sustain.' },
-  { emoji: '🧌', name: 'Troll', desc: 'Kiting ranged unit (4-tile range). Backs away when you approach.' },
-  { emoji: '💣', name: 'Sapper', desc: 'Explodes on contact, dealing massive AoE damage. Intercept before it reaches your walls.' },
-  { emoji: '🪄', name: 'Necromancer', desc: 'Raises fallen grunts from the dead within 3 tiles every 4s. Destroy before it snowballs the fight.' },
-  { emoji: '🩺', name: 'Witch Doctor', desc: 'Enrages nearby enemies, boosting their attack damage for 6s. Buffs cascade quickly — prioritize.' },
-  { emoji: '🌊', name: 'War Ram', desc: 'Heavy siege unit that smashes buildings and your barn for massive damage. First appears wave 6.' },
-  { emoji: '☄️', name: 'Demolisher', desc: 'Ranged siege catapult with 4-tile fire range and splash damage. Appears wave 14.' },
-  { emoji: '🐺', name: 'Night Lurker', desc: 'Fast stealth-like raider that hunts down farmers. Only appears at night (wave 15+). Very high speed.' },
-  { emoji: '👑', name: 'Warchief', desc: 'Elite boss-tier unit with a War Stomp AoE that stuns your units for 2.5s on a 12s cooldown.' },
-  { emoji: '🛡️', name: 'Warlord', desc: 'Top-tier boss. War Cry slows all nearby units; Shield Bash stuns a single target. First at wave 20.' },
+  {
+    emoji: '👹',
+    name: 'Grunt',
+    desc: 'Basic melee raider. Attacks your barn and buildings. Scales in HP per wave. Boss variants appear periodically.',
+  },
+  {
+    emoji: '🧙',
+    name: 'Shaman',
+    desc: 'Heals nearby allies. Priority target — kill first to deny enemy sustain.',
+  },
+  {
+    emoji: '🧌',
+    name: 'Troll',
+    desc: 'Kiting ranged unit (4-tile range). Backs away when you approach.',
+  },
+  {
+    emoji: '💣',
+    name: 'Sapper',
+    desc: 'Explodes on contact, dealing massive AoE damage. Intercept before it reaches your walls.',
+  },
+  {
+    emoji: '🪄',
+    name: 'Necromancer',
+    desc: 'Raises fallen grunts from the dead within 3 tiles every 4s. Destroy before it snowballs the fight.',
+  },
+  {
+    emoji: '🩺',
+    name: 'Witch Doctor',
+    desc: 'Enrages nearby enemies, boosting their attack damage for 6s. Buffs cascade quickly — prioritize.',
+  },
+  {
+    emoji: '🌊',
+    name: 'War Ram',
+    desc: 'Heavy siege unit that smashes buildings and your barn for massive damage. First appears wave 6.',
+  },
+  {
+    emoji: '☄️',
+    name: 'Demolisher',
+    desc: 'Ranged siege catapult with 4-tile fire range and splash damage. Appears wave 14.',
+  },
+  {
+    emoji: '🐺',
+    name: 'Night Lurker',
+    desc: 'Fast stealth-like raider that hunts down farmers. Only appears at night (wave 15+). Very high speed.',
+  },
+  {
+    emoji: '👑',
+    name: 'Warchief',
+    desc: 'Elite boss-tier unit with a War Stomp AoE that stuns your units for 2.5s on a 12s cooldown.',
+  },
+  {
+    emoji: '🛡️',
+    name: 'Warlord',
+    desc: 'Top-tier boss. War Cry slows all nearby units; Shield Bash stuns a single target. First at wave 20.',
+  },
 ];
 
 const BUILDING_GROUPS = [
   {
     label: 'Economy',
     buildings: [
-      { emoji: '🏠', name: 'Farmhouse', desc: '+5 food cap per level. Research Sharper Tools, Swift Harvest, Iron Will.' },
-      { emoji: '🌾', name: 'Granary', desc: '+15 food cap. Expand your army size significantly.' },
-      { emoji: '🪵', name: 'Lumber Shed', desc: 'Drop-off site for lumber. Each shed reduces gather time by 200ms.' },
-      { emoji: '⛏️', name: 'Mining Camp', desc: 'Drop-off for gold and stone. Speeds up mining runs.' },
+      {
+        emoji: '🏠',
+        name: 'Farmhouse',
+        desc: '+5 food cap per level. Research Sharper Tools, Swift Harvest, Iron Will.',
+      },
+      {
+        emoji: '🌾',
+        name: 'Granary',
+        desc: '+15 food cap. Expand your army size significantly.',
+      },
+      {
+        emoji: '🪵',
+        name: 'Lumber Shed',
+        desc: 'Drop-off site for lumber. Each shed reduces gather time by 200ms.',
+      },
+      {
+        emoji: '⛏️',
+        name: 'Mining Camp',
+        desc: 'Drop-off for gold and stone. Speeds up mining runs.',
+      },
       { emoji: '🏪', name: 'Market', desc: '+2 gold every 5s passive income.' },
-      { emoji: '💨', name: 'Windmill', desc: '+2 gold every 5s. Stack with Markets for strong passive economy.' },
+      {
+        emoji: '💨',
+        name: 'Windmill',
+        desc: '+2 gold every 5s. Stack with Markets for strong passive economy.',
+      },
     ],
   },
   {
     label: 'Military',
     buildings: [
-      { emoji: '🏯', name: 'Barracks', desc: 'Train Swordsmen. Unlock War Drums upgrade. Requires Farmhouse.' },
-      { emoji: '🐴', name: 'Stable', desc: 'Train Cavalry. Requires Barracks.' },
-      { emoji: '🔨', name: 'Blacksmith', desc: 'Steel Edge (+5 atk per level) and Iron Hide (-5 dmg per level). Requires Barracks.' },
-      { emoji: '⚙️', name: 'Siege Workshop', desc: 'Build Catapults & Trebuchets. Requires Blacksmith.' },
-      { emoji: '🛒', name: 'Farm Supply Store', desc: 'Hero item shop. Buy Boots, Blade, Shield, Potions. Requires Market.' },
+      {
+        emoji: '🏯',
+        name: 'Barracks',
+        desc: 'Train Swordsmen. Unlock War Drums upgrade. Requires Farmhouse.',
+      },
+      {
+        emoji: '🐴',
+        name: 'Stable',
+        desc: 'Train Cavalry. Requires Barracks.',
+      },
+      {
+        emoji: '🔨',
+        name: 'Blacksmith',
+        desc: 'Steel Edge (+5 atk per level) and Iron Hide (-5 dmg per level). Requires Barracks.',
+      },
+      {
+        emoji: '⚙️',
+        name: 'Siege Workshop',
+        desc: 'Build Catapults & Trebuchets. Requires Blacksmith.',
+      },
+      {
+        emoji: '🛒',
+        name: 'Farm Supply Store',
+        desc: 'Hero item shop. Buy Boots, Blade, Shield, Potions. Requires Market.',
+      },
     ],
   },
   {
     label: 'Defense',
     buildings: [
-      { emoji: '🗼', name: 'Watchtower', desc: '5-tile vision, 5-tile attack range, garrison up to 3 units for bonus damage and range.' },
-      { emoji: '🧱', name: 'Palisade Wall', desc: 'Blocks enemy pathing. Forces grunts to break through before reaching your core.' },
-      { emoji: '🪤', name: 'Spike Trap', desc: 'Deals 20 damage to any grunt that steps on it. 30s recharge.' },
-      { emoji: '❄️', name: 'Frost Tower', desc: 'Slows enemies by 50% for 3s. 5-tile range.' },
-      { emoji: '🏹', name: 'Ballista Tower', desc: 'High single-target damage with pierce. Requires Watchtower.' },
-      { emoji: '☠️', name: 'Poison Tower', desc: 'AoE poison DoT on hit. Requires Watchtower.' },
+      {
+        emoji: '🗼',
+        name: 'Watchtower',
+        desc: '5-tile vision, 5-tile attack range, garrison up to 3 units for bonus damage and range.',
+      },
+      {
+        emoji: '🧱',
+        name: 'Palisade Wall',
+        desc: 'Blocks enemy pathing. Forces grunts to break through before reaching your core.',
+      },
+      {
+        emoji: '🪤',
+        name: 'Spike Trap',
+        desc: 'Deals 20 damage to any grunt that steps on it. 30s recharge.',
+      },
+      {
+        emoji: '❄️',
+        name: 'Frost Tower',
+        desc: 'Slows enemies by 50% for 3s. 5-tile range.',
+      },
+      {
+        emoji: '🏹',
+        name: 'Ballista Tower',
+        desc: 'High single-target damage with pierce. Requires Watchtower.',
+      },
+      {
+        emoji: '☠️',
+        name: 'Poison Tower',
+        desc: 'AoE poison DoT on hit. Requires Watchtower.',
+      },
     ],
   },
 ];
 
 const MECHANICS = [
-  { emoji: '🌙', title: 'Day / Night Cycle', desc: 'Enemies speed up at night. Night Lurkers only appear after dark. Plan your garrison and build your defenses before sunset.' },
-  { emoji: '🌊', title: 'Wave System', desc: 'Enemies raid in escalating waves. Each wave grows harder: more grunts, higher HP, and new enemy types unlock over time.' },
-  { emoji: '⛩️', title: 'Shrines', desc: 'Neutral shrines scattered across the map. Channel to capture: Shrine of War grants +5 attack to all units; Shrine of Plenty speeds up resource gathering by 15%.' },
-  { emoji: '📦', title: 'Loot Crates', desc: 'Crates spawn every 45s on fixed map positions. Send a farmer to collect free gold, lumber, or stone.' },
-  { emoji: '🏰', title: 'Enemy Fortifications', desc: 'The enemy base builds walls and towers as waves progress. Breach their defenses to destroy the enemy barn and win.' },
-  { emoji: '💾', title: 'Save System', desc: 'Up to 3 save slots with wave progress, resources, buildings, and units preserved. Cloud saves (cross-device) coming soon.' },
+  {
+    emoji: '🌙',
+    title: 'Day / Night Cycle',
+    desc: 'Enemies speed up at night. Night Lurkers only appear after dark. Plan your garrison and build your defenses before sunset.',
+  },
+  {
+    emoji: '🌊',
+    title: 'Wave System',
+    desc: 'Enemies raid in escalating waves. Each wave grows harder: more grunts, higher HP, and new enemy types unlock over time.',
+  },
+  {
+    emoji: '⛩️',
+    title: 'Shrines',
+    desc: 'Neutral shrines scattered across the map. Channel to capture: Shrine of War grants +5 attack to all units; Shrine of Plenty speeds up resource gathering by 15%.',
+  },
+  {
+    emoji: '📦',
+    title: 'Loot Crates',
+    desc: 'Crates spawn every 45s on fixed map positions. Send a farmer to collect free gold, lumber, or stone.',
+  },
+  {
+    emoji: '🏰',
+    title: 'Enemy Fortifications',
+    desc: 'The enemy base builds walls and towers as waves progress. Breach their defenses to destroy the enemy barn and win.',
+  },
+  {
+    emoji: '💾',
+    title: 'Save System',
+    desc: 'Up to 3 save slots with wave progress, resources, buildings, and units preserved. Cloud saves (cross-device) coming soon.',
+  },
 ];
 
 export default function RTSLandingPage() {
@@ -112,7 +244,9 @@ export default function RTSLandingPage() {
         <section className="relative overflow-hidden bg-gradient-to-br from-green-900 via-green-800 to-yellow-800 py-20 text-center text-white">
           <div className="relative z-10 mx-auto max-w-3xl px-6">
             <div className="mb-4 text-6xl">🌾⚔️🏰</div>
-            <h1 className="mb-4 text-5xl font-bold drop-shadow-lg">PG Farms RTS</h1>
+            <h1 className="mb-4 text-5xl font-bold drop-shadow-lg">
+              PG Farms RTS
+            </h1>
             <p className="mb-8 text-lg text-green-100 opacity-90">
               Defend your farm. Train your army. Survive the siege.
               <br />A real-time strategy game built in the browser.
@@ -141,7 +275,9 @@ export default function RTSLandingPage() {
                 <h3 className="mb-1 font-bold text-green-800 dark:text-green-300">
                   {m.title}
                 </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">{m.desc}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {m.desc}
+                </p>
               </div>
             ))}
           </div>

@@ -145,14 +145,16 @@ export const HeroPanel: React.FC<HeroPanelProps> = ({
               </div>
             );
           })}
-          {Array.from({ length: HERO_MAX_ITEMS - heroItems.length }).map((_, i) => (
-            <div
-              key={`empty-${i}`}
-              className="flex h-16 items-center justify-center rounded border border-dashed border-slate-700/50 text-xs text-slate-600"
-            >
-              —
-            </div>
-          ))}
+          {Array.from({ length: HERO_MAX_ITEMS - heroItems.length }).map(
+            (_, i) => (
+              <div
+                key={`empty-${i}`}
+                className="flex h-16 items-center justify-center rounded border border-dashed border-slate-700/50 text-xs text-slate-600"
+              >
+                —
+              </div>
+            )
+          )}
         </div>
       </div>
     )}

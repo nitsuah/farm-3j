@@ -12,7 +12,8 @@ export async function GET(req: NextRequest) {
   if (!sql) return unavailable();
   const deviceId = req.nextUrl.searchParams.get('deviceId');
   const slotParam = req.nextUrl.searchParams.get('slot');
-  if (!deviceId) return NextResponse.json({ error: 'missing deviceId' }, { status: 400 });
+  if (!deviceId)
+    return NextResponse.json({ error: 'missing deviceId' }, { status: 400 });
 
   if (slotParam !== null) {
     const slot = parseInt(slotParam, 10);
@@ -37,7 +38,11 @@ export async function GET(req: NextRequest) {
 // POST /api/saves   body: { deviceId, slot, data }
 export async function POST(req: NextRequest) {
   if (!sql) return unavailable();
-  const body = (await req.json()) as { deviceId?: string; slot?: number; data?: unknown };
+  const body = (await req.json()) as {
+    deviceId?: string;
+    slot?: number;
+    data?: unknown;
+  };
   const { deviceId, slot, data } = body;
   if (!deviceId || slot === undefined || !data)
     return NextResponse.json({ error: 'missing fields' }, { status: 400 });

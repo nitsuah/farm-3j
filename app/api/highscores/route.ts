@@ -56,8 +56,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'invalid fields' }, { status: 400 });
   }
 
-  const safeGold = typeof gold === 'number' && Number.isFinite(gold) ? Math.max(0, Math.round(gold)) : 0;
-  const safeTime = typeof timeSecs === 'number' && Number.isFinite(timeSecs) ? Math.max(0, Math.round(timeSecs)) : 0;
+  const safeGold =
+    typeof gold === 'number' && Number.isFinite(gold)
+      ? Math.max(0, Math.round(gold))
+      : 0;
+  const safeTime =
+    typeof timeSecs === 'number' && Number.isFinite(timeSecs)
+      ? Math.max(0, Math.round(timeSecs))
+      : 0;
   const safeDate = typeof scoreDate === 'string' ? scoreDate.slice(0, 32) : '';
 
   await sql`
