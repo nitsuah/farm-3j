@@ -169,8 +169,7 @@ const RTSMap: React.FC<{
   // for the next session (does not affect the current game state).
   useEffect(() => {
     void loadSave(slot);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, []); // intentional: only sync from cloud once on mount
 
   const [zoom, setZoom] = useState(1);
   const tiles = useMemo(() => INITIAL_TILES, []);
