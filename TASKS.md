@@ -1,6 +1,6 @@
 # TASKS
 
-Last Updated: 2026-08-04 (componentize large files — useGameLoop split, RTSMap boundary scaffolded as MapRenderer, RTSUI → BuildMenu/WaveTimer/HeroPanel, +55 unit tests)
+Last Updated: 2026-08-07 (PG Farms branding, RTS feature landing page, cloud save system, game fixes, code-review pass)
 
 ## Farm RTS — Round 2 (2026 Q3)
 
@@ -16,7 +16,7 @@ Last Updated: 2026-08-04 (componentize large files — useGameLoop split, RTSMap
 - [ ] Named unit formations — move selected group in line/wedge/box formation
 - [ ] Enemy hero unit — Warlord (wave 20+, unique abilities, drops loot)
 - [ ] Dropped hero items — equippable pickups from slain elite enemies (Speed Boots, War Banner, Healing Totem)
-- [ ] Save slots — 3 named localStorage slots; slot picker on New Game screen
+- [x] Save slots — 3 cloud-backed slots (0/1/2) with localStorage fallback via hybrid persistence system (2026-08-07); slot picker UI on New Game screen still TBD
 - [ ] Achievement / challenge system — milestone badges for specific run conditions
 - [ ] Campaign mode Phase 1 — 3 hand-crafted scenarios with scripted objectives
 

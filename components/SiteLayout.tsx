@@ -4,14 +4,11 @@ import { HeaderCropRow } from '@/components/animations/HeaderCropRow';
 export function SiteLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <header className="relative h-48 shadow-sm">
-        {/* Animated crop header background */}
+      <header className="relative h-[212px] shadow-sm md:h-48">
         <HeaderCropRow />
-
-        {/* Navigation overlay - positioned in sky portion */}
         <nav className="absolute top-0 right-0 left-0 z-10">
           <div className="container mx-auto px-4 py-3">
-            {/* Desktop: horizontal layout */}
+            {/* Desktop */}
             <div className="hidden items-center justify-between md:flex">
               <a
                 href="/"
@@ -19,7 +16,7 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
               >
                 <span className="text-2xl">🌾</span>
                 <h1 className="text-2xl font-bold text-white drop-shadow-lg">
-                  PG Farm
+                  PG Farms
                 </h1>
               </a>
               <div className="flex items-center gap-6 rounded-lg bg-black/30 px-4 py-2 backdrop-blur-sm">
@@ -30,17 +27,22 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
                   About
                 </a>
                 <a
-                  href="/farm"
+                  href="/rtsfarm"
                   className="font-medium text-white drop-shadow hover:text-green-200"
                 >
-                  Farm Game
+                  RTS Game
+                </a>
+                <a
+                  href="/privacy"
+                  className="font-medium text-white drop-shadow hover:text-green-200"
+                >
+                  Privacy
                 </a>
               </div>
             </div>
 
-            {/* Mobile: vertical layout stacked on left */}
+            {/* Mobile */}
             <div className="flex flex-col gap-2 md:hidden">
-              {/* PG Farms title - acts as home button */}
               <a
                 href="/"
                 className="flex w-fit items-center gap-2 rounded-lg bg-black/30 px-3 py-1 backdrop-blur-sm transition-colors hover:bg-black/40"
@@ -50,25 +52,42 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
                   PG Farms
                 </h1>
               </a>
-
-              {/* Mobile nav buttons stacked vertically */}
               <div className="flex w-fit flex-col gap-1">
-                {/* About - question mark icon */}
                 <a
                   href="/about"
                   className="flex items-center justify-center rounded-lg bg-black/30 p-2 backdrop-blur-sm transition-colors hover:bg-black/40"
-                  title="About"
+                  aria-label="About"
                 >
-                  <span className="text-xl text-white drop-shadow">❓</span>
+                  <span
+                    aria-hidden="true"
+                    className="text-xl text-white drop-shadow"
+                  >
+                    ❓
+                  </span>
                 </a>
-
-                {/* Farm Game - play icon */}
                 <a
-                  href="/farm"
+                  href="/rtsfarm"
                   className="flex items-center justify-center rounded-lg bg-black/30 p-2 backdrop-blur-sm transition-colors hover:bg-black/40"
-                  title="Play Farm Game"
+                  aria-label="Play RTS"
                 >
-                  <span className="text-xl text-white drop-shadow">▶️</span>
+                  <span
+                    aria-hidden="true"
+                    className="text-xl text-white drop-shadow"
+                  >
+                    ▶️
+                  </span>
+                </a>
+                <a
+                  href="/privacy"
+                  className="flex items-center justify-center rounded-lg bg-black/30 p-2 backdrop-blur-sm transition-colors hover:bg-black/40"
+                  aria-label="Privacy"
+                >
+                  <span
+                    aria-hidden="true"
+                    className="text-xl text-white drop-shadow"
+                  >
+                    🔒
+                  </span>
                 </a>
               </div>
             </div>
@@ -76,7 +95,7 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
         </nav>
       </header>
       {children}
-      <footer className="bg-white py-3 text-green-900 dark:bg-green-900 dark:text-white">
+      <footer className="bg-white py-3 text-green-900 dark:bg-black dark:text-white">
         <div className="container mx-auto px-4 text-center">
           <p className="text-sm">
             &copy; 2025 Pretty Good Farms. All rights reserved.

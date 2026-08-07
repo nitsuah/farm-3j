@@ -1,7 +1,12 @@
 import React, { useEffect, useState } from 'react';
 
-import type { WorkerState } from '../game/types';
-import { loadHighScores, clearSave, type SaveSlot } from '../game/persistence';
+import type { WorkerState, HighScoreEntry } from '../game/types';
+import {
+  loadHighScoresSync,
+  loadHighScores,
+  clearSave,
+  type SaveSlot,
+} from '../game/persistence';
 import type { PlacedBuilding } from '../game/types';
 import { Stat } from '../ui/Stat';
 
@@ -37,12 +42,19 @@ export const GameOverOverlay: React.FC<GameOverOverlayProps> = ({
   workers,
 }) => {
   const [countdown, setCountdown] = useState(5);
+  const [scores, setScores] = useState<HighScoreEntry[]>(() =>
+    loadHighScoresSync()
+  );
   useEffect(() => {
     if (!isDemo || !gameOver) return;
     setCountdown(5);
     const id = setInterval(() => setCountdown(n => n - 1), 1000);
     return () => clearInterval(id);
   }, [isDemo, gameOver]);
+  useEffect(() => {
+    if (!gameOver) return;
+    void loadHighScores().then(setScores);
+  }, [gameOver]);
 
   return (
     <>
@@ -142,7 +154,6 @@ export const GameOverOverlay: React.FC<GameOverOverlayProps> = ({
               </div>
               {/* High score table */}
               {(() => {
-                const scores = loadHighScores();
                 if (scores.length === 0) return null;
                 return (
                   <div

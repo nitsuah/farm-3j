@@ -1,5 +1,13 @@
 import React from 'react';
 
+import {
+  TRAIN_CAVALRY_COST,
+  TRAIN_CATAPULT_COST,
+  TRAIN_HERO_COST,
+  TRAIN_QUEUE_MAX,
+  TRAIN_SWORDSMAN_COST,
+  TRAIN_TREBUCHET_COST,
+} from '../game/constants';
 import type { FarmhouseAction, Resources } from '../game/types';
 
 export interface TrainTabProps {
@@ -36,7 +44,9 @@ export const TrainTab: React.FC<TrainTabProps> = ({
       <div className="rounded border border-slate-600/60 bg-slate-800/40 px-2 py-1.5">
         <div className="mb-1 flex items-center gap-1 text-xs text-slate-300">
           <span className="font-semibold">Queue</span>
-          <span className="text-slate-500">({trainingQueue.length}/5)</span>
+          <span className="text-slate-500">
+            ({trainingQueue.length}/{TRAIN_QUEUE_MAX})
+          </span>
         </div>
         <div className="mb-1 h-1.5 w-full rounded-full bg-slate-700">
           <div
@@ -63,16 +73,18 @@ export const TrainTab: React.FC<TrainTabProps> = ({
           className="flex flex-col items-center rounded border border-rose-500/70 bg-rose-500/15 py-1.5 text-xs text-rose-100 hover:bg-rose-500/30 disabled:opacity-40"
           onClick={() => onFarmhouseAction('trainSwordsman')}
           disabled={
-            resources.gold < 50 ||
+            resources.gold < TRAIN_SWORDSMAN_COST ||
             resources.food >= resources.foodCap ||
-            trainingQueue.length >= 5
+            trainingQueue.length >= TRAIN_QUEUE_MAX
           }
-          title="Train Swordsman — 50🪙, 80HP, +10 dmg"
+          title={`Train Swordsman — ${TRAIN_SWORDSMAN_COST}🪙, 80HP, +10 dmg`}
         >
           <span>
             ⚔️ Swordsman <span className="opacity-50">[Q]</span>
           </span>
-          <span className="mt-0.5 text-[10px] text-amber-300/80">50🪙</span>
+          <span className="mt-0.5 text-[10px] text-amber-300/80">
+            {TRAIN_SWORDSMAN_COST}🪙
+          </span>
         </button>
       ) : (
         <div
@@ -89,16 +101,18 @@ export const TrainTab: React.FC<TrainTabProps> = ({
           className="flex flex-col items-center rounded border border-amber-500/70 bg-amber-500/15 py-1.5 text-xs text-amber-100 hover:bg-amber-500/30 disabled:opacity-40"
           onClick={() => onFarmhouseAction('trainCavalry')}
           disabled={
-            resources.gold < 60 ||
+            resources.gold < TRAIN_CAVALRY_COST ||
             resources.food >= resources.foodCap ||
-            trainingQueue.length >= 5
+            trainingQueue.length >= TRAIN_QUEUE_MAX
           }
-          title="Train Cavalry — 60🪙, 2× speed"
+          title={`Train Cavalry — ${TRAIN_CAVALRY_COST}🪙, 2× speed`}
         >
           <span>
             🐴 Cavalry <span className="opacity-50">[R]</span>
           </span>
-          <span className="mt-0.5 text-[10px] text-amber-300/80">60🪙</span>
+          <span className="mt-0.5 text-[10px] text-amber-300/80">
+            {TRAIN_CAVALRY_COST}🪙
+          </span>
         </button>
       ) : (
         <div
@@ -115,15 +129,15 @@ export const TrainTab: React.FC<TrainTabProps> = ({
           className="flex flex-col items-center rounded border border-orange-500/70 bg-orange-500/15 py-1.5 text-xs text-orange-100 hover:bg-orange-500/30 disabled:opacity-40"
           onClick={() => onFarmhouseAction('trainCatapult')}
           disabled={
-            resources.gold < 150 ||
-            resources.lumber < 80 ||
+            resources.gold < TRAIN_CATAPULT_COST.gold ||
+            resources.lumber < TRAIN_CATAPULT_COST.lumber ||
             resources.food >= resources.foodCap
           }
-          title="Train Catapult — 150🪙 80🌲, AoE 6-tile range"
+          title={`Train Catapult — ${TRAIN_CATAPULT_COST.gold}🪙 ${TRAIN_CATAPULT_COST.lumber}🌲, AoE 6-tile range`}
         >
           <span>🪨 Catapult</span>
           <span className="mt-0.5 text-[10px] text-amber-300/80">
-            150🪙 80🌲
+            {TRAIN_CATAPULT_COST.gold}🪙 {TRAIN_CATAPULT_COST.lumber}🌲
           </span>
         </button>
       ) : (
@@ -141,16 +155,17 @@ export const TrainTab: React.FC<TrainTabProps> = ({
           className="flex flex-col items-center rounded border border-yellow-700/70 bg-yellow-900/20 py-1.5 text-xs text-yellow-100 hover:bg-yellow-900/40 disabled:opacity-40"
           onClick={() => onFarmhouseAction('trainTrebuchet')}
           disabled={
-            resources.gold < 200 ||
-            resources.lumber < 80 ||
-            resources.stone < 60 ||
+            resources.gold < TRAIN_TREBUCHET_COST.gold ||
+            resources.lumber < TRAIN_TREBUCHET_COST.lumber ||
+            resources.stone < TRAIN_TREBUCHET_COST.stone ||
             resources.food >= resources.foodCap
           }
           title="Train Trebuchet — long-range siege"
         >
           <span>🏰 Trebuchet</span>
           <span className="mt-0.5 text-[10px] text-amber-300/80">
-            200🪙 80🌲 60🪨
+            {TRAIN_TREBUCHET_COST.gold}🪙 {TRAIN_TREBUCHET_COST.lumber}🌲{' '}
+            {TRAIN_TREBUCHET_COST.stone}🪨
           </span>
         </button>
       ) : (
@@ -185,16 +200,18 @@ export const TrainTab: React.FC<TrainTabProps> = ({
           onClick={onRecruitHero}
           disabled={
             heroRecruited ||
-            resources.gold < 150 ||
+            resources.gold < TRAIN_HERO_COST ||
             resources.food >= resources.foodCap
           }
           title={
             heroRecruited
               ? 'Barnabas already recruited'
-              : 'Recruit Barnabas — 150🪙'
+              : `Recruit Barnabas — ${TRAIN_HERO_COST}🪙`
           }
         >
-          {heroRecruited ? '🦸 Hero Active' : '🦸 Recruit Hero 150🪙'}
+          {heroRecruited
+            ? '🦸 Hero Active'
+            : `🦸 Recruit Hero ${TRAIN_HERO_COST}🪙`}
         </button>
       ))}
     {!hasBarracks && !hasStable && !hasSiegeWorkshop && (

@@ -1,6 +1,10 @@
 import React from 'react';
 
-import { LUMBER_SHED_BONUS_MS, BUILDING_REQUIRES } from '../game/constants';
+import {
+  LUMBER_SHED_BONUS_MS,
+  BUILDING_REQUIRES,
+  BUILDING_COSTS,
+} from '../game/constants';
 import type {
   BuildingType,
   PlacedBuilding,
@@ -30,7 +34,7 @@ const BUILDINGS: BEntry[] = [
     bg: 'bg-green-500/15',
     hover: 'hover:bg-green-500/30',
     text: 'text-green-100',
-    desc: '+5 food cap',
+    desc: `+${BUILDING_COSTS.farmhouse.foodCapBonus} food cap`,
   },
   {
     key: 'watchtower',

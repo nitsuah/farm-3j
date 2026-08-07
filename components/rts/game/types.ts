@@ -85,6 +85,22 @@ export interface BuildingCost {
   foodCapBonus: number;
 }
 
+export interface GoldLumberCost {
+  gold: number;
+  lumber: number;
+}
+
+export interface GoldStoneCost {
+  gold: number;
+  stone: number;
+}
+
+export interface GoldLumberStoneCost {
+  gold: number;
+  lumber: number;
+  stone: number;
+}
+
 export type UnitType =
   | 'farmer'
   | 'swordsman'
