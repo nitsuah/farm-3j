@@ -44,6 +44,7 @@ import {
   GATHER_INTERVAL_MS,
   GRID_SIZE,
   GRUNT_ATTACK_MS,
+  GRUNT_BARN_MELEE_RANGE,
   GRUNT_DAMAGE,
   GRUNT_MAX_HP,
   GRUNT_SPEED,
@@ -3803,9 +3804,8 @@ export function useGameLoop(ctx: RTSGameContext) {
             // Require the grunt to be within melee range of the barn before it can deal damage.
             // Without this check a grunt stuck in 'attacking' state (e.g. after destroying a
             // building) would damage the barn from arbitrary distances.
-            const barnMeleeRange = 2.0;
             const distToBarnNow = tileDist(g.x, g.y, BARN_POS.x, BARN_POS.y);
-            if (distToBarnNow > barnMeleeRange) {
+            if (distToBarnNow > GRUNT_BARN_MELEE_RANGE) {
               // Not close enough — re-path to the barn and clear the stale attacking state
               const wallSet3 = new Set(
                 placedBuildingsRef.current

@@ -1,29 +1,31 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useId } from 'react';
 
 import { SiteLayout } from '@/components/SiteLayout';
 import { GrowingCropScene } from '@/components/animations/GrowingCropScene';
 import { IsometricTownScene } from '@/components/animations/IsometricTownScene';
 import { SustainableFarmScene } from '@/components/animations/SustainableFarmScene';
 
-function FeatureCard({
-  title,
-  description,
-  children,
-}: {
+interface FeatureCardProps {
   title: string;
   description: string;
   children: React.ReactNode;
-}) {
+}
+
+function FeatureCard({ title, description, children }: FeatureCardProps) {
   const [expanded, setExpanded] = useState(false);
+  const contentId = useId();
 
   return (
-    <div
-      className="relative flex cursor-pointer flex-col overflow-hidden border border-green-200 bg-white transition-all duration-300 dark:border-gray-600 dark:bg-black"
-      onClick={() => setExpanded(e => !e)}
-    >
-      <div className="flex flex-col justify-center p-8 lg:p-6">
+    <div className="relative flex flex-col overflow-hidden border border-green-200 bg-white transition-all duration-300 dark:border-gray-600 dark:bg-black">
+      <button
+        type="button"
+        aria-expanded={expanded}
+        aria-controls={contentId}
+        className="flex cursor-pointer flex-col justify-center p-8 text-left lg:p-6"
+        onClick={() => setExpanded(e => !e)}
+      >
         <div className="flex items-start justify-between gap-2">
           <div>
             <h3 className="text-sm font-bold text-green-900 lg:text-base dark:text-green-400">
@@ -37,13 +39,13 @@ function FeatureCard({
             {expanded ? '▲' : '▼'}
           </span>
         </div>
-      </div>
+      </button>
 
-      <div
-        className={`overflow-hidden transition-all duration-500 ease-in-out ${expanded ? 'max-h-80 opacity-100' : 'max-h-0 opacity-0'}`}
-      >
-        <div className="h-64">{children}</div>
-      </div>
+      {expanded && (
+        <div id={contentId} className="h-64">
+          {children}
+        </div>
+      )}
     </div>
   );
 }

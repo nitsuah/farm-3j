@@ -4,7 +4,7 @@ export interface WaveTimerProps {
   /** Matches ResourceBar's gameOver prop type. Truthy value means the game ended. */
   gameOver: 'victory' | 'defeat' | null;
   nextWaveAt: number | null;
-  waveTimerRemainingRef: React.MutableRefObject<number | null>;
+  waveTimerRemainingRef: React.RefObject<number | null>;
   gameSpeed: number;
 }
 

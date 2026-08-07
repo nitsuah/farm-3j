@@ -16,6 +16,8 @@ export async function GET(req: NextRequest) {
 
   if (slotParam !== null) {
     const slot = parseInt(slotParam, 10);
+    if (!Number.isInteger(slot) || ![0, 1, 2].includes(slot))
+      return NextResponse.json({ error: 'invalid slot' }, { status: 400 });
     const rows = await sql`
       SELECT data FROM game_saves
       WHERE device_id = ${deviceId} AND slot = ${slot}
@@ -59,6 +61,8 @@ export async function DELETE(req: NextRequest) {
   if (!deviceId || slotParam === null)
     return NextResponse.json({ error: 'missing params' }, { status: 400 });
   const slot = parseInt(slotParam, 10);
+  if (!Number.isInteger(slot) || ![0, 1, 2].includes(slot))
+    return NextResponse.json({ error: 'invalid slot' }, { status: 400 });
 
   await sql`
     DELETE FROM game_saves WHERE device_id = ${deviceId} AND slot = ${slot}

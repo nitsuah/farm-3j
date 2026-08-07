@@ -45,16 +45,20 @@ export async function loadHighScores(): Promise<HighScoreEntry[]> {
     const r = await fetch('/api/highscores?limit=10');
     if (r.ok) {
       const rows = (await r.json()) as {
-        player_name: string;
         wave: number;
         kills: number;
-        difficulty_id?: string;
+        result: 'victory' | 'defeat';
+        gold: number;
+        time_seconds: number;
+        score_date: string;
       }[];
       return rows.map(row => ({
-        name: row.player_name,
         wave: row.wave,
         kills: row.kills,
-        difficultyId: row.difficulty_id,
+        result: row.result ?? 'defeat',
+        gold: row.gold ?? 0,
+        time: row.time_seconds ?? 0,
+        date: row.score_date ?? '',
       }));
     }
   } catch {
@@ -81,10 +85,12 @@ export async function saveHighScore(entry: HighScoreEntry): Promise<void> {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         deviceId: getDeviceId(),
-        playerName: entry.name ?? 'Anonymous',
         wave: entry.wave,
         kills: entry.kills,
-        difficultyId: entry.difficultyId,
+        result: entry.result,
+        gold: entry.gold,
+        timeSecs: entry.time,
+        scoreDate: entry.date,
       }),
     });
   } catch {

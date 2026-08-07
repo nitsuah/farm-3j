@@ -1,6 +1,7 @@
+import type { Metadata } from 'next';
 import { SiteLayout } from '@/components/SiteLayout';
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'Privacy & Security – PG Farms',
   description: 'How PG Farms handles your data and privacy.',
 };
@@ -13,7 +14,7 @@ export default function PrivacyPage() {
           Privacy &amp; Security
         </h1>
         <p className="mb-8 text-sm text-gray-500 dark:text-gray-400">
-          Last updated: July 2025
+          Last updated: August 2025
         </p>
 
         <section className="mb-8">
@@ -21,17 +22,15 @@ export default function PrivacyPage() {
             What data we store
           </h2>
           <p className="mb-3 text-gray-700 dark:text-gray-300">
-            PG Farms currently stores game save files and high scores locally in
-            your browser&apos;s <code>localStorage</code>. This data never
-            leaves your device unless you choose to share it.
+            PG Farms stores game save files and high scores locally in your
+            browser&apos;s <code>localStorage</code>. When a network connection
+            is available, this data is also synced to a secure cloud database so
+            your progress is preserved across devices and browser resets.
           </p>
           <p className="text-gray-700 dark:text-gray-300">
-            We are actively building an optional cloud save system backed by a
-            secure database. When enabled, save data will be linked to an
-            anonymous device identifier (a randomly generated UUID) — no account
-            or personal information required. You can also choose to use a
-            username or a Web3 wallet address to identify your saves across
-            devices.
+            Cloud saves are linked to an anonymous device identifier — a
+            randomly generated UUID stored in your browser. No account or
+            personal information is required.
           </p>
         </section>
 
@@ -62,13 +61,12 @@ export default function PrivacyPage() {
 
         <section className="mb-8">
           <h2 className="mb-3 text-xl font-semibold text-green-800 dark:text-green-300">
-            Cloud saves (coming soon)
+            Cloud saves
           </h2>
           <p className="mb-3 text-gray-700 dark:text-gray-300">
-            Our upcoming cloud save feature will store game state in a secure,
-            hosted database (Neon Postgres). Data is tied to your anonymous
-            device ID by default. You may optionally link it to a username or a
-            Web3 wallet address for cross-device access.
+            Game saves and high scores are stored in a secure, hosted database
+            (Neon Postgres) tied to your anonymous device ID. Writes happen
+            automatically in the background whenever you save or complete a run.
           </p>
           <p className="text-gray-700 dark:text-gray-300">
             All data in transit is encrypted via HTTPS. Database credentials are

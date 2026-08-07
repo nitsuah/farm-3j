@@ -1,5 +1,5 @@
 import React from 'react';
-import { HERO_ITEM_DATA } from '../game/constants';
+import { HERO_ITEM_DATA, HERO_MAX_ITEMS } from '../game/constants';
 import type { HeroItem } from '../game/types';
 
 export interface HeroPanelProps {
@@ -106,7 +106,7 @@ export const HeroPanel: React.FC<HeroPanelProps> = ({
     {heroItems.length > 0 && (
       <div className="col-span-3 mt-2 border-t border-slate-700/50 pt-2">
         <div className="mb-1 text-xs font-semibold text-violet-300">
-          🎒 Items ({heroItems.length}/3)
+          🎒 Items ({heroItems.length}/{HERO_MAX_ITEMS})
         </div>
         <div className="grid grid-cols-3 gap-1">
           {heroItems.map(item => {
@@ -128,6 +128,7 @@ export const HeroPanel: React.FC<HeroPanelProps> = ({
                     onClick={
                       item.itemId === 'healing_potion' ? onUsePotion : undefined
                     }
+                    disabled={item.itemId !== 'healing_potion'}
                     className="mt-1 w-full rounded bg-violet-600/40 py-0.5 text-[9px] text-violet-100 hover:bg-violet-600/60 disabled:opacity-40"
                   >
                     Use
@@ -144,7 +145,7 @@ export const HeroPanel: React.FC<HeroPanelProps> = ({
               </div>
             );
           })}
-          {Array.from({ length: 3 - heroItems.length }).map((_, i) => (
+          {Array.from({ length: HERO_MAX_ITEMS - heroItems.length }).map((_, i) => (
             <div
               key={`empty-${i}`}
               className="flex h-16 items-center justify-center rounded border border-dashed border-slate-700/50 text-xs text-slate-600"

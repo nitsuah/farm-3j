@@ -1,6 +1,7 @@
+import type { Metadata } from 'next';
 import { SiteLayout } from '@/components/SiteLayout';
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'PG Farms RTS – Real-Time Strategy',
   description:
     'Defend your farm against waves of enemies. Build, gather, train, and conquer.',
