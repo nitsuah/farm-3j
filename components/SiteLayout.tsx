@@ -56,23 +56,38 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
                 <a
                   href="/about"
                   className="flex items-center justify-center rounded-lg bg-black/30 p-2 backdrop-blur-sm transition-colors hover:bg-black/40"
-                  title="About"
+                  aria-label="About"
                 >
-                  <span className="text-xl text-white drop-shadow">❓</span>
+                  <span
+                    aria-hidden="true"
+                    className="text-xl text-white drop-shadow"
+                  >
+                    ❓
+                  </span>
                 </a>
                 <a
                   href="/rtsfarm"
                   className="flex items-center justify-center rounded-lg bg-black/30 p-2 backdrop-blur-sm transition-colors hover:bg-black/40"
-                  title="Play RTS"
+                  aria-label="Play RTS"
                 >
-                  <span className="text-xl text-white drop-shadow">▶️</span>
+                  <span
+                    aria-hidden="true"
+                    className="text-xl text-white drop-shadow"
+                  >
+                    ▶️
+                  </span>
                 </a>
                 <a
                   href="/privacy"
                   className="flex items-center justify-center rounded-lg bg-black/30 p-2 backdrop-blur-sm transition-colors hover:bg-black/40"
-                  title="Privacy"
+                  aria-label="Privacy"
                 >
-                  <span className="text-xl text-white drop-shadow">🔒</span>
+                  <span
+                    aria-hidden="true"
+                    className="text-xl text-white drop-shadow"
+                  >
+                    🔒
+                  </span>
                 </a>
               </div>
             </div>

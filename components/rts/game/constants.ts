@@ -1,7 +1,14 @@
 // Gameplay tuning constants for the RTS mode.
 // Split out of RTSMap.tsx — grouped by system (map, units, enemies, towers, buildings).
 
-import type { BuildingType, HeroItemId, Upgrades } from './types';
+import type {
+  BuildingType,
+  GoldLumberCost,
+  GoldLumberStoneCost,
+  GoldStoneCost,
+  HeroItemId,
+  Upgrades,
+} from './types';
 
 // ---------- Map & core ----------
 export const GRID_SIZE = 25;
@@ -661,16 +668,28 @@ export const UPGRADE_COSTS: Record<
 export const TRAIN_FARMER_COST = 30;
 export const TRAIN_SWORDSMAN_COST = 50;
 export const TRAIN_CAVALRY_COST = 60;
-export const TRAIN_CATAPULT_COST = { gold: 150, lumber: 80 } as const;
+export const TRAIN_CATAPULT_COST = {
+  gold: 150,
+  lumber: 80,
+} as const satisfies GoldLumberCost;
 export const TRAIN_TREBUCHET_COST = {
   gold: 200,
   lumber: 80,
   stone: 60,
-} as const;
+} as const satisfies GoldLumberStoneCost;
 export const TRAIN_HERO_COST = 150;
 export const TRAIN_QUEUE_MAX = 5;
 
 // ---------- Tech / research upgrade costs ----------
-export const GUARD_TOWER_COST = { gold: 120, stone: 80 } as const;
-export const VETERAN_TRAINING_COST = { gold: 100, lumber: 60 } as const;
-export const WAR_DRUMS_COST = { gold: 120, lumber: 40 } as const;
+export const GUARD_TOWER_COST = {
+  gold: 120,
+  stone: 80,
+} as const satisfies GoldStoneCost;
+export const VETERAN_TRAINING_COST = {
+  gold: 100,
+  lumber: 60,
+} as const satisfies GoldLumberCost;
+export const WAR_DRUMS_COST = {
+  gold: 120,
+  lumber: 40,
+} as const satisfies GoldLumberCost;
