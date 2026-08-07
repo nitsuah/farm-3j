@@ -656,3 +656,21 @@ export const UPGRADE_COSTS: Record<
     { gold: 150, lumber: 100, stone: 0 },
   ],
 };
+
+// ---------- Unit training costs ----------
+export const TRAIN_FARMER_COST = 30;
+export const TRAIN_SWORDSMAN_COST = 50;
+export const TRAIN_CAVALRY_COST = 60;
+export const TRAIN_CATAPULT_COST = { gold: 150, lumber: 80 } as const;
+export const TRAIN_TREBUCHET_COST = {
+  gold: 200,
+  lumber: 80,
+  stone: 60,
+} as const;
+export const TRAIN_HERO_COST = 150;
+export const TRAIN_QUEUE_MAX = 5;
+
+// ---------- Tech / research upgrade costs ----------
+export const GUARD_TOWER_COST = { gold: 120, stone: 80 } as const;
+export const VETERAN_TRAINING_COST = { gold: 100, lumber: 60 } as const;
+export const WAR_DRUMS_COST = { gold: 120, lumber: 40 } as const;

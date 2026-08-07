@@ -20,14 +20,14 @@ export interface HighScoreRow {
   score_date: string;
 }
 
-export interface SavePostBody {
-  deviceId: string;
-  slot: number;
-  data: unknown;
-}
-
 export const VALID_SAVE_SLOTS = [0, 1, 2] as const;
 export type SaveSlotValue = (typeof VALID_SAVE_SLOTS)[number];
+
+export interface SavePostBody {
+  deviceId: string;
+  slot: SaveSlotValue;
+  data: unknown;
+}
 
 export function isValidSaveSlot(n: number): n is SaveSlotValue {
   return (VALID_SAVE_SLOTS as readonly number[]).includes(n);

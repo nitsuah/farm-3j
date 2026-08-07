@@ -4,7 +4,7 @@ import { HeaderCropRow } from '@/components/animations/HeaderCropRow';
 export function SiteLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <header className="relative h-48 shadow-sm">
+      <header className="relative h-[212px] shadow-sm md:h-48">
         <HeaderCropRow />
         <nav className="absolute top-0 right-0 left-0 z-10">
           <div className="container mx-auto px-4 py-3">

@@ -29,6 +29,16 @@ import {
   BUILDING_COSTS,
   BUILDING_MAX_HP,
   BUILDING_REQUIRES,
+  GUARD_TOWER_COST,
+  TRAIN_CAVALRY_COST,
+  TRAIN_CATAPULT_COST,
+  TRAIN_FARMER_COST,
+  TRAIN_HERO_COST,
+  TRAIN_QUEUE_MAX,
+  TRAIN_SWORDSMAN_COST,
+  TRAIN_TREBUCHET_COST,
+  VETERAN_TRAINING_COST,
+  WAR_DRUMS_COST,
   CAVALRY_SPRINT_COOLDOWN_S,
   CAVALRY_SPRINT_DURATION_MS,
   CREEP_CAMPS,
@@ -2934,8 +2944,16 @@ const RTSMap: React.FC<{
         foodCap: FOOD_CAP_BASE + (farmhouse.level + 1) * FOOD_CAP_PER_LEVEL,
       }));
     } else if (action === 'train') {
-      if (resources.gold < 30 || resources.food >= resources.foodCap) return;
-      setResources(r => ({ ...r, gold: r.gold - 30, food: r.food + 1 }));
+      if (
+        resources.gold < TRAIN_FARMER_COST ||
+        resources.food >= resources.foodCap
+      )
+        return;
+      setResources(r => ({
+        ...r,
+        gold: r.gold - TRAIN_FARMER_COST,
+        food: r.food + 1,
+      }));
       setWorkers(ws => {
         const newId = Math.max(...ws.map(w => w.id), 0) + 1;
         const rp = rallyPoint;
@@ -2956,12 +2974,16 @@ const RTSMap: React.FC<{
     } else if (action === 'recruitHero') {
       if (
         heroRecruited ||
-        resources.gold < 150 ||
+        resources.gold < TRAIN_HERO_COST ||
         resources.food >= resources.foodCap
       )
         return;
       setHeroRecruited(true);
-      setResources(r => ({ ...r, gold: r.gold - 150, food: r.food + 1 }));
+      setResources(r => ({
+        ...r,
+        gold: r.gold - TRAIN_HERO_COST,
+        food: r.food + 1,
+      }));
       setWorkers(ws => {
         const newId = Math.max(...ws.map(w => w.id), 0) + 1;
         const hero = makeUnit(newId, BARN_POS.x, BARN_POS.y, 'hero');
@@ -2982,33 +3004,41 @@ const RTSMap: React.FC<{
       });
     } else if (action === 'trainSwordsman') {
       if (
-        resources.gold < 50 ||
+        resources.gold < TRAIN_SWORDSMAN_COST ||
         resources.food >= resources.foodCap ||
-        trainingQueue.length >= 5
+        trainingQueue.length >= TRAIN_QUEUE_MAX
       )
         return;
-      setResources(r => ({ ...r, gold: r.gold - 50, food: r.food + 1 }));
+      setResources(r => ({
+        ...r,
+        gold: r.gold - TRAIN_SWORDSMAN_COST,
+        food: r.food + 1,
+      }));
       setTrainingQueue(q => [...q, { type: 'swordsman' }]);
     } else if (action === 'trainCavalry') {
       if (
-        resources.gold < 60 ||
+        resources.gold < TRAIN_CAVALRY_COST ||
         resources.food >= resources.foodCap ||
-        trainingQueue.length >= 5
+        trainingQueue.length >= TRAIN_QUEUE_MAX
       )
         return;
-      setResources(r => ({ ...r, gold: r.gold - 60, food: r.food + 1 }));
+      setResources(r => ({
+        ...r,
+        gold: r.gold - TRAIN_CAVALRY_COST,
+        food: r.food + 1,
+      }));
       setTrainingQueue(q => [...q, { type: 'cavalry' }]);
     } else if (action === 'trainCatapult') {
       if (
-        resources.gold < 150 ||
-        resources.lumber < 80 ||
+        resources.gold < TRAIN_CATAPULT_COST.gold ||
+        resources.lumber < TRAIN_CATAPULT_COST.lumber ||
         resources.food >= resources.foodCap
       )
         return;
       setResources(r => ({
         ...r,
-        gold: r.gold - 150,
-        lumber: r.lumber - 80,
+        gold: r.gold - TRAIN_CATAPULT_COST.gold,
+        lumber: r.lumber - TRAIN_CATAPULT_COST.lumber,
         food: r.food + 1,
       }));
       setWorkers(ws => {
@@ -3030,17 +3060,17 @@ const RTSMap: React.FC<{
       });
     } else if (action === 'trainTrebuchet') {
       if (
-        resources.gold < 200 ||
-        resources.lumber < 80 ||
-        resources.stone < 60 ||
+        resources.gold < TRAIN_TREBUCHET_COST.gold ||
+        resources.lumber < TRAIN_TREBUCHET_COST.lumber ||
+        resources.stone < TRAIN_TREBUCHET_COST.stone ||
         resources.food >= resources.foodCap
       )
         return;
       setResources(r => ({
         ...r,
-        gold: r.gold - 200,
-        lumber: r.lumber - 80,
-        stone: r.stone - 60,
+        gold: r.gold - TRAIN_TREBUCHET_COST.gold,
+        lumber: r.lumber - TRAIN_TREBUCHET_COST.lumber,
+        stone: r.stone - TRAIN_TREBUCHET_COST.stone,
         food: r.food + 1,
       }));
       setWorkers(ws => {
@@ -3111,22 +3141,30 @@ const RTSMap: React.FC<{
         '#38bdf8'
       );
     } else if (action === 'guardTower') {
-      if (guardTowerResearched || resources.gold < 120 || resources.stone < 80)
+      if (
+        guardTowerResearched ||
+        resources.gold < GUARD_TOWER_COST.gold ||
+        resources.stone < GUARD_TOWER_COST.stone
+      )
         return;
-      setResources(r => ({ ...r, gold: r.gold - 120, stone: r.stone - 80 }));
+      setResources(r => ({
+        ...r,
+        gold: r.gold - GUARD_TOWER_COST.gold,
+        stone: r.stone - GUARD_TOWER_COST.stone,
+      }));
       setGuardTowerResearched(true);
       addFloatingText(BARN_POS.x, BARN_POS.y, '🏰 Guard Tower!', '#22d3ee');
     } else if (action === 'barracks:veteranTraining') {
       if (
         barracksTech.veteranTraining ||
-        resources.gold < 100 ||
-        resources.lumber < 60
+        resources.gold < VETERAN_TRAINING_COST.gold ||
+        resources.lumber < VETERAN_TRAINING_COST.lumber
       )
         return;
       setResources(r => ({
         ...r,
-        gold: r.gold - 100,
-        lumber: r.lumber - 60,
+        gold: r.gold - VETERAN_TRAINING_COST.gold,
+        lumber: r.lumber - VETERAN_TRAINING_COST.lumber,
       }));
       setBarracksTech(t => ({ ...t, veteranTraining: true }));
       // Apply +20 maxHp to all existing combat units
@@ -3148,14 +3186,14 @@ const RTSMap: React.FC<{
     } else if (action === 'barracks:warDrums') {
       if (
         barracksTech.warDrums ||
-        resources.gold < 120 ||
-        resources.lumber < 40
+        resources.gold < WAR_DRUMS_COST.gold ||
+        resources.lumber < WAR_DRUMS_COST.lumber
       )
         return;
       setResources(r => ({
         ...r,
-        gold: r.gold - 120,
-        lumber: r.lumber - 40,
+        gold: r.gold - WAR_DRUMS_COST.gold,
+        lumber: r.lumber - WAR_DRUMS_COST.lumber,
       }));
       setBarracksTech(t => ({ ...t, warDrums: true }));
       addFloatingText(BARN_POS.x, BARN_POS.y, '🥁 War Drums!', '#fb923c');
