@@ -1,6 +1,6 @@
 # ROADMAP
 
-Last Updated: 2026-08-04
+Last Updated: 2026-08-07
 
 ## 2026 Q1 ✅
 
@@ -24,7 +24,7 @@ Last Updated: 2026-08-04
 - [ ] **Named formations** — move a selected group in line, wedge, or box formation; prevents units stacking on the same tile and adds strategic depth to multi-unit control
 - [ ] **Enemy hero unit** — Warlord spawns at wave 20+; unique abilities (War Cry, Shield Bash); harder than Warchief, drops rare item
 - [ ] **Dropped hero items** — slain enemy elites drop equippable items Barnabas can pick up (Speed Boots, War Banner, Healing Totem); persists between hero deaths
-- [ ] **Save slots** — 3 named save slots instead of a single localStorage entry; slot picker on New Game screen
+- [x] **Save slots** — 3 cloud-backed save slots (0/1/2) with localStorage fallback via hybrid persistence; slot picker UI on New Game screen still TBD (2026-08-07)
 - [ ] **Challenge / achievement system** — unlock badges for milestone runs (e.g., "Survive 20 waves without losing a building", "Kill 5 Sappers before they explode")
 - [ ] **Campaign mode (Phase 1)** — linear sequence of 3 hand-crafted scenarios with scripted objectives beyond simple "defend the barn"
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
+import type { HighScorePostBody, HighScoreRow } from '@/lib/api-types';
 
 export const runtime = 'edge';
 
@@ -10,7 +11,7 @@ function unavailable() {
 // GET /api/highscores?limit=10
 export async function GET(req: NextRequest) {
   if (!sql) return unavailable();
-  const rawLimit = parseInt(req.nextUrl.searchParams.get('limit') ?? '10', 10);
+  const rawLimit = Number(req.nextUrl.searchParams.get('limit') ?? '10');
   const limit = Math.min(100, Number.isNaN(rawLimit) ? 10 : rawLimit);
   const rows = await sql`
     SELECT wave, kills, result, gold, time_seconds, score_date, recorded_at
@@ -24,17 +25,9 @@ export async function GET(req: NextRequest) {
 // POST /api/highscores   body: { deviceId, wave, kills, result, gold, timeSecs, scoreDate }
 export async function POST(req: NextRequest) {
   if (!sql) return unavailable();
-  let body: {
-    deviceId?: string;
-    wave?: unknown;
-    kills?: unknown;
-    result?: unknown;
-    gold?: unknown;
-    timeSecs?: unknown;
-    scoreDate?: unknown;
-  };
+  let body: Partial<HighScorePostBody>;
   try {
-    body = (await req.json()) as typeof body;
+    body = (await req.json()) as Partial<HighScorePostBody>;
   } catch {
     return NextResponse.json({ error: 'invalid json' }, { status: 400 });
   }
@@ -72,3 +65,5 @@ export async function POST(req: NextRequest) {
   `;
   return NextResponse.json({ ok: true });
 }
+
+export type { HighScoreRow };

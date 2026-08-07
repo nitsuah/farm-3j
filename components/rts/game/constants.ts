@@ -49,7 +49,7 @@ export const GARRISON_HEAL_MS = 1000;
 export const GARRISON_HEAL_AMOUNT = 8;
 export const GARRISON_BARN_HEAL_PER_UNIT = 4; // barn HP restored per garrisoned unit per tick
 export const GARRISON_ARMOR_PER_UNIT = 2;
-export const GRUNT_BARN_MELEE_RANGE = 2.0; // max tile distance at which a grunt can hit the barn
+export const GRUNT_BARN_MELEE_RANGE: number = 2.0; // max tile distance at which a grunt can hit the barn
 
 // ---------- Hero ----------
 export const HERO_MAX_HP = 150;

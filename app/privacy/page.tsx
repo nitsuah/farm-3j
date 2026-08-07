@@ -22,15 +22,18 @@ export default function PrivacyPage() {
             What data we store
           </h2>
           <p className="mb-3 text-gray-700 dark:text-gray-300">
-            PG Farms stores game save files and high scores locally in your
+            PG Farms stores game save files and high scores in your
             browser&apos;s <code>localStorage</code>. When a network connection
-            is available, this data is also synced to a secure cloud database so
-            your progress is preserved across devices and browser resets.
+            is available, this data is also written to a secure cloud database
+            as a background backup.
           </p>
           <p className="text-gray-700 dark:text-gray-300">
-            Cloud saves are linked to an anonymous device identifier — a
-            randomly generated UUID stored in your browser. No account or
-            personal information is required.
+            Cloud saves are tied to an anonymous device identifier — a randomly
+            generated UUID stored in <code>localStorage</code> on this browser.
+            Clearing your browser data or switching to a different device will
+            lose access to those cloud saves, because the UUID that links them
+            lives only in this browser. No account or personal information is
+            required.
           </p>
         </section>
 

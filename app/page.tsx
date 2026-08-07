@@ -14,8 +14,8 @@ interface FeatureCardProps {
 }
 
 function FeatureCard({ title, description, children }: FeatureCardProps) {
-  const [expanded, setExpanded] = useState(false);
-  const contentId = useId();
+  const [expanded, setExpanded] = useState<boolean>(false);
+  const contentId: string = useId();
 
   return (
     <div className="relative flex flex-col overflow-hidden border border-green-200 bg-white transition-all duration-300 dark:border-gray-600 dark:bg-black">
@@ -24,7 +24,7 @@ function FeatureCard({ title, description, children }: FeatureCardProps) {
         aria-expanded={expanded}
         aria-controls={contentId}
         className="flex cursor-pointer flex-col justify-center p-8 text-left lg:p-6"
-        onClick={() => setExpanded(e => !e)}
+        onClick={() => setExpanded(prev => !prev)}
       >
         <div className="flex items-start justify-between gap-2">
           <div>
@@ -41,11 +41,10 @@ function FeatureCard({ title, description, children }: FeatureCardProps) {
         </div>
       </button>
 
-      {expanded && (
-        <div id={contentId} className="h-64">
-          {children}
-        </div>
-      )}
+      {/* Always mounted so aria-controls can reference the id; children unmount to stop animations */}
+      <div id={contentId} className="h-64" hidden={!expanded}>
+        {expanded && children}
+      </div>
     </div>
   );
 }

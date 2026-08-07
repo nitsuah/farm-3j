@@ -6,6 +6,7 @@
 //   2. localStorage — always available as a fallback.
 
 import type { HighScoreEntry, SaveData } from './types';
+import type { HighScoreRow } from '@/lib/api-types';
 
 // ---------- device id ----------
 const DEVICE_ID_KEY = 'farm3j_device_id';
@@ -44,14 +45,7 @@ export async function loadHighScores(): Promise<HighScoreEntry[]> {
   try {
     const r = await fetch('/api/highscores?limit=10');
     if (r.ok) {
-      const rows = (await r.json()) as {
-        wave: number;
-        kills: number;
-        result: 'victory' | 'defeat';
-        gold: number;
-        time_seconds: number;
-        score_date: string;
-      }[];
+      const rows = (await r.json()) as HighScoreRow[];
       return rows.map(row => ({
         wave: row.wave,
         kills: row.kills,

@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
+import { isValidSaveSlot } from '@/lib/api-types';
 
 export const runtime = 'edge';
 
 function unavailable() {
   return NextResponse.json({ error: 'db_unavailable' }, { status: 503 });
+}
+
+function parseSlot(s: string): number | null {
+  const n = Number(s);
+  return Number.isInteger(n) && isValidSaveSlot(n) ? n : null;
 }
 
 // GET /api/saves?deviceId=xxx&slot=n
@@ -16,8 +22,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'missing deviceId' }, { status: 400 });
 
   if (slotParam !== null) {
-    const slot = parseInt(slotParam, 10);
-    if (!Number.isInteger(slot) || ![0, 1, 2].includes(slot))
+    const slot = parseSlot(slotParam);
+    if (slot === null)
       return NextResponse.json({ error: 'invalid slot' }, { status: 400 });
     const rows = await sql`
       SELECT data FROM game_saves
@@ -38,15 +44,16 @@ export async function GET(req: NextRequest) {
 // POST /api/saves   body: { deviceId, slot, data }
 export async function POST(req: NextRequest) {
   if (!sql) return unavailable();
-  const body = (await req.json()) as {
-    deviceId?: string;
-    slot?: number;
-    data?: unknown;
-  };
+  let body: { deviceId?: string; slot?: number; data?: unknown };
+  try {
+    body = (await req.json()) as typeof body;
+  } catch {
+    return NextResponse.json({ error: 'invalid json' }, { status: 400 });
+  }
   const { deviceId, slot, data } = body;
   if (!deviceId || slot === undefined || !data)
     return NextResponse.json({ error: 'missing fields' }, { status: 400 });
-  if (![0, 1, 2].includes(slot))
+  if (!isValidSaveSlot(slot))
     return NextResponse.json({ error: 'invalid slot' }, { status: 400 });
 
   await sql`
@@ -65,8 +72,8 @@ export async function DELETE(req: NextRequest) {
   const slotParam = req.nextUrl.searchParams.get('slot');
   if (!deviceId || slotParam === null)
     return NextResponse.json({ error: 'missing params' }, { status: 400 });
-  const slot = parseInt(slotParam, 10);
-  if (!Number.isInteger(slot) || ![0, 1, 2].includes(slot))
+  const slot = parseSlot(slotParam);
+  if (slot === null)
     return NextResponse.json({ error: 'invalid slot' }, { status: 400 });
 
   await sql`
