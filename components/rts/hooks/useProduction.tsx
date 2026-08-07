@@ -178,7 +178,9 @@ export function useProduction(ctx: RTSGameContext) {
           regen,
           PLAYER_BARN_MAX_HP - playerBarnHpRef.current
         );
-        setPlayerBarnHp((hp: number) => Math.min(PLAYER_BARN_MAX_HP, hp + regen));
+        setPlayerBarnHp((hp: number) =>
+          Math.min(PLAYER_BARN_MAX_HP, hp + regen)
+        );
         addFloatingText(BARN_POS.x, BARN_POS.y, `+${actual}❤️`, '#4ade80');
       }
     }, GARRISON_HEAL_MS);
