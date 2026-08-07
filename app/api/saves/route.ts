@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
-import { isValidSaveSlot } from '@/lib/api-types';
+import { isValidSaveSlot, type SavePostBody } from '@/lib/api-types';
 
 export const runtime = 'edge';
 
@@ -44,9 +44,13 @@ export async function GET(req: NextRequest) {
 // POST /api/saves   body: { deviceId, slot, data }
 export async function POST(req: NextRequest) {
   if (!sql) return unavailable();
-  let body: { deviceId?: string; slot?: number; data?: unknown };
+  let body: Partial<SavePostBody>;
   try {
-    body = (await req.json()) as typeof body;
+    const raw = await req.json();
+    if (typeof raw !== 'object' || raw === null) {
+      return NextResponse.json({ error: 'invalid body' }, { status: 400 });
+    }
+    body = raw as Partial<SavePostBody>;
   } catch {
     return NextResponse.json({ error: 'invalid json' }, { status: 400 });
   }

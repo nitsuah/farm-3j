@@ -171,11 +171,15 @@ export function useProduction(ctx: RTSGameContext) {
         return healed;
       });
       // Regen barn HP proportional to garrison size
-      const garrisonCount = garrisonedRef.current.length;
+      const garrisonCount: number = garrisonedRef.current.length;
       if (garrisonCount > 0 && playerBarnHpRef.current < PLAYER_BARN_MAX_HP) {
-        const regen = garrisonCount * GARRISON_BARN_HEAL_PER_UNIT;
+        const regen: number = garrisonCount * GARRISON_BARN_HEAL_PER_UNIT;
+        const actual: number = Math.min(
+          regen,
+          PLAYER_BARN_MAX_HP - playerBarnHpRef.current
+        );
         setPlayerBarnHp(hp => Math.min(PLAYER_BARN_MAX_HP, hp + regen));
-        addFloatingText(BARN_POS.x, BARN_POS.y, `+${regen}❤️`, '#4ade80');
+        addFloatingText(BARN_POS.x, BARN_POS.y, `+${actual}❤️`, '#4ade80');
       }
     }, GARRISON_HEAL_MS);
     return () => clearInterval(id);

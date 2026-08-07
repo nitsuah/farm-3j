@@ -27,7 +27,11 @@ export async function POST(req: NextRequest) {
   if (!sql) return unavailable();
   let body: Partial<HighScorePostBody>;
   try {
-    body = (await req.json()) as Partial<HighScorePostBody>;
+    const raw = await req.json();
+    if (typeof raw !== 'object' || raw === null) {
+      return NextResponse.json({ error: 'invalid body' }, { status: 400 });
+    }
+    body = raw as Partial<HighScorePostBody>;
   } catch {
     return NextResponse.json({ error: 'invalid json' }, { status: 400 });
   }
