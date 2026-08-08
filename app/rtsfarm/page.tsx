@@ -1,13 +1,43 @@
 import type { Metadata } from 'next';
 import { SiteLayout } from '@/components/SiteLayout';
 
+interface RosterEntry {
+  emoji: string;
+  name: string;
+  role: string;
+  desc: string;
+}
+
+interface EnemyEntry {
+  emoji: string;
+  name: string;
+  desc: string;
+}
+
+interface BuildingEntry {
+  emoji: string;
+  name: string;
+  desc: string;
+}
+
+interface BuildingGroup {
+  label: string;
+  buildings: BuildingEntry[];
+}
+
+interface MechanicEntry {
+  emoji: string;
+  title: string;
+  desc: string;
+}
+
 export const metadata: Metadata = {
   title: 'PG Farms RTS – Real-Time Strategy',
   description:
     'Defend your farm against waves of enemies. Build, gather, train, and conquer.',
 };
 
-const UNIT_ROSTER = [
+const UNIT_ROSTER: RosterEntry[] = [
   {
     emoji: '👨‍🌾',
     name: 'Farmer',
@@ -46,7 +76,7 @@ const UNIT_ROSTER = [
   },
 ];
 
-const ENEMY_ROSTER = [
+const ENEMY_ROSTER: EnemyEntry[] = [
   {
     emoji: '👹',
     name: 'Grunt',
@@ -104,7 +134,7 @@ const ENEMY_ROSTER = [
   },
 ];
 
-const BUILDING_GROUPS = [
+const BUILDING_GROUPS: BuildingGroup[] = [
   {
     label: 'Economy',
     buildings: [
@@ -203,7 +233,7 @@ const BUILDING_GROUPS = [
   },
 ];
 
-const MECHANICS = [
+const MECHANICS: MechanicEntry[] = [
   {
     emoji: '🌙',
     title: 'Day / Night Cycle',
@@ -232,7 +262,7 @@ const MECHANICS = [
   {
     emoji: '💾',
     title: 'Save System',
-    desc: 'Up to 3 save slots with wave progress, resources, buildings, and units preserved. Cloud saves (cross-device) coming soon.',
+    desc: 'Up to 3 save slots with wave progress, resources, buildings, and units preserved. Cloud saves back up to a secure database automatically via your anonymous device ID.',
   },
 ];
 

@@ -163,13 +163,13 @@ export const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
     {showBirds && (
       <>
         <div
-          className="absolute top-16 z-0 -translate-x-1/2 animate-[birdFly_0.4s_ease-in-out_infinite] text-2xl [transition:left_0.1s_linear]"
+          className="absolute top-16 z-0 -translate-x-1/2 text-2xl [transition:left_0.1s_linear] motion-safe:animate-[birdFly_0.4s_ease-in-out_infinite]"
           style={{ left: `${birdPosition}%` }}
         >
           🦅
         </div>
         <div
-          className="absolute top-20 z-0 -translate-x-1/2 animate-[birdFly_0.4s_ease-in-out_infinite] text-xl [animation-delay:0.2s] [transition:left_0.1s_linear]"
+          className="absolute top-20 z-0 -translate-x-1/2 text-xl [animation-delay:0.2s] [transition:left_0.1s_linear] motion-safe:animate-[birdFly_0.4s_ease-in-out_infinite]"
           style={{ left: `${birdPosition + 5}%` }}
         >
           🦅
@@ -197,7 +197,7 @@ export const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
           return (
             <div
               key={i}
-              className={`absolute ${size} animate-[twinkle_3s_ease-in-out_infinite]`}
+              className={`absolute ${size} motion-safe:animate-[twinkle_3s_ease-in-out_infinite]`}
               style={{
                 left: `${leftPos}%`,
                 top: `${topPos}%`,
@@ -219,7 +219,7 @@ export const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
         ].map((star, i) => (
           <div
             key={`dipper-${i}`}
-            className="absolute animate-[twinkle_4s_ease-in-out_infinite] text-[5px]"
+            className="absolute text-[5px] motion-safe:animate-[twinkle_4s_ease-in-out_infinite]"
             style={{
               left: `${star.left}%`,
               top: `${star.top}%`,
@@ -287,7 +287,7 @@ export const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
               return (
                 <div
                   key={i}
-                  className="absolute top-24 z-[15] flex h-[calc(100%_-_6rem)] animate-[lightning_2s_ease-in-out_infinite] items-start justify-center opacity-0"
+                  className="absolute top-24 z-[15] flex h-[calc(100%_-_6rem)] items-start justify-center opacity-0 motion-safe:animate-[lightning_2s_ease-in-out_infinite]"
                   style={{
                     left: `${leftPos}%`,
                     animationDelay: `${delay}s`,
@@ -319,7 +319,7 @@ export const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
             return (
               <div
                 key={i}
-                className="absolute text-[2px] text-blue-500 dark:text-blue-300"
+                className="animate-raindrop absolute text-[2px] text-blue-500 dark:text-blue-300"
                 style={{
                   left: `${leftPos}%`,
                   top: `${topStart}%`,
