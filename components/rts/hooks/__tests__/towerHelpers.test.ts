@@ -7,6 +7,10 @@ import {
 import {
   WATCHTOWER_DAMAGE,
   WATCHTOWER_ATTACK_RANGE,
+  WATCHTOWER_GUARD_DAMAGE_BONUS,
+  WATCHTOWER_GARRISON_DAMAGE_PER,
+  WATCHTOWER_GUARD_RANGE_BONUS,
+  WATCHTOWER_GARRISON_RANGE_PER,
 } from '../../game/constants';
 
 // Minimal unit type for findNearestInRange tests
@@ -88,16 +92,24 @@ describe('computeWatchtowerDamage', () => {
     expect(computeWatchtowerDamage(false, 0)).toBe(WATCHTOWER_DAMAGE);
   });
 
-  it('adds 7 damage when Guard Tower research is active', () => {
-    expect(computeWatchtowerDamage(true, 0)).toBe(WATCHTOWER_DAMAGE + 7);
+  it('adds guard bonus damage when Guard Tower research is active', () => {
+    expect(computeWatchtowerDamage(true, 0)).toBe(
+      WATCHTOWER_DAMAGE + WATCHTOWER_GUARD_DAMAGE_BONUS
+    );
   });
 
-  it('adds 4 damage per garrisoned unit', () => {
-    expect(computeWatchtowerDamage(false, 3)).toBe(WATCHTOWER_DAMAGE + 12);
+  it('adds garrison damage per garrisoned unit', () => {
+    expect(computeWatchtowerDamage(false, 3)).toBe(
+      WATCHTOWER_DAMAGE + 3 * WATCHTOWER_GARRISON_DAMAGE_PER
+    );
   });
 
   it('stacks Guard Tower bonus and garrison bonus', () => {
-    expect(computeWatchtowerDamage(true, 2)).toBe(WATCHTOWER_DAMAGE + 7 + 8);
+    expect(computeWatchtowerDamage(true, 2)).toBe(
+      WATCHTOWER_DAMAGE +
+        WATCHTOWER_GUARD_DAMAGE_BONUS +
+        2 * WATCHTOWER_GARRISON_DAMAGE_PER
+    );
   });
 });
 
@@ -106,23 +118,29 @@ describe('computeWatchtowerRange', () => {
     expect(computeWatchtowerRange(false, 0)).toBe(WATCHTOWER_ATTACK_RANGE);
   });
 
-  it('adds 1 to range when Guard Tower research is active', () => {
-    expect(computeWatchtowerRange(true, 0)).toBe(WATCHTOWER_ATTACK_RANGE + 1);
+  it('adds guard range bonus when Guard Tower research is active', () => {
+    expect(computeWatchtowerRange(true, 0)).toBe(
+      WATCHTOWER_ATTACK_RANGE + WATCHTOWER_GUARD_RANGE_BONUS
+    );
   });
 
-  it('adds 0.5 range per garrisoned unit', () => {
-    expect(computeWatchtowerRange(false, 4)).toBe(WATCHTOWER_ATTACK_RANGE + 2);
+  it('adds garrison range per garrisoned unit', () => {
+    expect(computeWatchtowerRange(false, 4)).toBe(
+      WATCHTOWER_ATTACK_RANGE + 4 * WATCHTOWER_GARRISON_RANGE_PER
+    );
   });
 
   it('produces fractional range with odd garrison count', () => {
     expect(computeWatchtowerRange(false, 1)).toBe(
-      WATCHTOWER_ATTACK_RANGE + 0.5
+      WATCHTOWER_ATTACK_RANGE + WATCHTOWER_GARRISON_RANGE_PER
     );
   });
 
   it('stacks Guard Tower bonus and garrison range bonus', () => {
     expect(computeWatchtowerRange(true, 2)).toBe(
-      WATCHTOWER_ATTACK_RANGE + 1 + 1
+      WATCHTOWER_ATTACK_RANGE +
+        WATCHTOWER_GUARD_RANGE_BONUS +
+        2 * WATCHTOWER_GARRISON_RANGE_PER
     );
   });
 });

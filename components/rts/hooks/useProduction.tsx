@@ -2,8 +2,10 @@ import { useEffect } from 'react';
 
 import {
   BARN_POS,
+  GARRISON_BARN_HEAL_PER_UNIT,
   GARRISON_HEAL_AMOUNT,
   GARRISON_HEAL_MS,
+  PLAYER_BARN_MAX_HP,
   TRAIN_TIME_MS,
   TRAP_COOLDOWN_MS,
   TRAP_DAMAGE,
@@ -22,10 +24,13 @@ export function useProduction(ctx: RTSGameContext) {
     enemyGruntsRef,
     gameOver,
     gameOverRef,
+    garrisonedRef,
     placedBuildingsRef,
+    playerBarnHpRef,
     rallyPointRef,
     setEnemyGrunts,
     setGarrisoned,
+    setPlayerBarnHp,
     setResources,
     setTrainingProgress,
     setTrainingQueue,
@@ -151,11 +156,12 @@ export function useProduction(ctx: RTSGameContext) {
     return () => clearInterval(id);
   }, [gameOver, addFloatingText]);
 
-  // Garrison heal
+  // Garrison heal — heals garrisoned units AND regen barn HP
   useEffect(() => {
     if (gameOver) return;
     const id = setInterval(() => {
       if (gameOverRef.current) return;
+      // Heal garrisoned units
       setGarrisoned(gs => {
         const healed = gs.map(u =>
           u.hp < u.maxHp
@@ -164,7 +170,20 @@ export function useProduction(ctx: RTSGameContext) {
         );
         return healed;
       });
+      // Regen barn HP proportional to garrison size
+      const garrisonCount: number = garrisonedRef.current.length;
+      if (garrisonCount > 0 && playerBarnHpRef.current < PLAYER_BARN_MAX_HP) {
+        const regen: number = garrisonCount * GARRISON_BARN_HEAL_PER_UNIT;
+        const actual: number = Math.min(
+          regen,
+          PLAYER_BARN_MAX_HP - playerBarnHpRef.current
+        );
+        setPlayerBarnHp((hp: number) =>
+          Math.min(PLAYER_BARN_MAX_HP, hp + regen)
+        );
+        addFloatingText(BARN_POS.x, BARN_POS.y, `+${actual}❤️`, '#4ade80');
+      }
     }, GARRISON_HEAL_MS);
     return () => clearInterval(id);
-  }, [gameOver]);
+  }, [gameOver, addFloatingText]);
 }

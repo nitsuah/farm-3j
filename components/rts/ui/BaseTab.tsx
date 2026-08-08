@@ -1,5 +1,6 @@
 import React from 'react';
 
+import { TRAIN_FARMER_COST } from '../game/constants';
 import type { FarmhouseAction, Resources } from '../game/types';
 
 export interface BaseTabProps {
@@ -26,14 +27,18 @@ export const BaseTab: React.FC<BaseTabProps> = ({
       type="button"
       className="rounded border border-blue-500/70 bg-blue-500/15 py-2.5 text-xs text-blue-100 hover:bg-blue-500/30 disabled:opacity-40"
       onClick={() => onFarmhouseAction('train')}
-      disabled={resources.gold < 30 || resources.food >= resources.foodCap}
+      disabled={
+        resources.gold < TRAIN_FARMER_COST ||
+        resources.food >= resources.foodCap
+      }
       title={
         resources.food >= resources.foodCap
           ? 'Food cap! Build Farmhouse'
-          : 'Train Farmer (30🪙)'
+          : `Train Farmer (${TRAIN_FARMER_COST}🪙)`
       }
     >
-      🌾 Farmer 30🪙 <span className="text-xs opacity-50">[F]</span>
+      🌾 Farmer {TRAIN_FARMER_COST}🪙{' '}
+      <span className="text-xs opacity-50">[F]</span>
     </button>
     {farmhouse.level < farmhouseUpgradeCosts.length && (
       <button
@@ -42,9 +47,9 @@ export const BaseTab: React.FC<BaseTabProps> = ({
         onClick={() => onFarmhouseAction('upgrade')}
         disabled={
           resources.gold <
-            (farmhouseUpgradeCosts[farmhouse.level]?.gold ?? 0) ||
+            (farmhouseUpgradeCosts[farmhouse.level]?.gold ?? Infinity) ||
           resources.lumber <
-            (farmhouseUpgradeCosts[farmhouse.level]?.lumber ?? 0)
+            (farmhouseUpgradeCosts[farmhouse.level]?.lumber ?? Infinity)
         }
       >
         ⬆️ Upgrade Barn

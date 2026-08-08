@@ -1,7 +1,14 @@
 // Gameplay tuning constants for the RTS mode.
 // Split out of RTSMap.tsx — grouped by system (map, units, enemies, towers, buildings).
 
-import type { BuildingType, HeroItemId, Upgrades } from './types';
+import type {
+  BuildingType,
+  GoldLumberCost,
+  GoldLumberStoneCost,
+  GoldStoneCost,
+  HeroItemId,
+  Upgrades,
+} from './types';
 
 // ---------- Map & core ----------
 export const GRID_SIZE = 25;
@@ -46,8 +53,10 @@ export const REPAIR_AMOUNT = 2;
 export const REPAIR_RADIUS = 3;
 export const GARRISON_CAP = 5;
 export const GARRISON_HEAL_MS = 1000;
-export const GARRISON_HEAL_AMOUNT = 5;
+export const GARRISON_HEAL_AMOUNT = 8;
+export const GARRISON_BARN_HEAL_PER_UNIT = 4; // barn HP restored per garrisoned unit per tick
 export const GARRISON_ARMOR_PER_UNIT = 2;
+export const GRUNT_BARN_MELEE_RANGE: number = 2.0; // max tile distance at which a grunt can hit the barn
 
 // ---------- Hero ----------
 export const HERO_MAX_HP = 150;
@@ -654,3 +663,33 @@ export const UPGRADE_COSTS: Record<
     { gold: 150, lumber: 100, stone: 0 },
   ],
 };
+
+// ---------- Unit training costs ----------
+export const TRAIN_FARMER_COST = 30;
+export const TRAIN_SWORDSMAN_COST = 50;
+export const TRAIN_CAVALRY_COST = 60;
+export const TRAIN_CATAPULT_COST = {
+  gold: 150,
+  lumber: 80,
+} as const satisfies GoldLumberCost;
+export const TRAIN_TREBUCHET_COST = {
+  gold: 200,
+  lumber: 80,
+  stone: 60,
+} as const satisfies GoldLumberStoneCost;
+export const TRAIN_HERO_COST = 150;
+export const TRAIN_QUEUE_MAX = 5;
+
+// ---------- Tech / research upgrade costs ----------
+export const GUARD_TOWER_COST = {
+  gold: 120,
+  stone: 80,
+} as const satisfies GoldStoneCost;
+export const VETERAN_TRAINING_COST = {
+  gold: 100,
+  lumber: 60,
+} as const satisfies GoldLumberCost;
+export const WAR_DRUMS_COST = {
+  gold: 120,
+  lumber: 40,
+} as const satisfies GoldLumberCost;

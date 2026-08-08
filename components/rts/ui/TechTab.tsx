@@ -1,6 +1,9 @@
 import React from 'react';
 
 import {
+  GUARD_TOWER_COST,
+  VETERAN_TRAINING_COST,
+  WAR_DRUMS_COST,
   UPGRADE_COSTS,
   UPGRADE_MAX,
   BLACKSMITH_STEEL_EDGE_COSTS,
@@ -97,13 +100,15 @@ export const TechTab: React.FC<TechTabProps> = ({
         className={`rounded border py-2.5 text-xs disabled:opacity-40 ${guardTowerResearched ? 'border-cyan-500/50 bg-cyan-900/20 text-cyan-400' : 'border-cyan-500/70 bg-cyan-500/15 text-cyan-100 hover:bg-cyan-500/30'}`}
         onClick={onGuardTower}
         disabled={
-          guardTowerResearched || resources.gold < 120 || resources.stone < 80
+          guardTowerResearched ||
+          resources.gold < GUARD_TOWER_COST.gold ||
+          resources.stone < GUARD_TOWER_COST.stone
         }
-        title="Guard Tower — +7 dmg, +1 range on all watchtowers (120🪙 80🪨)"
+        title={`Guard Tower — +7 dmg, +1 range on all watchtowers (${GUARD_TOWER_COST.gold}🪙 ${GUARD_TOWER_COST.stone}🪨)`}
       >
         {guardTowerResearched
           ? '🏰 Guard Tower ✓'
-          : '🏰 Guard Tower 120🪙 80🪨'}
+          : `🏰 Guard Tower ${GUARD_TOWER_COST.gold}🪙 ${GUARD_TOWER_COST.stone}🪨`}
       </button>
     )}
     {hasBlacksmith && (
@@ -158,13 +163,13 @@ export const TechTab: React.FC<TechTabProps> = ({
           onClick={() => onBarracksTech('veteranTraining')}
           disabled={
             barracksTech.veteranTraining ||
-            resources.gold < 100 ||
-            resources.lumber < 60
+            resources.gold < VETERAN_TRAINING_COST.gold ||
+            resources.lumber < VETERAN_TRAINING_COST.lumber
           }
         >
           {barracksTech.veteranTraining
             ? '🛡️ Veteran ✓'
-            : '🛡️ Veteran 100🪙 60🪵'}
+            : `🛡️ Veteran ${VETERAN_TRAINING_COST.gold}🪙 ${VETERAN_TRAINING_COST.lumber}🪵`}
         </button>
         <button
           type="button"
@@ -172,11 +177,13 @@ export const TechTab: React.FC<TechTabProps> = ({
           onClick={() => onBarracksTech('warDrums')}
           disabled={
             barracksTech.warDrums ||
-            resources.gold < 120 ||
-            resources.lumber < 40
+            resources.gold < WAR_DRUMS_COST.gold ||
+            resources.lumber < WAR_DRUMS_COST.lumber
           }
         >
-          {barracksTech.warDrums ? '🥁 War Drums ✓' : '🥁 Drums 120🪙 40🪵'}
+          {barracksTech.warDrums
+            ? '🥁 War Drums ✓'
+            : `🥁 Drums ${WAR_DRUMS_COST.gold}🪙 ${WAR_DRUMS_COST.lumber}🪵`}
         </button>
       </div>
     )}

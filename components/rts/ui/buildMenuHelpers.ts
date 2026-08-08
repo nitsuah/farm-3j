@@ -1,7 +1,11 @@
-export type ResourceCost = { gold: number; lumber: number; stone: number };
+export interface ResourceCost {
+  gold: number;
+  lumber: number;
+  stone: number;
+}
 
 export function canAfford(
-  resources: { gold: number; lumber: number; stone: number },
+  resources: ResourceCost,
   cost: ResourceCost
 ): boolean {
   return (

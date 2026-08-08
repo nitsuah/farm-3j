@@ -1,7 +1,27 @@
-// localStorage save/load and high-score persistence for the RTS mode.
+// Save/load and high-score persistence for the RTS mode.
+//
+// Strategy (tried in order):
+//   1. Cloud API (/api/saves, /api/highscores) — active when the server has DATABASE_URL.
+//      Identified by an anonymous device UUID persisted in localStorage.
+//   2. localStorage — always available as a fallback.
 
 import type { HighScoreEntry, SaveData } from './types';
+import type { HighScoreRow } from '@/lib/api-types';
 
+// ---------- device id ----------
+const DEVICE_ID_KEY = 'farm3j_device_id';
+
+export function getDeviceId(): string {
+  if (typeof window === 'undefined') return '';
+  let id = localStorage.getItem(DEVICE_ID_KEY);
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem(DEVICE_ID_KEY, id);
+  }
+  return id;
+}
+
+// ---------- localStorage keys ----------
 const HIGH_SCORES_KEY = 'farm3j_highscores_v1';
 const LEGACY_SAVE_KEY = 'farm3j_rts_v2';
 const SLOT_KEYS = [
@@ -12,24 +32,67 @@ const SLOT_KEYS = [
 
 export type SaveSlot = 0 | 1 | 2;
 
-export function loadHighScores(): HighScoreEntry[] {
+// ---------- high scores ----------
+function loadHighScoresLocal(): HighScoreEntry[] {
   try {
     return JSON.parse(localStorage.getItem(HIGH_SCORES_KEY) ?? '[]');
   } catch {
     return [];
   }
 }
-export function saveHighScore(entry: HighScoreEntry) {
-  const scores = loadHighScores();
+
+export async function loadHighScores(): Promise<HighScoreEntry[]> {
+  try {
+    const r = await fetch('/api/highscores?limit=10');
+    if (r.ok) {
+      const rows = (await r.json()) as HighScoreRow[];
+      return rows.map(row => ({
+        wave: row.wave,
+        kills: row.kills,
+        result: row.result ?? 'defeat',
+        gold: row.gold ?? 0,
+        time: row.time_seconds ?? 0,
+        date: row.score_date ?? '',
+      }));
+    }
+  } catch {
+    // fall through
+  }
+  return loadHighScoresLocal();
+}
+
+export async function saveHighScore(entry: HighScoreEntry): Promise<void> {
+  // Always write locally for instant feedback
+  const scores = loadHighScoresLocal();
   scores.push(entry);
   scores.sort((a, b) => b.wave - a.wave || b.kills - a.kills);
   try {
-    localStorage.setItem(HIGH_SCORES_KEY, JSON.stringify(scores.slice(0, 5)));
+    localStorage.setItem(HIGH_SCORES_KEY, JSON.stringify(scores.slice(0, 10)));
   } catch {
-    /* ignore storage errors */
+    /* ignore quota */
+  }
+
+  // Fire-and-forget to cloud
+  try {
+    void fetch('/api/highscores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        deviceId: getDeviceId(),
+        wave: entry.wave,
+        kills: entry.kills,
+        result: entry.result,
+        gold: entry.gold,
+        timeSecs: entry.time,
+        scoreDate: entry.date,
+      }),
+    });
+  } catch {
+    /* ignore network errors */
   }
 }
 
+// ---------- save validation ----------
 function isValidSave(d: unknown): d is SaveData {
   if (!d || typeof d !== 'object') return false;
   const s = d as SaveData;
@@ -42,6 +105,39 @@ function isValidSave(d: unknown): d is SaveData {
   );
 }
 
+// Synchronous read from localStorage — used during React render where async is not allowed.
+// The async loadSave() call should be used in useEffect for cloud sync.
+export function loadSaveSync(slot: SaveSlot): SaveData | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(SLOT_KEYS[slot]);
+    if (!raw) {
+      if (slot === 0) {
+        const legacyRaw = localStorage.getItem(LEGACY_SAVE_KEY);
+        if (legacyRaw) {
+          const d = JSON.parse(legacyRaw) as SaveData;
+          if (isValidSave(d)) {
+            writeSave(d, slot);
+            localStorage.removeItem(LEGACY_SAVE_KEY);
+            return d;
+          }
+        }
+      }
+      return null;
+    }
+    const d = JSON.parse(raw) as SaveData;
+    return isValidSave(d) ? d : null;
+  } catch {
+    return null;
+  }
+}
+
+// Synchronous high scores from localStorage — used when async is not possible.
+export function loadHighScoresSync(): HighScoreEntry[] {
+  return loadHighScoresLocal();
+}
+
+// ---------- slot metadata ----------
 export interface SlotMeta {
   wave: number;
   savedAt: number;
@@ -67,12 +163,33 @@ export function loadSlotMeta(slot: SaveSlot): SlotMeta | null {
   }
 }
 
-export function loadSave(slot: SaveSlot): SaveData | null {
+// ---------- load ----------
+export async function loadSave(slot: SaveSlot): Promise<SaveData | null> {
   if (typeof window === 'undefined') return null;
+
+  // Try cloud first
+  try {
+    const r = await fetch(`/api/saves?deviceId=${getDeviceId()}&slot=${slot}`);
+    if (r.ok) {
+      const d = (await r.json()) as SaveData | null;
+      if (d && isValidSave(d)) {
+        // Mirror to localStorage so the game can access it synchronously
+        try {
+          localStorage.setItem(SLOT_KEYS[slot], JSON.stringify(d));
+        } catch {
+          /* ignore */
+        }
+        return d;
+      }
+    }
+  } catch {
+    // fall through to localStorage
+  }
+
+  // localStorage
   try {
     const raw = localStorage.getItem(SLOT_KEYS[slot]);
     if (!raw) {
-      // Migrate legacy single-save into slot 0 on first load
       if (slot === 0) {
         const legacyRaw = localStorage.getItem(LEGACY_SAVE_KEY);
         if (legacyRaw) {
@@ -97,10 +214,21 @@ let _saveLocked = false;
 
 export function writeSave(data: SaveData, slot: SaveSlot): void {
   if (_saveLocked) return;
+  // Always write localStorage synchronously (game loop depends on this)
   try {
     localStorage.setItem(SLOT_KEYS[slot], JSON.stringify(data));
   } catch {
     /* ignore quota errors */
+  }
+  // Fire-and-forget cloud write
+  try {
+    void fetch('/api/saves', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ deviceId: getDeviceId(), slot, data }),
+    });
+  } catch {
+    /* ignore */
   }
 }
 
@@ -109,7 +237,15 @@ export function clearSave(slot: SaveSlot): void {
   try {
     localStorage.removeItem(SLOT_KEYS[slot]);
   } catch {
-    /* ignore storage errors */
+    /* ignore */
+  }
+  // Fire-and-forget cloud delete
+  try {
+    void fetch(`/api/saves?deviceId=${getDeviceId()}&slot=${slot}`, {
+      method: 'DELETE',
+    });
+  } catch {
+    /* ignore */
   }
   setTimeout(() => {
     _saveLocked = false;
