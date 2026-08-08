@@ -1,10 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 
-import {
-  computeGruntHp,
-  computeGruntCount,
-  buildWallSet,
-} from './spawnHelpers';
+import { computeGruntHp, computeGruntCount } from './spawnHelpers';
+import { getWallTileSet } from '../game/mapSelectors';
 
 import {
   BARN_POS,
@@ -170,7 +167,7 @@ export function useWaveSpawner(ctx: RTSGameContext) {
 
     const diffHpMult: number = difficulty?.gruntHpMult ?? 1;
     const gruntHp: number = computeGruntHp(newWave, diffHpMult);
-    const wallSet: Set<string> = buildWallSet(placedBuildingsRef.current);
+    const wallSet: Set<string> = getWallTileSet(placedBuildingsRef.current);
 
     // Boss spawn on multiples of 10
     if (isBossWave) {
@@ -378,7 +375,7 @@ export function useWaveSpawner(ctx: RTSGameContext) {
       const sx2 = Math.max(0, ENEMY_BARN_POS.x - 2);
       const sy2 = ENEMY_BARN_POS.y;
       // Target: nearest wall, or barn if no walls
-      const wallSet2 = buildWallSet(placedBuildingsRef.current);
+      const wallSet2 = getWallTileSet(placedBuildingsRef.current);
       const nearestWall = placedBuildingsRef.current
         .filter(b => b.type === 'wall' && b.hp > 0)
         .sort(

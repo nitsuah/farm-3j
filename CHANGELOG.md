@@ -33,7 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Refactored
 
 - **RTS code modularization** — broke down the largest files into focused modules:
-  - `RTSUI` (2110 lines) fully decomposed into `ui/BuildMenu`, `ui/WaveTimer`, `ui/HeroPanel` sub-components; all type/constant re-exports preserved for backward compat
+  - `RTSUI` (2110 lines) fully decomposed into `ui/BuildMenu`, `ui/WaveTimer`, `ui/HeroPanel`, `ui/BaseTab`, `ui/BuildTab`, `ui/TrainTab`, `ui/TechTab`, `ui/buildMenuHelpers` sub-components and helpers; all type/constant re-exports preserved for backward compat
   - `HeaderCropRow` background animation extracted to `animations/AnimatedBackground.tsx`
   - Pure combat/spawn helpers extracted to `spawnHelpers.ts` and `towerHelpers.ts`; map-state queries extracted to `game/mapSelectors.ts` — all immediately unit-tested
   - Domain-specific hook shells scaffolded (`useEnemyAI`, `useResourceTick`, `useCombatResolution`, `usePathfinding`) and `MapRenderer` shell created as migration targets for `useGameLoop` and `RTSMap` in follow-on PRs

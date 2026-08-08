@@ -47,9 +47,9 @@ export const BaseTab: React.FC<BaseTabProps> = ({
         onClick={() => onFarmhouseAction('upgrade')}
         disabled={
           resources.gold <
-            (farmhouseUpgradeCosts[farmhouse.level]?.gold ?? 0) ||
+            (farmhouseUpgradeCosts[farmhouse.level]?.gold ?? Infinity) ||
           resources.lumber <
-            (farmhouseUpgradeCosts[farmhouse.level]?.lumber ?? 0)
+            (farmhouseUpgradeCosts[farmhouse.level]?.lumber ?? Infinity)
         }
       >
         ⬆️ Upgrade Barn

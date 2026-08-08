@@ -11,7 +11,6 @@ import {
   GRUNT_COUNT_BASE,
   GRUNT_DOUBLE_ASSAULT_BONUS,
 } from '../game/constants';
-import type { PlacedBuilding } from '../game/types';
 
 /**
  * Computes the HP of a grunt for the given wave number and difficulty multiplier.
@@ -25,7 +24,7 @@ export function computeGruntHp(wave: number, diffHpMult: number): number {
 
 /**
  * Computes the base number of grunts to spawn this wave (before flanking).
- * Doubles on every 3rd wave as a "double assault".
+ * Adds GRUNT_DOUBLE_ASSAULT_BONUS on every 3rd wave as a "double assault".
  */
 export function computeGruntCount(wave: number): number {
   const baseCount: number = Math.min(
@@ -33,14 +32,4 @@ export function computeGruntCount(wave: number): number {
     GRUNT_COUNT_BASE + Math.floor(wave / 5)
   );
   return wave % 3 === 0 ? baseCount + GRUNT_DOUBLE_ASSAULT_BONUS : baseCount;
-}
-
-/**
- * Builds a Set of "x,y" strings representing all placed wall tiles.
- * Used to block pathfinding through walls.
- */
-export function buildWallSet(buildings: PlacedBuilding[]): Set<string> {
-  return new Set(
-    buildings.filter(b => b.type === 'wall').map(b => `${b.x},${b.y}`)
-  );
 }
