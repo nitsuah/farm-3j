@@ -1,12 +1,16 @@
 import React from 'react';
 
 import {
+  CAVALRY_SPEED,
   TRAIN_CAVALRY_COST,
   TRAIN_CATAPULT_COST,
   TRAIN_HERO_COST,
   TRAIN_QUEUE_MAX,
   TRAIN_SWORDSMAN_COST,
   TRAIN_TREBUCHET_COST,
+  SWORDSMAN_DAMAGE_BONUS,
+  SWORDSMAN_MAX_HP,
+  WORKER_SPEED,
 } from '../game/constants';
 import type { FarmhouseAction, Resources } from '../game/types';
 
@@ -77,7 +81,7 @@ export const TrainTab: React.FC<TrainTabProps> = ({
             resources.food >= resources.foodCap ||
             trainingQueue.length >= TRAIN_QUEUE_MAX
           }
-          title={`Train Swordsman — ${TRAIN_SWORDSMAN_COST}🪙, 80HP, +10 dmg`}
+          title={`Train Swordsman — ${TRAIN_SWORDSMAN_COST}🪙, ${SWORDSMAN_MAX_HP}HP, +${SWORDSMAN_DAMAGE_BONUS} dmg`}
         >
           <span>
             ⚔️ Swordsman <span className="opacity-50">[Q]</span>
@@ -105,7 +109,7 @@ export const TrainTab: React.FC<TrainTabProps> = ({
             resources.food >= resources.foodCap ||
             trainingQueue.length >= TRAIN_QUEUE_MAX
           }
-          title={`Train Cavalry — ${TRAIN_CAVALRY_COST}🪙, 2× speed`}
+          title={`Train Cavalry — ${TRAIN_CAVALRY_COST}🪙, ${CAVALRY_SPEED / WORKER_SPEED}× farmer speed`}
         >
           <span>
             🐴 Cavalry <span className="opacity-50">[R]</span>
