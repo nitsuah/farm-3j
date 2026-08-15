@@ -1,14 +1,7 @@
 // Core entity types for Farm Tycoon simulation
 
 export type EntityType =
-  | 'cow'
-  | 'chicken'
-  | 'pig'
-  | 'sheep'
-  | 'barn'
-  | 'fence'
-  | 'trough'
-  | 'pond';
+  'cow' | 'chicken' | 'pig' | 'sheep' | 'barn' | 'fence' | 'trough' | 'pond';
 
 export interface Entity {
   id: string;
