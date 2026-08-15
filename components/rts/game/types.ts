@@ -45,12 +45,7 @@ export interface WorkerState {
   attackMoveTarget: { x: number; y: number } | null;
   carrying: { gold: number; lumber: number; stone: number };
   state:
-    | 'idle'
-    | 'moving'
-    | 'gathering'
-    | 'returning'
-    | 'attacking'
-    | 'repairing';
+    'idle' | 'moving' | 'gathering' | 'returning' | 'attacking' | 'repairing';
   group: number | null;
   hp: number;
   maxHp: number;
@@ -61,12 +56,7 @@ export interface WorkerState {
   } | null;
   holdPosition: boolean;
   unitType:
-    | 'farmer'
-    | 'swordsman'
-    | 'hero'
-    | 'catapult'
-    | 'cavalry'
-    | 'trebuchet';
+    'farmer' | 'swordsman' | 'hero' | 'catapult' | 'cavalry' | 'trebuchet';
   xp: number;
   level: number;
 }
@@ -102,12 +92,7 @@ export interface GoldLumberStoneCost {
 }
 
 export type UnitType =
-  | 'farmer'
-  | 'swordsman'
-  | 'hero'
-  | 'catapult'
-  | 'cavalry'
-  | 'trebuchet';
+  'farmer' | 'swordsman' | 'hero' | 'catapult' | 'cavalry' | 'trebuchet';
 
 export type HeroItemId =
   | 'boots_speed'

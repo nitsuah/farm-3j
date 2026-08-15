@@ -4722,9 +4722,15 @@ export function useGameLoop(ctx: RTSGameContext) {
           // Find nearest alive worker
           const nearestWorker = workersRef.current
             .filter(w => w.hp > 0)
-            .reduce<
-              (typeof workersRef.current)[0] | null
-            >((best, w) => (!best || tileDist(lk.x, lk.y, w.x, w.y) < tileDist(lk.x, lk.y, best.x, best.y) ? w : best), null);
+            .reduce<(typeof workersRef.current)[0] | null>(
+              (best, w) =>
+                !best ||
+                tileDist(lk.x, lk.y, w.x, w.y) <
+                  tileDist(lk.x, lk.y, best.x, best.y)
+                  ? w
+                  : best,
+              null
+            );
           const distToWorker = nearestWorker
             ? tileDist(lk.x, lk.y, nearestWorker.x, nearestWorker.y)
             : 999;
