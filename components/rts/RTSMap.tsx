@@ -1275,12 +1275,8 @@ const RTSMap: React.FC<{
     addFloatingText(hero.x, hero.y, '🦸 Barnabas Fallen!', '#f97316');
   }, [workers, heroRecruited, heroReviveAt, gameOver, addFloatingText]);
 
-  const {
-    projectiles,
-    addProjectile,
-    moveRing,
-    setMoveRing,
-  } = useProjectiles();
+  const { projectiles, addProjectile, moveRing, setMoveRing } =
+    useProjectiles();
 
   // Fog of war: updated in the animate loop to avoid useEffect cascade
 
