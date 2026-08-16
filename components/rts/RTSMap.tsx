@@ -2650,8 +2650,6 @@ const RTSMap: React.FC<{
     return () => window.clearTimeout(id);
   }, [isDemo, gameOver, onNewGame]);
 
-
-
   const selectedWorkers = workers.filter(w => w.selected);
   const anySelected = selectedWorkers.length > 0;
   const viewBoxW = GRID_SIZE * TILE_SIZE * 2 + 200;
