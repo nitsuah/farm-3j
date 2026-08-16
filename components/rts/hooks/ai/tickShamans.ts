@@ -45,8 +45,7 @@ export function tickShamans(ctx: RTSGameContext, dt: number): void {
         g => g.hp > 0 && g.hp < g.maxHp
       );
       const nearInjured = injuredGrunts.sort(
-        (a, b2) =>
-          tileDist(s.x, s.y, a.x, a.y) - tileDist(s.x, s.y, b2.x, b2.y)
+        (a, b2) => tileDist(s.x, s.y, a.x, a.y) - tileDist(s.x, s.y, b2.x, b2.y)
       )[0];
       if (nearInjured) {
         const d = tileDist(s.x, s.y, nearInjured.x, nearInjured.y);
@@ -63,10 +62,7 @@ export function tickShamans(ctx: RTSGameContext, dt: number): void {
                     tileDist(s.x, s.y, g.x, g.y) > SHAMAN_HEAL_RADIUS
                   )
                     return g;
-                  const newHp = Math.min(
-                    g.maxHp,
-                    g.hp + SHAMAN_HEAL_AMOUNT
-                  );
+                  const newHp = Math.min(g.maxHp, g.hp + SHAMAN_HEAL_AMOUNT);
                   if (newHp > g.hp)
                     addFloatingText(
                       Math.round(g.x),

@@ -36,8 +36,7 @@ export function tickWitchDoctors(ctx: RTSGameContext, dt: number): void {
     return alive.map(wd => {
       const nearGrunts = enemyGruntsRef.current.filter(
         g =>
-          g.hp > 0 &&
-          tileDist(wd.x, wd.y, g.x, g.y) <= WITCH_DOCTOR_BUFF_RADIUS
+          g.hp > 0 && tileDist(wd.x, wd.y, g.x, g.y) <= WITCH_DOCTOR_BUFF_RADIUS
       );
       if (nearGrunts.length > 0) {
         if (!witchDoctorBuffTimersRef.current[wd.id]) {

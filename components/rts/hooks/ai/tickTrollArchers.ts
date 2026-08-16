@@ -111,9 +111,7 @@ export function tickTrollArchers(ctx: RTSGameContext, dt: number): void {
           trollAttackTimersRef.current[tid] = window.setTimeout(() => {
             delete trollAttackTimersRef.current[tid];
             if (gameOverRef.current) return;
-            if (
-              !enemyTrollsRef.current.find(tr => tr.id === tid && tr.hp > 0)
-            )
+            if (!enemyTrollsRef.current.find(tr => tr.id === tid && tr.hp > 0))
               return;
             addProjectile(
               capturedTX2,

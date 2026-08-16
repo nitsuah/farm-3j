@@ -152,9 +152,8 @@ export function tickEnemyGrunts(ctx: RTSGameContext, dt: number): void {
             gruntAttackTimeoutsRef.current[g.id] = window.setTimeout(() => {
               delete gruntAttackTimeoutsRef.current[g.id];
               const gruntEnraged =
-                (enemyGruntsRef.current.find(
-                  gg => gg.id === capturedGruntId
-                )?.enragedUntil ?? 0) > Date.now();
+                (enemyGruntsRef.current.find(gg => gg.id === capturedGruntId)
+                  ?.enragedUntil ?? 0) > Date.now();
               const targetHeroArmor =
                 workersRef.current.find(w2 => w2.id === wid)?.unitType ===
                 'hero'
@@ -268,37 +267,28 @@ export function tickEnemyGrunts(ctx: RTSGameContext, dt: number): void {
       const nearBuilding =
         nearBuildingCandidates.sort(
           (a, b2) =>
-            (BUILDING_PRIORITY[b2.type] ?? 0) -
-            (BUILDING_PRIORITY[a.type] ?? 0)
+            (BUILDING_PRIORITY[b2.type] ?? 0) - (BUILDING_PRIORITY[a.type] ?? 0)
         )[0] ?? null;
       if (nearBuilding) {
         if (!buildingAttackTimeoutsRef.current[g.id]) {
           const bid = nearBuilding.id;
           const bx = nearBuilding.x;
           const by = nearBuilding.y;
-          buildingAttackTimeoutsRef.current[g.id] = window.setTimeout(
-            () => {
-              delete buildingAttackTimeoutsRef.current[g.id];
-              setPlacedBuildings(bs =>
-                bs.map(b =>
-                  b.id === bid
-                    ? {
-                        ...b,
-                        hp: Math.max(0, b.hp - BUILDING_GRUNT_DAMAGE),
-                      }
-                    : b
-                )
-              );
-              addFloatingText(
-                bx,
-                by,
-                `-${BUILDING_GRUNT_DAMAGE}`,
-                '#f97316'
-              );
-              triggerUnderAttackRef.current({ x: bx, y: by });
-            },
-            GRUNT_ATTACK_MS
-          );
+          buildingAttackTimeoutsRef.current[g.id] = window.setTimeout(() => {
+            delete buildingAttackTimeoutsRef.current[g.id];
+            setPlacedBuildings(bs =>
+              bs.map(b =>
+                b.id === bid
+                  ? {
+                      ...b,
+                      hp: Math.max(0, b.hp - BUILDING_GRUNT_DAMAGE),
+                    }
+                  : b
+              )
+            );
+            addFloatingText(bx, by, `-${BUILDING_GRUNT_DAMAGE}`, '#f97316');
+            triggerUnderAttackRef.current({ x: bx, y: by });
+          }, GRUNT_ATTACK_MS);
         }
         return { ...g, movingTo: null, path: [], state: 'attacking' };
       }

@@ -65,11 +65,7 @@ import {
 import { INITIAL_TILES, computeVisible, tileDist } from '../game/map';
 import { aStar } from '../game/pathfinding';
 import { Snd } from '../game/sound';
-import type {
-  EnemyGrunt,
-  HeroItemId,
-  ResourceNode,
-} from '../game/types';
+import type { EnemyGrunt, HeroItemId, ResourceNode } from '../game/types';
 import type { RTSGameContext } from './context';
 import { tickEnemyGrunts } from './ai/tickEnemyGrunts';
 import { tickGoblinSappers } from './ai/tickGoblinSappers';

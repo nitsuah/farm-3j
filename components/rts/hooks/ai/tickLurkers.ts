@@ -98,21 +98,18 @@ export function tickLurkers(
       if (distToBarn <= 1.2) {
         const barnKey = -lk.id;
         if (!lurkerAttackTimeoutsRef.current[barnKey]) {
-          lurkerAttackTimeoutsRef.current[barnKey] = window.setTimeout(
-            () => {
-              delete lurkerAttackTimeoutsRef.current[barnKey];
-              addDmgLog('🦇 Night Lurker', LURKER_DAMAGE);
-              barnDmgThisWaveRef.current += LURKER_DAMAGE;
-              setPlayerBarnHp(hp => Math.max(0, hp - LURKER_DAMAGE));
-              addFloatingText(
-                BARN_POS.x,
-                BARN_POS.y,
-                `-${LURKER_DAMAGE}🏰`,
-                '#99f6e4'
-              );
-            },
-            LURKER_ATTACK_MS
-          );
+          lurkerAttackTimeoutsRef.current[barnKey] = window.setTimeout(() => {
+            delete lurkerAttackTimeoutsRef.current[barnKey];
+            addDmgLog('🦇 Night Lurker', LURKER_DAMAGE);
+            barnDmgThisWaveRef.current += LURKER_DAMAGE;
+            setPlayerBarnHp(hp => Math.max(0, hp - LURKER_DAMAGE));
+            addFloatingText(
+              BARN_POS.x,
+              BARN_POS.y,
+              `-${LURKER_DAMAGE}🏰`,
+              '#99f6e4'
+            );
+          }, LURKER_ATTACK_MS);
         }
         return { ...lk, state: 'attacking' as const };
       }

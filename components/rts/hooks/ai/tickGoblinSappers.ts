@@ -78,19 +78,13 @@ export function tickGoblinSappers(
               const d = tileDist(b.x, b.y, s.x, s.y);
               if (d > SAPPER_EXPLODE_RADIUS) return b;
               const newHp = Math.max(0, b.hp - SAPPER_EXPLODE_DAMAGE);
-              addFloatingText(
-                b.x,
-                b.y,
-                `-${SAPPER_EXPLODE_DAMAGE}`,
-                '#ef4444'
-              );
+              addFloatingText(b.x, b.y, `-${SAPPER_EXPLODE_DAMAGE}`, '#ef4444');
               return { ...b, hp: newHp };
             })
           );
           // Damage player barn if in range
           if (
-            tileDist(s.x, s.y, BARN_POS.x, BARN_POS.y) <=
-            SAPPER_EXPLODE_RADIUS
+            tileDist(s.x, s.y, BARN_POS.x, BARN_POS.y) <= SAPPER_EXPLODE_RADIUS
           ) {
             addDmgLog('💣 Goblin Sapper', SAPPER_EXPLODE_DAMAGE);
             setPlayerBarnHp(hp => {
@@ -125,8 +119,7 @@ export function tickGoblinSappers(
           // XP reward to nearby attackers
           setWorkers(ws2 =>
             ws2.map(u => {
-              if (!u.attacking || u.attacking.targetType !== 'sapper')
-                return u;
+              if (!u.attacking || u.attacking.targetType !== 'sapper') return u;
               const xpGain = SAPPER_XP_REWARD;
               const newXp = u.xp + xpGain;
               const newLevel =

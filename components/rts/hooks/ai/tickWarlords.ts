@@ -44,8 +44,7 @@ export function tickWarlords(ctx: RTSGameContext, dt: number): void {
         '#c4b5fd'
       );
       const wlDropPool: HeroItemId[] = ['battle_sword', 'boots_speed'];
-      const wlDrop =
-        wlDropPool[Math.floor(Math.random() * wlDropPool.length)]!;
+      const wlDrop = wlDropPool[Math.floor(Math.random() * wlDropPool.length)]!;
       setDroppedItems(ds => [
         ...ds,
         {
@@ -135,12 +134,7 @@ export function tickWarlords(ctx: RTSGameContext, dt: number): void {
       if (distToBarnWL <= 1.2) {
         addDmgLog('⚔️ Warlord', WARLORD_DMG);
         setPlayerBarnHp(hp => Math.max(0, hp - WARLORD_DMG));
-        addFloatingText(
-          BARN_POS.x,
-          BARN_POS.y,
-          `-${WARLORD_DMG}🏰`,
-          '#fca5a5'
-        );
+        addFloatingText(BARN_POS.x, BARN_POS.y, `-${WARLORD_DMG}🏰`, '#fca5a5');
         return { ...wl, state: 'attacking' as const };
       }
       // March toward barn

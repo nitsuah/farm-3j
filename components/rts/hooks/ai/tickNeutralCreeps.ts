@@ -34,10 +34,7 @@ export function tickNeutralCreeps(ctx: RTSGameContext, dt: number): void {
       // Check if any camp is now fully cleared
       CREEP_CAMPS.forEach(camp => {
         const campAlive = alive.filter(c => c.campId === camp.id);
-        if (
-          campAlive.length === 0 &&
-          killed.some(c => c.campId === camp.id)
-        ) {
+        if (campAlive.length === 0 && killed.some(c => c.campId === camp.id)) {
           setClearedCamps(s => {
             if (s.has(camp.id)) return s;
             const n = new Set(s);
@@ -96,12 +93,10 @@ export function tickNeutralCreeps(ctx: RTSGameContext, dt: number): void {
           targetWorkerId: null,
           x:
             c.x +
-            ((c.homeX - c.x) / distHome) *
-              Math.min(CREEP_SPEED * dt, distHome),
+            ((c.homeX - c.x) / distHome) * Math.min(CREEP_SPEED * dt, distHome),
           y:
             c.y +
-            ((c.homeY - c.y) / distHome) *
-              Math.min(CREEP_SPEED * dt, distHome),
+            ((c.homeY - c.y) / distHome) * Math.min(CREEP_SPEED * dt, distHome),
         };
       }
       // Aggro nearest worker in range
@@ -131,12 +126,7 @@ export function tickNeutralCreeps(ctx: RTSGameContext, dt: number): void {
                     : w2
                 )
               );
-              addFloatingText(
-                capturedX,
-                capturedY,
-                `-${creepDmg}`,
-                '#a855f7'
-              );
+              addFloatingText(capturedX, capturedY, `-${creepDmg}`, '#a855f7');
             }, CREEP_ATTACK_MS);
           }
           return {

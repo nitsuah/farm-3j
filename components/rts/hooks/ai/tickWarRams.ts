@@ -104,8 +104,7 @@ export function tickWarRams(ctx: RTSGameContext, dt: number): void {
       if (r.siegeType === 'demolisher') {
         const atkRange = DEMOLISHER_FIRE_RANGE;
         const inRange =
-          (nearBuilding && buildingDist <= atkRange) ||
-          barnDist <= atkRange;
+          (nearBuilding && buildingDist <= atkRange) || barnDist <= atkRange;
         if (inRange) {
           if (!siegeAttackTimeoutsRef.current[r.id]) {
             const tx =
