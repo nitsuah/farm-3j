@@ -186,7 +186,7 @@ const RTSMap: React.FC<{
     camera,
     setCamera,
     screenShake,
-    _triggerShake,
+    triggerShake: _triggerShake,
     triggerShakeRef,
   } = usePanZoom();
   const tiles = useMemo(() => INITIAL_TILES, []);
