@@ -1,0 +1,62 @@
+name: Auto-format (one-shot)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [refactor/rts-tick-functions]
+    paths:
+      - 'components/rts/hooks/ai/**'
+      - 'components/rts/hooks/useGameLoop.tsx'
+      - '.github/workflows/autoformat.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    name: Prettier write-fix
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v7
+        with:
+          ref: refactor/rts-tick-functions
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          package-manager-cache: false
+
+      - name: Enable Corepack and pnpm
+        shell: bash
+        run: |
+          corepack enable
+          corepack prepare pnpm@9.0.0 --activate
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          if ! pnpm install --frozen-lockfile; then
+            pnpm install --no-frozen-lockfile
+          fi
+
+      - name: Run Prettier write
+        shell: bash
+        run: pnpm run format
+
+      - name: Commit and push if changed
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet; then
+            git add -A
+            git commit -m "chore: auto-format via prettier [skip ci]"
+            git push
+          else
+            echo "No formatting changes needed."
+          fi
