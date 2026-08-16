@@ -179,8 +179,16 @@ const RTSMap: React.FC<{
     void loadSave(slot);
   }, []); // intentional: only sync from cloud once on mount
 
-  const { svgRef, zoom, setZoom, camera, setCamera, screenShake, triggerShake, triggerShakeRef } =
-    usePanZoom();
+  const {
+    svgRef,
+    zoom,
+    setZoom,
+    camera,
+    setCamera,
+    screenShake,
+    _triggerShake,
+    triggerShakeRef,
+  } = usePanZoom();
   const tiles = useMemo(() => INITIAL_TILES, []);
   const [soundMuted, setSoundMutedState] = useState(getSoundMuted);
   const toggleMute = () => {
@@ -1267,8 +1275,12 @@ const RTSMap: React.FC<{
     addFloatingText(hero.x, hero.y, '🦸 Barnabas Fallen!', '#f97316');
   }, [workers, heroRecruited, heroReviveAt, gameOver, addFloatingText]);
 
-  const { projectiles, addProjectile, moveRing, setMoveRing } =
-    useProjectiles();
+  const {
+    projectiles,
+    addProjectile,
+    moveRing,
+    setMoveRing,
+  } = useProjectiles();
 
   // Fog of war: updated in the animate loop to avoid useEffect cascade
 
