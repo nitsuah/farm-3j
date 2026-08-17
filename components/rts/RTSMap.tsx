@@ -19,9 +19,6 @@ import {
 import {
   ARCHER_TOWER_POS,
   ATTACK_DAMAGE,
-  ZOOM_MAX,
-  ZOOM_MIN,
-  ZOOM_STEP,
   BARN_POS,
   BARN_VISION,
   BLACKSMITH_IRON_HIDE_COSTS,
@@ -86,13 +83,11 @@ import type {
   EnemyWarchief,
   EnemyWarlord,
   EnemyWitchDoctor,
-  FloatingText,
   HeroItem,
   HeroItemId,
   LootCrate,
   NeutralCreep,
   PlacedBuilding,
-  Projectile,
   ResourceNode,
   Resources,
   SaveData,
@@ -159,6 +154,9 @@ import {
   type BotCommands,
   type BotSnapshot,
 } from './hooks/useBotController';
+import { useFloatingText } from './hooks/useFloatingText';
+import { usePanZoom } from './hooks/usePanZoom';
+import { useProjectiles } from './hooks/useProjectiles';
 
 // Re-exported for backwards compatibility — previously defined in this file.
 export { BUILDING_REQUIRES } from './game/constants';
@@ -181,24 +179,17 @@ const RTSMap: React.FC<{
     void loadSave(slot);
   }, []); // intentional: only sync from cloud once on mount
 
-  const [zoom, setZoom] = useState(1);
+  const {
+    svgRef,
+    zoom,
+    setZoom,
+    camera,
+    setCamera,
+    screenShake,
+    triggerShake: _triggerShake,
+    triggerShakeRef,
+  } = usePanZoom();
   const tiles = useMemo(() => INITIAL_TILES, []);
-  const [camera, setCamera] = useState({ x: 0, y: 0 });
-  const [screenShake, setScreenShake] = useState(0);
-  const screenShakeTimerRef = useRef<number | null>(null);
-  const triggerShake = useCallback((magnitude = 1) => {
-    setScreenShake(magnitude);
-    if (screenShakeTimerRef.current) clearTimeout(screenShakeTimerRef.current);
-    screenShakeTimerRef.current = window.setTimeout(
-      () => setScreenShake(0),
-      350
-    );
-  }, []);
-  const triggerShakeRef = useRef(triggerShake);
-  useEffect(() => {
-    triggerShakeRef.current = triggerShake;
-  }, [triggerShake]);
-  const svgRef = useRef<SVGSVGElement>(null);
   const [soundMuted, setSoundMutedState] = useState(getSoundMuted);
   const toggleMute = () => {
     const next = !soundMuted;
@@ -1172,37 +1163,7 @@ const RTSMap: React.FC<{
   const workerHitRef = useRef<Map<number, number>>(new Map());
   const gruntHitRef = useRef<Map<number, number>>(new Map());
 
-  const [floatingTexts, setFloatingTexts] = useState<FloatingText[]>([]);
-  const floatingTextIdRef = useRef(1);
-  useEffect(() => {
-    const id = setInterval(() => {
-      const now = Date.now();
-      setFloatingTexts(ts => {
-        if (ts.length === 0) return ts; // avoid new empty array reference every 100ms
-        const filtered = ts.filter(t => now - t.createdAt < 1200);
-        return filtered.length === ts.length ? ts : filtered;
-      });
-    }, 100);
-    return () => clearInterval(id);
-  }, []);
-
-  const addFloatingText = useCallback(
-    (tileX: number, tileY: number, text: string, color: string) => {
-      const { isoX, isoY } = tileToSvg(tileX, tileY);
-      setFloatingTexts(ts => [
-        ...ts,
-        {
-          id: floatingTextIdRef.current++,
-          x: isoX + TILE_SIZE / 2 + (Math.random() * 20 - 10),
-          y: isoY + 10,
-          text,
-          color,
-          createdAt: Date.now(),
-        },
-      ]);
-    },
-    []
-  );
+  const { floatingTexts, addFloatingText } = useFloatingText();
 
   // Creep camp respawn: cleared camps respawn after 3 minutes (WC3-style)
   const CAMP_RESPAWN_MS = 180_000;
@@ -1314,52 +1275,8 @@ const RTSMap: React.FC<{
     addFloatingText(hero.x, hero.y, '🦸 Barnabas Fallen!', '#f97316');
   }, [workers, heroRecruited, heroReviveAt, gameOver, addFloatingText]);
 
-  // Projectile system — flying arrows/rocks/ice bolts
-  const [projectiles, setProjectiles] = useState<Projectile[]>([]);
-  const projIdRef = useRef(0);
-  // Move-target ring — flashes at right-click destination like WC3/AoE
-  const [moveRing, setMoveRing] = useState<{
-    svgX: number;
-    svgY: number;
-    born: number;
-  } | null>(null);
-  useEffect(() => {
-    const id = setInterval(() => {
-      const now = Date.now();
-      setProjectiles(ps =>
-        ps.filter(p => now - p.createdAt < p.duration + 100)
-      );
-      if (moveRing && now - moveRing.born > 700) setMoveRing(null);
-    }, 200);
-    return () => clearInterval(id);
-  }, []);
-  const addProjectile = useCallback(
-    (
-      fromTX: number,
-      fromTY: number,
-      toTX: number,
-      toTY: number,
-      type: Projectile['type'],
-      duration: number
-    ) => {
-      const { isoX: fx, isoY: fy } = tileToSvg(fromTX, fromTY);
-      const { isoX: tx2, isoY: ty2 } = tileToSvg(toTX, toTY);
-      setProjectiles(ps => [
-        ...ps,
-        {
-          id: projIdRef.current++,
-          fx: fx + TILE_SIZE / 2,
-          fy: fy + TILE_SIZE / 4,
-          tx: tx2 + TILE_SIZE / 2,
-          ty: ty2 + TILE_SIZE / 4,
-          type,
-          createdAt: Date.now(),
-          duration,
-        },
-      ]);
-    },
-    []
-  );
+  const { projectiles, addProjectile, moveRing, setMoveRing } =
+    useProjectiles();
 
   // Fog of war: updated in the animate loop to avoid useEffect cascade
 
@@ -2728,194 +2645,6 @@ const RTSMap: React.FC<{
     }, 5000);
     return () => window.clearTimeout(id);
   }, [isDemo, gameOver, onNewGame]);
-
-  // Scroll-wheel zoom anchored to cursor position
-  useEffect(() => {
-    const svgEl = svgRef.current;
-
-    const onWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      const delta = e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP;
-      setZoom(prev => {
-        const next = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, prev + delta));
-        if (!svgEl) return next;
-        const rect = svgEl.getBoundingClientRect();
-        const svgCenterX = rect.left + rect.width / 2;
-        const svgCenterY = rect.top + rect.height / 2;
-        const ax = e.clientX - svgCenterX;
-        const ay = e.clientY - svgCenterY;
-        const ratio = next / prev;
-        setCamera(c => ({
-          x: ax + (c.x - ax) * ratio,
-          y: ay + (c.y - ay) * ratio,
-        }));
-        return next;
-      });
-    };
-
-    const onKeyFull = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement).tagName === 'INPUT') return;
-      if (e.key === '=' || e.key === '+') {
-        setZoom(prev => {
-          const next = Math.min(ZOOM_MAX, prev + ZOOM_STEP);
-          return next;
-        });
-      }
-      if (e.key === '-' || e.key === '_') {
-        setZoom(prev => {
-          const next = Math.max(ZOOM_MIN, prev - ZOOM_STEP);
-          return next;
-        });
-      }
-    };
-
-    window.addEventListener('wheel', onWheel, { passive: false });
-    window.addEventListener('keydown', onKeyFull);
-    return () => {
-      window.removeEventListener('wheel', onWheel);
-      window.removeEventListener('keydown', onKeyFull);
-    };
-  }, []);
-
-  // Smooth WASD/Arrow camera pan using held-key tracking + RAF
-  useEffect(() => {
-    const bounds = {
-      minX: -(GRID_SIZE * TILE_SIZE),
-      maxX: GRID_SIZE * TILE_SIZE,
-      minY: -200,
-      maxY: GRID_SIZE * TILE_SIZE,
-    };
-    const PAN_SPEED = 480; // px/sec
-    const held = new Set<string>();
-    let rafId = 0;
-    let last = 0;
-
-    const tick = (now: number) => {
-      const dt = Math.min((now - last) / 1000, 0.05);
-      last = now;
-      if (held.size > 0) {
-        const up = held.has('ArrowUp') || held.has('w') || held.has('W');
-        const down = held.has('ArrowDown') || held.has('s') || held.has('S');
-        const left = held.has('ArrowLeft') || held.has('a') || held.has('A');
-        const right = held.has('ArrowRight') || held.has('d') || held.has('D');
-        const dx = (left ? 1 : 0) - (right ? 1 : 0);
-        const dy = (up ? 1 : 0) - (down ? 1 : 0);
-        if (dx !== 0 || dy !== 0) {
-          setCamera(c => ({
-            x: Math.max(
-              bounds.minX,
-              Math.min(bounds.maxX, c.x + dx * PAN_SPEED * dt)
-            ),
-            y: Math.max(
-              bounds.minY,
-              Math.min(bounds.maxY, c.y + dy * PAN_SPEED * dt)
-            ),
-          }));
-        }
-      }
-      rafId = requestAnimationFrame(tick);
-    };
-    rafId = requestAnimationFrame(t => {
-      last = t;
-      rafId = requestAnimationFrame(tick);
-    });
-
-    const onKeyDown = (e: KeyboardEvent) => {
-      const panKeys = [
-        'ArrowUp',
-        'ArrowDown',
-        'ArrowLeft',
-        'ArrowRight',
-        'w',
-        'W',
-        'a',
-        'A',
-        's',
-        'S',
-        'd',
-        'D',
-      ];
-      if (!panKeys.includes(e.key)) return;
-      if (
-        (e.target as HTMLElement).tagName === 'INPUT' ||
-        (e.target as HTMLElement).tagName === 'TEXTAREA'
-      )
-        return;
-      e.preventDefault();
-      held.add(e.key);
-    };
-    const onKeyUp = (e: KeyboardEvent) => held.delete(e.key);
-    const onBlur = () => held.clear();
-
-    window.addEventListener('keydown', onKeyDown);
-    window.addEventListener('keyup', onKeyUp);
-    window.addEventListener('blur', onBlur);
-    return () => {
-      cancelAnimationFrame(rafId);
-      window.removeEventListener('keydown', onKeyDown);
-      window.removeEventListener('keyup', onKeyUp);
-      window.removeEventListener('blur', onBlur);
-    };
-  }, []);
-
-  // Mouse edge-scroll — pan when cursor is within EDGE_ZONE px of viewport edge
-  useEffect(() => {
-    const EDGE_ZONE = 48;
-    const PAN_SPEED = 400;
-    const bounds = {
-      minX: -(GRID_SIZE * TILE_SIZE),
-      maxX: GRID_SIZE * TILE_SIZE,
-      minY: -200,
-      maxY: GRID_SIZE * TILE_SIZE,
-    };
-    let mx = -1,
-      my = -1,
-      rafId = 0,
-      last = 0;
-
-    const onMouseMove = (e: MouseEvent) => {
-      mx = e.clientX;
-      my = e.clientY;
-    };
-
-    const tick = (now: number) => {
-      const dt = Math.min((now - last) / 1000, 0.05);
-      last = now;
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
-      let dx = 0,
-        dy = 0;
-      if (mx >= 0) {
-        if (mx < EDGE_ZONE) dx = 1;
-        else if (mx > vw - EDGE_ZONE) dx = -1;
-        if (my < EDGE_ZONE) dy = 1;
-        else if (my > vh - EDGE_ZONE) dy = -1;
-      }
-      if (dx !== 0 || dy !== 0) {
-        setCamera(c => ({
-          x: Math.max(
-            bounds.minX,
-            Math.min(bounds.maxX, c.x + dx * PAN_SPEED * dt)
-          ),
-          y: Math.max(
-            bounds.minY,
-            Math.min(bounds.maxY, c.y + dy * PAN_SPEED * dt)
-          ),
-        }));
-      }
-      rafId = requestAnimationFrame(tick);
-    };
-    rafId = requestAnimationFrame(t => {
-      last = t;
-      rafId = requestAnimationFrame(tick);
-    });
-
-    window.addEventListener('mousemove', onMouseMove);
-    return () => {
-      cancelAnimationFrame(rafId);
-      window.removeEventListener('mousemove', onMouseMove);
-    };
-  }, []);
 
   const selectedWorkers = workers.filter(w => w.selected);
   const anySelected = selectedWorkers.length > 0;
