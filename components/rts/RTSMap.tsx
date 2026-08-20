@@ -18,11 +18,9 @@ import {
 import {
   BARN_POS,
   BUILDING_COSTS,
-  BUILDING_MAX_HP,
   CREEP_CAMPS,
   CREEP_MAX_HP,
   ENEMY_BARN_MAX_HP,
-  ENEMY_BARN_POS,
   GARRISON_CAP,
   GRID_SIZE,
   HERO_MAX_HP,
@@ -30,8 +28,7 @@ import {
   TILE_SIZE,
 } from './game/constants';
 import type { BuildingType } from './game/types';
-import { INITIAL_TILES, tileToSvg } from './game/map';
-import { aStar } from './game/pathfinding';
+import { tileToSvg } from './game/map';
 import {
   ALL_ACHIEVEMENTS,
   unlockAchievement,
@@ -39,13 +36,11 @@ import {
 } from './game/achievements';
 import { saveHighScore, writeSave, type SaveSlot } from './game/persistence';
 import { makeUnit } from './game/units';
-import {
-  getSoundMuted,
-  setSoundMuted,
-  startAmbient,
-  stopAmbient,
-  Snd,
-} from './game/sound';
+import { useAchievementTracking } from './hooks/useAchievementTracking';
+import { useBotCommands } from './hooks/useBotCommands';
+import { useDayNight } from './hooks/useDayNight';
+import { useKeyboardControls } from './hooks/useKeyboardControls';
+import { getSoundMuted, setSoundMuted, Snd } from './game/sound';
 import { AchievementPanel } from './hud/AchievementPanel';
 import { AlertsOverlay } from './hud/AlertsOverlay';
 import { BuffIndicators } from './hud/BuffIndicators';
@@ -72,15 +67,11 @@ import { useProduction } from './hooks/useProduction';
 import { useTowerCombat } from './hooks/useTowerCombat';
 import { useWaveSpawner } from './hooks/useWaveSpawner';
 import { useWorldTicks } from './hooks/useWorldTicks';
-import {
-  useBotController,
-  type BotCommands,
-  type BotSnapshot,
-} from './hooks/useBotController';
+import { useBotController, type BotSnapshot } from './hooks/useBotController';
 import { useFloatingText } from './hooks/useFloatingText';
 import { usePanZoom } from './hooks/usePanZoom';
 import { useProjectiles } from './hooks/useProjectiles';
-import { makeWorker, useRTSGameState } from './hooks/useRTSGameState';
+import { useRTSGameState } from './hooks/useRTSGameState';
 
 // Re-exported for backwards compatibility â€” previously defined in this file.
 export { BUILDING_REQUIRES } from './game/constants';
@@ -426,48 +417,12 @@ const RTSMap: React.FC<{
     attackMoveModeRef.current = attackMoveMode;
   }, [attackMoveMode]);
   // Day/Night cycle
-  const DAY_DURATION_MS = 60000;
-  const NIGHT_DURATION_MS = 45000;
-  const [dayPhase, setDayPhase] = useState<'day' | 'night'>('day');
-  const [dayProgress, setDayProgress] = useState(0); // 0-1 through current phase
-  const [phaseAnnouncement, setPhaseAnnouncement] = useState<string | null>(
-    null
-  );
-  useEffect(() => {
-    isNightRef.current = dayPhase === 'night';
-    if (!soundMuted) startAmbient(dayPhase === 'night');
-  }, [dayPhase, soundMuted]);
-
-  // Stop ambient audio when muted or game over
-  useEffect(() => {
-    if (soundMuted || gameOver) stopAmbient();
-    else startAmbient(isNightRef.current);
-  }, [soundMuted, gameOver]);
-
-  useEffect(() => {
-    if (gameOver) return;
-    let phaseStart = Date.now();
-    let currentPhase: 'day' | 'night' = 'day';
-    const tick = setInterval(() => {
-      if (gameOverRef.current) return;
-      const elapsed = Date.now() - phaseStart;
-      const duration =
-        currentPhase === 'day' ? DAY_DURATION_MS : NIGHT_DURATION_MS;
-      setDayProgress(Math.min(1, elapsed / duration));
-      if (elapsed >= duration) {
-        currentPhase = currentPhase === 'day' ? 'night' : 'day';
-        setDayPhase(currentPhase);
-        phaseStart = Date.now();
-        const msg =
-          currentPhase === 'night'
-            ? 'ðŸŒ™ Night Falls! Grunts grow strongerâ€¦'
-            : 'â˜€ï¸ Dawn Breaks!';
-        setPhaseAnnouncement(msg);
-        setTimeout(() => setPhaseAnnouncement(null), 2500);
-      }
-    }, 250);
-    return () => clearInterval(tick);
-  }, [gameOver]);
+  const { dayPhase, dayProgress, phaseAnnouncement } = useDayNight({
+    isNightRef,
+    gameOver,
+    gameOverRef,
+    soundMuted,
+  });
 
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle');
   const [achievementToast, setAchievementToast] = useState<Achievement | null>(
@@ -578,49 +533,17 @@ const RTSMap: React.FC<{
     window.setTimeout(() => setAchievementToast(null), 4500);
   }, []);
 
-  // Achievement: kill milestones
-  useEffect(() => {
-    if (killCount >= 1) triggerAchievement('first_blood');
-    if (killCount >= 100) triggerAchievement('kill_100');
-    if (killCount >= 500) triggerAchievement('kill_500');
-  }, [killCount, triggerAchievement]);
-
-  // Achievement: wave milestones
-  useEffect(() => {
-    if (wave >= 10) triggerAchievement('wave_10');
-    if (wave >= 20) triggerAchievement('wave_20');
-    if (wave >= 30) triggerAchievement('wave_30');
-    if (wave >= 50) triggerAchievement('wave_50');
-  }, [wave, triggerAchievement]);
-
-  // Achievement: total gold earned
-  useEffect(() => {
-    if (totalGold >= 1000) triggerAchievement('gold_baron');
-  }, [totalGold, triggerAchievement]);
-
-  // Achievement: unit count and veterancy
-  useEffect(() => {
-    if (workers.length >= 6) triggerAchievement('pack_leader');
-    const level3Count = workers.filter(w => w.level >= 3).length;
-    if (level3Count >= 3) triggerAchievement('veteran_corps');
-  }, [workers, triggerAchievement]);
-
-  // Achievement: hero items
-  useEffect(() => {
-    if (heroItems.length >= 3) triggerAchievement('hero_equipped');
-  }, [heroItems, triggerAchievement]);
-
-  // Achievement: buildings â€” fortified (3 walls) and blacksmith max
-  useEffect(() => {
-    const wallCount = placedBuildings.filter(b => b.type === 'wall').length;
-    if (wallCount >= 3) triggerAchievement('fortified');
-  }, [placedBuildings, triggerAchievement]);
-
-  useEffect(() => {
-    if (blacksmithUpgrades.steelEdge >= 2 || blacksmithUpgrades.ironHide >= 2) {
-      triggerAchievement('blacksmith_max');
-    }
-  }, [blacksmithUpgrades, triggerAchievement]);
+  // Achievement tracking
+  useAchievementTracking({
+    killCount,
+    wave,
+    totalGold,
+    workers,
+    heroItems,
+    placedBuildings,
+    blacksmithUpgrades,
+    onAchievement: triggerAchievement,
+  });
 
   // Income rate: snapshot every 30s, publish as per-minute rate
   useEffect(() => {
@@ -974,281 +897,21 @@ const RTSMap: React.FC<{
   };
   const handlers = useRTSHandlers(gameCtx, handlerCtx);
 
-  // Chicken wander â€” move each chicken to an adjacent clear tile every ~2s
-  useEffect(() => {
-    if (gameOver) return;
-    const id = setInterval(() => {
-      setChickens(cs =>
-        cs.map(c => {
-          const dirs = [
-            { dx: 1, dy: 0 },
-            { dx: -1, dy: 0 },
-            { dx: 0, dy: 1 },
-            { dx: 0, dy: -1 },
-            { dx: 0, dy: 0 },
-          ];
-          const shuffled = dirs.sort(() => Math.random() - 0.5);
-          for (const d of shuffled) {
-            const nx = c.x + d.dx,
-              ny = c.y + d.dy;
-            if (nx < 0 || ny < 0 || nx >= GRID_SIZE || ny >= GRID_SIZE)
-              continue;
-            if (
-              INITIAL_TILES[nx]?.[ny] === 'water' ||
-              INITIAL_TILES[nx]?.[ny] === 'tree'
-            )
-              continue;
-            // Stay within 5 tiles of barn
-            if (Math.abs(nx - BARN_POS.x) > 5 || Math.abs(ny - BARN_POS.y) > 5)
-              continue;
-            const facing =
-              d.dx === -1
-                ? (-1 as const)
-                : d.dx === 1
-                  ? (1 as const)
-                  : c.facing;
-            return { ...c, x: nx, y: ny, facing };
-          }
-          return c;
-        })
-      );
-    }, 2000);
-    return () => clearInterval(id);
-  }, [gameOver]);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setBuildMode(null);
-        setGhostTile(null);
-        setPatrolMode(false);
-        setAttackMoveMode(false);
-      }
-      if (
-        e.key === ' ' &&
-        !e.ctrlKey &&
-        !e.metaKey &&
-        (e.target as HTMLElement).tagName !== 'INPUT'
-      ) {
-        e.preventDefault();
-        if (!gameOverRef.current) setGameSpeed(s => (s === 0 ? 1 : 0));
-      }
-      if ((e.key === 'p' || e.key === 'P') && !e.ctrlKey && !e.metaKey) {
-        setWorkers(ws => {
-          if (ws.some(w => w.selected)) {
-            setPatrolMode(m => !m);
-          }
-          return ws;
-        });
-      }
-      if ((e.key === 'a' || e.key === 'A') && !e.ctrlKey && !e.metaKey) {
-        setWorkers(ws => {
-          if (
-            ws.some(
-              w =>
-                w.selected &&
-                w.unitType !== 'farmer' &&
-                w.unitType !== 'catapult' &&
-                w.unitType !== 'trebuchet'
-            )
-          ) {
-            setAttackMoveMode(m => !m);
-          }
-          return ws;
-        });
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []);
-
-  // Ctrl+A: select all living units
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.key === 'a' || e.key === 'A') && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault();
-        setWorkers(ws =>
-          ws.map(w => (w.hp > 0 ? { ...w, selected: true } : w))
-        );
-        setSelectedType('worker');
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []);
-
-  // Command hotkeys: F=train farmer, Q=train swordsman, R=cavalry, Delete=stop, G=garrison
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.metaKey || e.altKey) return;
-      if (
-        (e.target as HTMLElement).tagName === 'INPUT' ||
-        (e.target as HTMLElement).tagName === 'TEXTAREA'
-      )
-        return;
-      if (e.key === 'f' || e.key === 'F') {
-        e.preventDefault();
-        handlers.handleFarmhouseAction('train');
-      }
-      if (e.key === 'q' || e.key === 'Q') {
-        e.preventDefault();
-        handlers.handleFarmhouseAction('trainSwordsman');
-      }
-      if (e.key === 'r' || e.key === 'R') {
-        e.preventDefault();
-        handlers.handleFarmhouseAction('trainCavalry');
-      }
-      if (e.key === 'Delete' || e.key === 'Backspace') {
-        e.preventDefault();
-        setWorkers(ws =>
-          ws.map(w =>
-            w.selected
-              ? {
-                  ...w,
-                  movingTo: null,
-                  path: [],
-                  gathering: null,
-                  attacking: null,
-                  repairing: null,
-                  attackMove: false,
-                  attackMoveTarget: null,
-                  patrol: null,
-                  holdPosition: false,
-                  waypoints: [],
-                  state: 'idle' as const,
-                }
-              : w
-          )
-        );
-      }
-      if (e.key === 'g' || e.key === 'G') {
-        e.preventDefault();
-        handlers.handleGarrison();
-      }
-      if (e.key === 'e' || e.key === 'E') {
-        e.preventDefault();
-        handlers.handleEarthquake();
-      }
-      if (e.key === 'c' || e.key === 'C') {
-        e.preventDefault();
-        handlers.handleSwordsmanCharge();
-      }
-      if (e.key === 's' || e.key === 'S') {
-        e.preventDefault();
-        handlers.handleCavalrySprint();
-      }
-      if (e.key === 'h' || e.key === 'H') {
-        e.preventDefault();
-        setWorkers(ws =>
-          ws.map(w =>
-            w.selected
-              ? {
-                  ...w,
-                  holdPosition: true,
-                  movingTo: null,
-                  path: [],
-                  patrol: null,
-                  attackMove: false,
-                  attackMoveTarget: null,
-                  waypoints: [],
-                  state: 'idle' as const,
-                }
-              : w
-          )
-        );
-      }
-      if (e.key === 'Tab') {
-        e.preventDefault();
-        setWorkers(ws => {
-          const idleWorkers = ws.filter(
-            w =>
-              w.hp > 0 &&
-              w.state === 'idle' &&
-              !w.gathering &&
-              !w.attacking &&
-              !w.repairing
-          );
-          if (idleWorkers.length === 0) return ws;
-          const idx = idleWorkerIndexRef.current % idleWorkers.length;
-          idleWorkerIndexRef.current = (idx + 1) % idleWorkers.length;
-          const target = idleWorkers[idx] ?? idleWorkers[0];
-          if (!target) return ws;
-          // Pan camera to center on this worker
-          const { isoX, isoY } = tileToSvg(target.x, target.y);
-          const svgEl = svgRef.current;
-          if (svgEl) {
-            const rect = svgEl.getBoundingClientRect();
-            setCamera({
-              x: rect.width / 2 - isoX - TILE_SIZE / 2,
-              y: rect.height / 2 - isoY - 18,
-            });
-          }
-          setSelectedType('worker');
-          return ws.map(w => ({ ...w, selected: w.id === target.id }));
-        });
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      const num = parseInt(e.key);
-      if (isNaN(num) || num < 1 || num > 9) return;
-      if (e.ctrlKey || e.metaKey) {
-        e.preventDefault();
-        const ids = workers.filter(w => w.selected).map(w => w.id);
-        if (!ids.length) return;
-        setControlGroups(cg => ({ ...cg, [num]: ids }));
-        setWorkers(ws =>
-          ws.map(w =>
-            w.selected
-              ? { ...w, group: num }
-              : w.group === num
-                ? { ...w, group: null }
-                : w
-          )
-        );
-      } else {
-        setControlGroups(cg => {
-          const ids = cg[num];
-          if (!ids?.length) return cg;
-          setSelectedType('worker');
-          setWorkers(ws =>
-            ws.map(w => ({ ...w, selected: ids.includes(w.id) }))
-          );
-          // Double-tap: center camera on group centroid
-          const now = Date.now();
-          const last = lastGroupKeyRef.current;
-          if (last && last.num === num && now - last.t < 500) {
-            const units = workersRef.current.filter(
-              w => ids.includes(w.id) && w.hp > 0
-            );
-            if (units.length > 0) {
-              const cx = units.reduce((s, u) => s + u.x, 0) / units.length;
-              const cy = units.reduce((s, u) => s + u.y, 0) / units.length;
-              const { isoX, isoY } = tileToSvg(cx, cy);
-              const svgEl = svgRef.current;
-              if (svgEl) {
-                const rect = svgEl.getBoundingClientRect();
-                setCamera({
-                  x: rect.width / 2 - isoX - TILE_SIZE / 2,
-                  y: rect.height / 2 - isoY - 18,
-                });
-              }
-            }
-            lastGroupKeyRef.current = null;
-          } else {
-            lastGroupKeyRef.current = { num, t: now };
-          }
-          return cg;
-        });
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [workers]);
+  // Keyboard controls (chicken wander, Escape/Space, Ctrl+A, hotkeys, control groups)
+  useKeyboardControls(gameCtx, handlers, {
+    svgRef,
+    setCamera,
+    setGameSpeed,
+    setBuildMode,
+    setGhostTile,
+    setPatrolMode,
+    setAttackMoveMode,
+    setSelectedType,
+    setControlGroups,
+    setChickens,
+    idleWorkerIndexRef,
+    lastGroupKeyRef,
+  });
 
   useGameLoop(gameCtx);
 
@@ -1267,162 +930,7 @@ const RTSMap: React.FC<{
     };
   }, [resources, workers, placedBuildings, tiles, wave, farmhouse, gameOver]);
 
-  const botCommands = useMemo<BotCommands>(
-    () => ({
-      orderGather: (workerId, resourceType, resourceIdx) => {
-        const nodes =
-          resourceType === 'gold'
-            ? goldMinesRef.current
-            : resourceType === 'tree'
-              ? treesRef.current
-              : stoneNodesRef.current;
-        const node = nodes[resourceIdx];
-        if (!node) return;
-        setWorkers(ws =>
-          ws.map(w => {
-            if (w.id !== workerId || w.hp <= 0) return w;
-            const dest = { x: node.x, y: node.y };
-            const path = aStar(
-              INITIAL_TILES,
-              { x: Math.round(w.x), y: Math.round(w.y) },
-              dest
-            );
-            return {
-              ...w,
-              movingTo: path[0] ?? dest,
-              path: path.slice(1),
-              gathering: { type: resourceType, idx: resourceIdx },
-              attacking: null,
-              state: 'moving' as const,
-              selected: false,
-            };
-          })
-        );
-      },
-
-      orderAttack: (workerId, target) => {
-        setWorkers(ws =>
-          ws.map(w => {
-            if (w.id !== workerId || w.hp <= 0) return w;
-            return {
-              ...w,
-              attacking: target,
-              gathering: null,
-              movingTo: null,
-              path: [],
-              state: 'attacking' as const,
-              selected: false,
-            };
-          })
-        );
-      },
-
-      orderMove: (workerId, tx, ty) => {
-        setWorkers(ws =>
-          ws.map(w => {
-            if (w.id !== workerId || w.hp <= 0) return w;
-            const dest = { x: tx, y: ty };
-            const path = aStar(
-              INITIAL_TILES,
-              { x: Math.round(w.x), y: Math.round(w.y) },
-              dest
-            );
-            return {
-              ...w,
-              movingTo: path[0] ?? dest,
-              path: path.slice(1),
-              attacking: null,
-              gathering: null,
-              state: 'moving' as const,
-              selected: false,
-            };
-          })
-        );
-      },
-
-      buildAt: (type, tx, ty) => {
-        const snap = botSnapshotRef.current;
-        if (!snap) return false;
-        const cost = BUILDING_COSTS[type];
-        if (!cost) return false;
-        if (
-          snap.resources.gold < cost.gold ||
-          snap.resources.lumber < cost.lumber ||
-          snap.resources.stone < cost.stone
-        )
-          return false;
-        const occupied =
-          (tx === BARN_POS.x && ty === BARN_POS.y) ||
-          (tx === ENEMY_BARN_POS.x && ty === ENEMY_BARN_POS.y) ||
-          tiles[tx]?.[ty] === 'water' ||
-          tiles[tx]?.[ty] === 'tree' ||
-          tiles[tx]?.[ty] === 'rock' ||
-          placedBuildingsRef.current.some(b => b.x === tx && b.y === ty) ||
-          treesRef.current.some(
-            t => t.x === tx && t.y === ty && t.amount > 0
-          ) ||
-          goldMinesRef.current.some(
-            m => m.x === tx && m.y === ty && m.amount > 0
-          ) ||
-          stoneNodesRef.current.some(
-            s => s.x === tx && s.y === ty && s.amount > 0
-          );
-        if (occupied) return false;
-        setResources(r => ({
-          ...r,
-          gold: r.gold - cost.gold,
-          lumber: r.lumber - cost.lumber,
-          stone: r.stone - cost.stone,
-        }));
-        setPlacedBuildings(bs => [
-          ...bs,
-          {
-            id: buildingIdRef.current++,
-            type,
-            x: tx,
-            y: ty,
-            hp: 1,
-            maxHp: BUILDING_MAX_HP[type] ?? 100,
-            constructing: true,
-            constructedAt: Date.now(),
-          },
-        ]);
-        return true;
-      },
-
-      trainFarmer: () => {
-        const snap = botSnapshotRef.current;
-        if (!snap) return false;
-        if (
-          snap.resources.gold < 30 ||
-          snap.resources.food >= snap.resources.foodCap
-        )
-          return false;
-        if (!snap.farmhouse.built) return false;
-        setResources(r => ({ ...r, gold: r.gold - 30, food: r.food + 1 }));
-        setWorkers(ws => {
-          const newId = Math.max(...ws.map(w => w.id), 0) + 1;
-          return [...ws, makeWorker(newId, BARN_POS.x, BARN_POS.y)];
-        });
-        return true;
-      },
-
-      trainSwordsman: () => {
-        const snap = botSnapshotRef.current;
-        if (!snap) return false;
-        if (
-          snap.resources.gold < 50 ||
-          snap.resources.food >= snap.resources.foodCap
-        )
-          return false;
-        setResources(r => ({ ...r, gold: r.gold - 50, food: r.food + 1 }));
-        setTrainingQueue(q => [...q, { type: 'swordsman' }]);
-        return true;
-      },
-    }),
-    // deps intentionally empty â€” botCommands is stable (useMemo with [] deps above)
-    []
-  );
+  const botCommands = useBotCommands(gameCtx, buildingIdRef, botSnapshotRef);
 
   useBotController(gameCtx, botCommands, botSnapshotRef, isDemo);
 
