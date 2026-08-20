@@ -151,7 +151,7 @@ export interface RTSHandlerContext {
   >;
   isDraggingRef: React.MutableRefObject<boolean>;
   buildingIdRef: React.MutableRefObject<number>;
-  svgRef: React.RefObject<SVGSVGElement>;
+  svgRef: React.RefObject<SVGSVGElement | null>;
   setMoveRing: React.Dispatch<
     React.SetStateAction<{ svgX: number; svgY: number; born: number } | null>
   >;
