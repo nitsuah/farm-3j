@@ -54,11 +54,7 @@ import type {
   Resources,
   SaveData,
 } from './game/types';
-import {
-  computeVisible,
-  INITIAL_TILES,
-  tileToSvg,
-} from './game/map';
+import { computeVisible, INITIAL_TILES, tileToSvg } from './game/map';
 import { aStar } from './game/pathfinding';
 import {
   ALL_ACHIEVEMENTS,
@@ -2178,7 +2174,13 @@ const RTSMap: React.FC<{
             }}
           />
           <ResourceNodesLayer
-            {...{ buildMode, commandMove: handlers.commandMove, goldMines, stoneNodes, trees }}
+            {...{
+              buildMode,
+              commandMove: handlers.commandMove,
+              goldMines,
+              stoneNodes,
+              trees,
+            }}
           />
           <BuildingsLayer
             {...{
@@ -2451,7 +2453,9 @@ const RTSMap: React.FC<{
         underAttack={underAttack}
         incomeRate={incomeRate}
         barracksTech={barracksTech}
-        onBarracksTech={type => handlers.handleFarmhouseAction(`barracks:${type}`)}
+        onBarracksTech={type =>
+          handlers.handleFarmhouseAction(`barracks:${type}`)
+        }
         earthquakeCooldown={earthquakeCooldown}
         onEarthquake={handlers.handleEarthquake}
         heroItems={heroItems}
