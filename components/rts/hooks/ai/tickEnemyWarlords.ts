@@ -237,35 +237,36 @@ export function tickEnemyWarlords(ctx: RTSGameContext, dt: number): void {
     workersRef,
   } = ctx;
   // Update Enemy Warlords (War Cry slow AoE + Shield Bash hero stun + march to barn)
+  const currentWarlords = enemyWarlordsRef.current;
+  const killedWarlords = currentWarlords.filter(wl => wl.hp <= 0);
+  killedWarlords.forEach(wl => {
+    setResources(r => ({ ...r, gold: r.gold + WARLORD_GOLD_REWARD }));
+    addFloatingText(
+      Math.round(wl.x),
+      Math.round(wl.y),
+      `⚔ +${WARLORD_GOLD_REWARD}🪙`,
+      '#c4b5fd'
+    );
+    const wlDropPool: HeroItemId[] = ['battle_sword', 'boots_speed'];
+    const wlDrop = wlDropPool[Math.floor(Math.random() * wlDropPool.length)]!;
+    setDroppedItems(ds => [
+      ...ds,
+      {
+        id: dropItemIdRef.current++,
+        itemId: wlDrop,
+        x: Math.round(wl.x),
+        y: Math.round(wl.y),
+      },
+    ]);
+    addFloatingText(
+      Math.round(wl.x),
+      Math.round(wl.y),
+      `⚔ ${HERO_ITEM_DATA[wlDrop].emoji} Dropped!`,
+      '#c084fc'
+    );
+  });
   setEnemyWarlords((wls: EnemyWarlord[]) => {
     const alive = wls.filter(wl => wl.hp > 0);
-    const killed = wls.filter(wl => wl.hp <= 0);
-    killed.forEach(wl => {
-      setResources(r => ({ ...r, gold: r.gold + WARLORD_GOLD_REWARD }));
-      addFloatingText(
-        Math.round(wl.x),
-        Math.round(wl.y),
-        `⚔ +${WARLORD_GOLD_REWARD}🪙`,
-        '#c4b5fd'
-      );
-      const wlDropPool: HeroItemId[] = ['battle_sword', 'boots_speed'];
-      const wlDrop = wlDropPool[Math.floor(Math.random() * wlDropPool.length)]!;
-      setDroppedItems(ds => [
-        ...ds,
-        {
-          id: dropItemIdRef.current++,
-          itemId: wlDrop,
-          x: Math.round(wl.x),
-          y: Math.round(wl.y),
-        },
-      ]);
-      addFloatingText(
-        Math.round(wl.x),
-        Math.round(wl.y),
-        `⚔ ${HERO_ITEM_DATA[wlDrop].emoji} Dropped!`,
-        '#c084fc'
-      );
-    });
     const now = Date.now();
     return alive.map(wl => {
       // War Cry: slow all workers in radius
@@ -337,9 +338,24 @@ export function tickEnemyWarlords(ctx: RTSGameContext, dt: number): void {
       // Attack barn when adjacent
       const distToBarnWL = tileDist(wl.x, wl.y, BARN_POS.x, BARN_POS.y);
       if (distToBarnWL <= 1.2) {
-        addDmgLog('⚔️ Warlord', WARLORD_DMG);
-        setPlayerBarnHp(hp => Math.max(0, hp - WARLORD_DMG));
-        addFloatingText(BARN_POS.x, BARN_POS.y, `-${WARLORD_DMG}🏰`, '#fca5a5');
+        const wlBarnTimeouts = buildingAttackTimeoutsRef.current as Record<
+          string,
+          number
+        >;
+        const wlBarnKey = `wl_${wl.id}`;
+        if (!wlBarnTimeouts[wlBarnKey]) {
+          wlBarnTimeouts[wlBarnKey] = window.setTimeout(() => {
+            delete wlBarnTimeouts[wlBarnKey];
+            addDmgLog('⚔️ Warlord', WARLORD_DMG);
+            setPlayerBarnHp(hp => Math.max(0, hp - WARLORD_DMG));
+            addFloatingText(
+              BARN_POS.x,
+              BARN_POS.y,
+              `-${WARLORD_DMG}🏰`,
+              '#fca5a5'
+            );
+          }, ATTACK_INTERVAL_MS);
+        }
         return { ...wl, state: 'attacking' as const };
       }
       // March toward barn

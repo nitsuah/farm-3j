@@ -1,22 +1,11 @@
 // Enemy grunt AI tick � kill processing, building damage, and movement.
 
 import {
-  ATTACK_DAMAGE,
-  ATTACK_INTERVAL_MS,
   BARN_POS,
-  BARN_VISION,
   BOSS_DAMAGE,
   BOSS_GOLD_REWARD,
-  BOSS_XP_REWARD,
   BUILDING_COSTS,
   BUILDING_GRUNT_DAMAGE,
-  CARRY_CAP,
-  CATAPULT_DAMAGE,
-  CATAPULT_FIRE_MS,
-  CATAPULT_RANGE,
-  CATAPULT_SPEED,
-  CATAPULT_SPLASH_DAMAGE,
-  CATAPULT_SPLASH_RANGE,
   CAVALRY_DAMAGE_BONUS,
   CAVALRY_SPEED,
   CAVALRY_SPRINT_SPEED_MULT,
@@ -141,6 +130,16 @@ import type {
   ResourceNode,
 } from '../../game/types';
 import type { RTSGameContext } from '../context';
+
+const BUILDING_PRIORITY: Partial<Record<BuildingType, number>> = {
+  barracks: 5,
+  siegeWorkshop: 4,
+  stable: 4,
+  watchtower: 3,
+  blacksmith: 2,
+  farmhouse: 1,
+};
+
 export function tickEnemyGrunts(ctx: RTSGameContext, dt: number): void {
   const {
     difficulty,
@@ -240,38 +239,36 @@ export function tickEnemyGrunts(ctx: RTSGameContext, dt: number): void {
 
   // Update enemy grunts
   const currentWorkers = workersRef.current;
-  setEnemyGrunts(gs => {
-    const survived = gs.filter(g => g.hp > 0);
-    const killed = gs.filter(g => g.hp <= 0);
-    if (killed.length > 0) {
-      setKillCount(k => k + killed.length);
-      const goldDrop = killed.reduce(
-        (sum, g) => sum + (g.isBoss ? BOSS_GOLD_REWARD : 5),
-        0
-      );
-      setResources(r => ({ ...r, gold: r.gold + goldDrop }));
-      Snd.death();
-      killed.forEach(g =>
-        addFloatingText(
-          Math.round(g.x),
-          Math.round(g.y),
-          g.isBoss ? `💀+${BOSS_GOLD_REWARD}🪙` : `+5🪙`,
-          '#fbbf24'
-        )
-      );
-      // Record positions for necromancer to raise
-      const now = Date.now();
-      setDeadGruntPositions(prev => [
-        ...prev.filter(p => now - p.t < 20000),
-        ...killed.map(g => ({
-          x: Math.round(g.x),
-          y: Math.round(g.y),
-          t: now,
-        })),
-      ]);
-    }
-    return survived;
-  });
+  const currentGrunts = enemyGruntsRef.current;
+  const killedGrunts = currentGrunts.filter(g => g.hp <= 0);
+  if (killedGrunts.length > 0) {
+    setKillCount(k => k + killedGrunts.length);
+    const goldDrop = killedGrunts.reduce(
+      (sum, g) => sum + (g.isBoss ? BOSS_GOLD_REWARD : 5),
+      0
+    );
+    setResources(r => ({ ...r, gold: r.gold + goldDrop }));
+    Snd.death();
+    killedGrunts.forEach(g =>
+      addFloatingText(
+        Math.round(g.x),
+        Math.round(g.y),
+        g.isBoss ? `💀+${BOSS_GOLD_REWARD}🪙` : `+5🪙`,
+        '#fbbf24'
+      )
+    );
+    // Record positions for necromancer to raise
+    const now = Date.now();
+    setDeadGruntPositions(prev => [
+      ...prev.filter(p => now - p.t < 20000),
+      ...killedGrunts.map(g => ({
+        x: Math.round(g.x),
+        y: Math.round(g.y),
+        t: now,
+      })),
+    ]);
+  }
+  setEnemyGrunts(gs => gs.filter(g => g.hp > 0));
   // Remove destroyed buildings and spawn loot drops (partial resource refund)
   setPlacedBuildings(bs => {
     const destroyed = bs.filter(b => b.hp <= 0);
@@ -436,14 +433,6 @@ export function tickEnemyGrunts(ctx: RTSGameContext, dt: number): void {
       }
 
       // Building aggro: prioritize military buildings over economic ones (AoE-style target AI)
-      const BUILDING_PRIORITY: Partial<Record<BuildingType, number>> = {
-        barracks: 5,
-        siegeWorkshop: 4,
-        stable: 4,
-        watchtower: 3,
-        blacksmith: 2,
-        farmhouse: 1,
-      };
       const nearBuildingCandidates = placedBuildingsRef.current.filter(
         b =>
           b.type !== 'wall' &&
@@ -573,19 +562,12 @@ export function tickEnemyGrunts(ctx: RTSGameContext, dt: number): void {
       }
       // If grunt has no path and isn't attacking anything, re-path to highest-priority building in range or barn
       if (!g.movingTo && g.state !== 'attacking') {
-        const PRIORITY: Partial<Record<BuildingType, number>> = {
-          barracks: 5,
-          siegeWorkshop: 4,
-          stable: 4,
-          watchtower: 3,
-          blacksmith: 2,
-          farmhouse: 1,
-        };
         const buildings = placedBuildingsRef.current.filter(
           b => b.type !== 'wall' && b.hp > 0
         );
         const target = buildings.sort(
-          (a, b2) => (PRIORITY[b2.type] ?? 0) - (PRIORITY[a.type] ?? 0)
+          (a, b2) =>
+            (BUILDING_PRIORITY[b2.type] ?? 0) - (BUILDING_PRIORITY[a.type] ?? 0)
         )[0];
         const dest = target ? { x: target.x, y: target.y } : BARN_POS;
         const wallSet2 = new Set(

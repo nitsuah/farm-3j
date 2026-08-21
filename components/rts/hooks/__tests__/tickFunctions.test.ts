@@ -41,7 +41,6 @@ function makeWorker(overrides: Partial<WorkerState> = {}): WorkerState {
 // All setters are no-ops; all refs hold safe empty defaults.
 function makeMockCtx(): RTSGameContext {
   const ref = <T>(val: T) => ({ current: val });
-  const fn = () => vi.fn();
   return {
     difficulty: undefined,
 

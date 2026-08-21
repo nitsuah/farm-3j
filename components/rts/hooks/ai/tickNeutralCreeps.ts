@@ -238,61 +238,66 @@ export function tickNeutralCreeps(ctx: RTSGameContext, dt: number): void {
     workersRef,
   } = ctx;
   // Update neutral creeps
-  setNeutralCreeps(creeps => {
-    const alive = creeps.filter(c => c.hp > 0);
-    const killed = creeps.filter(c => c.hp <= 0);
-    if (killed.length > 0) {
-      // Check if any camp is now fully cleared
-      CREEP_CAMPS.forEach(camp => {
-        const campAlive = alive.filter(c => c.campId === camp.id);
-        if (campAlive.length === 0 && killed.some(c => c.campId === camp.id)) {
-          setClearedCamps(s => {
-            if (s.has(camp.id)) return s;
-            const n = new Set(s);
-            n.add(camp.id);
-            return n;
-          });
-          campClearedAtRef.current[camp.id] = Date.now();
-          setResources(r => ({ ...r, gold: r.gold + camp.goldReward }));
+  const currentCreeps = neutralCreepsRef.current;
+  const killedCreeps = currentCreeps.filter(c => c.hp <= 0);
+  if (killedCreeps.length > 0) {
+    const aliveCreeps = currentCreeps.filter(c => c.hp > 0);
+    // Check if any camp is now fully cleared
+    CREEP_CAMPS.forEach(camp => {
+      const campAlive = aliveCreeps.filter(c => c.campId === camp.id);
+      if (
+        campAlive.length === 0 &&
+        killedCreeps.some(c => c.campId === camp.id)
+      ) {
+        setClearedCamps(s => {
+          if (s.has(camp.id)) return s;
+          const n = new Set(s);
+          n.add(camp.id);
+          return n;
+        });
+        campClearedAtRef.current[camp.id] = Date.now();
+        setResources(r => ({ ...r, gold: r.gold + camp.goldReward }));
+        addFloatingText(
+          camp.x,
+          camp.y,
+          `+${camp.goldReward}🪙 Camp!`,
+          '#fbbf24'
+        );
+        if (Math.random() < 0.65) {
+          const pool: HeroItemId[] = [
+            'boots_speed',
+            'battle_sword',
+            'shield_pendant',
+            'healing_potion',
+          ];
+          const pick = pool[Math.floor(Math.random() * pool.length)]!;
+          setDroppedItems(ds => [
+            ...ds,
+            {
+              id: dropItemIdRef.current++,
+              itemId: pick,
+              x: camp.x,
+              y: camp.y + 1,
+            },
+          ]);
           addFloatingText(
             camp.x,
             camp.y,
-            `+${camp.goldReward}🪙 Camp!`,
-            '#fbbf24'
+            `📦 ${HERO_ITEM_DATA[pick].emoji} Item!`,
+            '#c084fc'
           );
-          if (Math.random() < 0.65) {
-            const pool: HeroItemId[] = [
-              'boots_speed',
-              'battle_sword',
-              'shield_pendant',
-              'healing_potion',
-            ];
-            const pick = pool[Math.floor(Math.random() * pool.length)]!;
-            setDroppedItems(ds => [
-              ...ds,
-              {
-                id: dropItemIdRef.current++,
-                itemId: pick,
-                x: camp.x,
-                y: camp.y + 1,
-              },
-            ]);
-            addFloatingText(
-              camp.x,
-              camp.y,
-              `📦 ${HERO_ITEM_DATA[pick].emoji} Item!`,
-              '#c084fc'
-            );
-          }
         }
-      });
-      killed.forEach(c => {
-        if (creepAttackTimeoutsRef.current[c.id]) {
-          clearTimeout(creepAttackTimeoutsRef.current[c.id]);
-          delete creepAttackTimeoutsRef.current[c.id];
-        }
-      });
-    }
+      }
+    });
+    killedCreeps.forEach(c => {
+      if (creepAttackTimeoutsRef.current[c.id]) {
+        clearTimeout(creepAttackTimeoutsRef.current[c.id]);
+        delete creepAttackTimeoutsRef.current[c.id];
+      }
+    });
+  }
+  setNeutralCreeps(creeps => {
+    const alive = creeps.filter(c => c.hp > 0);
     return alive.map(c => {
       const workers2 = workersRef.current;
       // Leash: if too far from home, return

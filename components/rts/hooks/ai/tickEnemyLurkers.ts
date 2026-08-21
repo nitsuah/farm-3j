@@ -242,21 +242,22 @@ export function tickEnemyLurkers(
   } = ctx;
   // lurkerKillCountRef is passed in from useGameLoop to persist across frames
   // Update Enemy Lurkers (fast flankers — chase nearest worker or march to barn)
+  const currentLurkers = enemyLurkersRef.current;
+  const killedLurkers = currentLurkers.filter(lk => lk.hp <= 0);
+  killedLurkers.forEach(lk => {
+    lurkerKillCountRef.current += 1;
+    if (lurkerKillCountRef.current >= 10) onAchievement('lurker_slayer');
+    setResources(r => ({ ...r, gold: r.gold + LURKER_GOLD_REWARD }));
+    setKillCount(k => k + 1);
+    addFloatingText(
+      Math.round(lk.x),
+      Math.round(lk.y),
+      `+${LURKER_GOLD_REWARD}🪙`,
+      '#34d399'
+    );
+  });
   setEnemyLurkers((lks: EnemyLurker[]) => {
     const alive = lks.filter(lk => lk.hp > 0);
-    const killed = lks.filter(lk => lk.hp <= 0);
-    killed.forEach(lk => {
-      lurkerKillCountRef.current += 1;
-      if (lurkerKillCountRef.current >= 10) onAchievement('lurker_slayer');
-      setResources(r => ({ ...r, gold: r.gold + LURKER_GOLD_REWARD }));
-      setKillCount(k => k + 1);
-      addFloatingText(
-        Math.round(lk.x),
-        Math.round(lk.y),
-        `+${LURKER_GOLD_REWARD}🪙`,
-        '#34d399'
-      );
-    });
     return alive.map(lk => {
       // Find nearest alive worker
       const nearestWorker = workersRef.current

@@ -237,40 +237,41 @@ export function tickEnemyWarchiefs(ctx: RTSGameContext, dt: number): void {
     workersRef,
   } = ctx;
   // Update Enemy Warchiefs (War Stomp + march to barn)
+  const currentWarchiefs = enemyWarchiefsRef.current;
+  const killedWarchiefs = currentWarchiefs.filter(wc2 => wc2.hp <= 0);
+  killedWarchiefs.forEach(wc2 => {
+    setResources(r => ({ ...r, gold: r.gold + WARCHIEF_GOLD_REWARD }));
+    addFloatingText(
+      Math.round(wc2.x),
+      Math.round(wc2.y),
+      `👑 +${WARCHIEF_GOLD_REWARD}🪙`,
+      '#fbbf24'
+    );
+    const wcPool2: HeroItemId[] = [
+      'battle_sword',
+      'shield_pendant',
+      'tome_xp',
+      'healing_potion',
+    ];
+    const wcDrop2 = wcPool2[Math.floor(Math.random() * wcPool2.length)]!;
+    setDroppedItems(ds => [
+      ...ds,
+      {
+        id: dropItemIdRef.current++,
+        itemId: wcDrop2,
+        x: Math.round(wc2.x),
+        y: Math.round(wc2.y),
+      },
+    ]);
+    addFloatingText(
+      Math.round(wc2.x),
+      Math.round(wc2.y),
+      `👑 ${HERO_ITEM_DATA[wcDrop2].emoji} Dropped!`,
+      '#c084fc'
+    );
+  });
   setEnemyWarchiefs(wcs => {
     const alive = wcs.filter(wc2 => wc2.hp > 0);
-    const killed = wcs.filter(wc2 => wc2.hp <= 0);
-    killed.forEach(wc2 => {
-      setResources(r => ({ ...r, gold: r.gold + WARCHIEF_GOLD_REWARD }));
-      addFloatingText(
-        Math.round(wc2.x),
-        Math.round(wc2.y),
-        `👑 +${WARCHIEF_GOLD_REWARD}🪙`,
-        '#fbbf24'
-      );
-      const wcPool2: HeroItemId[] = [
-        'battle_sword',
-        'shield_pendant',
-        'tome_xp',
-        'healing_potion',
-      ];
-      const wcDrop2 = wcPool2[Math.floor(Math.random() * wcPool2.length)]!;
-      setDroppedItems(ds => [
-        ...ds,
-        {
-          id: dropItemIdRef.current++,
-          itemId: wcDrop2,
-          x: Math.round(wc2.x),
-          y: Math.round(wc2.y),
-        },
-      ]);
-      addFloatingText(
-        Math.round(wc2.x),
-        Math.round(wc2.y),
-        `👑 ${HERO_ITEM_DATA[wcDrop2].emoji} Dropped!`,
-        '#c084fc'
-      );
-    });
     const now = Date.now();
     return alive.map(wc2 => {
       // War Stomp: every WARCHIEF_STOMP_COOLDOWN_MS stun all workers within radius
@@ -310,14 +311,24 @@ export function tickEnemyWarchiefs(ctx: RTSGameContext, dt: number): void {
       // Attack barn when adjacent
       const distToBarn = tileDist(wc2.x, wc2.y, BARN_POS.x, BARN_POS.y);
       if (distToBarn <= 1.2) {
-        addDmgLog('⚔️ Warchief', WARCHIEF_DMG);
-        setPlayerBarnHp(hp => Math.max(0, hp - WARCHIEF_DMG));
-        addFloatingText(
-          BARN_POS.x,
-          BARN_POS.y,
-          `-${WARCHIEF_DMG}🏰`,
-          '#fca5a5'
-        );
+        const wcBarnTimeouts = buildingAttackTimeoutsRef.current as Record<
+          string,
+          number
+        >;
+        const wcBarnKey = `wc_${wc2.id}`;
+        if (!wcBarnTimeouts[wcBarnKey]) {
+          wcBarnTimeouts[wcBarnKey] = window.setTimeout(() => {
+            delete wcBarnTimeouts[wcBarnKey];
+            addDmgLog('⚔️ Warchief', WARCHIEF_DMG);
+            setPlayerBarnHp(hp => Math.max(0, hp - WARCHIEF_DMG));
+            addFloatingText(
+              BARN_POS.x,
+              BARN_POS.y,
+              `-${WARCHIEF_DMG}🏰`,
+              '#fca5a5'
+            );
+          }, ATTACK_INTERVAL_MS);
+        }
         return { ...wc2, state: 'attacking' as const };
       }
       // March toward barn

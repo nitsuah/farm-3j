@@ -238,18 +238,19 @@ export function tickEnemyTrolls(ctx: RTSGameContext, dt: number): void {
     gameOverRef,
   } = ctx;
   // Update enemy Troll Archers
+  const currentTrolls = enemyTrollsRef.current;
+  const killedTrolls = currentTrolls.filter(t => t.hp <= 0);
+  killedTrolls.forEach(t => {
+    setResources(r => ({ ...r, gold: r.gold + TROLL_GOLD_REWARD }));
+    addFloatingText(
+      Math.round(t.x),
+      Math.round(t.y),
+      `+${TROLL_GOLD_REWARD}🪙`,
+      '#fbbf24'
+    );
+  });
   setEnemyTrolls(ts => {
     const alive = ts.filter(t => t.hp > 0);
-    const killed = ts.filter(t => t.hp <= 0);
-    killed.forEach(t => {
-      setResources(r => ({ ...r, gold: r.gold + TROLL_GOLD_REWARD }));
-      addFloatingText(
-        Math.round(t.x),
-        Math.round(t.y),
-        `+${TROLL_GOLD_REWARD}🪙`,
-        '#fbbf24'
-      );
-    });
     return alive.map(t => {
       // Find nearest player unit within attack range
       const nearestWorker = workersRef.current

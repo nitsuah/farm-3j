@@ -242,20 +242,21 @@ export function tickEnemySappers(
   } = ctx;
   // sapperWarnedRef is passed in from useGameLoop to persist across frames
   // Update Goblin Sappers
+  const currentSappers = enemySappersRef.current;
+  const killedSappers = currentSappers.filter(s => !s.exploded && s.hp <= 0);
+  killedSappers.forEach(s => {
+    sapperKillCountRef.current += 1;
+    if (sapperKillCountRef.current >= 5) onAchievement('sapper_slayer');
+    setResources(r => ({ ...r, gold: r.gold + SAPPER_GOLD_REWARD }));
+    addFloatingText(
+      Math.round(s.x),
+      Math.round(s.y),
+      `+${SAPPER_GOLD_REWARD}🪙 💥Defused!`,
+      '#fbbf24'
+    );
+  });
   setEnemySappers(ss => {
     const alive = ss.filter(s => !s.exploded && s.hp > 0);
-    const killed = ss.filter(s => !s.exploded && s.hp <= 0);
-    killed.forEach(s => {
-      sapperKillCountRef.current += 1;
-      if (sapperKillCountRef.current >= 5) onAchievement('sapper_slayer');
-      setResources(r => ({ ...r, gold: r.gold + SAPPER_GOLD_REWARD }));
-      addFloatingText(
-        Math.round(s.x),
-        Math.round(s.y),
-        `+${SAPPER_GOLD_REWARD}🪙 💥Defused!`,
-        '#fbbf24'
-      );
-    });
     return alive
       .map(s => {
         const distToTarget = tileDist(s.x, s.y, s.targetX, s.targetY);

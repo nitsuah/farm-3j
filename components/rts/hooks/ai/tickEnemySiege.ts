@@ -238,24 +238,25 @@ export function tickEnemySiege(ctx: RTSGameContext, dt: number): void {
     gameOverRef,
   } = ctx;
   // Update War Rams (enemy siege units)
+  const currentSiege = enemySiegeRef.current;
+  const killedSiege = currentSiege.filter(r => r.hp <= 0);
+  if (killedSiege.length > 0) {
+    killedSiege.forEach(r => {
+      const reward =
+        r.siegeType === 'demolisher'
+          ? DEMOLISHER_GOLD_REWARD
+          : WAR_RAM_GOLD_REWARD;
+      setResources(res => ({ ...res, gold: res.gold + reward }));
+      addFloatingText(
+        Math.round(r.x),
+        Math.round(r.y),
+        `+${reward}🪙`,
+        '#fbbf24'
+      );
+    });
+  }
   setEnemySiege(rams => {
     const survived = rams.filter(r => r.hp > 0);
-    const killed = rams.filter(r => r.hp <= 0);
-    if (killed.length > 0) {
-      killed.forEach(r => {
-        const reward =
-          r.siegeType === 'demolisher'
-            ? DEMOLISHER_GOLD_REWARD
-            : WAR_RAM_GOLD_REWARD;
-        setResources(res => ({ ...res, gold: res.gold + reward }));
-        addFloatingText(
-          Math.round(r.x),
-          Math.round(r.y),
-          `+${reward}🪙`,
-          '#fbbf24'
-        );
-      });
-    }
     return survived.map(r => {
       const speed =
         r.siegeType === 'demolisher' ? DEMOLISHER_SPEED : WAR_RAM_SPEED;
