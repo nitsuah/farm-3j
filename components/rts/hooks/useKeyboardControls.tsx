@@ -12,6 +12,27 @@ type Handlers = ReturnType<typeof useRTSHandlers>;
 
 type ChickenState = { id: number; x: number; y: number; facing: 1 | -1 };
 
+const WANDER_DIRS = [
+  { dx: 1, dy: 0 },
+  { dx: -1, dy: 0 },
+  { dx: 0, dy: 1 },
+  { dx: 0, dy: -1 },
+  { dx: 0, dy: 0 },
+] as const;
+
+function shuffleDirs(
+  dirs: typeof WANDER_DIRS
+): { dx: number; dy: number }[] {
+  const a: { dx: number; dy: number }[] = [...dirs];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = a[i]!;
+    a[i] = a[j]!;
+    a[j] = tmp;
+  }
+  return a;
+}
+
 export interface KeyboardControlsParams {
   /** svgRef from usePanZoom */
   svgRef: React.RefObject<SVGSVGElement | null>;
@@ -70,14 +91,7 @@ export function useKeyboardControls(
     const id = setInterval(() => {
       setChickens(cs =>
         cs.map(c => {
-          const dirs = [
-            { dx: 1, dy: 0 },
-            { dx: -1, dy: 0 },
-            { dx: 0, dy: 1 },
-            { dx: 0, dy: -1 },
-            { dx: 0, dy: 0 },
-          ];
-          const shuffled = dirs.sort(() => Math.random() - 0.5);
+          const shuffled = shuffleDirs(WANDER_DIRS);
           for (const d of shuffled) {
             const nx = c.x + d.dx,
               ny = c.y + d.dy;

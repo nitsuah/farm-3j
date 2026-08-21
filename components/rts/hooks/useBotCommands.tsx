@@ -1,5 +1,5 @@
 'use client';
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import type React from 'react';
 
 import {
@@ -36,6 +36,10 @@ export function useBotCommands(
     setTrainingQueue,
     tiles,
   } = ctx;
+
+  // Monotonically-increasing counter avoids O(n) max scan inside state setters.
+  // Start at 10_000 to avoid collisions with player worker IDs (typically 1–10).
+  const nextWorkerIdRef = useRef(10_000);
 
   return useMemo<BotCommands>(
     () => ({
@@ -172,10 +176,8 @@ export function useBotCommands(
           return false;
         if (!snap.farmhouse.built) return false;
         setResources(r => ({ ...r, gold: r.gold - 30, food: r.food + 1 }));
-        setWorkers(ws => {
-          const newId = Math.max(...ws.map(w => w.id), 0) + 1;
-          return [...ws, makeWorker(newId, BARN_POS.x, BARN_POS.y)];
-        });
+        const newId = nextWorkerIdRef.current++;
+        setWorkers(ws => [...ws, makeWorker(newId, BARN_POS.x, BARN_POS.y)]);
         return true;
       },
 
