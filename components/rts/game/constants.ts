@@ -7,6 +7,7 @@ import type {
   GoldLumberStoneCost,
   GoldStoneCost,
   HeroItemId,
+  ResourceNode,
   Upgrades,
 } from './types';
 
@@ -17,6 +18,7 @@ export const WORKER_SPEED = 1.5;
 export const GRUNT_SPEED = 0.8;
 export const GATHER_INTERVAL_MS = 900;
 export const CARRY_CAP = 10;
+export const DEFAULT_FOOD_START = 5;
 export const FOOD_CAP_BASE = 10; // starts at 10 so 5 workers don't immediately hit cap penalty
 export const FOOD_CAP_PER_LEVEL = 5;
 export const WORKER_VISION = 3.5;
@@ -127,6 +129,7 @@ export const ENEMY_TOWER_MAX_HP = 60;
 export const ENEMY_TOWER_DAMAGE = 9;
 export const ENEMY_TOWER_RANGE = 4.5;
 export const ENEMY_TOWER_ATTACK_MS = 2500;
+export const ARCHER_TOWER_HP = 120;
 export const ARCHER_TOWER_ATTACK_MS = 2500;
 
 // ---------- Enemy siege ----------
@@ -693,3 +696,24 @@ export const WAR_DRUMS_COST = {
   gold: 120,
   lumber: 40,
 } as const satisfies GoldLumberCost;
+
+// ---------- Default resource nodes ----------
+export const DEFAULT_STONE_NODES: ResourceNode[] = [
+  { x: 4, y: 1, amount: 180 },
+  { x: 1, y: 4, amount: 180 },
+  { x: 2, y: 15, amount: 160 },
+  { x: 5, y: 13, amount: 160 },
+  { x: 13, y: 2, amount: 160 },
+  { x: 15, y: 4, amount: 160 },
+  { x: 9, y: 9, amount: 180 },
+  { x: 11, y: 7, amount: 160 },
+  { x: 7, y: 11, amount: 160 },
+  { x: 6, y: 20, amount: 160 },
+  { x: 20, y: 6, amount: 160 },
+  { x: 14, y: 14, amount: 180 },
+  { x: 10, y: 22, amount: 160 },
+  { x: 22, y: 10, amount: 160 },
+  { x: 20, y: 20, amount: 160 },
+  { x: 24, y: 18, amount: 160 },
+  { x: 18, y: 24, amount: 160 },
+];

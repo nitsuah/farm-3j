@@ -8,6 +8,7 @@ import type { DifficultyConfig } from '../RTSGameRoot';
 import type {
   DroppedItem,
   Upgrades,
+  UnitType,
   WorkerState,
   EnemyGrunt,
   EnemyLurker,
@@ -73,7 +74,7 @@ export interface RTSGameContext {
   setClearedCamps: Setter<Set<number>>;
   setDeadGruntPositions: Setter<{ x: number; y: number; t: number }[]>;
   setDeadWorkerPositions: Setter<
-    { x: number; y: number; t: number; unitType: string }[]
+    { x: number; y: number; t: number; unitType: UnitType }[]
   >;
   setDroppedItems: Setter<DroppedItem[]>;
   setEnemyBarnHp: Setter<number>;

@@ -3,13 +3,17 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 
 import type { WorkerState, Upgrades } from '../RTSUI';
 import {
+  ARCHER_TOWER_HP,
   ARCHER_TOWER_POS,
   BARN_POS,
   BARN_VISION,
   BUILDING_MAX_HP,
   CREEP_CAMPS,
   CREEP_MAX_HP,
+  DEFAULT_FOOD_START,
+  DEFAULT_STONE_NODES,
   ENEMY_BARN_MAX_HP,
+  FOOD_CAP_BASE,
   GRID_SIZE,
   PLAYER_BARN_MAX_HP,
 } from '../game/constants';
@@ -34,6 +38,7 @@ import type {
   Resources,
   SaveData,
   TileType,
+  UnitType,
 } from '../game/types';
 import { computeVisible, INITIAL_TILES } from '../game/map';
 import { loadSave, loadSaveSync, type SaveSlot } from '../game/persistence';
@@ -153,6 +158,21 @@ export function makeCreeps(): NeutralCreep[] {
 }
 
 // ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function useSecondCountdown(
+  active: boolean,
+  setValue: (updater: (prev: number) => number) => void
+): void {
+  useEffect(() => {
+    if (!active) return;
+    const id = setInterval(() => setValue(c => Math.max(0, c - 1)), 1000);
+    return () => clearInterval(id);
+  }, [active, setValue]);
+}
+
+// ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
 
@@ -161,15 +181,13 @@ export function useRTSGameState(
   difficulty: DifficultyConfig | undefined
 ) {
   // ---- Load save once per mount ----
-  const saveRef = useRef<SaveData | null | undefined>(undefined);
-  if (saveRef.current === undefined) saveRef.current = loadSaveSync(slot);
-  const INITIAL_SAVE = saveRef.current;
+  const [INITIAL_SAVE] = useState<SaveData | null>(() => loadSaveSync(slot));
 
   // Background cloud-save sync: if a newer cloud save exists, mirror it to
   // localStorage for the next session (does not affect current game state).
   useEffect(() => {
-    void loadSave(slot);
-  }, []); // intentional: only sync from cloud once on mount
+    loadSave(slot).catch(() => {}); // intentional: only sync from cloud once on mount
+  }, []); // eslint-disable-line
 
   // ---- Tiles ----
   const tiles = useMemo<TileType[][]>(() => INITIAL_TILES, []);
@@ -218,8 +236,8 @@ export function useRTSGameState(
         gold: difficulty?.startGold ?? 150,
         lumber: difficulty?.startLumber ?? 80,
         stone: difficulty?.startStone ?? 30,
-        food: 5,
-        foodCap: 10,
+        food: DEFAULT_FOOD_START,
+        foodCap: FOOD_CAP_BASE,
       }
   );
 
@@ -233,26 +251,7 @@ export function useRTSGameState(
       (INITIAL_SAVE?.goldMine ? [INITIAL_SAVE.goldMine] : DEFAULT_GOLD_MINES)
   );
   const [stoneNodes, setStoneNodes] = useState<ResourceNode[]>(
-    () =>
-      INITIAL_SAVE?.stoneNodes ?? [
-        { x: 4, y: 1, amount: 180 },
-        { x: 1, y: 4, amount: 180 },
-        { x: 2, y: 15, amount: 160 },
-        { x: 5, y: 13, amount: 160 },
-        { x: 13, y: 2, amount: 160 },
-        { x: 15, y: 4, amount: 160 },
-        { x: 9, y: 9, amount: 180 },
-        { x: 11, y: 7, amount: 160 },
-        { x: 7, y: 11, amount: 160 },
-        { x: 6, y: 20, amount: 160 },
-        { x: 20, y: 6, amount: 160 },
-        { x: 14, y: 14, amount: 180 },
-        { x: 10, y: 22, amount: 160 },
-        { x: 22, y: 10, amount: 160 },
-        { x: 20, y: 20, amount: 160 },
-        { x: 24, y: 18, amount: 160 },
-        { x: 18, y: 24, amount: 160 },
-      ]
+    () => INITIAL_SAVE?.stoneNodes ?? DEFAULT_STONE_NODES
   );
   const treesRef = useRef(trees);
   const goldMinesRef = useRef(goldMines);
@@ -380,11 +379,19 @@ export function useRTSGameState(
       id: -1,
       x: ARCHER_TOWER_POS.x,
       y: ARCHER_TOWER_POS.y,
-      hp: 120,
-      maxHp: 120,
+      hp: ARCHER_TOWER_HP,
+      maxHp: ARCHER_TOWER_HP,
     },
   ]);
-  const enemyTowersRef = useRef<EnemyTower[]>([]);
+  const enemyTowersRef = useRef<EnemyTower[]>([
+    {
+      id: -1,
+      x: ARCHER_TOWER_POS.x,
+      y: ARCHER_TOWER_POS.y,
+      hp: ARCHER_TOWER_HP,
+      maxHp: ARCHER_TOWER_HP,
+    },
+  ]);
   useEffect(() => {
     enemyTowersRef.current = enemyTowers;
   }, [enemyTowers]);
@@ -488,7 +495,7 @@ export function useRTSGameState(
     deadGruntPositionsRef.current = deadGruntPositions;
   }, [deadGruntPositions]);
   const [deadWorkerPositions, setDeadWorkerPositions] = useState<
-    { x: number; y: number; t: number; unitType: string }[]
+    { x: number; y: number; t: number; unitType: UnitType }[]
   >([]);
   const deadWorkerIdsRef = useRef<Set<number>>(new Set());
 
@@ -625,23 +632,9 @@ export function useRTSGameState(
   const [heroReviveCountdown, setHeroReviveCountdown] = useState(0);
   const heroXpRef = useRef<{ xp: number; level: number } | null>(null);
   const [heroAbilityCooldown, setHeroAbilityCooldown] = useState(0);
-  useEffect(() => {
-    if (heroAbilityCooldown <= 0) return;
-    const id = setInterval(
-      () => setHeroAbilityCooldown(c => Math.max(0, c - 1)),
-      1000
-    );
-    return () => clearInterval(id);
-  }, [heroAbilityCooldown > 0]); // eslint-disable-line
+  useSecondCountdown(heroAbilityCooldown > 0, setHeroAbilityCooldown);
   const [heroShoutCooldown, setHeroShoutCooldown] = useState(0);
-  useEffect(() => {
-    if (heroShoutCooldown <= 0) return;
-    const id = setInterval(
-      () => setHeroShoutCooldown(c => Math.max(0, c - 1)),
-      1000
-    );
-    return () => clearInterval(id);
-  }, [heroShoutCooldown > 0]); // eslint-disable-line
+  useSecondCountdown(heroShoutCooldown > 0, setHeroShoutCooldown);
 
   // ---- Battle shout ----
   const [battleShoutUntil, setBattleShoutUntil] = useState(0);
@@ -663,22 +656,8 @@ export function useRTSGameState(
   useEffect(() => {
     harvestBoonRef.current = harvestBoonActive;
   }, [harvestBoonActive]);
-  useEffect(() => {
-    if (harvestBoonCooldown <= 0) return;
-    const id = setInterval(
-      () => setHarvestBoonCooldown(c => Math.max(0, c - 1)),
-      1000
-    );
-    return () => clearInterval(id);
-  }, [harvestBoonCooldown > 0]); // eslint-disable-line
-  useEffect(() => {
-    if (earthquakeCooldown <= 0) return;
-    const id = setInterval(
-      () => setEarthquakeCooldown(c => Math.max(0, c - 1)),
-      1000
-    );
-    return () => clearInterval(id);
-  }, [earthquakeCooldown > 0]); // eslint-disable-line
+  useSecondCountdown(harvestBoonCooldown > 0, setHarvestBoonCooldown);
+  useSecondCountdown(earthquakeCooldown > 0, setEarthquakeCooldown);
 
   // ---- Kill / resource totals ----
   const [killCount, setKillCount] = useState(
