@@ -7,6 +7,7 @@ import {
   BUILDING_COSTS,
   BUILDING_MAX_HP,
   ENEMY_BARN_POS,
+  GRID_SIZE,
 } from '../game/constants';
 import { INITIAL_TILES } from '../game/map';
 import { aStar } from '../game/pathfinding';
@@ -114,6 +115,8 @@ export function useBotCommands(
         if (!snap) return false;
         const cost = BUILDING_COSTS[type];
         if (!cost) return false;
+        if (tx < 0 || ty < 0 || tx >= GRID_SIZE || ty >= GRID_SIZE)
+          return false;
         if (
           snap.resources.gold < cost.gold ||
           snap.resources.lumber < cost.lumber ||

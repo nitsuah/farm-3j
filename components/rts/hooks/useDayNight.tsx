@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type React from 'react';
 
 import { startAmbient, stopAmbient } from '../game/sound';
@@ -30,6 +30,7 @@ export function useDayNight({
   const [phaseAnnouncement, setPhaseAnnouncement] = useState<string | null>(
     null
   );
+  const annTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Sync the isNightRef and restart ambient audio whenever the phase changes.
   useEffect(() => {
@@ -41,6 +42,7 @@ export function useDayNight({
   useEffect(() => {
     if (soundMuted || gameOver) stopAmbient();
     else startAmbient(isNightRef.current);
+    return () => stopAmbient();
   }, [soundMuted, gameOver, isNightRef]);
 
   // Day/night timer — advances progress and flips phase at the end of each period.
@@ -63,10 +65,17 @@ export function useDayNight({
             ? '🌙 Night Falls! Grunts grow stronger…'
             : '☀️ Dawn Breaks!';
         setPhaseAnnouncement(msg);
-        setTimeout(() => setPhaseAnnouncement(null), 2500);
+        if (annTimerRef.current) clearTimeout(annTimerRef.current);
+        annTimerRef.current = setTimeout(
+          () => setPhaseAnnouncement(null),
+          2500
+        );
       }
     }, 250);
-    return () => clearInterval(tick);
+    return () => {
+      clearInterval(tick);
+      if (annTimerRef.current) clearTimeout(annTimerRef.current);
+    };
   }, [gameOver, gameOverRef]);
 
   return { dayPhase, dayProgress, phaseAnnouncement };

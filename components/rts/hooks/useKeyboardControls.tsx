@@ -62,7 +62,7 @@ export function useKeyboardControls(
     lastGroupKeyRef,
   } = params;
 
-  const { workers, workersRef, setWorkers, gameOver, gameOverRef } = ctx;
+  const { workersRef, setWorkers, gameOver, gameOverRef } = ctx;
 
   // ── Chicken wander ───────────────────────────────────────────────────────────
   useEffect(() => {
@@ -125,28 +125,22 @@ export function useKeyboardControls(
         if (!gameOverRef.current) setGameSpeed(s => (s === 0 ? 1 : 0));
       }
       if ((e.key === 'p' || e.key === 'P') && !e.ctrlKey && !e.metaKey) {
-        setWorkers(ws => {
-          if (ws.some(w => w.selected)) {
-            setPatrolMode(m => !m);
-          }
-          return ws;
-        });
+        if (workersRef.current.some(w => w.selected)) {
+          setPatrolMode(m => !m);
+        }
       }
       if ((e.key === 'a' || e.key === 'A') && !e.ctrlKey && !e.metaKey) {
-        setWorkers(ws => {
-          if (
-            ws.some(
-              w =>
-                w.selected &&
-                w.unitType !== 'farmer' &&
-                w.unitType !== 'catapult' &&
-                w.unitType !== 'trebuchet'
-            )
-          ) {
-            setAttackMoveMode(m => !m);
-          }
-          return ws;
-        });
+        if (
+          workersRef.current.some(
+            w =>
+              w.selected &&
+              w.unitType !== 'farmer' &&
+              w.unitType !== 'catapult' &&
+              w.unitType !== 'trebuchet'
+          )
+        ) {
+          setAttackMoveMode(m => !m);
+        }
       }
     };
     window.addEventListener('keydown', onKey);
@@ -158,13 +152,19 @@ export function useKeyboardControls(
     setAttackMoveMode,
     gameOverRef,
     setGameSpeed,
-    setWorkers,
   ]);
 
   // ── Ctrl+A: select all living units ─────────────────────────────────────────
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.key === 'a' || e.key === 'A') && (e.ctrlKey || e.metaKey)) {
+        const target = e.target as HTMLElement;
+        if (
+          target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable
+        )
+          return;
         e.preventDefault();
         setWorkers(ws =>
           ws.map(w => (w.hp > 0 ? { ...w, selected: true } : w))
@@ -181,6 +181,7 @@ export function useKeyboardControls(
   // E=earthquake, C=charge, S=cavalry sprint, H=hold position, Tab=idle worker
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (gameOverRef.current) return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (
         (e.target as HTMLElement).tagName === 'INPUT' ||
@@ -305,11 +306,18 @@ export function useKeyboardControls(
   // N alone: select group N; double-tap to center camera on the group
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      )
+        return;
       const num = parseInt(e.key);
       if (isNaN(num) || num < 1 || num > 9) return;
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
-        const ids = workers.filter(w => w.selected).map(w => w.id);
+        const ids = workersRef.current.filter(w => w.selected).map(w => w.id);
         if (!ids.length) return;
         setControlGroups(cg => ({ ...cg, [num]: ids }));
         setWorkers(ws =>
@@ -322,45 +330,41 @@ export function useKeyboardControls(
           )
         );
       } else {
-        setControlGroups(cg => {
-          const ids = cg[num];
-          if (!ids?.length) return cg;
-          setSelectedType('worker');
-          setWorkers(ws =>
-            ws.map(w => ({ ...w, selected: ids.includes(w.id) }))
+        const ids = workersRef.current
+          .filter(w => w.group === num)
+          .map(w => w.id);
+        if (!ids.length) return;
+        setSelectedType('worker');
+        setWorkers(ws => ws.map(w => ({ ...w, selected: ids.includes(w.id) })));
+        // Double-tap: center camera on group centroid
+        const now = Date.now();
+        const last = lastGroupKeyRef.current;
+        if (last && last.num === num && now - last.t < 500) {
+          const units = workersRef.current.filter(
+            w => ids.includes(w.id) && w.hp > 0
           );
-          // Double-tap: center camera on group centroid
-          const now = Date.now();
-          const last = lastGroupKeyRef.current;
-          if (last && last.num === num && now - last.t < 500) {
-            const units = workersRef.current.filter(
-              w => ids.includes(w.id) && w.hp > 0
-            );
-            if (units.length > 0) {
-              const cx = units.reduce((s, u) => s + u.x, 0) / units.length;
-              const cy = units.reduce((s, u) => s + u.y, 0) / units.length;
-              const { isoX, isoY } = tileToSvg(cx, cy);
-              const svgEl = svgRef.current;
-              if (svgEl) {
-                const rect = svgEl.getBoundingClientRect();
-                setCamera({
-                  x: rect.width / 2 - isoX - TILE_SIZE / 2,
-                  y: rect.height / 2 - isoY - 18,
-                });
-              }
+          if (units.length > 0) {
+            const cx = units.reduce((s, u) => s + u.x, 0) / units.length;
+            const cy = units.reduce((s, u) => s + u.y, 0) / units.length;
+            const { isoX, isoY } = tileToSvg(cx, cy);
+            const svgEl = svgRef.current;
+            if (svgEl) {
+              const rect = svgEl.getBoundingClientRect();
+              setCamera({
+                x: rect.width / 2 - isoX - TILE_SIZE / 2,
+                y: rect.height / 2 - isoY - 18,
+              });
             }
-            lastGroupKeyRef.current = null;
-          } else {
-            lastGroupKeyRef.current = { num, t: now };
           }
-          return cg;
-        });
+          lastGroupKeyRef.current = null;
+        } else {
+          lastGroupKeyRef.current = { num, t: now };
+        }
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [
-    workers,
     workersRef,
     setWorkers,
     setControlGroups,
