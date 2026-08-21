@@ -20,9 +20,7 @@ const WANDER_DIRS = [
   { dx: 0, dy: 0 },
 ] as const;
 
-function shuffleDirs(
-  dirs: typeof WANDER_DIRS
-): { dx: number; dy: number }[] {
+function shuffleDirs(dirs: typeof WANDER_DIRS): { dx: number; dy: number }[] {
   const a: { dx: number; dy: number }[] = [...dirs];
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));

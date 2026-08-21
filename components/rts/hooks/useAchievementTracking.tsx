@@ -67,7 +67,8 @@ export function useAchievementTracking({
 
   // Hero items
   useEffect(() => {
-    if (heroItems.length >= HERO_ITEMS_THRESHOLD) onAchievement('hero_equipped');
+    if (heroItems.length >= HERO_ITEMS_THRESHOLD)
+      onAchievement('hero_equipped');
   }, [heroItems, onAchievement]);
 
   // Buildings — fortified (3+ walls)
