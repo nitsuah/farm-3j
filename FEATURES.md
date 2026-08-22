@@ -133,12 +133,19 @@
 - **Farm RTS: Building Selection Panel** — Clicking any placed building (watchtower, barracks, siege workshop, frost tower, etc.) selects it and shows a "Structure" info panel with building name, icon, HP bar, and description; watchtowers/frost towers/ballistas/poison towers show a Garrison button (garrison selected units into the tower for +4 dmg/unit) and Deploy button; repair hint shown if building is damaged; WC3/AoE-style building selection replacing the blank "Nothing selected" state.
 - **Farm RTS: Queued Waypoint Path Visualization** — When workers have queued shift+right-click move orders, a green dashed path with numbered circle markers renders on the map from the worker to each queued waypoint; last waypoint has a larger ring; intermediate waypoints are numbered 1,2,3…; mirrors WC3/SC2 shift-queue visualization so players can plan and verify complex unit routes.
 - **Farm RTS: Hero Level 3 — Earthquake** — Barnabas gains a third ability at level 3 (280 XP cumulative): 🌋 Earthquake deals 45 damage to all enemy units (grunts, shamans, trolls, siege, warchiefs) within a 5-tile radius and stuns grunts for 2.5 seconds via frozenUntil; hotkey [E]; 45s cooldown; expanding amber/red double ellipse shockwave visual effect; locked placeholder shown until level 3; XP level bar updated to show progress toward level 3 (☆☆☆ → ⭐⭐⭐ progression); WC3-style high-level hero nuke rewarding investing in the hero unit.
+- **Farm RTS: Building Construction Time** — All placed buildings take 6s to construct; shown as scaffold SVG (wooden frame, cross-poles, planks, faint icon, progress bar); buildings are invulnerable and non-functional while constructing; foodCapBonus applied on completion not placement; "✅ Built!" float on complete; multiple workers can assist (each adds 40% speed); right-click scaffold with no units selected cancels with 50% resource refund; WC3/AoE2-style construction time adding strategic depth to base-building timing.
 
 ## Planned
 
 ### Farm RTS Game
 
-- **Building Construction Time** — Workers take 6s to construct buildings with scaffold display during build
+- **Componentize Large Files Phase 2** — Migrate game logic from `useGameLoop.tsx` into domain hooks (`useEnemyAI`, `useResourceTick`, `useCombatResolution`, `usePathfinding`) and wire `RTSMap.tsx` through `MapRenderer` + `mapSelectors`
+- **Named Unit Formations** — Move a selected group in line, wedge, or box formation
+- **Enemy Hero Unit (Warlord)** — Spawns wave 20+; unique abilities; drops rare item
+- **Dropped Hero Items** — Equippable pickups from slain elite enemies (Speed Boots, War Banner, Healing Totem)
+- **Achievement / Challenge System** — Milestone badges for specific run conditions
+- **Campaign Mode Phase 1** — 3 hand-crafted scenarios with scripted objectives
+- **Background Ambient Audio Loop** — Farm sounds and wind with independent volume slider
 
 ### Product & Commerce Surface
 
