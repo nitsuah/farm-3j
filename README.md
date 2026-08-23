@@ -105,7 +105,7 @@ Farm 3J is an interactive farm website with a full-featured isometric **Real-Tim
 - **State**: React useState/useRef + requestAnimationFrame animation loop
 - **Shared SVG Components**: `HpBar`, `StructureDamageSmoke`, `StructureFireEffect` — parameterized primitives reused across all map layers
 - **Database**: Neon Postgres (serverless) via `@neondatabase/serverless` for cloud saves and high scores
-- **Testing**: Vitest with @vitest/coverage-v8; 264 tests across `lib/`
+- **Testing**: Vitest with @vitest/coverage-v8; 272 tests across `lib/`
 
 ## Site Pages
 
@@ -129,7 +129,7 @@ Farm 3J is an interactive farm website with a full-featured isometric **Real-Tim
 ## Local Development
 
 ```bash
-# Install dependencies (requires Node 22+)
+# Install dependencies (requires Node 20+)
 corepack enable
 corepack prepare pnpm@9.0.0 --activate
 pnpm install
