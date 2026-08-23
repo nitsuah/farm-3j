@@ -109,22 +109,22 @@ Farm 3J is an interactive farm website with a full-featured isometric **Real-Tim
 
 ## Site Pages
 
-| Route | Description |
-| --- | --- |
-| `/` | Animated homepage with farm scene, weather effects, day/night cycle, animated crops and wildlife |
-| `/about` | About page with contact modal (submits to `POST /api/contact`) |
-| `/farm` | Farm Tycoon legacy isometric simulation game |
-| `/rtsfarm` | PG Farms RTS landing page — feature overview, unit roster, building catalog |
-| `/rtsfarm/play` | Playable Farm RTS game |
-| `/privacy` | Privacy & Security page — localStorage, cloud saves, device ID, and contact data policy |
+| Route           | Description                                                                                      |
+| --------------- | ------------------------------------------------------------------------------------------------ |
+| `/`             | Animated homepage with farm scene, weather effects, day/night cycle, animated crops and wildlife |
+| `/about`        | About page with contact modal (submits to `POST /api/contact`)                                   |
+| `/farm`         | Farm Tycoon legacy isometric simulation game                                                     |
+| `/rtsfarm`      | PG Farms RTS landing page — feature overview, unit roster, building catalog                      |
+| `/rtsfarm/play` | Playable Farm RTS game                                                                           |
+| `/privacy`      | Privacy & Security page — localStorage, cloud saves, device ID, and contact data policy          |
 
 ## API Routes
 
-| Route | Description |
-| --- | --- |
-| `POST /api/contact` | Contact form endpoint with server-side validation; optional webhook forwarding via `FARM_CONTACT_WEBHOOK_URL` |
-| `GET/POST/DELETE /api/saves` | Cloud save slots (0–2) backed by Neon Postgres with localStorage fallback |
-| `GET/POST /api/highscores` | High-score leaderboard backed by Neon Postgres with localStorage fallback |
+| Route                        | Description                                                                                                   |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `POST /api/contact`          | Contact form endpoint with server-side validation; optional webhook forwarding via `FARM_CONTACT_WEBHOOK_URL` |
+| `GET/POST/DELETE /api/saves` | Cloud save slots (0–2) backed by Neon Postgres with localStorage fallback                                     |
+| `GET/POST /api/highscores`   | High-score leaderboard backed by Neon Postgres with localStorage fallback                                     |
 
 ## Local Development
 
@@ -156,10 +156,10 @@ pnpm format
 
 **Environment variables** (copy `.env.example` to `.env.local`):
 
-| Variable | Required | Description |
-| --- | --- | --- |
-| `DATABASE_URL` | For cloud saves/scores | Neon Postgres connection string |
-| `FARM_CONTACT_WEBHOOK_URL` | Optional | Webhook URL for contact form submissions |
+| Variable                   | Required               | Description                              |
+| -------------------------- | ---------------------- | ---------------------------------------- |
+| `DATABASE_URL`             | For cloud saves/scores | Neon Postgres connection string          |
+| `FARM_CONTACT_WEBHOOK_URL` | Optional               | Webhook URL for contact form submissions |
 
 This repository will stay in sync with your deployed chats on [v0.dev](https://v0.dev).
 Any changes you make to your deployed app will be automatically pushed to this repository from [v0.dev](https://v0.dev).

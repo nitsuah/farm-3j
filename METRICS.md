@@ -2,13 +2,13 @@
 
 ## Core Metrics
 
-| Metric        | Value | Notes                                                                                                                               |
-| ------------- | ----- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Code Coverage | 97%   | lib/farm/ coverage: 96.71% statements, 90.07% branches, 100% functions, 96.55% lines. Excludes UI components and app/. Target: 80%. |
-| Build Time    | ~4.1s | Test execution with coverage (272 tests)                                                                                            |
-| Bundle Size   | TBD   | Not measured yet                                                                                                                    |
+| Metric        | Value | Notes                                                                                                                                                        |
+| ------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Code Coverage | 97%   | lib/farm/ coverage: 96.71% statements, 90.07% branches, 100% functions, 96.55% lines. Excludes UI components and app/. Target: 80%.                          |
+| Build Time    | ~4.1s | Test execution with coverage (272 tests)                                                                                                                     |
+| Bundle Size   | TBD   | Not measured yet                                                                                                                                             |
 | Test Files    | 13    | utils, gameLogic, farmReducer, spawner, isometric, terrain, structures, notifications, spawnHelpers, towerHelpers, mapSelectors, tickFunctions, ContactModal |
-| Test Cases    | 272   | All tests passing - game logic, terrain, state management, notification, spawn/tower math, map selectors, tick functions, contact modal coverage |
+| Test Cases    | 272   | All tests passing - game logic, terrain, state management, notification, spawn/tower math, map selectors, tick functions, contact modal coverage             |
 
 ## Health
 
