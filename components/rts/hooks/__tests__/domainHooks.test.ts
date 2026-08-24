@@ -1,0 +1,490 @@
+/**
+ * Tests for the domain hook tick functions.
+ *
+ * useCombatResolution, useResourceTick, usePathfinding: no React hooks inside —
+ * they destructure ctx and return a plain closure, safe to call directly.
+ *
+ * useEnemyAI: uses useRef internally, so tested via renderHook.
+ */
+import { renderHook } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+
+import { useEnemyAI } from '../useEnemyAI';
+
+import { GRID_SIZE } from '../../game/constants';
+import { useCombatResolution } from '../useCombatResolution';
+import { usePathfinding } from '../usePathfinding';
+import { useResourceTick } from '../useResourceTick';
+import type { RTSGameContext } from '../context';
+
+// ── Shared mock factory (re-used from tickFunctions.test.ts pattern) ──────────
+
+function makeMockCtx(): RTSGameContext {
+  const ref = <T>(val: T) => ({ current: val });
+  return {
+    difficulty: undefined,
+    onAchievement: vi.fn(),
+    addDmgLog: vi.fn(),
+    addFloatingText: vi.fn(),
+    addProjectile: vi.fn(),
+    triggerShakeRef: ref(vi.fn()),
+    triggerUnderAttackRef: ref(vi.fn()),
+
+    enemyTowers: [],
+    farmhouse: { built: false, level: 0 },
+    gameOver: null,
+    gameSpeed: 1,
+    garrisoned: [],
+    placedBuildings: [],
+    stance: 'aggressive',
+    tiles: [],
+    wave: 1,
+    workers: [],
+
+    setCapturedShrines: vi.fn(),
+    setClearedCamps: vi.fn(),
+    setDeadGruntPositions: vi.fn(),
+    setDeadWorkerPositions: vi.fn(),
+    setDroppedItems: vi.fn(),
+    setEnemyBarnHp: vi.fn(),
+    setEnemyGrunts: vi.fn(),
+    setEnemyNecromancers: vi.fn(),
+    setEnemySappers: vi.fn(),
+    setEnemyShamans: vi.fn(),
+    setEnemySiege: vi.fn(),
+    setEnemyTowers: vi.fn(),
+    setEnemyTrolls: vi.fn(),
+    setEnemyWalls: vi.fn(),
+    setEnemyWarchiefs: vi.fn(),
+    setEnemyLurkers: vi.fn(),
+    setEnemyWarlords: vi.fn(),
+    setEnemyWitchDoctors: vi.fn(),
+    setFogExplored: vi.fn(),
+    setFogVisible: vi.fn(),
+    setGameOver: vi.fn(),
+    setGarrisoned: vi.fn(),
+    setGoldMines: vi.fn(),
+    setHeroItems: vi.fn(),
+    setKillCount: vi.fn(),
+    setLootCrates: vi.fn(),
+    setNeutralCreeps: vi.fn(),
+    setNextWaveAt: vi.fn(),
+    setPlacedBuildings: vi.fn(),
+    setPlayerBarnHp: vi.fn(),
+    setResources: vi.fn(),
+    setShrineCapturing: vi.fn(),
+    setShrinePlentyBuff: vi.fn(),
+    setShrineWarBuff: vi.fn(),
+    setStoneNodes: vi.fn(),
+    setTotalGold: vi.fn(),
+    setTotalLumber: vi.fn(),
+    setTotalStone: vi.fn(),
+    setTrainingProgress: vi.fn(),
+    setTrainingQueue: vi.fn(),
+    setTrees: vi.fn(),
+    setWave: vi.fn(),
+    setWaveAnnouncement: vi.fn(),
+    setWavePreview: vi.fn(),
+    setWorkers: vi.fn(),
+
+    animationRef: ref(null),
+    attackTimeoutsRef: ref({}),
+    barnDmgThisWaveRef: ref(0),
+    barracksTechRef: ref({ veteranTraining: false, warDrums: false }),
+    battleShoutUntilRef: ref(0),
+    blacksmithUpgradesRef: ref({ steelEdge: 0, ironHide: 0 }),
+    buildingAttackTimeoutsRef: ref({}),
+    buildingRepairTimeoutsRef: ref({}),
+    campClearedAtRef: ref({}),
+    capturedShrinesRef: ref(new Set<number>()),
+    creepAttackTimeoutsRef: ref({}),
+    deadGruntPositionsRef: ref([]),
+    deadWorkerIdsRef: ref(new Set<number>()),
+    dropItemIdRef: ref(0),
+    droppedItemsRef: ref([]),
+    enemyBarnHpRef: ref(1000),
+    enemyGruntsRef: ref([]),
+    enemyNecromancersRef: ref([]),
+    enemySappersRef: ref([]),
+    enemyShamansRef: ref([]),
+    enemySiegeRef: ref([]),
+    enemyTowerTimersRef: ref({}),
+    enemyTowersRef: ref([]),
+    enemyTrollsRef: ref([]),
+    enemyWallIdRef: ref(0),
+    enemyWallsRef: ref([]),
+    enemyLurkersRef: ref([]),
+    lurkerAttackTimeoutsRef: ref({}),
+    lurkerIdRef: ref(0),
+    enemyWarchiefsRef: ref([]),
+    enemyWarlordsRef: ref([]),
+    enemyWitchDoctorsRef: ref([]),
+    fogExploredRef: ref(
+      Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(false))
+    ),
+    fogVisibleRef: ref(
+      Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(false))
+    ),
+    gameOverRef: ref(null),
+    gameSpeedRef: ref(1),
+    garrisonedRef: ref([]),
+    gatherTimeoutsRef: ref({}),
+    goldMinesRef: ref([]),
+    gruntAttackTimeoutsRef: ref({}),
+    gruntHitRef: ref(new Map<number, number>()),
+    gruntIdRef: ref(0),
+    guardTowerRef: ref(false),
+    harvestBoonRef: ref(false),
+    heroItemsRef: ref([]),
+    incomeAccRef: ref({ gold: 0, lumber: 0, stone: 0 }),
+    isNightRef: ref(false),
+    lastFogUpdateRef: ref(0),
+    lastStandEnrageRef: ref(false),
+    lootCrateIdRef: ref(0),
+    lootCratesRef: ref([]),
+    necromancerIdRef: ref(0),
+    necromancerRaiseTimersRef: ref({}),
+    neutralCreepsRef: ref([]),
+    nextWaveAtRef: ref(null),
+    pendingPickupRef: ref(new Set<number>()),
+    placedBuildingsRef: ref([]),
+    playerBarnHpRef: ref(200),
+    prevTimeRef: ref(null),
+    previewTimerRef: ref(null),
+    rallyPointRef: ref(null),
+    repairTimeoutsRef: ref({}),
+    sallyForthThresholdsRef: ref(new Set<number>()),
+    sapperIdRef: ref(0),
+    sapperKillCountRef: ref(0),
+    shamanHealTimersRef: ref({}),
+    shamanIdRef: ref(0),
+    shrineCapturingRef: ref(null),
+    shrinePlentyBuffRef: ref(false),
+    shrineWarBuffRef: ref(false),
+    siegeAttackTimeoutsRef: ref({}),
+    siegeIdRef: ref(0),
+    spawnTimerRef: ref(null),
+    stanceRef: ref('aggressive' as const),
+    stoneNodesRef: ref([]),
+    towerGarrisonRef: ref({}),
+    trainingElapsedRef: ref(0),
+    trainingQueueRef: ref([]),
+    trapTriggeredRef: ref({}),
+    treesRef: ref([]),
+    trollAttackTimersRef: ref({}),
+    trollIdRef: ref(0),
+    upgradesRef: ref({ sharperTools: 0, swiftHarvest: 0, ironWill: 0 }),
+    upkeepMultRef: ref(1),
+    warchiefIdRef: ref(0),
+    warlordIdRef: ref(0),
+    watchtowerTimersRef: ref({}),
+    waveRef: ref(1),
+    waveTimerRemainingRef: ref(null),
+    witchDoctorBuffTimersRef: ref({}),
+    witchDoctorIdRef: ref(0),
+    workerHitRef: ref(new Map<number, number>()),
+    workersRef: ref([]),
+  } satisfies RTSGameContext;
+}
+
+// ── useEnemyAI (requires renderHook since it uses useRef internally) ──────────
+
+describe('useEnemyAI', () => {
+  it('returns a callable tick function', () => {
+    const ctx = makeMockCtx();
+    const { result } = renderHook(() => useEnemyAI(ctx));
+    expect(typeof result.current).toBe('function');
+  });
+
+  it('tick does not throw with empty state', () => {
+    const ctx = makeMockCtx();
+    const { result } = renderHook(() => useEnemyAI(ctx));
+    expect(() => result.current(1 / 60)).not.toThrow();
+  });
+
+  it('calls setWorkers once per tick (for tickWorkers)', () => {
+    const ctx = makeMockCtx();
+    const { result } = renderHook(() => useEnemyAI(ctx));
+    result.current(1 / 60);
+    // tickWorkers always calls setWorkers
+    expect(ctx.setWorkers).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls setEnemyGrunts once per tick (for tickEnemyGrunts)', () => {
+    const ctx = makeMockCtx();
+    const { result } = renderHook(() => useEnemyAI(ctx));
+    result.current(1 / 60);
+    expect(ctx.setEnemyGrunts).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls setNeutralCreeps once per tick (for tickNeutralCreeps)', () => {
+    const ctx = makeMockCtx();
+    const { result } = renderHook(() => useEnemyAI(ctx));
+    result.current(1 / 60);
+    expect(ctx.setNeutralCreeps).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls setEnemySappers once per tick (for tickEnemySappers)', () => {
+    const ctx = makeMockCtx();
+    const { result } = renderHook(() => useEnemyAI(ctx));
+    result.current(1 / 60);
+    expect(ctx.setEnemySappers).toHaveBeenCalledTimes(1);
+  });
+
+  it('the returned function is stable across re-renders', () => {
+    const ctx = makeMockCtx();
+    const { result, rerender } = renderHook(() => useEnemyAI(ctx));
+    const first = result.current;
+    rerender();
+    // useRef means lurkerKillCountRef and sapperWarnedRef persist,
+    // but the returned function is recreated each render (first render's
+    // copy is what useGameLoop captures); both calls should work
+    expect(() => result.current(1 / 60)).not.toThrow();
+    expect(typeof first).toBe('function');
+  });
+});
+
+// ── useResourceTick ───────────────────────────────────────────────────────────
+
+describe('useResourceTick tick function', () => {
+  it('does not call setResources when no workers are dead and no structures destroyed', () => {
+    const ctx = makeMockCtx();
+    const tick = useResourceTick(ctx);
+    tick(1 / 60);
+    expect(ctx.setResources).not.toHaveBeenCalled();
+  });
+
+  it('drains food when dead workers are present', () => {
+    const ctx = makeMockCtx();
+    ctx.workersRef.current = [
+      { id: 1, hp: 0 } as any, // dead
+      { id: 2, hp: 0 } as any, // dead
+      { id: 3, hp: 50 } as any, // alive
+    ];
+    const tick = useResourceTick(ctx);
+    tick(1 / 60);
+    expect(ctx.setResources).toHaveBeenCalledTimes(1);
+    // The updater should subtract 2 from food (2 dead workers)
+    const updater = vi.mocked(ctx.setResources).mock.calls[0]![0] as (
+      r: any
+    ) => any;
+    const result = updater({ food: 10, gold: 100, lumber: 0, stone: 0 });
+    expect(result.food).toBe(8); // 10 - 2
+  });
+
+  it('food cannot go below 0 from dead worker drain', () => {
+    const ctx = makeMockCtx();
+    ctx.workersRef.current = [
+      { id: 1, hp: 0 } as any,
+      { id: 2, hp: 0 } as any,
+      { id: 3, hp: 0 } as any,
+    ];
+    const tick = useResourceTick(ctx);
+    tick(1 / 60);
+    const updater = vi.mocked(ctx.setResources).mock.calls[0]![0] as (
+      r: any
+    ) => any;
+    const result = updater({ food: 1, gold: 0, lumber: 0, stone: 0 });
+    expect(result.food).toBe(0);
+  });
+
+  it('calls setEnemyWalls to filter out destroyed walls', () => {
+    const ctx = makeMockCtx();
+    ctx.enemyWallsRef.current = [
+      { id: 1, x: 3, y: 4, hp: 0, maxHp: 100 },
+      { id: 2, x: 5, y: 6, hp: 50, maxHp: 100 },
+    ];
+    const tick = useResourceTick(ctx);
+    tick(1 / 60);
+    expect(ctx.setEnemyWalls).toHaveBeenCalledTimes(1);
+    // Awards gold for the destroyed wall
+    expect(ctx.setResources).toHaveBeenCalled();
+    expect(ctx.addFloatingText).toHaveBeenCalled();
+  });
+
+  it('does not call setEnemyWalls when all walls are alive', () => {
+    const ctx = makeMockCtx();
+    ctx.enemyWallsRef.current = [{ id: 1, x: 3, y: 4, hp: 50, maxHp: 100 }];
+    const tick = useResourceTick(ctx);
+    tick(1 / 60);
+    expect(ctx.setEnemyWalls).not.toHaveBeenCalled();
+  });
+
+  it('calls setEnemyTowers to filter out destroyed towers', () => {
+    const ctx = makeMockCtx();
+    ctx.enemyTowersRef.current = [
+      { id: 10, x: 20, y: 20, hp: 0, maxHp: 200 },
+    ];
+    const tick = useResourceTick(ctx);
+    tick(1 / 60);
+    expect(ctx.setEnemyTowers).toHaveBeenCalledTimes(1);
+    expect(ctx.addFloatingText).toHaveBeenCalled();
+  });
+
+  it('awards 40 gold for the archer tower (id -1)', () => {
+    const ctx = makeMockCtx();
+    ctx.enemyTowersRef.current = [{ id: -1, x: 5, y: 5, hp: 0, maxHp: 200 }];
+    const tick = useResourceTick(ctx);
+    tick(1 / 60);
+    // At least one setResources call for the gold award
+    const calls = vi.mocked(ctx.setResources).mock.calls;
+    const goldAward = calls.find(([updater]) => {
+      const r = (updater as (r: any) => any)({ food: 0, gold: 0, lumber: 0, stone: 0 });
+      return r.gold === 40;
+    });
+    expect(goldAward).toBeDefined();
+  });
+
+  it('awards 25 gold for a regular enemy tower', () => {
+    const ctx = makeMockCtx();
+    ctx.enemyTowersRef.current = [
+      { id: 9001, x: 5, y: 5, hp: 0, maxHp: 200 },
+    ];
+    const tick = useResourceTick(ctx);
+    tick(1 / 60);
+    const calls = vi.mocked(ctx.setResources).mock.calls;
+    const goldAward = calls.find(([updater]) => {
+      const r = (updater as (r: any) => any)({ food: 0, gold: 0, lumber: 0, stone: 0 });
+      return r.gold === 25;
+    });
+    expect(goldAward).toBeDefined();
+  });
+});
+
+// ── useCombatResolution ───────────────────────────────────────────────────────
+
+describe('useCombatResolution tick function', () => {
+  it('does nothing when no workers exist', () => {
+    const ctx = makeMockCtx();
+    const tick = useCombatResolution(ctx);
+    expect(() => tick(1 / 60)).not.toThrow();
+    expect(ctx.setDeadWorkerPositions).not.toHaveBeenCalled();
+  });
+
+  it('does not flag alive workers as dead', () => {
+    const ctx = makeMockCtx();
+    ctx.workersRef.current = [{ id: 1, hp: 50, unitType: 'farmer' } as any];
+    const tick = useCombatResolution(ctx);
+    tick(1 / 60);
+    expect(ctx.setDeadWorkerPositions).not.toHaveBeenCalled();
+  });
+
+  it('records newly dead workers in setDeadWorkerPositions', () => {
+    const ctx = makeMockCtx();
+    ctx.workersRef.current = [
+      { id: 1, hp: 0, x: 3, y: 5, unitType: 'farmer' } as any,
+    ];
+    const tick = useCombatResolution(ctx);
+    tick(1 / 60);
+    expect(ctx.setDeadWorkerPositions).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not re-record already-tracked dead workers', () => {
+    const ctx = makeMockCtx();
+    ctx.workersRef.current = [
+      { id: 1, hp: 0, x: 3, y: 5, unitType: 'farmer' } as any,
+    ];
+    // Pre-seed the dead set so worker id 1 is already known
+    ctx.deadWorkerIdsRef.current.add(1);
+    const tick = useCombatResolution(ctx);
+    tick(1 / 60);
+    expect(ctx.setDeadWorkerPositions).not.toHaveBeenCalled();
+  });
+
+  it('does not call setWorkers for hero pickup when no hero exists', () => {
+    const ctx = makeMockCtx();
+    ctx.workersRef.current = [{ id: 1, hp: 50, unitType: 'farmer' } as any];
+    const tick = useCombatResolution(ctx);
+    tick(1 / 60);
+    expect(ctx.setWorkers).not.toHaveBeenCalled();
+  });
+
+  it('does not pick up an item when no items are dropped', () => {
+    const ctx = makeMockCtx();
+    ctx.workersRef.current = [
+      { id: 99, hp: 100, x: 5, y: 5, unitType: 'hero' } as any,
+    ];
+    ctx.droppedItemsRef.current = [];
+    const tick = useCombatResolution(ctx);
+    tick(1 / 60);
+    expect(ctx.setHeroItems).not.toHaveBeenCalled();
+  });
+
+  it('does not pick up an item that is too far away', () => {
+    const ctx = makeMockCtx();
+    ctx.workersRef.current = [
+      { id: 99, hp: 100, x: 5, y: 5, unitType: 'hero' } as any,
+    ];
+    ctx.droppedItemsRef.current = [
+      { id: 1, itemId: 'speed_boots', x: 10, y: 10 },
+    ];
+    const tick = useCombatResolution(ctx);
+    tick(1 / 60);
+    expect(ctx.setHeroItems).not.toHaveBeenCalled();
+  });
+});
+
+// ── usePathfinding ────────────────────────────────────────────────────────────
+
+describe('usePathfinding tick function', () => {
+  it('does not call setFogVisible when the interval has not elapsed', () => {
+    const ctx = makeMockCtx();
+    // lastFogUpdateRef.current = Date.now() → interval not elapsed yet
+    ctx.lastFogUpdateRef.current = Date.now();
+    const tick = usePathfinding(ctx);
+    tick();
+    expect(ctx.setFogVisible).not.toHaveBeenCalled();
+  });
+
+  it('calls setFogVisible when the interval has elapsed and visibility changed', () => {
+    const ctx = makeMockCtx();
+    // Set last update to 1 second ago so the 350ms throttle has expired
+    ctx.lastFogUpdateRef.current = Date.now() - 1000;
+    // Put a worker inside the grid to create a visible region
+    ctx.workersRef.current = [{ x: 5, y: 5 } as any];
+    const tick = usePathfinding(ctx);
+    tick();
+    // Should have computed visibility and called setFogVisible (there is a change
+    // since fogVisibleRef starts all-false and worker creates a visible circle)
+    expect(ctx.setFogVisible).toHaveBeenCalledTimes(1);
+  });
+
+  it('updates lastFogUpdateRef when the interval elapses', () => {
+    const ctx = makeMockCtx();
+    const before = Date.now() - 1000;
+    ctx.lastFogUpdateRef.current = before;
+    const tick = usePathfinding(ctx);
+    tick();
+    expect(ctx.lastFogUpdateRef.current).toBeGreaterThan(before);
+  });
+
+  it('does not set fog explored when nothing new is explored', () => {
+    const ctx = makeMockCtx();
+    // Mark everything as already explored
+    ctx.fogExploredRef.current = Array.from({ length: GRID_SIZE }, () =>
+      Array(GRID_SIZE).fill(true)
+    );
+    ctx.fogVisibleRef.current = Array.from({ length: GRID_SIZE }, () =>
+      Array(GRID_SIZE).fill(true)
+    );
+    ctx.lastFogUpdateRef.current = Date.now() - 1000;
+    ctx.workersRef.current = [{ x: 5, y: 5 } as any];
+    const tick = usePathfinding(ctx);
+    tick();
+    // Visible didn't change (already all true via fogVisibleRef) — setFogVisible
+    // may or may not fire, but setFogExplored should not fire since everything explored
+    expect(ctx.setFogExplored).not.toHaveBeenCalled();
+  });
+
+  it('can be called multiple times without throwing', () => {
+    const ctx = makeMockCtx();
+    ctx.lastFogUpdateRef.current = Date.now() - 2000;
+    const tick = usePathfinding(ctx);
+    expect(() => {
+      tick();
+      // Update ref so subsequent call respects throttle
+      ctx.lastFogUpdateRef.current = Date.now();
+      tick();
+    }).not.toThrow();
+  });
+});

@@ -24,7 +24,18 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
-      include: ['lib/**/*.{ts,tsx}'],
+      include: [
+        'lib/**/*.{ts,tsx}',
+        // RTS game logic — pure functions and AI tick helpers
+        'components/rts/game/**/*.{ts,tsx}',
+        'components/rts/hooks/ai/**/*.{ts,tsx}',
+        'components/rts/hooks/spawnHelpers.ts',
+        'components/rts/hooks/towerHelpers.ts',
+        'components/rts/hooks/useCombatResolution.ts',
+        'components/rts/hooks/useResourceTick.ts',
+        'components/rts/hooks/usePathfinding.ts',
+        'components/rts/hooks/useEnemyAI.ts',
+      ],
       exclude: [
         'node_modules/',
         '.next/',
@@ -35,15 +46,18 @@ export default defineConfig({
         '**/*.test.{ts,tsx}',
         '**/*.spec.{ts,tsx}',
         '**/coverage/**',
-        'components/**', // Exclude UI components from coverage (Phase 1)
-        'app/**', // Exclude Next.js pages (Phase 1)
+        // Exclude Next.js pages, UI-only components, sound, persistence
+        'app/**',
+        'components/rts/game/sound.ts',
+        'components/rts/game/persistence.ts',
+        'components/rts/game/achievements.ts',
       ],
-      // Set coverage thresholds - Phase 1: Core logic only
+      // Set coverage thresholds — Phase 2: Core logic + RTS game systems
       thresholds: {
-        lines: 40,
-        functions: 48,
-        branches: 37,
-        statements: 41,
+        lines: 60,
+        functions: 60,
+        branches: 50,
+        statements: 60,
       },
     },
   },
