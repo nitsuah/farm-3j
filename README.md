@@ -9,7 +9,7 @@ _Automatically synced with your [v0.dev](https://v0.dev) deployments_
 
 Farm 3J is an interactive farm website with a full-featured isometric **Real-Time Strategy game** — think Warcraft II / Age of Empires II, built entirely in SVG + React.
 
-- **Farm RTS Game** (`/rts`): Full RTS with workers, combat units, buildings, enemy waves, hero unit, fog of war, tech upgrades, and strategic depth
+- **Farm RTS Game** (`/rtsfarm/play`): Full RTS with workers, combat units, buildings, enemy waves, hero unit, fog of war, tech upgrades, and strategic depth
 - **Animated Homepage**: Dynamic farm scene with weather effects, day/night cycle, animated crops, trees, mountains, and wildlife
 - **Farm Tycoon Game** (`/farm`): Isometric farm simulation (legacy mode)
 - **Responsive Design**: Optimized for mobile and desktop
@@ -95,14 +95,71 @@ Farm 3J is an interactive farm website with a full-featured isometric **Real-Tim
 
 ## Tech Stack
 
-- **Framework**: Next.js 15 with App Router
+- **Framework**: Next.js 16 with App Router
 - **Language**: TypeScript (strict mode)
 - **Styling**: Tailwind CSS v4
+- **Package Manager**: pnpm 9
 - **Rendering**: SVG-based isometric grid (25×25 tiles, 64px tile size)
 - **Pathfinding**: 8-directional A\* with wall avoidance
 - **Audio**: Web Audio API procedural tone synthesis (no audio files)
 - **State**: React useState/useRef + requestAnimationFrame animation loop
 - **Shared SVG Components**: `HpBar`, `StructureDamageSmoke`, `StructureFireEffect` — parameterized primitives reused across all map layers
+- **Database**: Neon Postgres (serverless) via `@neondatabase/serverless` for cloud saves and high scores
+- **Testing**: Vitest with @vitest/coverage-v8; 272 tests across `lib/`
+
+## Site Pages
+
+| Route           | Description                                                                                      |
+| --------------- | ------------------------------------------------------------------------------------------------ |
+| `/`             | Animated homepage with farm scene, weather effects, day/night cycle, animated crops and wildlife |
+| `/about`        | About page with contact modal (submits to `POST /api/contact`)                                   |
+| `/farm`         | Farm Tycoon legacy isometric simulation game                                                     |
+| `/rtsfarm`      | PG Farms RTS landing page — feature overview, unit roster, building catalog                      |
+| `/rtsfarm/play` | Playable Farm RTS game                                                                           |
+| `/privacy`      | Privacy & Security page — localStorage, cloud saves, device ID, and contact data policy          |
+
+## API Routes
+
+| Route                        | Description                                                                                                   |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `POST /api/contact`          | Contact form endpoint with server-side validation; optional webhook forwarding via `FARM_CONTACT_WEBHOOK_URL` |
+| `GET/POST/DELETE /api/saves` | Cloud save slots (0–2) backed by Neon Postgres with localStorage fallback                                     |
+| `GET/POST /api/highscores`   | High-score leaderboard backed by Neon Postgres with localStorage fallback                                     |
+
+## Local Development
+
+```bash
+# Install dependencies (requires Node 20+)
+corepack enable
+corepack prepare pnpm@9.0.0 --activate
+pnpm install
+
+# Start dev server
+pnpm dev
+# → http://localhost:3000
+
+# Run tests
+pnpm test
+
+# Run tests with coverage
+pnpm test:coverage
+
+# Type-check
+pnpm type-check
+
+# Lint
+pnpm lint
+
+# Format
+pnpm format
+```
+
+**Environment variables** (copy `.env.example` to `.env.local`):
+
+| Variable                   | Required               | Description                              |
+| -------------------------- | ---------------------- | ---------------------------------------- |
+| `DATABASE_URL`             | For cloud saves/scores | Neon Postgres connection string          |
+| `FARM_CONTACT_WEBHOOK_URL` | Optional               | Webhook URL for contact form submissions |
 
 This repository will stay in sync with your deployed chats on [v0.dev](https://v0.dev).
 Any changes you make to your deployed app will be automatically pushed to this repository from [v0.dev](https://v0.dev).

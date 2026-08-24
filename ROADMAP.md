@@ -1,6 +1,6 @@
 # ROADMAP
 
-Last Updated: 2026-08-07
+Last Updated: 2026-08-22
 
 ## 2026 Q1 ✅
 
@@ -16,6 +16,7 @@ Last Updated: 2026-08-07
 
 - [ ] Continue SVG component extraction — worker body shapes, enemy unit torsos, building base rects are next candidates for shared components (see iter109 pattern)
 - [x] Extract blacksmith upgrade costs to shared config constants — `BLACKSMITH_STEEL_EDGE_COSTS` and `BLACKSMITH_IRON_HIDE_COSTS` in `constants.ts`; TechTab consumes them (2026-08-07)
+- [ ] Componentize large files Phase 2 — migrate logic from `useGameLoop.tsx` (5369 lines) into `useEnemyAI`, `useResourceTick`, `useCombatResolution`, `usePathfinding` domain hooks; wire `RTSMap.tsx` (4392 lines) through `MapRenderer` + `mapSelectors`
 - [ ] Profile render loop on 25×25 map with 30+ units; investigate canvas or OffscreenCanvas fallback if SVG drops below 30fps on mobile
 - [ ] Add unit tests for remaining core helpers: `tileDist`, `tileToSvg`, A\* pathfinding (damage formulas ✅ covered in towerHelpers/spawnHelpers; map selectors ✅ covered in mapSelectors tests)
 
