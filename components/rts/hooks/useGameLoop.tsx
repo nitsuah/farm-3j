@@ -40,12 +40,16 @@ export function useGameLoop(ctx: RTSGameContext) {
       const dt = Math.min(deltaTime, 0.1) * gameSpeedRef.current;
       prevTimeRef.current = timestamp;
 
-      tickCombat(dt);
-      tickResources(dt);
-      tickEnemyAI(dt);
-      tickFog();
-
-      animationRef.current = requestAnimationFrame(animate);
+      try {
+        tickCombat(dt);
+        tickResources(dt);
+        tickEnemyAI(dt);
+        tickFog();
+      } catch (err) {
+        reportError(err);
+      } finally {
+        animationRef.current = requestAnimationFrame(animate);
+      }
     }
 
     animationRef.current = requestAnimationFrame(animate);

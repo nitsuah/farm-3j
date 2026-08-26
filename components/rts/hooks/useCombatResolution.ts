@@ -78,20 +78,16 @@ export function useCombatResolution(ctx: RTSGameContext): (dt: number) => void {
             `📖 +80 XP!`,
             '#c084fc'
           );
-          setDroppedItems(ds => {
-            pendingPickupRef.current.delete(nearItem.id);
-            return ds.filter(d => d.id !== nearItem.id);
-          });
+          setDroppedItems(ds => ds.filter(d => d.id !== nearItem.id));
+          pendingPickupRef.current.delete(nearItem.id);
         } else if (heroItemsRef.current.length < HERO_MAX_ITEMS) {
           pendingPickupRef.current.add(nearItem.id);
           setHeroItems(hi => [
             ...hi,
             { id: nearItem.id, itemId: nearItem.itemId },
           ]);
-          setDroppedItems(ds => {
-            pendingPickupRef.current.delete(nearItem.id);
-            return ds.filter(d => d.id !== nearItem.id);
-          });
+          setDroppedItems(ds => ds.filter(d => d.id !== nearItem.id));
+          pendingPickupRef.current.delete(nearItem.id);
           addFloatingText(
             Math.round(heroForPickup.x),
             Math.round(heroForPickup.y),

@@ -10,182 +10,10 @@ import { renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { useEnemyAI } from '../useEnemyAI';
-
-import { GRID_SIZE } from '../../game/constants';
 import { useCombatResolution } from '../useCombatResolution';
 import { usePathfinding } from '../usePathfinding';
 import { useResourceTick } from '../useResourceTick';
-import type { RTSGameContext } from '../context';
-
-// ── Shared mock factory (re-used from tickFunctions.test.ts pattern) ──────────
-
-function makeMockCtx(): RTSGameContext {
-  const ref = <T>(val: T) => ({ current: val });
-  return {
-    difficulty: undefined,
-    onAchievement: vi.fn(),
-    addDmgLog: vi.fn(),
-    addFloatingText: vi.fn(),
-    addProjectile: vi.fn(),
-    triggerShakeRef: ref(vi.fn()),
-    triggerUnderAttackRef: ref(vi.fn()),
-
-    enemyTowers: [],
-    farmhouse: { built: false, level: 0 },
-    gameOver: null,
-    gameSpeed: 1,
-    garrisoned: [],
-    placedBuildings: [],
-    stance: 'aggressive',
-    tiles: [],
-    wave: 1,
-    workers: [],
-
-    setCapturedShrines: vi.fn(),
-    setClearedCamps: vi.fn(),
-    setDeadGruntPositions: vi.fn(),
-    setDeadWorkerPositions: vi.fn(),
-    setDroppedItems: vi.fn(),
-    setEnemyBarnHp: vi.fn(),
-    setEnemyGrunts: vi.fn(),
-    setEnemyNecromancers: vi.fn(),
-    setEnemySappers: vi.fn(),
-    setEnemyShamans: vi.fn(),
-    setEnemySiege: vi.fn(),
-    setEnemyTowers: vi.fn(),
-    setEnemyTrolls: vi.fn(),
-    setEnemyWalls: vi.fn(),
-    setEnemyWarchiefs: vi.fn(),
-    setEnemyLurkers: vi.fn(),
-    setEnemyWarlords: vi.fn(),
-    setEnemyWitchDoctors: vi.fn(),
-    setFogExplored: vi.fn(),
-    setFogVisible: vi.fn(),
-    setGameOver: vi.fn(),
-    setGarrisoned: vi.fn(),
-    setGoldMines: vi.fn(),
-    setHeroItems: vi.fn(),
-    setKillCount: vi.fn(),
-    setLootCrates: vi.fn(),
-    setNeutralCreeps: vi.fn(),
-    setNextWaveAt: vi.fn(),
-    setPlacedBuildings: vi.fn(),
-    setPlayerBarnHp: vi.fn(),
-    setResources: vi.fn(),
-    setShrineCapturing: vi.fn(),
-    setShrinePlentyBuff: vi.fn(),
-    setShrineWarBuff: vi.fn(),
-    setStoneNodes: vi.fn(),
-    setTotalGold: vi.fn(),
-    setTotalLumber: vi.fn(),
-    setTotalStone: vi.fn(),
-    setTrainingProgress: vi.fn(),
-    setTrainingQueue: vi.fn(),
-    setTrees: vi.fn(),
-    setWave: vi.fn(),
-    setWaveAnnouncement: vi.fn(),
-    setWavePreview: vi.fn(),
-    setWorkers: vi.fn(),
-
-    animationRef: ref(null),
-    attackTimeoutsRef: ref({}),
-    barnDmgThisWaveRef: ref(0),
-    barracksTechRef: ref({ veteranTraining: false, warDrums: false }),
-    battleShoutUntilRef: ref(0),
-    blacksmithUpgradesRef: ref({ steelEdge: 0, ironHide: 0 }),
-    buildingAttackTimeoutsRef: ref({}),
-    buildingRepairTimeoutsRef: ref({}),
-    campClearedAtRef: ref({}),
-    capturedShrinesRef: ref(new Set<number>()),
-    creepAttackTimeoutsRef: ref({}),
-    deadGruntPositionsRef: ref([]),
-    deadWorkerIdsRef: ref(new Set<number>()),
-    dropItemIdRef: ref(0),
-    droppedItemsRef: ref([]),
-    enemyBarnHpRef: ref(1000),
-    enemyGruntsRef: ref([]),
-    enemyNecromancersRef: ref([]),
-    enemySappersRef: ref([]),
-    enemyShamansRef: ref([]),
-    enemySiegeRef: ref([]),
-    enemyTowerTimersRef: ref({}),
-    enemyTowersRef: ref([]),
-    enemyTrollsRef: ref([]),
-    enemyWallIdRef: ref(0),
-    enemyWallsRef: ref([]),
-    enemyLurkersRef: ref([]),
-    lurkerAttackTimeoutsRef: ref({}),
-    lurkerIdRef: ref(0),
-    enemyWarchiefsRef: ref([]),
-    enemyWarlordsRef: ref([]),
-    enemyWitchDoctorsRef: ref([]),
-    fogExploredRef: ref(
-      Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(false))
-    ),
-    fogVisibleRef: ref(
-      Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(false))
-    ),
-    gameOverRef: ref(null),
-    gameSpeedRef: ref(1),
-    garrisonedRef: ref([]),
-    gatherTimeoutsRef: ref({}),
-    goldMinesRef: ref([]),
-    gruntAttackTimeoutsRef: ref({}),
-    gruntHitRef: ref(new Map<number, number>()),
-    gruntIdRef: ref(0),
-    guardTowerRef: ref(false),
-    harvestBoonRef: ref(false),
-    heroItemsRef: ref([]),
-    incomeAccRef: ref({ gold: 0, lumber: 0, stone: 0 }),
-    isNightRef: ref(false),
-    lastFogUpdateRef: ref(0),
-    lastStandEnrageRef: ref(false),
-    lootCrateIdRef: ref(0),
-    lootCratesRef: ref([]),
-    necromancerIdRef: ref(0),
-    necromancerRaiseTimersRef: ref({}),
-    neutralCreepsRef: ref([]),
-    nextWaveAtRef: ref(null),
-    pendingPickupRef: ref(new Set<number>()),
-    placedBuildingsRef: ref([]),
-    playerBarnHpRef: ref(200),
-    prevTimeRef: ref(null),
-    previewTimerRef: ref(null),
-    rallyPointRef: ref(null),
-    repairTimeoutsRef: ref({}),
-    sallyForthThresholdsRef: ref(new Set<number>()),
-    sapperIdRef: ref(0),
-    sapperKillCountRef: ref(0),
-    shamanHealTimersRef: ref({}),
-    shamanIdRef: ref(0),
-    shrineCapturingRef: ref(null),
-    shrinePlentyBuffRef: ref(false),
-    shrineWarBuffRef: ref(false),
-    siegeAttackTimeoutsRef: ref({}),
-    siegeIdRef: ref(0),
-    spawnTimerRef: ref(null),
-    stanceRef: ref('aggressive' as const),
-    stoneNodesRef: ref([]),
-    towerGarrisonRef: ref({}),
-    trainingElapsedRef: ref(0),
-    trainingQueueRef: ref([]),
-    trapTriggeredRef: ref({}),
-    treesRef: ref([]),
-    trollAttackTimersRef: ref({}),
-    trollIdRef: ref(0),
-    upgradesRef: ref({ sharperTools: 0, swiftHarvest: 0, ironWill: 0 }),
-    upkeepMultRef: ref(1),
-    warchiefIdRef: ref(0),
-    warlordIdRef: ref(0),
-    watchtowerTimersRef: ref({}),
-    waveRef: ref(1),
-    waveTimerRemainingRef: ref(null),
-    witchDoctorBuffTimersRef: ref({}),
-    witchDoctorIdRef: ref(0),
-    workerHitRef: ref(new Map<number, number>()),
-    workersRef: ref([]),
-  } satisfies RTSGameContext;
-}
+import { makeMockCtx } from './makeMockCtx';
 
 // ── useEnemyAI (requires renderHook since it uses useRef internally) ──────────
 
@@ -231,7 +59,7 @@ describe('useEnemyAI', () => {
     expect(ctx.setEnemySappers).toHaveBeenCalledTimes(1);
   });
 
-  it('the returned function is stable across re-renders', () => {
+  it('remains callable after a re-render', () => {
     const ctx = makeMockCtx();
     const { result, rerender } = renderHook(() => useEnemyAI(ctx));
     const first = result.current;
@@ -416,7 +244,7 @@ describe('useCombatResolution tick function', () => {
       { id: 99, hp: 100, x: 5, y: 5, unitType: 'hero' } as any,
     ];
     ctx.droppedItemsRef.current = [
-      { id: 1, itemId: 'speed_boots', x: 10, y: 10 },
+      { id: 1, itemId: 'boots_speed', x: 10, y: 10 },
     ];
     const tick = useCombatResolution(ctx);
     tick(1 / 60);

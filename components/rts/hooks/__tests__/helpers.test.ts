@@ -93,12 +93,14 @@ describe('computeGruntCount', () => {
     }
   });
 
-  it('count is non-decreasing over waves (ignoring bonus oscillation at the cap)', () => {
-    // The base count is non-decreasing; bonus only appears every 3rd wave
-    const nonBonus = (w: number) =>
-      Math.min(GRUNT_COUNT_CAP, GRUNT_COUNT_BASE + Math.floor(w / 5));
+  it('non-double-assault count is non-decreasing over waves', () => {
+    // Skip wave pairs that straddle a double-assault (every 3rd wave gets a bonus),
+    // since a non-bonus wave can be lower than the preceding bonus wave.
     for (let w = 1; w < 50; w++) {
-      expect(nonBonus(w + 1)).toBeGreaterThanOrEqual(nonBonus(w));
+      if ((w + 1) % 3 === 0 || w % 3 === 0) continue;
+      expect(computeGruntCount(w + 1)).toBeGreaterThanOrEqual(
+        computeGruntCount(w)
+      );
     }
   });
 });

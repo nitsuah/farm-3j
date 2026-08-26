@@ -1,6 +1,8 @@
 import type { RTSGameContext } from './context';
 
 // Returns a stable tick function called each rAF frame by useGameLoop.
+// Idempotency: refs track processed IDs so each dead unit/structure is only
+// handled once across the multiple frames before React state commits.
 export function useResourceTick(ctx: RTSGameContext): (dt: number) => void {
   const {
     addFloatingText,
@@ -12,15 +14,27 @@ export function useResourceTick(ctx: RTSGameContext): (dt: number) => void {
     workersRef,
   } = ctx;
 
-  return (_dt: number) => {
-    // Food drain from dead workers
-    const deadWorkerCount = workersRef.current.filter(w => w.hp <= 0).length;
-    if (deadWorkerCount > 0)
-      setResources(r => ({ ...r, food: Math.max(0, r.food - deadWorkerCount) }));
+  const processedDeadWorkerIds = new Set<number>();
+  const processedWallIds = new Set<number>();
+  const processedTowerIds = new Set<number>();
 
-    // Gold from destroyed enemy walls
-    const destroyedWalls = enemyWallsRef.current.filter(ew => ew.hp <= 0);
+  return (_dt: number) => {
+    // Food drain from dead workers — only once per worker death
+    const newlyDeadWorkers = workersRef.current.filter(
+      w => w.hp <= 0 && !processedDeadWorkerIds.has(w.id)
+    );
+    if (newlyDeadWorkers.length > 0) {
+      newlyDeadWorkers.forEach(w => processedDeadWorkerIds.add(w.id));
+      const count = newlyDeadWorkers.length;
+      setResources(r => ({ ...r, food: Math.max(0, r.food - count) }));
+    }
+
+    // Gold from destroyed enemy walls — only once per wall
+    const destroyedWalls = enemyWallsRef.current.filter(
+      ew => ew.hp <= 0 && !processedWallIds.has(ew.id)
+    );
     if (destroyedWalls.length > 0) {
+      destroyedWalls.forEach(ew => processedWallIds.add(ew.id));
       setEnemyWalls(ews => ews.filter(ew => ew.hp > 0));
       destroyedWalls.forEach(ew => {
         const gold = 15;
@@ -29,9 +43,12 @@ export function useResourceTick(ctx: RTSGameContext): (dt: number) => void {
       });
     }
 
-    // Gold from destroyed enemy towers
-    const destroyedTowers = enemyTowersRef.current.filter(t => t.hp <= 0);
+    // Gold from destroyed enemy towers — only once per tower
+    const destroyedTowers = enemyTowersRef.current.filter(
+      t => t.hp <= 0 && !processedTowerIds.has(t.id)
+    );
     if (destroyedTowers.length > 0) {
+      destroyedTowers.forEach(t => processedTowerIds.add(t.id));
       setEnemyTowers(ts => ts.filter(t => t.hp > 0));
       destroyedTowers.forEach(t => {
         const gold = t.id === -1 ? 40 : 25;
