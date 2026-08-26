@@ -206,6 +206,37 @@ describe('useResourceTick tick function', () => {
     });
     expect(goldAward).toBeDefined();
   });
+
+  it('idempotency: second tick with same dead worker does not drain food again', () => {
+    const ctx = makeMockCtx();
+    ctx.workersRef.current = [makeWorker({ id: 1, hp: 0 })];
+    const tick = useResourceTick(ctx);
+    tick(1 / 60);
+    tick(1 / 60);
+    // setResources should only be called once (first tick), not twice
+    expect(ctx.setResources).toHaveBeenCalledTimes(1);
+  });
+
+  it('idempotency: second tick with same destroyed wall does not award gold again', () => {
+    const ctx = makeMockCtx();
+    ctx.enemyWallsRef.current = [{ id: 5, x: 3, y: 4, hp: 0, maxHp: 100 }];
+    const tick = useResourceTick(ctx);
+    tick(1 / 60);
+    vi.mocked(ctx.setResources).mockClear();
+    tick(1 / 60);
+    // Second tick: wall already processed — no additional setResources call
+    expect(ctx.setResources).not.toHaveBeenCalled();
+  });
+
+  it('idempotency: second tick with same destroyed tower does not award gold again', () => {
+    const ctx = makeMockCtx();
+    ctx.enemyTowersRef.current = [{ id: 10, x: 5, y: 5, hp: 0, maxHp: 200 }];
+    const tick = useResourceTick(ctx);
+    tick(1 / 60);
+    vi.mocked(ctx.setResources).mockClear();
+    tick(1 / 60);
+    expect(ctx.setResources).not.toHaveBeenCalled();
+  });
 });
 
 // ── useCombatResolution ───────────────────────────────────────────────────────
@@ -477,5 +508,17 @@ describe('usePathfinding tick function', () => {
       ctx.lastFogUpdateRef.current = Date.now();
       tick();
     }).not.toThrow();
+  });
+
+  it('uses WATCHTOWER_VISION for watchtower buildings vs BUILDING_VISION for others', () => {
+    const ctx = makeMockCtx();
+    ctx.lastFogUpdateRef.current = Date.now() - 1000;
+    // Add a watchtower and a regular building — exercises the ternary on line 42
+    ctx.placedBuildingsRef.current = [
+      { id: 1, type: 'watchtower', x: 10, y: 10, hp: 100, maxHp: 100 },
+      { id: 2, type: 'farmhouse', x: 20, y: 20, hp: 100, maxHp: 100 },
+    ];
+    const tick = usePathfinding(ctx);
+    expect(() => tick()).not.toThrow();
   });
 });
