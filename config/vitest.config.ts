@@ -53,6 +53,8 @@ export default defineConfig({
         'components/rts/game/sound.ts',
         'components/rts/game/persistence.ts',
         'components/rts/game/achievements.ts',
+        // Server-only neon client — requires DATABASE_URL and cannot run in jsdom
+        'lib/db.ts',
       ],
       // Coverage thresholds — Phase 2: Core logic + RTS game systems.
       // AI tick files (~7 kloc) are excluded (smoke-tested only).
