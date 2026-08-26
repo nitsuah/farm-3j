@@ -26,9 +26,11 @@ export default defineConfig({
       reporter: ['text', 'json', 'html', 'lcov'],
       include: [
         'lib/**/*.{ts,tsx}',
-        // RTS game logic — pure functions and AI tick helpers
+        // RTS game logic — pure functions, helpers, and the 4 domain hooks.
+        // AI tick files (tickWorkers.ts ~3 kloc, others 300-600 loc) are
+        // excluded: they require integration-level tests to reach meaningful
+        // coverage and are verified by smoke tests in tickEnemyAI.test.ts.
         'components/rts/game/**/*.{ts,tsx}',
-        'components/rts/hooks/ai/**/*.{ts,tsx}',
         'components/rts/hooks/spawnHelpers.ts',
         'components/rts/hooks/towerHelpers.ts',
         'components/rts/hooks/useCombatResolution.ts',
