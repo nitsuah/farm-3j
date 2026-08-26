@@ -39,11 +39,11 @@ describe('useEnemyAI', () => {
     expect(ctx.setWorkers).toHaveBeenCalledTimes(1);
   });
 
-  it('calls setEnemyGrunts once per tick (for tickEnemyGrunts)', () => {
+  it('calls setEnemyGrunts twice per tick (filter dead + update state)', () => {
     const ctx = makeMockCtx();
     const { result } = renderHook(() => useEnemyAI(ctx));
     result.current(1 / 60);
-    expect(ctx.setEnemyGrunts).toHaveBeenCalledTimes(1);
+    expect(ctx.setEnemyGrunts).toHaveBeenCalledTimes(2);
   });
 
   it('calls setNeutralCreeps once per tick (for tickNeutralCreeps)', () => {

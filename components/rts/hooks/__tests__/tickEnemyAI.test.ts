@@ -26,10 +26,10 @@ describe('tickEnemyGrunts', () => {
     expect(() => tickEnemyGrunts(ctx, 1 / 60)).not.toThrow();
   });
 
-  it('calls setEnemyGrunts once per tick', () => {
+  it('calls setEnemyGrunts twice per tick (filter dead + update state)', () => {
     const ctx = makeMockCtx();
     tickEnemyGrunts(ctx, 1 / 60);
-    expect(ctx.setEnemyGrunts).toHaveBeenCalledTimes(1);
+    expect(ctx.setEnemyGrunts).toHaveBeenCalledTimes(2);
   });
 
   it('does not touch setGameOver when no grunts are attacking the barn', () => {

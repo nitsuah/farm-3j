@@ -226,20 +226,24 @@ describe('makeTiles', () => {
     expect(tiles[9]![2]).toBe('water');
   });
 
-  it('dirt path column j=8 is dirt (where not overridden by water)', () => {
+  it('dirt path column j=8 is dirt (where not overridden by water or trees)', () => {
     const tiles = makeTiles();
     for (let i = 0; i < GRID_SIZE; i++) {
-      if (tiles[i]![8] !== 'water') {
-        expect(tiles[i]![8]).toBe('dirt');
+      const t = tiles[i]![8];
+      // rows 13–14 have tree clusters that override the dirt path
+      if (t !== 'water' && t !== 'tree') {
+        expect(t).toBe('dirt');
       }
     }
   });
 
-  it('dirt path row i=12 is dirt (where not overridden)', () => {
+  it('dirt path row i=12 is dirt (where not overridden by water or rocks)', () => {
     const tiles = makeTiles();
     for (let j = 0; j < GRID_SIZE; j++) {
-      if (tiles[12]![j] !== 'water') {
-        expect(tiles[12]![j]).toBe('dirt');
+      const t = tiles[12]![j];
+      // cols 6–7 have rock clusters that override the dirt path
+      if (t !== 'water' && t !== 'rock') {
+        expect(t).toBe('dirt');
       }
     }
   });
