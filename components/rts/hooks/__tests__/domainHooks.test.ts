@@ -13,6 +13,7 @@ import { useEnemyAI } from '../useEnemyAI';
 import { useCombatResolution } from '../useCombatResolution';
 import { usePathfinding } from '../usePathfinding';
 import { useResourceTick } from '../useResourceTick';
+import { GRID_SIZE } from '../../game/constants';
 import { makeMockCtx } from './makeMockCtx';
 
 // ── useEnemyAI (requires renderHook since it uses useRef internally) ──────────
