@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { farmReducer, initialFarmState } from '../farmReducer';
-import { FarmAction, Entity } from '../types';
+import { FarmAction, FarmState, Entity } from '../types';
 
 describe('FarmReducer', () => {
   describe('Initial State', () => {
@@ -811,12 +811,12 @@ describe('FarmReducer', () => {
     });
 
     it('does not sell hay (no price defined)', () => {
-      const testState = {
+      const testState: FarmState = {
         ...initialFarmState,
         resources: { ...initialFarmState.resources, hay: 50 },
         money: 200,
       };
-      const newState = farmReducer(testState, {
+      const newState: FarmState = farmReducer(testState, {
         type: 'SELL_RESOURCE',
         payload: { resource: 'hay', amount: 10 },
       });
@@ -827,7 +827,7 @@ describe('FarmReducer', () => {
 
   describe('PRODUCE_RESOURCES — timed production branch', () => {
     it('produces inventory when lastProduced is >3 seconds ago', () => {
-      const testState = {
+      const testState: FarmState = {
         ...initialFarmState,
         entities: [
           {
@@ -850,14 +850,16 @@ describe('FarmReducer', () => {
           irrigation: 0,
         },
       };
-      const newState = farmReducer(testState, { type: 'PRODUCE_RESOURCES' });
+      const newState: FarmState = farmReducer(testState, {
+        type: 'PRODUCE_RESOURCES',
+      });
       // The cow produced 1 unit and it was collected immediately
       expect(newState.resources.milk).toBe(1);
       expect(newState.entities[0]!.inventory).toBe(0); // cleared after collection
     });
 
     it('skips production for non-animal entities (barn, fence)', () => {
-      const testState = {
+      const testState: FarmState = {
         ...initialFarmState,
         entities: [
           { id: 'barn-1', type: 'barn' as const, x: 50, y: 40 },
@@ -865,7 +867,9 @@ describe('FarmReducer', () => {
         ],
         resources: { ...initialFarmState.resources, milk: 5 },
       };
-      const newState = farmReducer(testState, { type: 'PRODUCE_RESOURCES' });
+      const newState: FarmState = farmReducer(testState, {
+        type: 'PRODUCE_RESOURCES',
+      });
       // Non-animal entities are skipped; milk unchanged
       expect(newState.resources.milk).toBe(5);
     });
@@ -874,7 +878,7 @@ describe('FarmReducer', () => {
   describe('default case', () => {
     it('returns state unchanged for an unknown action type', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const newState = farmReducer(initialFarmState, {
+      const newState: FarmState = farmReducer(initialFarmState, {
         type: 'UNKNOWN',
       } as any);
       expect(newState).toBe(initialFarmState);

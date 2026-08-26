@@ -13,7 +13,12 @@ import { useEnemyAI } from '../useEnemyAI';
 import { useCombatResolution } from '../useCombatResolution';
 import { usePathfinding } from '../usePathfinding';
 import { useResourceTick } from '../useResourceTick';
-import { GRID_SIZE, HERO_MAX_ITEMS, XP_TO_LEVEL_1 } from '../../game/constants';
+import {
+  GRID_SIZE,
+  HERO_MAX_ITEMS,
+  TOME_XP_REWARD,
+  XP_TO_LEVEL_1,
+} from '../../game/constants';
 import type { Resources } from '../../game/types';
 import { makeMockCtx, makeDroppedItem, makeWorker } from './makeMockCtx';
 
@@ -336,7 +341,7 @@ describe('useCombatResolution tick function', () => {
 
   it('picks up tome_xp: calls setWorkers, setDroppedItems, addFloatingText for XP', () => {
     const ctx = makeMockCtx();
-    // Hero at level 1 so picking up tome (80 xp) won't trigger level-up to 2
+    // Hero at level 1; TOME_XP_REWARD stays below XP_TO_LEVEL_2, so no level-up to 2
     ctx.workersRef.current = [
       makeWorker({
         id: 99,
@@ -362,7 +367,7 @@ describe('useCombatResolution tick function', () => {
 
   it('picks up tome_xp that causes a level-up: addFloatingText called twice', () => {
     const ctx = makeMockCtx();
-    // Hero at level 0, xp 0 → tome gives 80 xp → 80 >= XP_TO_LEVEL_1 → level 1
+    // Hero at level 0, xp 0 → tome gives TOME_XP_REWARD xp → >= XP_TO_LEVEL_1 → level 1
     ctx.workersRef.current = [
       makeWorker({
         id: 99,
@@ -385,8 +390,8 @@ describe('useCombatResolution tick function', () => {
     const calls = vi.mocked(ctx.addFloatingText).mock.calls;
     const levelUpCall = calls.find(([, , msg]) => msg.includes('Level'));
     expect(levelUpCall).toBeDefined();
-    // XP should be at least XP_TO_LEVEL_1 after pickup
-    expect(80).toBeGreaterThanOrEqual(XP_TO_LEVEL_1);
+    // Guard the fixture: the tome must cross the level-1 threshold.
+    expect(TOME_XP_REWARD).toBeGreaterThanOrEqual(XP_TO_LEVEL_1);
   });
 
   it('pendingPickupRef cleanup: removes id when item is no longer in droppedItemsRef', () => {

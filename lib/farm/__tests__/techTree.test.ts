@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { TECH_TREE } from '../techTree';
+import { TECH_TREE, TechNode } from '../techTree';
 
 describe('TECH_TREE', () => {
   it('has 4 tech nodes', () => {
@@ -31,19 +31,25 @@ describe('TECH_TREE', () => {
   });
 
   it('tractor-unlock has no prerequisites', () => {
-    const tractor = TECH_TREE.find(n => n.id === 'tractor-unlock');
+    const tractor: TechNode | undefined = TECH_TREE.find(
+      n => n.id === 'tractor-unlock'
+    );
     expect(tractor).toBeDefined();
     expect(tractor!.prerequisites).toHaveLength(0);
   });
 
   it('barn-upgrade requires tractor-unlock', () => {
-    const barn = TECH_TREE.find(n => n.id === 'barn-upgrade');
+    const barn: TechNode | undefined = TECH_TREE.find(
+      n => n.id === 'barn-upgrade'
+    );
     expect(barn).toBeDefined();
     expect(barn!.prerequisites).toContain('tractor-unlock');
   });
 
   it('animal-ability requires barn-upgrade', () => {
-    const ability = TECH_TREE.find(n => n.id === 'animal-ability');
+    const ability: TechNode | undefined = TECH_TREE.find(
+      n => n.id === 'animal-ability'
+    );
     expect(ability).toBeDefined();
     expect(ability!.prerequisites).toContain('barn-upgrade');
   });
