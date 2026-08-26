@@ -1,3 +1,8 @@
+import {
+  ENEMY_ARCHER_TOWER_GOLD,
+  ENEMY_TOWER_GOLD,
+  ENEMY_WALL_GOLD,
+} from '../game/constants';
 import type { RTSGameContext } from './context';
 
 // Returns a stable tick function called each rAF frame by useGameLoop.
@@ -37,9 +42,8 @@ export function useResourceTick(ctx: RTSGameContext): (dt: number) => void {
       destroyedWalls.forEach(ew => processedWallIds.add(ew.id));
       setEnemyWalls(ews => ews.filter(ew => ew.hp > 0));
       destroyedWalls.forEach(ew => {
-        const gold = 15;
-        setResources(r => ({ ...r, gold: r.gold + gold }));
-        addFloatingText(ew.x, ew.y, `🧱 +${gold}🪙`, '#fbbf24');
+        setResources(r => ({ ...r, gold: r.gold + ENEMY_WALL_GOLD }));
+        addFloatingText(ew.x, ew.y, `🧱 +${ENEMY_WALL_GOLD}🪙`, '#fbbf24');
       });
     }
 
@@ -51,7 +55,7 @@ export function useResourceTick(ctx: RTSGameContext): (dt: number) => void {
       destroyedTowers.forEach(t => processedTowerIds.add(t.id));
       setEnemyTowers(ts => ts.filter(t => t.hp > 0));
       destroyedTowers.forEach(t => {
-        const gold = t.id === -1 ? 40 : 25;
+        const gold = t.id === -1 ? ENEMY_ARCHER_TOWER_GOLD : ENEMY_TOWER_GOLD;
         setResources(r => ({ ...r, gold: r.gold + gold }));
         addFloatingText(t.x, t.y, `🏰 +${gold}🪙`, '#fbbf24');
       });

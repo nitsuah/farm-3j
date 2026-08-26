@@ -1,6 +1,7 @@
 import {
   BARN_POS,
   BARN_VISION,
+  BUILDING_VISION,
   GRID_SIZE,
   WATCHTOWER_VISION,
   WORKER_VISION,
@@ -38,7 +39,7 @@ export function usePathfinding(ctx: RTSGameContext): () => void {
       ...placedBuildingsRef.current.map(b => ({
         x: b.x,
         y: b.y,
-        r: b.type === 'watchtower' ? WATCHTOWER_VISION : 2,
+        r: b.type === 'watchtower' ? WATCHTOWER_VISION : BUILDING_VISION,
       })),
     ]);
 

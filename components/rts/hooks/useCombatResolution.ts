@@ -1,6 +1,7 @@
 import {
   HERO_ITEM_DATA,
   HERO_MAX_ITEMS,
+  TOME_XP_REWARD,
   VETERAN_HP_BONUS,
   XP_TO_LEVEL_1,
   XP_TO_LEVEL_2,
@@ -42,7 +43,7 @@ export function useCombatResolution(ctx: RTSGameContext): (dt: number) => void {
           setWorkers(ws2 =>
             ws2.map(u => {
               if (u.unitType !== 'hero') return u;
-              const newXp = u.xp + 80;
+              const newXp = u.xp + TOME_XP_REWARD;
               const newLevel =
                 newXp >= XP_TO_LEVEL_3
                   ? 3
@@ -75,7 +76,7 @@ export function useCombatResolution(ctx: RTSGameContext): (dt: number) => void {
           addFloatingText(
             Math.round(heroForPickup.x),
             Math.round(heroForPickup.y),
-            `📖 +80 XP!`,
+            `📖 +${TOME_XP_REWARD} XP!`,
             '#c084fc'
           );
           setDroppedItems(ds => ds.filter(d => d.id !== nearItem.id));
