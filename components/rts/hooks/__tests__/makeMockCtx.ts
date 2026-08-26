@@ -1,6 +1,7 @@
 import { vi } from 'vitest';
 
 import { GRID_SIZE } from '../../game/constants';
+import type { DroppedItem, WorkerState } from '../../game/types';
 import type { RTSGameContext } from '../context';
 
 const ref = <T>(val: T) => ({ current: val });
@@ -174,4 +175,45 @@ export function makeMockCtx(): RTSGameContext {
     workerHitRef: ref(new Map<number, number>()),
     workersRef: ref([]),
   } satisfies RTSGameContext;
+}
+
+export function makeWorker(overrides: Partial<WorkerState> = {}): WorkerState {
+  return {
+    id: 1,
+    x: 0,
+    y: 0,
+    selected: false,
+    movingTo: null,
+    path: [],
+    gathering: null,
+    attacking: null,
+    repairing: null,
+    chargeCooldown: 0,
+    sprintCooldown: 0,
+    sprinting: false,
+    waypoints: [],
+    attackMove: false,
+    attackMoveTarget: null,
+    carrying: { gold: 0, lumber: 0, stone: 0 },
+    state: 'idle',
+    group: null,
+    hp: 100,
+    maxHp: 100,
+    patrol: null,
+    holdPosition: false,
+    unitType: 'farmer',
+    xp: 0,
+    level: 0,
+    ...overrides,
+  };
+}
+
+export function makeDroppedItem(overrides: Partial<DroppedItem> = {}): DroppedItem {
+  return {
+    id: 1,
+    itemId: 'boots_speed',
+    x: 0,
+    y: 0,
+    ...overrides,
+  };
 }

@@ -14,7 +14,7 @@ import { useCombatResolution } from '../useCombatResolution';
 import { usePathfinding } from '../usePathfinding';
 import { useResourceTick } from '../useResourceTick';
 import { GRID_SIZE } from '../../game/constants';
-import { makeMockCtx } from './makeMockCtx';
+import { makeMockCtx, makeDroppedItem, makeWorker } from './makeMockCtx';
 
 // ── useEnemyAI (requires renderHook since it uses useRef internally) ──────────
 
@@ -86,9 +86,9 @@ describe('useResourceTick tick function', () => {
   it('drains food when dead workers are present', () => {
     const ctx = makeMockCtx();
     ctx.workersRef.current = [
-      { id: 1, hp: 0 } as any, // dead
-      { id: 2, hp: 0 } as any, // dead
-      { id: 3, hp: 50 } as any, // alive
+      makeWorker({ id: 1, hp: 0 }), // dead
+      makeWorker({ id: 2, hp: 0 }), // dead
+      makeWorker({ id: 3, hp: 50 }), // alive
     ];
     const tick = useResourceTick(ctx);
     tick(1 / 60);
@@ -104,9 +104,9 @@ describe('useResourceTick tick function', () => {
   it('food cannot go below 0 from dead worker drain', () => {
     const ctx = makeMockCtx();
     ctx.workersRef.current = [
-      { id: 1, hp: 0 } as any,
-      { id: 2, hp: 0 } as any,
-      { id: 3, hp: 0 } as any,
+      makeWorker({ id: 1, hp: 0 }),
+      makeWorker({ id: 2, hp: 0 }),
+      makeWorker({ id: 3, hp: 0 }),
     ];
     const tick = useResourceTick(ctx);
     tick(1 / 60);
@@ -192,7 +192,7 @@ describe('useCombatResolution tick function', () => {
 
   it('does not flag alive workers as dead', () => {
     const ctx = makeMockCtx();
-    ctx.workersRef.current = [{ id: 1, hp: 50, unitType: 'farmer' } as any];
+    ctx.workersRef.current = [makeWorker({ id: 1, hp: 50 })];
     const tick = useCombatResolution(ctx);
     tick(1 / 60);
     expect(ctx.setDeadWorkerPositions).not.toHaveBeenCalled();
@@ -200,9 +200,7 @@ describe('useCombatResolution tick function', () => {
 
   it('records newly dead workers in setDeadWorkerPositions', () => {
     const ctx = makeMockCtx();
-    ctx.workersRef.current = [
-      { id: 1, hp: 0, x: 3, y: 5, unitType: 'farmer' } as any,
-    ];
+    ctx.workersRef.current = [makeWorker({ id: 1, hp: 0, x: 3, y: 5 })];
     const tick = useCombatResolution(ctx);
     tick(1 / 60);
     expect(ctx.setDeadWorkerPositions).toHaveBeenCalledTimes(1);
@@ -210,9 +208,7 @@ describe('useCombatResolution tick function', () => {
 
   it('does not re-record already-tracked dead workers', () => {
     const ctx = makeMockCtx();
-    ctx.workersRef.current = [
-      { id: 1, hp: 0, x: 3, y: 5, unitType: 'farmer' } as any,
-    ];
+    ctx.workersRef.current = [makeWorker({ id: 1, hp: 0, x: 3, y: 5 })];
     // Pre-seed the dead set so worker id 1 is already known
     ctx.deadWorkerIdsRef.current.add(1);
     const tick = useCombatResolution(ctx);
@@ -222,7 +218,7 @@ describe('useCombatResolution tick function', () => {
 
   it('does not call setWorkers for hero pickup when no hero exists', () => {
     const ctx = makeMockCtx();
-    ctx.workersRef.current = [{ id: 1, hp: 50, unitType: 'farmer' } as any];
+    ctx.workersRef.current = [makeWorker({ id: 1, hp: 50 })];
     const tick = useCombatResolution(ctx);
     tick(1 / 60);
     expect(ctx.setWorkers).not.toHaveBeenCalled();
@@ -230,9 +226,7 @@ describe('useCombatResolution tick function', () => {
 
   it('does not pick up an item when no items are dropped', () => {
     const ctx = makeMockCtx();
-    ctx.workersRef.current = [
-      { id: 99, hp: 100, x: 5, y: 5, unitType: 'hero' } as any,
-    ];
+    ctx.workersRef.current = [makeWorker({ id: 99, hp: 100, x: 5, y: 5, unitType: 'hero' })];
     ctx.droppedItemsRef.current = [];
     const tick = useCombatResolution(ctx);
     tick(1 / 60);
@@ -241,12 +235,8 @@ describe('useCombatResolution tick function', () => {
 
   it('does not pick up an item that is too far away', () => {
     const ctx = makeMockCtx();
-    ctx.workersRef.current = [
-      { id: 99, hp: 100, x: 5, y: 5, unitType: 'hero' } as any,
-    ];
-    ctx.droppedItemsRef.current = [
-      { id: 1, itemId: 'boots_speed', x: 10, y: 10 },
-    ];
+    ctx.workersRef.current = [makeWorker({ id: 99, hp: 100, x: 5, y: 5, unitType: 'hero' })];
+    ctx.droppedItemsRef.current = [makeDroppedItem({ id: 1, itemId: 'boots_speed', x: 10, y: 10 })];
     const tick = useCombatResolution(ctx);
     tick(1 / 60);
     expect(ctx.setHeroItems).not.toHaveBeenCalled();
@@ -270,7 +260,7 @@ describe('usePathfinding tick function', () => {
     // Set last update to 1 second ago so the 350ms throttle has expired
     ctx.lastFogUpdateRef.current = Date.now() - 1000;
     // Put a worker inside the grid to create a visible region
-    ctx.workersRef.current = [{ x: 5, y: 5 } as any];
+    ctx.workersRef.current = [makeWorker({ x: 5, y: 5 })];
     const tick = usePathfinding(ctx);
     tick();
     // Should have computed visibility and called setFogVisible (there is a change
@@ -297,7 +287,7 @@ describe('usePathfinding tick function', () => {
       Array(GRID_SIZE).fill(true)
     );
     ctx.lastFogUpdateRef.current = Date.now() - 1000;
-    ctx.workersRef.current = [{ x: 5, y: 5 } as any];
+    ctx.workersRef.current = [makeWorker({ x: 5, y: 5 })];
     const tick = usePathfinding(ctx);
     tick();
     // Visible didn't change (already all true via fogVisibleRef) — setFogVisible
