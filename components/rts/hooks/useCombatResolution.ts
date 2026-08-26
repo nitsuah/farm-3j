@@ -26,6 +26,15 @@ export function useCombatResolution(ctx: RTSGameContext): (dt: number) => void {
   } = ctx;
 
   return (_dt: number) => {
+    // Release the idempotency guard only after the state has committed and
+    // droppedItemsRef no longer contains the item — prevents double-pickup
+    // across frames that run before React flushes setDroppedItems.
+    for (const id of pendingPickupRef.current) {
+      if (!droppedItemsRef.current.some(d => d.id === id)) {
+        pendingPickupRef.current.delete(id);
+      }
+    }
+
     // Hero item auto-pickup (must run outside setWorkers updater to avoid nested setState)
     const heroForPickup = workersRef.current.find(
       w => w.unitType === 'hero' && w.hp > 0
@@ -80,7 +89,7 @@ export function useCombatResolution(ctx: RTSGameContext): (dt: number) => void {
             '#c084fc'
           );
           setDroppedItems(ds => ds.filter(d => d.id !== nearItem.id));
-          pendingPickupRef.current.delete(nearItem.id);
+          // ID stays in pendingPickupRef until droppedItemsRef reflects removal
         } else if (heroItemsRef.current.length < HERO_MAX_ITEMS) {
           pendingPickupRef.current.add(nearItem.id);
           setHeroItems(hi => [
@@ -88,7 +97,7 @@ export function useCombatResolution(ctx: RTSGameContext): (dt: number) => void {
             { id: nearItem.id, itemId: nearItem.itemId },
           ]);
           setDroppedItems(ds => ds.filter(d => d.id !== nearItem.id));
-          pendingPickupRef.current.delete(nearItem.id);
+          // ID stays in pendingPickupRef until droppedItemsRef reflects removal
           addFloatingText(
             Math.round(heroForPickup.x),
             Math.round(heroForPickup.y),
