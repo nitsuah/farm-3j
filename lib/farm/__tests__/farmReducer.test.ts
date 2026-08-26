@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { farmReducer, initialFarmState } from '../farmReducer';
-import { FarmAction, Entity } from '../types';
+import { FarmAction, FarmState, Entity } from '../types';
 
 describe('FarmReducer', () => {
   describe('Initial State', () => {
@@ -808,6 +808,80 @@ describe('FarmReducer', () => {
 
       expect(newState.resources.milk).toBe(3); // Unchanged
       expect(newState.money).toBe(100); // Unchanged
+    });
+
+    it('does not sell hay (no price defined)', () => {
+      const testState: FarmState = {
+        ...initialFarmState,
+        resources: { ...initialFarmState.resources, hay: 50 },
+        money: 200,
+      };
+      const newState: FarmState = farmReducer(testState, {
+        type: 'SELL_RESOURCE',
+        payload: { resource: 'hay', amount: 10 },
+      });
+      expect(newState.resources.hay).toBe(50);
+      expect(newState.money).toBe(200);
+    });
+  });
+
+  describe('PRODUCE_RESOURCES — timed production branch', () => {
+    it('produces inventory when lastProduced is >3 seconds ago', () => {
+      const testState: FarmState = {
+        ...initialFarmState,
+        entities: [
+          {
+            id: 'cow1',
+            type: 'cow' as const,
+            x: 50,
+            y: 50,
+            inventory: 0,
+            lastProduced: Date.now() - 4000, // 4 seconds ago → triggers production
+          },
+        ],
+        resources: {
+          milk: 0,
+          eggs: 0,
+          meat: 0,
+          wool: 0,
+          hay: 0,
+          water: 0,
+          tractor: 0,
+          irrigation: 0,
+        },
+      };
+      const newState: FarmState = farmReducer(testState, {
+        type: 'PRODUCE_RESOURCES',
+      });
+      // The cow produced 1 unit and it was collected immediately
+      expect(newState.resources.milk).toBe(1);
+      expect(newState.entities[0]!.inventory).toBe(0); // cleared after collection
+    });
+
+    it('skips production for non-animal entities (barn, fence)', () => {
+      const testState: FarmState = {
+        ...initialFarmState,
+        entities: [
+          { id: 'barn-1', type: 'barn' as const, x: 50, y: 40 },
+          { id: 'fence-1', type: 'fence' as const, x: 10, y: 10 },
+        ],
+        resources: { ...initialFarmState.resources, milk: 5 },
+      };
+      const newState: FarmState = farmReducer(testState, {
+        type: 'PRODUCE_RESOURCES',
+      });
+      // Non-animal entities are skipped; milk unchanged
+      expect(newState.resources.milk).toBe(5);
+    });
+  });
+
+  describe('default case', () => {
+    it('returns state unchanged for an unknown action type', () => {
+      // Deliberately exercises the reducer's default branch via a type escape
+      const newState: FarmState = farmReducer(initialFarmState, {
+        type: 'UNKNOWN',
+      } as unknown as FarmAction);
+      expect(newState).toBe(initialFarmState);
     });
   });
 });
