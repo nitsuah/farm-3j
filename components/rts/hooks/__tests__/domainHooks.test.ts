@@ -14,6 +14,7 @@ import { useCombatResolution } from '../useCombatResolution';
 import { usePathfinding } from '../usePathfinding';
 import { useResourceTick } from '../useResourceTick';
 import { GRID_SIZE } from '../../game/constants';
+import type { Resources } from '../../game/types';
 import { makeMockCtx, makeDroppedItem, makeWorker } from './makeMockCtx';
 
 // ── useEnemyAI (requires renderHook since it uses useRef internally) ──────────
@@ -94,10 +95,16 @@ describe('useResourceTick tick function', () => {
     tick(1 / 60);
     expect(ctx.setResources).toHaveBeenCalledTimes(1);
     // The updater should subtract 2 from food (2 dead workers)
-    const updater = vi.mocked(ctx.setResources).mock.calls[0]![0] as (
-      r: any
-    ) => any;
-    const result = updater({ food: 10, gold: 100, lumber: 0, stone: 0 });
+    const arg = vi.mocked(ctx.setResources).mock.calls[0]![0];
+    expect(typeof arg).toBe('function');
+    const updater = arg as (r: Resources) => Resources;
+    const result = updater({
+      food: 10,
+      gold: 100,
+      lumber: 0,
+      stone: 0,
+      foodCap: 100,
+    });
     expect(result.food).toBe(8); // 10 - 2
   });
 
@@ -110,10 +117,16 @@ describe('useResourceTick tick function', () => {
     ];
     const tick = useResourceTick(ctx);
     tick(1 / 60);
-    const updater = vi.mocked(ctx.setResources).mock.calls[0]![0] as (
-      r: any
-    ) => any;
-    const result = updater({ food: 1, gold: 0, lumber: 0, stone: 0 });
+    const arg2 = vi.mocked(ctx.setResources).mock.calls[0]![0];
+    expect(typeof arg2).toBe('function');
+    const updater2 = arg2 as (r: Resources) => Resources;
+    const result = updater2({
+      food: 1,
+      gold: 0,
+      lumber: 0,
+      stone: 0,
+      foodCap: 100,
+    });
     expect(result.food).toBe(0);
   });
 
@@ -155,12 +168,14 @@ describe('useResourceTick tick function', () => {
     tick(1 / 60);
     // At least one setResources call for the gold award
     const calls = vi.mocked(ctx.setResources).mock.calls;
-    const goldAward = calls.find(([updater]) => {
-      const r = (updater as (r: any) => any)({
+    const goldAward = calls.find(([u]) => {
+      if (typeof u !== 'function') return false;
+      const r = (u as (r: Resources) => Resources)({
         food: 0,
         gold: 0,
         lumber: 0,
         stone: 0,
+        foodCap: 100,
       });
       return r.gold === 40;
     });
@@ -173,12 +188,14 @@ describe('useResourceTick tick function', () => {
     const tick = useResourceTick(ctx);
     tick(1 / 60);
     const calls = vi.mocked(ctx.setResources).mock.calls;
-    const goldAward = calls.find(([updater]) => {
-      const r = (updater as (r: any) => any)({
+    const goldAward = calls.find(([u]) => {
+      if (typeof u !== 'function') return false;
+      const r = (u as (r: Resources) => Resources)({
         food: 0,
         gold: 0,
         lumber: 0,
         stone: 0,
+        foodCap: 100,
       });
       return r.gold === 25;
     });
