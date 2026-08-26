@@ -208,7 +208,9 @@ export function makeWorker(overrides: Partial<WorkerState> = {}): WorkerState {
   };
 }
 
-export function makeDroppedItem(overrides: Partial<DroppedItem> = {}): DroppedItem {
+export function makeDroppedItem(
+  overrides: Partial<DroppedItem> = {}
+): DroppedItem {
   return {
     id: 1,
     itemId: 'boots_speed',

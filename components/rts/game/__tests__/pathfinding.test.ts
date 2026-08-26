@@ -7,7 +7,10 @@ import type { TileType } from '../types';
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function makeGrid(size = GRID_SIZE, fill: TileType = 'grass'): TileType[][] {
-  return Array.from({ length: size }, () => Array(size).fill(fill) as TileType[]);
+  return Array.from(
+    { length: size },
+    () => Array(size).fill(fill) as TileType[]
+  );
 }
 
 // ── aStar ─────────────────────────────────────────────────────────────────────
@@ -124,9 +127,7 @@ describe('aStar', () => {
 
   it('does not throw for an out-of-bounds goal', () => {
     const tiles = makeGrid();
-    expect(() =>
-      aStar(tiles, { x: 5, y: 5 }, { x: -1, y: -1 })
-    ).not.toThrow();
+    expect(() => aStar(tiles, { x: 5, y: 5 }, { x: -1, y: -1 })).not.toThrow();
   });
 
   it('handles a very short path of 2 steps correctly', () => {

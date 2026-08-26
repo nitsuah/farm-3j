@@ -49,6 +49,24 @@ export function useCombatResolution(ctx: RTSGameContext): (dt: number) => void {
         const data = HERO_ITEM_DATA[nearItem.itemId];
         if (nearItem.itemId === 'tome_xp') {
           pendingPickupRef.current.add(nearItem.id);
+          // Compute level-up outside the updater — updaters must be pure (no side effects)
+          const heroNewXp = heroForPickup.xp + TOME_XP_REWARD;
+          const heroNewLevel =
+            heroNewXp >= XP_TO_LEVEL_3
+              ? 3
+              : heroNewXp >= XP_TO_LEVEL_2
+                ? 2
+                : heroNewXp >= XP_TO_LEVEL_1
+                  ? 1
+                  : 0;
+          if (heroNewLevel > heroForPickup.level) {
+            addFloatingText(
+              Math.round(heroForPickup.x),
+              Math.round(heroForPickup.y),
+              `⭐ Level ${heroNewLevel}!`,
+              '#fbbf24'
+            );
+          }
           setWorkers(ws2 =>
             ws2.map(u => {
               if (u.unitType !== 'hero') return u;
@@ -62,12 +80,6 @@ export function useCombatResolution(ctx: RTSGameContext): (dt: number) => void {
                       ? 1
                       : 0;
               if (newLevel > u.level) {
-                addFloatingText(
-                  Math.round(u.x),
-                  Math.round(u.y),
-                  `⭐ Level ${newLevel}!`,
-                  '#fbbf24'
-                );
                 return {
                   ...u,
                   xp: newXp,

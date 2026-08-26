@@ -141,9 +141,7 @@ describe('useResourceTick tick function', () => {
 
   it('calls setEnemyTowers to filter out destroyed towers', () => {
     const ctx = makeMockCtx();
-    ctx.enemyTowersRef.current = [
-      { id: 10, x: 20, y: 20, hp: 0, maxHp: 200 },
-    ];
+    ctx.enemyTowersRef.current = [{ id: 10, x: 20, y: 20, hp: 0, maxHp: 200 }];
     const tick = useResourceTick(ctx);
     tick(1 / 60);
     expect(ctx.setEnemyTowers).toHaveBeenCalledTimes(1);
@@ -158,7 +156,12 @@ describe('useResourceTick tick function', () => {
     // At least one setResources call for the gold award
     const calls = vi.mocked(ctx.setResources).mock.calls;
     const goldAward = calls.find(([updater]) => {
-      const r = (updater as (r: any) => any)({ food: 0, gold: 0, lumber: 0, stone: 0 });
+      const r = (updater as (r: any) => any)({
+        food: 0,
+        gold: 0,
+        lumber: 0,
+        stone: 0,
+      });
       return r.gold === 40;
     });
     expect(goldAward).toBeDefined();
@@ -166,14 +169,17 @@ describe('useResourceTick tick function', () => {
 
   it('awards 25 gold for a regular enemy tower', () => {
     const ctx = makeMockCtx();
-    ctx.enemyTowersRef.current = [
-      { id: 9001, x: 5, y: 5, hp: 0, maxHp: 200 },
-    ];
+    ctx.enemyTowersRef.current = [{ id: 9001, x: 5, y: 5, hp: 0, maxHp: 200 }];
     const tick = useResourceTick(ctx);
     tick(1 / 60);
     const calls = vi.mocked(ctx.setResources).mock.calls;
     const goldAward = calls.find(([updater]) => {
-      const r = (updater as (r: any) => any)({ food: 0, gold: 0, lumber: 0, stone: 0 });
+      const r = (updater as (r: any) => any)({
+        food: 0,
+        gold: 0,
+        lumber: 0,
+        stone: 0,
+      });
       return r.gold === 25;
     });
     expect(goldAward).toBeDefined();
@@ -226,7 +232,9 @@ describe('useCombatResolution tick function', () => {
 
   it('does not pick up an item when no items are dropped', () => {
     const ctx = makeMockCtx();
-    ctx.workersRef.current = [makeWorker({ id: 99, hp: 100, x: 5, y: 5, unitType: 'hero' })];
+    ctx.workersRef.current = [
+      makeWorker({ id: 99, hp: 100, x: 5, y: 5, unitType: 'hero' }),
+    ];
     ctx.droppedItemsRef.current = [];
     const tick = useCombatResolution(ctx);
     tick(1 / 60);
@@ -235,8 +243,12 @@ describe('useCombatResolution tick function', () => {
 
   it('does not pick up an item that is too far away', () => {
     const ctx = makeMockCtx();
-    ctx.workersRef.current = [makeWorker({ id: 99, hp: 100, x: 5, y: 5, unitType: 'hero' })];
-    ctx.droppedItemsRef.current = [makeDroppedItem({ id: 1, itemId: 'boots_speed', x: 10, y: 10 })];
+    ctx.workersRef.current = [
+      makeWorker({ id: 99, hp: 100, x: 5, y: 5, unitType: 'hero' }),
+    ];
+    ctx.droppedItemsRef.current = [
+      makeDroppedItem({ id: 1, itemId: 'boots_speed', x: 10, y: 10 }),
+    ];
     const tick = useCombatResolution(ctx);
     tick(1 / 60);
     expect(ctx.setHeroItems).not.toHaveBeenCalled();
