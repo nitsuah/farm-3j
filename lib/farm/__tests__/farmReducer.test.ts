@@ -877,10 +877,10 @@ describe('FarmReducer', () => {
 
   describe('default case', () => {
     it('returns state unchanged for an unknown action type', () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // Deliberately exercises the reducer's default branch via a type escape
       const newState: FarmState = farmReducer(initialFarmState, {
         type: 'UNKNOWN',
-      } as any);
+      } as unknown as FarmAction);
       expect(newState).toBe(initialFarmState);
     });
   });
