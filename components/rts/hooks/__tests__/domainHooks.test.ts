@@ -13,7 +13,11 @@ import { useEnemyAI } from '../useEnemyAI';
 import { useCombatResolution } from '../useCombatResolution';
 import { usePathfinding } from '../usePathfinding';
 import { useResourceTick } from '../useResourceTick';
-import { GRID_SIZE } from '../../game/constants';
+import {
+  GRID_SIZE,
+  HERO_MAX_ITEMS,
+  XP_TO_LEVEL_1,
+} from '../../game/constants';
 import type { Resources } from '../../game/types';
 import { makeMockCtx, makeDroppedItem, makeWorker } from './makeMockCtx';
 
@@ -269,6 +273,125 @@ describe('useCombatResolution tick function', () => {
     const tick = useCombatResolution(ctx);
     tick(1 / 60);
     expect(ctx.setHeroItems).not.toHaveBeenCalled();
+  });
+
+  it('dead hero (hp=0) does not pick up nearby items', () => {
+    const ctx = makeMockCtx();
+    ctx.workersRef.current = [
+      makeWorker({ id: 99, hp: 0, x: 5, y: 5, unitType: 'hero' }),
+    ];
+    ctx.droppedItemsRef.current = [
+      makeDroppedItem({ id: 1, itemId: 'boots_speed', x: 5, y: 5 }),
+    ];
+    const tick = useCombatResolution(ctx);
+    tick(1 / 60);
+    expect(ctx.setHeroItems).not.toHaveBeenCalled();
+  });
+
+  it('skips pickup when item is already in pendingPickupRef', () => {
+    const ctx = makeMockCtx();
+    ctx.workersRef.current = [
+      makeWorker({ id: 99, hp: 100, x: 5, y: 5, unitType: 'hero' }),
+    ];
+    ctx.droppedItemsRef.current = [
+      makeDroppedItem({ id: 7, itemId: 'boots_speed', x: 5, y: 5 }),
+    ];
+    ctx.pendingPickupRef.current.add(7);
+    const tick = useCombatResolution(ctx);
+    tick(1 / 60);
+    expect(ctx.setHeroItems).not.toHaveBeenCalled();
+  });
+
+  it('picks up a non-tome item: calls setHeroItems, setDroppedItems, addFloatingText', () => {
+    const ctx = makeMockCtx();
+    ctx.workersRef.current = [
+      makeWorker({ id: 99, hp: 100, x: 5, y: 5, unitType: 'hero' }),
+    ];
+    ctx.droppedItemsRef.current = [
+      makeDroppedItem({ id: 3, itemId: 'boots_speed', x: 5, y: 5 }),
+    ];
+    const tick = useCombatResolution(ctx);
+    tick(1 / 60);
+    expect(ctx.setHeroItems).toHaveBeenCalledTimes(1);
+    expect(ctx.setDroppedItems).toHaveBeenCalledTimes(1);
+    expect(ctx.addFloatingText).toHaveBeenCalled();
+    expect(ctx.pendingPickupRef.current.has(3)).toBe(true);
+  });
+
+  it('does not pick up a non-tome item when hero inventory is full', () => {
+    const ctx = makeMockCtx();
+    ctx.workersRef.current = [
+      makeWorker({ id: 99, hp: 100, x: 5, y: 5, unitType: 'hero' }),
+    ];
+    ctx.droppedItemsRef.current = [
+      makeDroppedItem({ id: 4, itemId: 'boots_speed', x: 5, y: 5 }),
+    ];
+    ctx.heroItemsRef.current = Array.from({ length: HERO_MAX_ITEMS }, (_, i) => ({
+      id: i,
+      itemId: 'boots_speed',
+    }));
+    const tick = useCombatResolution(ctx);
+    tick(1 / 60);
+    expect(ctx.setHeroItems).not.toHaveBeenCalled();
+  });
+
+  it('picks up tome_xp: calls setWorkers, setDroppedItems, addFloatingText for XP', () => {
+    const ctx = makeMockCtx();
+    // Hero at level 1 so picking up tome (80 xp) won't trigger level-up to 2
+    ctx.workersRef.current = [
+      makeWorker({ id: 99, hp: 100, x: 5, y: 5, unitType: 'hero', level: 1, xp: 0 }),
+    ];
+    ctx.droppedItemsRef.current = [
+      makeDroppedItem({ id: 5, itemId: 'tome_xp', x: 5, y: 5 }),
+    ];
+    const tick = useCombatResolution(ctx);
+    tick(1 / 60);
+    expect(ctx.setWorkers).toHaveBeenCalledTimes(1);
+    expect(ctx.setDroppedItems).toHaveBeenCalledTimes(1);
+    // At least the "+80 XP!" floating text should appear
+    expect(ctx.addFloatingText).toHaveBeenCalled();
+    expect(ctx.pendingPickupRef.current.has(5)).toBe(true);
+  });
+
+  it('picks up tome_xp that causes a level-up: addFloatingText called twice', () => {
+    const ctx = makeMockCtx();
+    // Hero at level 0, xp 0 → tome gives 80 xp → 80 >= XP_TO_LEVEL_1 → level 1
+    ctx.workersRef.current = [
+      makeWorker({ id: 99, hp: 100, x: 5, y: 5, unitType: 'hero', level: 0, xp: 0 }),
+    ];
+    ctx.droppedItemsRef.current = [
+      makeDroppedItem({ id: 6, itemId: 'tome_xp', x: 5, y: 5 }),
+    ];
+    const tick = useCombatResolution(ctx);
+    tick(1 / 60);
+    // One call for "⭐ Level N!" and one for "📖 +XP!"
+    expect(ctx.addFloatingText).toHaveBeenCalledTimes(2);
+    // Level-up call should include "Level"
+    const calls = vi.mocked(ctx.addFloatingText).mock.calls;
+    const levelUpCall = calls.find(([, , msg]) => msg.includes('Level'));
+    expect(levelUpCall).toBeDefined();
+    // XP should be at least XP_TO_LEVEL_1 after pickup
+    expect(80).toBeGreaterThanOrEqual(XP_TO_LEVEL_1);
+  });
+
+  it('pendingPickupRef cleanup: removes id when item is no longer in droppedItemsRef', () => {
+    const ctx = makeMockCtx();
+    ctx.pendingPickupRef.current.add(42);
+    ctx.droppedItemsRef.current = []; // item 42 already removed from state
+    const tick = useCombatResolution(ctx);
+    tick(1 / 60);
+    expect(ctx.pendingPickupRef.current.has(42)).toBe(false);
+  });
+
+  it('pendingPickupRef cleanup: retains id when item still exists in droppedItemsRef', () => {
+    const ctx = makeMockCtx();
+    ctx.pendingPickupRef.current.add(99);
+    ctx.droppedItemsRef.current = [
+      makeDroppedItem({ id: 99, itemId: 'boots_speed', x: 20, y: 20 }),
+    ];
+    const tick = useCombatResolution(ctx);
+    tick(1 / 60);
+    expect(ctx.pendingPickupRef.current.has(99)).toBe(true);
   });
 });
 
