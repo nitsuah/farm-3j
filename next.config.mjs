@@ -1,5 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // pnpm virtual-store paths aren't always auto-traced into standalone output;
+  // explicitly include @swc/helpers so the runner stage can resolve it.
+  experimental: {
+    outputFileTracingIncludes: {
+      '/**': ['./node_modules/**/@swc/helpers/**'],
+    },
+  },
   // Enable image optimization for production
   images: {
     unoptimized: process.env.NODE_ENV === 'development',
