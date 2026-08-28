@@ -6,7 +6,7 @@ Last Updated: 2026-08-28 (PG Farms branding, RTS feature landing page, cloud sav
 
 ### Technical Cleanup
 
-- [ ] Extract blacksmith upgrade costs to shared config constants (currently hardcoded in RTSUI disable logic)
+- [x] Extract blacksmith upgrade costs to shared config constants — `BLACKSMITH_STEEL_EDGE_COSTS`/`BLACKSMITH_IRON_HIDE_COSTS` in `constants.ts`; `TechTab`'s disable logic already consumes them, not hardcoded (2026-08-07)
 - [ ] Continue SVG component extraction — worker body shapes, enemy unit torsos, and building base rects are next candidates
 - [ ] Profile render loop at 30+ units on 25×25 map; investigate canvas/OffscreenCanvas fallback for mobile
 - [ ] Add unit tests for core helpers: `tileDist`, `tileToSvg`, A\* pathfinding (damage formulas ✅ covered by towerHelpers/spawnHelpers tests)
@@ -29,7 +29,7 @@ Last Updated: 2026-08-28 (PG Farms branding, RTS feature landing page, cloud sav
 
 ---
 
-## Farm RTS MVP (2026 Q2–Q3) ✅
+## Farm RTS MVP (2026 Q2–Q3)
 
 - [ ] Complete all MVP milestones as defined in docs/Farm_RTS_Game_Manual.md and docs/FARM-RTS-TODO.md
   - Progress: Milestone 1 complete; Milestone 3 (resource node depletion/feedback) complete
@@ -147,7 +147,7 @@ Last Updated: 2026-08-28 (PG Farms branding, RTS feature landing page, cloud sav
 - [x] Expanded 17×17 map — GRID_SIZE expanded from 13→17; player barn moved to (2,2), enemy barn to (14,14) for wider strategic distance; 14 lumber/gold/stone resource nodes scattered in 5 clusters across the map; 4 creep camps; 8 loot crate spawns; redesigned makeTiles() with player-side and enemy-side lakes; more room for base-building and flanking routes (2026-07-01)
 - [x] More starting resources — players start with 150🪙 80🌲 30🪨 instead of 0/0/0; reduces early frustration while keeping strategic decisions meaningful (2026-07-01)
 - [x] RTSUI code-quality pass — fixed mixed-selection label (heterogeneous unit groups now show ⚔️/🌾 Mixed); fixed attack label (shows actual target type not always "enemy barn"); gated Harvest and Build commands on anyFarmers; added type="button" to all non-submit buttons; derived Granary/Stable/building tooltips from buildingCosts; fixed Cavalry tooltip (2×, not 2.5×); fixed farmhouse level cap from prop length; minimap constants (MINIMAP_GRID, MINIMAP_BARN, MINIMAP_ENEMY_BARN) replacing hardcoded literals; LUMBER_SHED_BONUS_MS shared constant (2026-07-01)
-- [ ] Blacksmith: extract upgrade costs to shared config constants (currently hardcoded in disable logic)
+- [x] Blacksmith: extract upgrade costs to shared config constants — done, see Technical Cleanup section above (2026-08-07)
 - [x] New Game resets cleanly — module-level INITIAL_SAVE replaced with per-mount loadSave() + RTSGameRoot key pattern; no page reload needed (2026-07-01)
 - [x] Start with 5 farmers + 1 swordsman and food:6 for stronger early game (2026-07-01)
 - [x] Slower wave progression — 25s→40s base interval, escalation reduced from -1.5s/wave to -0.8s/wave, floor raised to 20s (2026-07-01)
