@@ -1,6 +1,6 @@
 # ROADMAP
 
-Last Updated: 2026-08-22
+Last Updated: 2026-08-28
 
 ## 2026 Q1 ✅
 
@@ -8,7 +8,7 @@ Last Updated: 2026-08-22
 
 ## 2026 Q2–Q3: Farm RTS MVP ✅ (feature-complete)
 
-> All core gameplay systems shipped. 25×25 map, 10+ enemy unit types, full economy/combat/building loop, fog of war, day/night cycle, hero unit, 20+ buildings, unit veterancy, tech research, save/load, procedural audio, high-score leaderboard, and wave escalation all live. Codebase refactored with shared SVG component layer (HpBar, StructureDamageSmoke, StructureFireEffect) eliminating duplicated render primitives across all map layer files. Modularization Phase 1 completed (2026-08-04): `RTSUI` decomposed into `BuildMenu`/`WaveTimer`/`HeroPanel`; `HeaderCropRow` background extracted; pure functions isolated in `spawnHelpers`, `towerHelpers`, `mapSelectors` with +55 tests (264 total); domain hook shells and `MapRenderer` shell scaffolded as migration targets for `useGameLoop`/`RTSMap` (Phase 2).
+> All core gameplay systems shipped. 25×25 map, 10+ enemy unit types, full economy/combat/building loop, fog of war, day/night cycle, hero unit, 20+ buildings, unit veterancy, tech research, save/load, procedural audio, high-score leaderboard, and wave escalation all live. Codebase refactored with shared SVG component layer (HpBar, StructureDamageSmoke, StructureFireEffect) eliminating duplicated render primitives across all map layer files. Modularization Phase 1 completed (2026-08-04): `RTSUI` decomposed into `BuildMenu`/`WaveTimer`/`HeroPanel`; `HeaderCropRow` background extracted; pure functions isolated in `spawnHelpers`, `towerHelpers`, `mapSelectors` with +55 tests (264 total). Modularization Phase 2a completed (PR #295): `useGameLoop.tsx` decomposed from a single monolith into `useEnemyAI`/`useResourceTick`/`useCombatResolution`/`usePathfinding`/`useBotController` plus a dozen domain-specific tick modules under `hooks/ai/`; the main loop is now a thin orchestrator calling each hook's tick closure inside one `requestAnimationFrame` (preserving React 18 automatic batching — domain hooks return plain `(dt) => void` closures rather than each running its own rAF loop). Vitest coverage scope expanded from `lib/**` only to also include RTS game logic, thresholds raised to 60%/50%. Phase 2b (`RTSMap.tsx` → `MapRenderer`) has not started — `RTSMap.tsx` is still 1387 lines and the `MapRenderer` shell remains an unused placeholder.
 
 ## 2026 Q3: Farm RTS — Round 2
 
@@ -16,7 +16,6 @@ Last Updated: 2026-08-22
 
 - [ ] Continue SVG component extraction — worker body shapes, enemy unit torsos, building base rects are next candidates for shared components (see iter109 pattern)
 - [x] Extract blacksmith upgrade costs to shared config constants — `BLACKSMITH_STEEL_EDGE_COSTS` and `BLACKSMITH_IRON_HIDE_COSTS` in `constants.ts`; TechTab consumes them (2026-08-07)
-- [ ] Componentize large files Phase 2 — migrate logic from `useGameLoop.tsx` (5369 lines) into `useEnemyAI`, `useResourceTick`, `useCombatResolution`, `usePathfinding` domain hooks; wire `RTSMap.tsx` (4392 lines) through `MapRenderer` + `mapSelectors`
 - [ ] Profile render loop on 25×25 map with 30+ units; investigate canvas or OffscreenCanvas fallback if SVG drops below 30fps on mobile
 - [ ] Add unit tests for remaining core helpers: `tileDist`, `tileToSvg`, A\* pathfinding (damage formulas ✅ covered in towerHelpers/spawnHelpers; map selectors ✅ covered in mapSelectors tests)
 
@@ -35,6 +34,8 @@ Last Updated: 2026-08-22
 - [ ] More unit voice lines and enemy audio cues (Warchief stomp roar, Sapper countdown tick)
 - [ ] Minimap: show dropped hero items and loot crate positions
 - [ ] Ensure farmers always render in front of barn and remain selectable when barn is clicked
+- [ ] **Post-game replay** — new idea (2026-08-28): the high-score leaderboard already records wave/kills/gold/result; if the save system additionally snapshotted key events (wave starts, hero deaths, boss spawns) rather than just final state, the game-over screen could offer a lightweight timeline scrub of "how the run went" without a full deterministic replay engine.
+- [ ] **Adaptive difficulty nudge** — new idea (2026-08-28): Easy/Normal/Hard are fixed presets chosen once at game start; track win/loss and wave-reached across runs (already have the leaderboard for this) and suggest a difficulty adjustment on the New Game screen rather than requiring the player to self-assess.
 
 ## 2026 Q4: Product and Content Surface
 

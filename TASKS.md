@@ -1,12 +1,12 @@
 # TASKS
 
-Last Updated: 2026-08-22 (documentation audit)
+Last Updated: 2026-08-28 (PG Farms branding, RTS feature landing page, cloud save system, game fixes, code-review pass)
 
 ## Farm RTS — Round 2 (2026 Q3)
 
 ### Technical Cleanup
 
-- [x] Extract blacksmith upgrade costs to shared config constants — `BLACKSMITH_STEEL_EDGE_COSTS` and `BLACKSMITH_IRON_HIDE_COSTS` in `constants.ts`; TechTab consumes them (2026-08-07)
+- [x] Extract blacksmith upgrade costs to shared config constants — `BLACKSMITH_STEEL_EDGE_COSTS`/`BLACKSMITH_IRON_HIDE_COSTS` in `constants.ts`; `TechTab`'s disable logic already consumes them, not hardcoded (2026-08-07)
 - [ ] Continue SVG component extraction — worker body shapes, enemy unit torsos, and building base rects are next candidates
 - [ ] Profile render loop at 30+ units on 25×25 map; investigate canvas/OffscreenCanvas fallback for mobile
 - [ ] Add unit tests for core helpers: `tileDist`, `tileToSvg`, A\* pathfinding (damage formulas ✅ covered by towerHelpers/spawnHelpers tests)
@@ -29,10 +29,12 @@ Last Updated: 2026-08-22 (documentation audit)
 
 ---
 
-## Farm RTS MVP (2026 Q2–Q3) ✅
+## Farm RTS MVP (2026 Q2–Q3)
 
-- [x] Complete all MVP milestones as defined in docs/Farm_RTS_Game_Manual.md and docs/FARM-RTS-TODO.md
-  - All core gameplay systems (map, camera, resource, worker, building, win/lose, fog of war, hero, tech research, 20+ buildings, enemy waves, save/load) shipped and feature-complete (2026-08-07)
+- [ ] Complete all MVP milestones as defined in docs/Farm_RTS_Game_Manual.md and docs/FARM-RTS-TODO.md
+  - Progress: Milestone 1 complete; Milestone 3 (resource node depletion/feedback) complete
+  - Priority: P0
+  - Acceptance Criteria: All core gameplay systems (map, camera, resource, worker, building, win/lose) are playable and validated in Docker.
 
 ## Legacy Tycoon Tasks (on hold)
 
@@ -145,7 +147,7 @@ Last Updated: 2026-08-22 (documentation audit)
 - [x] Expanded 17×17 map — GRID_SIZE expanded from 13→17; player barn moved to (2,2), enemy barn to (14,14) for wider strategic distance; 14 lumber/gold/stone resource nodes scattered in 5 clusters across the map; 4 creep camps; 8 loot crate spawns; redesigned makeTiles() with player-side and enemy-side lakes; more room for base-building and flanking routes (2026-07-01)
 - [x] More starting resources — players start with 150🪙 80🌲 30🪨 instead of 0/0/0; reduces early frustration while keeping strategic decisions meaningful (2026-07-01)
 - [x] RTSUI code-quality pass — fixed mixed-selection label (heterogeneous unit groups now show ⚔️/🌾 Mixed); fixed attack label (shows actual target type not always "enemy barn"); gated Harvest and Build commands on anyFarmers; added type="button" to all non-submit buttons; derived Granary/Stable/building tooltips from buildingCosts; fixed Cavalry tooltip (2×, not 2.5×); fixed farmhouse level cap from prop length; minimap constants (MINIMAP_GRID, MINIMAP_BARN, MINIMAP_ENEMY_BARN) replacing hardcoded literals; LUMBER_SHED_BONUS_MS shared constant (2026-07-01)
-- [x] Blacksmith: extract upgrade costs to shared config constants — done (2026-08-07)
+- [x] Blacksmith: extract upgrade costs to shared config constants — done, see Technical Cleanup section above (2026-08-07)
 - [x] New Game resets cleanly — module-level INITIAL_SAVE replaced with per-mount loadSave() + RTSGameRoot key pattern; no page reload needed (2026-07-01)
 - [x] Start with 5 farmers + 1 swordsman and food:6 for stronger early game (2026-07-01)
 - [x] Slower wave progression — 25s→40s base interval, escalation reduced from -1.5s/wave to -0.8s/wave, floor raised to 20s (2026-07-01)
@@ -202,4 +204,8 @@ Last Updated: 2026-08-22 (documentation audit)
 - [x] Sound mute toggle + gold deposit throttle — 🔊/🔇 button in HUD persists mute state to localStorage; gold deposit sound throttled to once per 2s so it doesn't spam with multiple harvesters; all playTone calls check mute flag (2026-07-02)
 - [x] Shared SVG component refactor (iter109) — extracted `HpBar`, `StructureDamageSmoke`, and `StructureFireEffect` into `components/rts/map/`; replaced duplicated inline two-rect HP bars across EnemyBaseLayer, EnemySiegeCastersLayer, EnemyGruntsLayer, EnemyEliteLayer, PlayerBarnLayer, BuildingsLayer, WorkersLayer (17 call sites); replaced near-identical smoke-circle and flame-ellipse blocks in PlayerBarnLayer, EnemyBaseLayer, and BuildingsLayer; components parameterized by center coordinates, colors, opacities, and optional label; type-check and lint clean; visual verified in running dev server (2026-07-04)
 - [x] Componentize large files — Phase 1 (2026-08-04) — `RTSUI` (2110 lines) fully split into `ui/BuildMenu`, `ui/WaveTimer`, `ui/HeroPanel`; `HeaderCropRow` background extracted to `animations/AnimatedBackground`; pure helpers in `spawnHelpers.ts`, `towerHelpers.ts`, `game/mapSelectors.ts`; domain hook shells (`useEnemyAI`, `useResourceTick`, `useCombatResolution`, `usePathfinding`) + `MapRenderer` shell scaffolded as migration targets; +55 unit tests (264 total); WaveTimer NaN fix; BuildMenu disabled-state fix; TypeScript clean
-- [ ] Componentize large files — Phase 2 — migrate logic from `useGameLoop.tsx` (5369 lines) into the four domain hooks; wire `RTSMap.tsx` (4392 lines) through `MapRenderer` + `mapSelectors`
+- [x] Componentize large files — Phase 2a — migrate logic from `useGameLoop.tsx` into the domain hooks (PR #295, merged). `useGameLoop.tsx` down to 72 lines, decomposed into `useEnemyAI`/`useResourceTick`/`useCombatResolution`/`usePathfinding`/`useBotController` plus a dozen domain tick modules under `hooks/ai/`. Vitest coverage scope expanded to include RTS game logic (60%/50% thresholds).
+- [ ] Componentize large files — Phase 2b — wire `RTSMap.tsx` (currently 1387 lines) through `MapRenderer` (`components/rts/map/MapRenderer.tsx`) + `mapSelectors`. Not started; the `MapRenderer` shell from Phase 1 is still unused by `RTSMap.tsx` itself.
+  - Priority: P2
+  - Context: `useGameLoop`'s decomposition (Phase 2a) is done, but the roadmap's original "domain hook shells and MapRenderer shell scaffolded as migration targets" note covered two separate files — only one has actually moved.
+  - Acceptance Criteria: `RTSMap.tsx`'s render logic moves into `MapRenderer`, consuming the existing `mapSelectors` helpers; `RTSMap.tsx` itself becomes a thin container (state + prop wiring only, similar to the `useGameLoop` orchestrator pattern).
