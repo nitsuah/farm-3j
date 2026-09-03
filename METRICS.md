@@ -4,11 +4,11 @@
 
 | Metric        | Value | Notes                                                                                                                                                        |
 | ------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Code Coverage | 97%   | lib/farm/ coverage: 96.71% statements, 90.07% branches, 100% functions, 96.55% lines. Excludes UI components and app/. Target: 80%.                          |
-| Test Time     | ~17s  | 272 tests across 13 suites confirmed passing (Docker run 2026-08-23)                                                                                         |
+| Code Coverage | TBD (re-verify) | Coverage collection failed to attribute output in the Docker/bind-mount run on 2026-09-02 (v8 provider produced an empty `coverage-final.json`); repo-wide thresholds are enforced at 28% lines/statements, 20% functions, 17% branches per `config/vitest.config.ts`. Needs a clean re-run to get a trustworthy percentage. |
+| Test Time     | ~35s  | 440 tests across 21 suites confirmed passing (Docker run 2026-09-02)                                                                                         |
 | Bundle Size   | TBD   | Not measured yet                                                                                                                                             |
-| Test Files    | 13    | utils, gameLogic, farmReducer, spawner, isometric, terrain, structures, notifications, spawnHelpers, towerHelpers, mapSelectors, tickFunctions, ContactModal |
-| Test Cases    | 272   | All tests passing - game logic, terrain, state management, notification, spawn/tower math, map selectors, tick functions, contact modal coverage             |
+| Test Files    | 21    | lib/farm (utils, gameLogic, farmReducer, spawner, isometric, terrain, structures, notifications, techTree), lib/api-types, components/ContactModal, components/rts/hooks (spawnHelpers, towerHelpers, mapSelectors, tickFunctions, tickEnemyAI, domainHooks) and more |
+| Test Cases    | 440   | All tests passing - game logic, terrain, state management, notification, spawn/tower math, map selectors, tick functions, domain hooks, contact modal coverage |
 
 ## Health
 
@@ -18,7 +18,7 @@
 | PR Turnaround | TBD        | Typical merge time                                         |
 | Skipped Tests | 0          | All tests passing                                          |
 | Health Score  | TBD        | Overall health score                                       |
-| Last Updated  | 2026-08-23 | Tests confirmed passing; coverage from prior validated run |
+| Last Updated  | 2026-09-02 | Tests confirmed passing (440/440); coverage figure needs re-verification (see Code Coverage note above) |
 
 <!--
 AGENT INSTRUCTIONS:

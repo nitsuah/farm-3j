@@ -1,6 +1,6 @@
 # TASKS
 
-Last Updated: 2026-08-28 (PG Farms branding, RTS feature landing page, cloud save system, game fixes, code-review pass)
+Last Updated: 2026-09-02 (docs audit, MapRenderer Phase 2b componentization, home page redesign)
 
 ## Farm RTS — Round 2 (2026 Q3)
 
@@ -75,7 +75,6 @@ Last Updated: 2026-08-28 (PG Farms branding, RTS feature landing page, cloud sav
 - [ ] Ensure farmers render in front of barn and are always selectable
 - [x] Lay groundwork for control groups (Ctrl+1-9) (2026-06-26)
 - [ ] Add buttons to train animal units from Barn
-- [ ] Fog of war — tile visibility driven by unit vision radius
 - [x] Fog of war — tile visibility driven by unit/building vision radius; dark/dim/clear states (2026-06-26)
 - [x] Enemy base + win/lose condition (Milestone 7) — enemy barn at (10,10) with HP bar, attack on right-click, victory overlay (2026-06-26)
 - [x] A\* pathfinding — workers and grunts avoid water; 8-directional grid search (2026-06-26)
@@ -204,8 +203,5 @@ Last Updated: 2026-08-28 (PG Farms branding, RTS feature landing page, cloud sav
 - [x] Sound mute toggle + gold deposit throttle — 🔊/🔇 button in HUD persists mute state to localStorage; gold deposit sound throttled to once per 2s so it doesn't spam with multiple harvesters; all playTone calls check mute flag (2026-07-02)
 - [x] Shared SVG component refactor (iter109) — extracted `HpBar`, `StructureDamageSmoke`, and `StructureFireEffect` into `components/rts/map/`; replaced duplicated inline two-rect HP bars across EnemyBaseLayer, EnemySiegeCastersLayer, EnemyGruntsLayer, EnemyEliteLayer, PlayerBarnLayer, BuildingsLayer, WorkersLayer (17 call sites); replaced near-identical smoke-circle and flame-ellipse blocks in PlayerBarnLayer, EnemyBaseLayer, and BuildingsLayer; components parameterized by center coordinates, colors, opacities, and optional label; type-check and lint clean; visual verified in running dev server (2026-07-04)
 - [x] Componentize large files — Phase 1 (2026-08-04) — `RTSUI` (2110 lines) fully split into `ui/BuildMenu`, `ui/WaveTimer`, `ui/HeroPanel`; `HeaderCropRow` background extracted to `animations/AnimatedBackground`; pure helpers in `spawnHelpers.ts`, `towerHelpers.ts`, `game/mapSelectors.ts`; domain hook shells (`useEnemyAI`, `useResourceTick`, `useCombatResolution`, `usePathfinding`) + `MapRenderer` shell scaffolded as migration targets; +55 unit tests (264 total); WaveTimer NaN fix; BuildMenu disabled-state fix; TypeScript clean
-- [x] Componentize large files — Phase 2a — migrate logic from `useGameLoop.tsx` into the domain hooks (PR #295, merged). `useGameLoop.tsx` down to 72 lines, decomposed into `useEnemyAI`/`useResourceTick`/`useCombatResolution`/`usePathfinding`/`useBotController` plus a dozen domain tick modules under `hooks/ai/`. Vitest coverage scope expanded to include RTS game logic (60%/50% thresholds).
-- [ ] Componentize large files — Phase 2b — wire `RTSMap.tsx` (currently 1387 lines) through `MapRenderer` (`components/rts/map/MapRenderer.tsx`) + `mapSelectors`. Not started; the `MapRenderer` shell from Phase 1 is still unused by `RTSMap.tsx` itself.
-  - Priority: P2
-  - Context: `useGameLoop`'s decomposition (Phase 2a) is done, but the roadmap's original "domain hook shells and MapRenderer shell scaffolded as migration targets" note covered two separate files — only one has actually moved.
-  - Acceptance Criteria: `RTSMap.tsx`'s render logic moves into `MapRenderer`, consuming the existing `mapSelectors` helpers; `RTSMap.tsx` itself becomes a thin container (state + prop wiring only, similar to the `useGameLoop` orchestrator pattern).
+- [x] Componentize large files — Phase 2a — migrate logic from `useGameLoop.tsx` into the domain hooks (PR #295, merged). `useGameLoop.tsx` down to 72 lines, decomposed into `useEnemyAI`/`useResourceTick`/`useCombatResolution`/`usePathfinding`/`useBotController` plus a dozen domain tick modules under `hooks/ai/`. Vitest coverage scope expanded to include RTS game logic (thresholds: 28% lines/statements, 20% functions, 17% branches — see `config/vitest.config.ts`).
+- [x] Componentize large files — Phase 2b (2026-09-02) — `RTSMap.tsx`'s `<svg>` render tree (viewport, pan/zoom transform, mouse handlers, and the 12-layer stack: Terrain/OverlayRings/ResourceNodes/Buildings/EnemyBase/PlayerBarn/Neutral/EnemyGrunts/EnemySiegeCasters/EnemyElite/Workers/Effects) now lives in `MapRenderer` (`components/rts/map/MapRenderer.tsx`), typed via `React.ComponentProps<typeof Layer>` per layer so prop types can't drift from the layer components themselves. `RTSMap.tsx` wires per-layer prop bags into `<MapRenderer>` instead of rendering the SVG tree inline. Also replaced 6 duplicated `placedBuildings.some(b => b.type === X && !b.constructing)` inline checks with `hasBuildingType()` from `mapSelectors`. Type-check and lint clean; all 440 tests still pass.
