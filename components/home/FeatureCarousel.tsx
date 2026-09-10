@@ -176,7 +176,7 @@ export const FeatureCarousel: React.FC<FeatureCarouselProps> = () => {
           </p>
           <Link
             href={current.href}
-            className="shrink-0 rounded-full bg-white/90 px-2 py-1 text-[10px] font-semibold text-green-900 whitespace-nowrap transition hover:bg-white sm:text-xs"
+            className="shrink-0 rounded-full bg-white/90 px-2 py-1 text-[10px] font-semibold whitespace-nowrap text-green-900 transition hover:bg-white sm:text-xs"
           >
             {current.cta} →
           </Link>

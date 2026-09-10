@@ -82,14 +82,14 @@ export const MapRenderer: React.FC<MapRendererProps> = ({
   workersLayer,
   effectsLayer,
 }) => (
-  <div className="absolute inset-0 z-[1] flex items-center justify-center pointer-events-none">
+  <div className="pointer-events-none absolute inset-0 z-[1] flex items-center justify-center">
     <svg
       ref={svgRef}
       viewBox={`0 0 ${viewBoxW} ${viewBoxH}`}
       width="100%"
       height="100%"
       preserveAspectRatio="xMidYMid meet"
-      className="block pointer-events-auto select-none"
+      className="pointer-events-auto block select-none"
       style={{
         transform: `translate(${camera.x}px,${camera.y}px) scale(${zoom})`,
         cursor: buildMode ? 'crosshair' : 'default',
