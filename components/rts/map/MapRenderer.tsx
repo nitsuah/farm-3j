@@ -82,28 +82,16 @@ export const MapRenderer: React.FC<MapRendererProps> = ({
   workersLayer,
   effectsLayer,
 }) => (
-  <div
-    style={{
-      position: 'absolute',
-      inset: 0,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1,
-      pointerEvents: 'none',
-    }}
-  >
+  <div className="absolute inset-0 z-[1] flex items-center justify-center pointer-events-none">
     <svg
       ref={svgRef}
       viewBox={`0 0 ${viewBoxW} ${viewBoxH}`}
       width="100%"
       height="100%"
       preserveAspectRatio="xMidYMid meet"
+      className="block pointer-events-auto select-none"
       style={{
-        display: 'block',
-        pointerEvents: 'auto',
         transform: `translate(${camera.x}px,${camera.y}px) scale(${zoom})`,
-        userSelect: 'none',
         cursor: buildMode ? 'crosshair' : 'default',
       }}
       onMouseDown={onSvgMouseDown}

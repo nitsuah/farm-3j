@@ -1,16 +1,23 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { GrowingCropScene } from '@/components/animations/GrowingCropScene';
 import { IsometricTownScene } from '@/components/animations/IsometricTownScene';
 import { SustainableFarmScene } from '@/components/animations/SustainableFarmScene';
 
+import { AUTO_ADVANCE_MS, SWIPE_THRESHOLD } from './constants';
+
 interface Slide {
   id: string;
   icon: string;
   title: string;
   description: string;
+  /** Where the slide's call-to-action link should take the visitor. */
+  href: string;
+  /** Label for the slide's call-to-action link. */
+  cta: string;
   render: () => React.ReactNode;
 }
 
@@ -21,6 +28,8 @@ const SLIDES: Slide[] = [
     title: 'Fresh Produce',
     description:
       'Watch our crops grow! Seasonal vegetables and fruits grown with care.',
+    href: '/rtsfarm',
+    cta: 'Grow your farm',
     render: () => <GrowingCropScene />,
   },
   {
@@ -29,6 +38,8 @@ const SLIDES: Slide[] = [
     title: 'Local Community',
     description:
       'Supporting our local community with quality, farm-fresh products.',
+    href: '/about',
+    cta: 'Meet the community',
     render: () => <IsometricTownScene buildings={3} />,
   },
   {
@@ -37,13 +48,14 @@ const SLIDES: Slide[] = [
     title: 'Sustainable Farming',
     description:
       'Solar, wind, and eco-friendly practices for a healthier future.',
+    href: '/rtsfarm',
+    cta: 'See it in the game',
     render: () => <SustainableFarmScene />,
   },
 ];
 
-const AUTO_ADVANCE_MS = 6000;
-/** Minimum horizontal swipe distance (px) before a touch gesture counts as a slide change. */
-const SWIPE_THRESHOLD = 40;
+/** Zero-prop component — declared explicitly to keep the `React.FC` contract consistent with other components. */
+type FeatureCarouselProps = Record<string, never>;
 
 /**
  * Compact, auto-rotating feature showcase for the home page.
@@ -56,9 +68,9 @@ const SWIPE_THRESHOLD = 40;
  * a fraction of the vertical footprint, and continuous motion instead of a
  * static wall of collapsed cards.
  */
-export function FeatureCarousel() {
-  const [active, setActive] = useState(0);
-  const [paused, setPaused] = useState(false);
+export const FeatureCarousel: React.FC<FeatureCarouselProps> = () => {
+  const [active, setActive] = useState<number>(0);
+  const [paused, setPaused] = useState<boolean>(false);
   const touchStartX = useRef<number | null>(null);
 
   const goTo = useCallback((idx: number) => {
@@ -66,13 +78,17 @@ export function FeatureCarousel() {
   }, []);
 
   // Auto-advance; paused on hover/focus so users can linger on a slide.
+  // Depending on `active` (not just `paused`) resets the interval whenever
+  // the slide changes for any reason — auto-tick, tab click, arrow, dot, or
+  // swipe — so a manual navigation doesn't leave a stale timer that fires
+  // again moments later.
   useEffect(() => {
     if (paused) return;
     const id = setInterval(() => {
       setActive(a => (a + 1) % SLIDES.length);
     }, AUTO_ADVANCE_MS);
     return () => clearInterval(id);
-  }, [paused]);
+  }, [paused, active]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0]?.clientX ?? null;
@@ -118,12 +134,9 @@ export function FeatureCarousel() {
             {i === active && (
               <span
                 key={`progress-${slide.id}-${paused}`}
-                className="absolute bottom-0 left-0 h-0.5 w-full origin-left bg-green-600 dark:bg-green-400"
-                style={{
-                  animation: paused
-                    ? 'none'
-                    : `carousel-progress ${AUTO_ADVANCE_MS}ms linear forwards`,
-                }}
+                className={`absolute bottom-0 left-0 h-0.5 w-full origin-left bg-green-600 dark:bg-green-400 ${
+                  paused ? '' : 'animate-carousel-progress'
+                }`}
               />
             )}
           </button>
@@ -157,10 +170,16 @@ export function FeatureCarousel() {
           ›
         </button>
 
-        <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/70 to-transparent px-3 pt-4 pb-1.5">
+        <div className="absolute inset-x-0 bottom-0 z-10 flex items-end justify-between gap-2 bg-gradient-to-t from-black/70 to-transparent px-3 pt-4 pb-1.5">
           <p className="text-[11px] text-white sm:text-xs">
             {current.description}
           </p>
+          <Link
+            href={current.href}
+            className="shrink-0 rounded-full bg-white/90 px-2 py-1 text-[10px] font-semibold text-green-900 whitespace-nowrap transition hover:bg-white sm:text-xs"
+          >
+            {current.cta} →
+          </Link>
         </div>
       </div>
 
@@ -182,4 +201,4 @@ export function FeatureCarousel() {
       </div>
     </section>
   );
-}
+};

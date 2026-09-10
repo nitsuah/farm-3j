@@ -176,10 +176,23 @@
       transform: scaleX(1);
     }
   }
+
+  .animate-carousel-progress {
+    /* Duration mirrors AUTO_ADVANCE_MS in components/home/constants.ts. */
+    animation: carousel-progress 6000ms linear forwards;
+  }
 }
 
 @layer base {
   body {
     @apply font-sans antialiased;
+  }
+}
+
+/* Respect the user's reduced-motion preference for decorative transitions. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-carousel-progress {
+    animation: none;
   }
 }
