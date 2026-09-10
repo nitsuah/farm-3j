@@ -55,7 +55,8 @@ const SLIDES: Slide[] = [
 ];
 
 /** Zero-prop component — declared explicitly to keep the `React.FC` contract consistent with other components. */
-type FeatureCarouselProps = Record<string, never>;
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface FeatureCarouselProps {}
 
 /**
  * Compact, auto-rotating feature showcase for the home page.
@@ -137,6 +138,11 @@ export const FeatureCarousel: React.FC<FeatureCarouselProps> = () => {
                 className={`absolute bottom-0 left-0 h-0.5 w-full origin-left bg-green-600 dark:bg-green-400 ${
                   paused ? '' : 'animate-carousel-progress'
                 }`}
+                style={
+                  {
+                    '--carousel-progress-duration': `${AUTO_ADVANCE_MS}ms`,
+                  } as React.CSSProperties
+                }
               />
             )}
           </button>

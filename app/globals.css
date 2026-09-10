@@ -178,8 +178,12 @@
   }
 
   .animate-carousel-progress {
-    /* Duration mirrors AUTO_ADVANCE_MS in components/home/constants.ts. */
-    animation: carousel-progress 6000ms linear forwards;
+    /* Duration is set inline from AUTO_ADVANCE_MS (components/home/constants.ts)
+       via the --carousel-progress-duration custom property, so the timer and
+       this progress indicator can't drift out of sync. Falls back to 6000ms
+       only if the property isn't set. */
+    animation: carousel-progress var(--carousel-progress-duration, 6000ms)
+      linear forwards;
   }
 }
 
