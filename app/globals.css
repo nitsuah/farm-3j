@@ -154,10 +154,49 @@
       opacity: 0.45;
     }
   }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.4s ease-out;
+  }
+
+  @keyframes carousel-progress {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
+
+  .animate-carousel-progress {
+    /* Duration is set inline from AUTO_ADVANCE_MS (components/home/constants.ts)
+       via the --carousel-progress-duration custom property, so the timer and
+       this progress indicator can't drift out of sync. Falls back to 6000ms
+       only if the property isn't set. */
+    animation: carousel-progress var(--carousel-progress-duration, 6000ms)
+      linear forwards;
+  }
 }
 
 @layer base {
   body {
     @apply font-sans antialiased;
+  }
+}
+
+/* Respect the user's reduced-motion preference for decorative transitions. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-carousel-progress {
+    animation: none;
   }
 }

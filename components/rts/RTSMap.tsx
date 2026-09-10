@@ -50,18 +50,8 @@ import { DamageLogPanel } from './hud/DamageLogPanel';
 import { GameOverOverlay } from './hud/GameOverOverlay';
 import { MinimapPanel } from './hud/MinimapPanel';
 import { ResourceBar } from './hud/ResourceBar';
-import { BuildingsLayer } from './map/BuildingsLayer';
-import { EffectsLayer } from './map/EffectsLayer';
-import { EnemyBaseLayer } from './map/EnemyBaseLayer';
-import { EnemyEliteLayer } from './map/EnemyEliteLayer';
-import { EnemyGruntsLayer } from './map/EnemyGruntsLayer';
-import { EnemySiegeCastersLayer } from './map/EnemySiegeCastersLayer';
-import { NeutralLayer } from './map/NeutralLayer';
-import { OverlayRingsLayer } from './map/OverlayRingsLayer';
-import { PlayerBarnLayer } from './map/PlayerBarnLayer';
-import { ResourceNodesLayer } from './map/ResourceNodesLayer';
-import { TerrainLayer } from './map/TerrainLayer';
-import { WorkersLayer } from './map/WorkersLayer';
+import { MapRenderer } from './map/MapRenderer';
+import { hasBuildingType } from './game/mapSelectors';
 import { useGameLoop } from './hooks/useGameLoop';
 import { useProduction } from './hooks/useProduction';
 import { useTowerCombat } from './hooks/useTowerCombat';
@@ -913,220 +903,176 @@ const RTSMap: React.FC<{
         />
       )}
       {/* SVG map */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1,
-          pointerEvents: 'none',
+      <MapRenderer
+        svgRef={svgRef}
+        viewBoxW={viewBoxW}
+        viewBoxH={viewBoxH}
+        camera={camera}
+        zoom={zoom}
+        buildMode={buildMode}
+        onSvgMouseDown={handlers.handleSvgMouseDown}
+        onSvgMouseMove={handlers.handleSvgMouseMove}
+        onSvgMouseUp={handlers.handleSvgMouseUp}
+        onSvgMouseLeave={() => {
+          isDraggingRef.current = false;
+          setDragBox(null);
+          setGhostTile(null);
         }}
-      >
-        <svg
-          ref={svgRef}
-          viewBox={`0 0 ${viewBoxW} ${viewBoxH}`}
-          width="100%"
-          height="100%"
-          preserveAspectRatio="xMidYMid meet"
-          style={{
-            display: 'block',
-            pointerEvents: 'auto',
-            transform: `translate(${camera.x}px,${camera.y}px) scale(${zoom})`,
-            userSelect: 'none',
-            cursor: buildMode ? 'crosshair' : 'default',
-          }}
-          onMouseDown={handlers.handleSvgMouseDown}
-          onMouseMove={handlers.handleSvgMouseMove}
-          onMouseUp={handlers.handleSvgMouseUp}
-          onMouseLeave={() => {
-            isDraggingRef.current = false;
-            setDragBox(null);
-            setGhostTile(null);
-          }}
-        >
-          <TerrainLayer
-            {...{
-              addFloatingText,
-              anySelected,
-              attackMoveMode,
-              attackMoveModeRef,
-              buildMode,
-              capturedShrines,
-              commandMove: handlers.commandMove,
-              commandQueueMove: handlers.commandQueueMove,
-              lootCrates,
-              patrolMode,
-              patrolModeRef,
-              selectedType,
-              setAttackMoveMode,
-              setPatrolMode,
-              setRallyPoint,
-              setShrineCapturing,
-              setWorkers,
-              tiles,
-              workers,
-            }}
-          />
-          <OverlayRingsLayer
-            {...{
-              buildMode,
-              enemySiege,
-              enemyTowers,
-              enemyTrolls,
-              enemyWarchiefs,
-              fogVisible,
-              ghostTile,
-              guardTowerResearched,
-              isTileOccupied: handlers.isTileOccupied,
-              placedBuildings,
-            }}
-          />
-          <ResourceNodesLayer
-            {...{
-              buildMode,
-              commandMove: handlers.commandMove,
-              goldMines,
-              stoneNodes,
-              trees,
-            }}
-          />
-          <BuildingsLayer
-            {...{
-              anySelected,
-              handleAssistConstruction: handlers.handleAssistConstruction,
-              handleFarmhouseAction: handlers.handleFarmhouseAction,
-              handleRepairBuilding: handlers.handleRepairBuilding,
-              handleTowerGarrison: handlers.handleTowerGarrison,
-              placedBuildings,
-              resources,
-              selectedBuildingId,
-              setSelectedBuildingId,
-              setSelectedType,
-              setWorkers,
-              towerGarrison,
-              trapTriggeredRef,
-              workers,
-            }}
-          />
-
-          <EnemyBaseLayer
-            {...{
-              anySelected,
-              enemyBarnHp,
-              enemyTowers,
-              enemyWalls,
-              fogVisible,
-              handleAttackEnemyBarn: handlers.handleAttackEnemyBarn,
-              handleAttackEnemyTower: handlers.handleAttackEnemyTower,
-              handleAttackEnemyWall: handlers.handleAttackEnemyWall,
-            }}
-          />
-          <PlayerBarnLayer
-            {...{
-              anySelected,
-              buildMode,
-              clientToSvg: handlers.clientToSvg,
-              enemyGrunts,
-              fogVisible,
-              garrisoned,
-              handleGarrison: handlers.handleGarrison,
-              playerBarnHp,
-              rallyPoint,
-              selectedType,
-              setRallyPoint,
-              setSelectedBuildingId,
-              setSelectedType,
-              setWorkers,
-            }}
-          />
-          <NeutralLayer
-            {...{
-              anySelected,
-              capturedShrines,
-              clearedCamps,
-              deadGruntPositions,
-              fogVisible,
-              handleAttackCreep: handlers.handleAttackCreep,
-              neutralCreeps,
-              shrineCapturing,
-            }}
-          />
-          <EnemyGruntsLayer
-            {...{
-              anySelected,
-              commandMove: handlers.commandMove,
-              droppedItems,
-              enemyGrunts,
-              enemyLurkers,
-              fogVisible,
-              gruntHitRef,
-              handleAttackGrunt: handlers.handleAttackGrunt,
-              handleAttackLurker: handlers.handleAttackLurker,
-              lootCrates,
-            }}
-          />
-          <EnemySiegeCastersLayer
-            {...{
-              anySelected,
-              enemyNecromancers,
-              enemySappers,
-              enemyShamans,
-              enemySiege,
-              enemyWitchDoctors,
-              fogVisible,
-              handleAttackNecromancer: handlers.handleAttackNecromancer,
-              handleAttackSapper: handlers.handleAttackSapper,
-              handleAttackShaman: handlers.handleAttackShaman,
-              handleAttackSiege: handlers.handleAttackSiege,
-              handleAttackWitchDoctor: handlers.handleAttackWitchDoctor,
-            }}
-          />
-          <EnemyEliteLayer
-            {...{
-              anySelected,
-              enemyTrolls,
-              enemyWarchiefs,
-              enemyWarlords,
-              fogVisible,
-              handleAttackTroll: handlers.handleAttackTroll,
-              handleAttackWarchief: handlers.handleAttackWarchief,
-              handleAttackWarlord: handlers.handleAttackWarlord,
-            }}
-          />
-          <WorkersLayer
-            {...{
-              battleShoutUntil,
-              buildMode,
-              deadWorkerPositions,
-              fogVisible,
-              isDraggingRef,
-              setSelectedBuildingId,
-              setSelectedType,
-              setWorkers,
-              workerHitRef,
-              workers,
-            }}
-          />
-          <EffectsLayer
-            {...{
-              chickens,
-              dayPhase,
-              dragBox,
-              earthquakeEffect,
-              floatingTexts,
-              fogExplored,
-              fogVisible,
-              moveRing,
-              projectiles,
-              viewBoxH,
-              viewBoxW,
-              workers,
-            }}
-          />
-        </svg>
-      </div>
+        terrainLayer={{
+          addFloatingText,
+          anySelected,
+          attackMoveMode,
+          attackMoveModeRef,
+          buildMode,
+          capturedShrines,
+          commandMove: handlers.commandMove,
+          commandQueueMove: handlers.commandQueueMove,
+          lootCrates,
+          patrolMode,
+          patrolModeRef,
+          selectedType,
+          setAttackMoveMode,
+          setPatrolMode,
+          setRallyPoint,
+          setShrineCapturing,
+          setWorkers,
+          tiles,
+          workers,
+        }}
+        overlayRingsLayer={{
+          buildMode,
+          enemySiege,
+          enemyTowers,
+          enemyTrolls,
+          enemyWarchiefs,
+          fogVisible,
+          ghostTile,
+          guardTowerResearched,
+          isTileOccupied: handlers.isTileOccupied,
+          placedBuildings,
+        }}
+        resourceNodesLayer={{
+          buildMode,
+          commandMove: handlers.commandMove,
+          goldMines,
+          stoneNodes,
+          trees,
+        }}
+        buildingsLayer={{
+          anySelected,
+          handleAssistConstruction: handlers.handleAssistConstruction,
+          handleFarmhouseAction: handlers.handleFarmhouseAction,
+          handleRepairBuilding: handlers.handleRepairBuilding,
+          handleTowerGarrison: handlers.handleTowerGarrison,
+          placedBuildings,
+          resources,
+          selectedBuildingId,
+          setSelectedBuildingId,
+          setSelectedType,
+          setWorkers,
+          towerGarrison,
+          trapTriggeredRef,
+          workers,
+        }}
+        enemyBaseLayer={{
+          anySelected,
+          enemyBarnHp,
+          enemyTowers,
+          enemyWalls,
+          fogVisible,
+          handleAttackEnemyBarn: handlers.handleAttackEnemyBarn,
+          handleAttackEnemyTower: handlers.handleAttackEnemyTower,
+          handleAttackEnemyWall: handlers.handleAttackEnemyWall,
+        }}
+        playerBarnLayer={{
+          anySelected,
+          buildMode,
+          clientToSvg: handlers.clientToSvg,
+          enemyGrunts,
+          fogVisible,
+          garrisoned,
+          handleGarrison: handlers.handleGarrison,
+          playerBarnHp,
+          rallyPoint,
+          selectedType,
+          setRallyPoint,
+          setSelectedBuildingId,
+          setSelectedType,
+          setWorkers,
+        }}
+        neutralLayer={{
+          anySelected,
+          capturedShrines,
+          clearedCamps,
+          deadGruntPositions,
+          fogVisible,
+          handleAttackCreep: handlers.handleAttackCreep,
+          neutralCreeps,
+          shrineCapturing,
+        }}
+        enemyGruntsLayer={{
+          anySelected,
+          commandMove: handlers.commandMove,
+          droppedItems,
+          enemyGrunts,
+          enemyLurkers,
+          fogVisible,
+          gruntHitRef,
+          handleAttackGrunt: handlers.handleAttackGrunt,
+          handleAttackLurker: handlers.handleAttackLurker,
+          lootCrates,
+        }}
+        enemySiegeCastersLayer={{
+          anySelected,
+          enemyNecromancers,
+          enemySappers,
+          enemyShamans,
+          enemySiege,
+          enemyWitchDoctors,
+          fogVisible,
+          handleAttackNecromancer: handlers.handleAttackNecromancer,
+          handleAttackSapper: handlers.handleAttackSapper,
+          handleAttackShaman: handlers.handleAttackShaman,
+          handleAttackSiege: handlers.handleAttackSiege,
+          handleAttackWitchDoctor: handlers.handleAttackWitchDoctor,
+        }}
+        enemyEliteLayer={{
+          anySelected,
+          enemyTrolls,
+          enemyWarchiefs,
+          enemyWarlords,
+          fogVisible,
+          handleAttackTroll: handlers.handleAttackTroll,
+          handleAttackWarchief: handlers.handleAttackWarchief,
+          handleAttackWarlord: handlers.handleAttackWarlord,
+        }}
+        workersLayer={{
+          battleShoutUntil,
+          buildMode,
+          deadWorkerPositions,
+          fogVisible,
+          isDraggingRef,
+          setSelectedBuildingId,
+          setSelectedType,
+          setWorkers,
+          workerHitRef,
+          workers,
+        }}
+        effectsLayer={{
+          chickens,
+          dayPhase,
+          dragBox,
+          earthquakeEffect,
+          floatingTexts,
+          fogExplored,
+          fogVisible,
+          moveRing,
+          projectiles,
+          viewBoxH,
+          viewBoxW,
+          workers,
+        }}
+      />
 
       <ControlGroupBar {...{ controlGroups, workers }} />
       <RTSUI
@@ -1168,9 +1114,7 @@ const RTSMap: React.FC<{
         onToggleStance={() =>
           setStance(s => (s === 'aggressive' ? 'passive' : 'aggressive'))
         }
-        hasBarracks={placedBuildings.some(
-          b => b.type === 'barracks' && !b.constructing
-        )}
+        hasBarracks={hasBuildingType(placedBuildings, 'barracks')}
         garrisonedCount={garrisoned.length}
         garrisonCap={GARRISON_CAP}
         onGarrison={handlers.handleGarrison}
@@ -1211,25 +1155,15 @@ const RTSMap: React.FC<{
         harvestBoonActive={harvestBoonActive}
         onHarvestBoon={handlers.handleHarvestBoon}
         onRecruitHero={() => handlers.handleFarmhouseAction('recruitHero')}
-        hasSiegeWorkshop={placedBuildings.some(
-          b => b.type === 'siegeWorkshop' && !b.constructing
-        )}
-        hasMarket={placedBuildings.some(
-          b => b.type === 'market' && !b.constructing
-        )}
-        hasBlacksmith={placedBuildings.some(
-          b => b.type === 'blacksmith' && !b.constructing
-        )}
+        hasSiegeWorkshop={hasBuildingType(placedBuildings, 'siegeWorkshop')}
+        hasMarket={hasBuildingType(placedBuildings, 'market')}
+        hasBlacksmith={hasBuildingType(placedBuildings, 'blacksmith')}
         blacksmithUpgrades={blacksmithUpgrades}
         onBlacksmithUpgrade={type =>
           handlers.handleFarmhouseAction(`blacksmith:${type}`)
         }
-        hasStable={placedBuildings.some(
-          b => b.type === 'stable' && !b.constructing
-        )}
-        hasWatchtower={placedBuildings.some(
-          b => b.type === 'watchtower' && !b.constructing
-        )}
+        hasStable={hasBuildingType(placedBuildings, 'stable')}
+        hasWatchtower={hasBuildingType(placedBuildings, 'watchtower')}
         guardTowerResearched={guardTowerResearched}
         onGuardTower={() => handlers.handleFarmhouseAction('guardTower')}
         trainingQueue={trainingQueue}

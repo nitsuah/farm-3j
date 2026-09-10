@@ -1,53 +1,7 @@
 'use client';
 
-import { useState, useId } from 'react';
-
 import { SiteLayout } from '@/components/SiteLayout';
-import { GrowingCropScene } from '@/components/animations/GrowingCropScene';
-import { IsometricTownScene } from '@/components/animations/IsometricTownScene';
-import { SustainableFarmScene } from '@/components/animations/SustainableFarmScene';
-
-interface FeatureCardProps {
-  title: string;
-  description: string;
-  children: React.ReactNode;
-}
-
-function FeatureCard({ title, description, children }: FeatureCardProps) {
-  const [expanded, setExpanded] = useState<boolean>(false);
-  const contentId: string = useId();
-
-  return (
-    <div className="relative flex flex-col overflow-hidden border border-green-200 bg-white transition-all duration-300 dark:border-gray-600 dark:bg-black">
-      <button
-        type="button"
-        aria-expanded={expanded}
-        aria-controls={contentId}
-        className="flex cursor-pointer flex-col justify-center p-8 text-left lg:p-6"
-        onClick={() => setExpanded(prev => !prev)}
-      >
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <h3 className="text-sm font-bold text-green-900 lg:text-base dark:text-green-400">
-              {title}
-            </h3>
-            <p className="text-xs text-green-700 lg:text-sm dark:text-green-200">
-              {description}
-            </p>
-          </div>
-          <span className="mt-0.5 shrink-0 text-xs text-green-600 dark:text-green-500">
-            {expanded ? '▲' : '▼'}
-          </span>
-        </div>
-      </button>
-
-      {/* Always mounted so aria-controls can reference the id; children unmount to stop animations */}
-      <div id={contentId} className="h-64" hidden={!expanded}>
-        {expanded && children}
-      </div>
-    </div>
-  );
-}
+import { FeatureCarousel } from '@/components/home/FeatureCarousel';
 
 export default function Home() {
   return (
@@ -67,29 +21,8 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Feature cards — click to expand animations */}
-        <section className="grid flex-1 grid-cols-1 gap-1 md:grid-cols-3 lg:gap-1">
-          <FeatureCard
-            title="Fresh Produce"
-            description="Watch our crops grow! Seasonal vegetables and fruits grown with care. Click to preview."
-          >
-            <GrowingCropScene />
-          </FeatureCard>
-
-          <FeatureCard
-            title="Local Community"
-            description="Supporting our local community with quality, farm-fresh products. Click to preview."
-          >
-            <IsometricTownScene buildings={3} />
-          </FeatureCard>
-
-          <FeatureCard
-            title="Sustainable Farming"
-            description="Solar, wind, and eco-friendly practices for a healthier future. Click to preview."
-          >
-            <SustainableFarmScene />
-          </FeatureCard>
-        </section>
+        {/* Feature showcase — auto-rotating carousel, swipe/tap/arrow navigable */}
+        <FeatureCarousel />
       </main>
     </SiteLayout>
   );
