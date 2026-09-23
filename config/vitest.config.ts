@@ -48,8 +48,10 @@ export default defineConfig({
         '**/*.test.{ts,tsx}',
         '**/*.spec.{ts,tsx}',
         '**/coverage/**',
-        // Exclude Next.js pages, UI-only components, sound, persistence
-        'app/**',
+        // Exclude UI-only components, sound, persistence. Next.js pages under
+        // app/ are already outside `include`; do NOT add an 'app/**' exclude —
+        // the Docker runner mounts the repo at /app, so that glob matches every
+        // file and coverage silently reports 0%.
         'components/rts/game/sound.ts',
         'components/rts/game/persistence.ts',
         'components/rts/game/achievements.ts',
@@ -58,7 +60,7 @@ export default defineConfig({
       ],
       // Coverage thresholds — Phase 2: Core logic + RTS game systems.
       // AI tick files (~7 kloc) are excluded (smoke-tested only).
-      // Thresholds reflect the current measured baseline (~30% lines);
+      // Thresholds were set when the measured baseline was ~30% lines;
       // raised incrementally toward 80% — see METRICS.md.
       thresholds: {
         lines: 28,
