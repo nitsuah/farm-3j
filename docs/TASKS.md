@@ -36,7 +36,7 @@ files rather than a duplicated narrative here._
 ## Farm RTS MVP (2026 Q2–Q3)
 
 - [ ] Complete all MVP milestones as defined in docs/Farm_RTS_Game_Manual.md
-  - Progress: all core systems (map/camera, resource, worker, building, win/lose) are shipped — see `docs/FEATURES.md`. The superseded milestone checklist (`docs/FARM-RTS-TODO.md`) was archived to `docs/archive/` since it no longer reflected reality.
+  - Progress: all core systems (map/camera, resource, worker, building, win/lose) are shipped — see `docs/FEATURES.md`. The superseded milestone checklist was archived to `docs/archive/FARM-RTS-TODO.md` since it no longer reflected reality.
   - Priority: P0
   - Acceptance Criteria: All core gameplay systems (map, camera, resource, worker, building, win/lose) are playable and validated in Docker.
 
