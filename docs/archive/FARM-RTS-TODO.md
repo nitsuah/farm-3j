@@ -1,3 +1,8 @@
+> **Archived 2026-09-23**: superseded by `docs/FEATURES.md`'s "Shipped" section —
+> nearly every milestone below now reads as unchecked despite having shipped long
+> ago (see FEATURES.md for the current, accurate state). Kept for historical
+> reference only; do not use as a live task list.
+
 # Farm RTS: Implementation TODOs (MVP)
 
 _This file is the actionable engineering breakdown for the Farm RTS MVP, directly mapped to the milestones and systems in Farm_RTS_Game_Manual.md._

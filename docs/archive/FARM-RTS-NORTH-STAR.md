@@ -1,3 +1,7 @@
+> **Archived 2026-09-23**: superseded by `docs/Farm_RTS_Game_Manual.md`, which
+> expanded this seed doc into the full "Complete Game Manual & North Star Plan".
+> Kept for historical reference only.
+
 # Farm RTS: North Star & Milestone Plan
 
 ## Vision (North Star)
