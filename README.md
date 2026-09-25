@@ -201,6 +201,7 @@ Shared community policies are centralized in https://github.com/nitsuah/.github:
 - Security: https://github.com/nitsuah/.github/blob/main/SECURITY.md
 
 <!-- docs-index:start -->
+
 ## Docs Index
 
 Every tracked doc in this repo, so nothing is orphaned (also used by the Obsidian vault mirror).
@@ -217,7 +218,8 @@ Every tracked doc in this repo, so nothing is orphaned (also used by the Obsidia
 - [Farm RTS: North Star & Milestone Plan](./docs/archive/FARM-RTS-NORTH-STAR.md) — `docs/archive/FARM-RTS-NORTH-STAR.md`
 - [Farm RTS: Implementation TODOs (MVP)](./docs/archive/FARM-RTS-TODO.md) — `docs/archive/FARM-RTS-TODO.md`
 
-**`docs/None/`**
+**`repo root`**
 
 - [Changelog](./CHANGELOG.md) — `CHANGELOG.md`
+
 <!-- docs-index:end -->

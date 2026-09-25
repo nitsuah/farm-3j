@@ -11,13 +11,13 @@ Last Updated: 2026-09-24
 
 ## 2027 Q1 - Farm RTS Round 2 + Product Surface (Planned)
 
-### Technical Health *(carried from 2026 Q3)*
+### Technical Health _(carried from 2026 Q3)_
 
 - [ ] Continue SVG component extraction — worker body shapes, enemy unit torsos, building base rects are next candidates for shared components (see iter109 pattern)
 - [ ] Profile render loop on 25×25 map with 30+ units; investigate canvas or OffscreenCanvas fallback if SVG drops below 30fps on mobile
 - [ ] Add unit tests for remaining core helpers: `tileDist`, `tileToSvg`, A\* pathfinding (damage formulas and map selectors already covered)
 
-### Gameplay Features *(carried from 2026 Q3)*
+### Gameplay Features _(carried from 2026 Q3)_
 
 - [ ] **Save-slot picker UI** — the 3 cloud-backed slots (0/1/2) shipped 2026-08-07; the slot picker on the New Game screen is still TBD
 - [ ] **Named formations** — move a selected group in line, wedge, or box formation; prevents units stacking on the same tile
@@ -26,7 +26,7 @@ Last Updated: 2026-09-24
 - [ ] **Challenge / achievement system** — milestone badges (e.g. "Survive 20 waves without losing a building", "Kill 5 Sappers before they explode")
 - [ ] **Campaign mode (Phase 1)** — linear sequence of 3 hand-crafted scenarios with scripted objectives beyond "defend the barn"
 
-### Content & Polish *(carried from 2026 Q3)*
+### Content & Polish _(carried from 2026 Q3)_
 
 - [ ] Background ambient audio loop (farm sounds, wind, distant battle) with independent volume slider
 - [ ] More unit voice lines and enemy audio cues (Warchief stomp roar, Sapper countdown tick)
@@ -35,7 +35,7 @@ Last Updated: 2026-09-24
 - [ ] **Post-game replay** — snapshot key events (wave starts, hero deaths, boss spawns) so the game-over screen can offer a lightweight timeline scrub of the run, without a deterministic replay engine
 - [ ] **Adaptive difficulty nudge** — use leaderboard win/loss + wave-reached history to suggest a difficulty on the New Game screen
 
-### Product and Content Surface *(carried from 2026 Q4)*
+### Product and Content Surface _(carried from 2026 Q4)_
 
 - [ ] Improve the product gallery and catalog surface.
 - [ ] Add a blog or news publishing path.
