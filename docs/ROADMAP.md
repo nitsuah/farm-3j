@@ -32,6 +32,8 @@ Last Updated: 2026-09-24
 - [ ] More unit voice lines and enemy audio cues (Warchief stomp roar, Sapper countdown tick)
 - [ ] Minimap: show dropped hero items and loot crate positions
 - [ ] Ensure farmers always render in front of barn and remain selectable when barn is clicked
+- [ ] Implement grazing logic and a food meter for animal units
+- [ ] Add buttons to train animal units from the Barn
 - [ ] **Post-game replay** — snapshot key events (wave starts, hero deaths, boss spawns) so the game-over screen can offer a lightweight timeline scrub of the run, without a deterministic replay engine
 - [ ] **Adaptive difficulty nudge** — use leaderboard win/loss + wave-reached history to suggest a difficulty on the New Game screen
 
