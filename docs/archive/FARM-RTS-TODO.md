@@ -5,6 +5,8 @@
 
 # Farm RTS: Implementation TODOs (MVP)
 
+> 🧭 [farm-3j](../../README.md) · [Features](../FEATURES.md) · [Roadmap](../ROADMAP.md) · [Tasks](../TASKS.md) · [Changelog](../../CHANGELOG.md) · [Metrics](../METRICS.md) <!-- nav -->
+
 _This file is the actionable engineering breakdown for the Farm RTS MVP, directly mapped to the milestones and systems in Farm_RTS_Game_Manual.md._
 
 ## Milestone 1: Core Map & Camera

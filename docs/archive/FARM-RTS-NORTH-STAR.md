@@ -4,6 +4,8 @@
 
 # Farm RTS: North Star & Milestone Plan
 
+> 🧭 [farm-3j](../../README.md) · [Features](../FEATURES.md) · [Roadmap](../ROADMAP.md) · [Tasks](../TASKS.md) · [Changelog](../../CHANGELOG.md) · [Metrics](../METRICS.md) <!-- nav -->
+
 ## Vision (North Star)
 
 Build a browser-based, isometric real-time strategy (RTS) game inspired by Warcraft 3 and Starcraft, with a farm theme. The MVP should deliver the core gameplay loop: base building, resource gathering, and unit management. The experience should be smooth, responsive, and fun, even if simplified and "on rails" at first.
