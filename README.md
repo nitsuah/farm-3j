@@ -204,7 +204,7 @@ Shared community policies are centralized in https://github.com/nitsuah/.github:
 
 ## Docs Index
 
-Every tracked doc in this repo, so nothing is orphaned (also used by the Obsidian vault mirror).
+Every doc at the repo root and under `docs/` (the files mirrored into the Obsidian vault), so none of them is orphaned.
 
 - [Features](./docs/FEATURES.md) — `docs/FEATURES.md`
 - [🌾 Farm RTS: Complete Game Manual & North Star Plan](./docs/Farm_RTS_Game_Manual.md) — `docs/Farm_RTS_Game_Manual.md`
