@@ -60,7 +60,7 @@ files rather than a duplicated narrative here._
 - [ ] Minimap: show dropped items and loot crate positions
   - Priority: P3
   - Type: Feature
-- [ ] Ensure farmers always render in front of barn and remain selectable when barn is clicked
+- [x] Ensure farmers always render in front of barn and remain selectable when barn is clicked
   - Priority: P1
   - Type: Bug
 - [ ] Implement grazing logic and food meter for animal units

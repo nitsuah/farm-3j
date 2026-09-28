@@ -109,30 +109,7 @@ export const PlayerBarnLayer: React.FC<PlayerBarnLayerProps> = React.memo(
           const bcy = isoY + ts * 0.4;
           const bt = (Date.now() / 600) % (2 * Math.PI);
           return (
-            <g
-              style={{ cursor: 'pointer' }}
-              onClick={() => {
-                if (!buildMode) {
-                  setSelectedType('farmhouse');
-                  setSelectedBuildingId(null);
-                  setWorkers(ws => ws.map(w => ({ ...w, selected: false })));
-                }
-              }}
-              onContextMenu={e => {
-                e.preventDefault();
-                if (anySelected && selectedType === 'worker') {
-                  handleGarrison();
-                  return;
-                }
-                if (selectedType === 'farmhouse') {
-                  const coords = clientToSvg(e.clientX, e.clientY);
-                  if (coords) {
-                    const { tx, ty } = svgToTile(coords.x, coords.y);
-                    setRallyPoint({ x: tx, y: ty });
-                  }
-                }
-              }}
-            >
+            <g style={{ cursor: 'pointer' }}>
               {/* Attack warning ring */}
               {(lastStand || barnUnderFire) && (
                 <polygon
@@ -246,6 +223,33 @@ export const PlayerBarnLayer: React.FC<PlayerBarnLayerProps> = React.memo(
                   </text>
                 </>
               )}
+              {/* Dedicated transparent hit target — covers barn footprint, rendered last in barn layer so workers (next layer) can still be clicked when visually in front */}
+              <polygon
+                points={`${lx},${ly} ${tx2},${ty2} ${rx2},${ry2} ${bx2},${by2}`}
+                fill="transparent"
+                pointerEvents="all"
+                onClick={() => {
+                  if (!buildMode) {
+                    setSelectedType('farmhouse');
+                    setSelectedBuildingId(null);
+                    setWorkers(ws => ws.map(w => ({ ...w, selected: false })));
+                  }
+                }}
+                onContextMenu={e => {
+                  e.preventDefault();
+                  if (anySelected && selectedType === 'worker') {
+                    handleGarrison();
+                    return;
+                  }
+                  if (selectedType === 'farmhouse') {
+                    const coords = clientToSvg(e.clientX, e.clientY);
+                    if (coords) {
+                      const { tx, ty } = svgToTile(coords.x, coords.y);
+                      setRallyPoint({ x: tx, y: ty });
+                    }
+                  }
+                }}
+              />
             </g>
           );
         })()}
