@@ -2,9 +2,18 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
-  plugins: [react()] as any,
+  plugins: [react()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, '..'),
+      '@/*': path.resolve(__dirname, '../*'),
+    },
+  },
   test: {
     // Enable globals for easier testing (e.g., describe, it, expect)
     globals: true,
@@ -68,12 +77,6 @@ export default defineConfig({
         branches: 17,
         statements: 28,
       },
-    },
-  },
-  resolve: {
-    alias: {
-      '@/*': path.resolve(__dirname, '../*'),
-      '@': path.resolve(__dirname, '..'),
     },
   },
 });
