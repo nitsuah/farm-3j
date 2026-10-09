@@ -144,8 +144,17 @@ describe('aStar (path validity)', () => {
     const tiles = makeGrid();
     tiles[5]![5] = 'tree';
     tiles[5]![6] = 'rock';
+    // Water walls on both sides make a one-tile corridor, so the only short route crosses both tiles
+    for (let y = 3; y <= 8; y++) {
+      tiles[4]![y] = 'water';
+      tiles[6]![y] = 'water';
+    }
     const result = aStar(tiles, { x: 5, y: 4 }, { x: 5, y: 7 });
-    expect(result).toHaveLength(3);
+    expect(result).toEqual([
+      { x: 5, y: 5 },
+      { x: 5, y: 6 },
+      { x: 5, y: 7 },
+    ]);
   });
 
   it('returns [goal] when the goal is walled off by water (no path)', () => {
