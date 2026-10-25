@@ -9,6 +9,8 @@ _Automatically synced with your [v0.dev](https://v0.dev) deployments_
 
 **Live:** [v0-farm-contact-website.vercel.app](https://v0-farm-contact-website.vercel.app)
 
+_Note: Production deploys from `main` via the connected Vercel Git integration._
+
 ## Overview
 
 Farm 3J is an interactive farm website with a full-featured isometric **Real-Time Strategy game** — think Warcraft II / Age of Empires II, built entirely in SVG + React.
