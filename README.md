@@ -9,7 +9,7 @@ _Automatically synced with your [v0.dev](https://v0.dev) deployments_
 
 **Live:** [v0-farm-contact-website.vercel.app](https://v0-farm-contact-website.vercel.app)
 
-_Note: Production deploys from `main` via the connected Vercel Git integration (verified 2026-10-25)._
+_Note: Production deploys from `main` via the connected Vercel Git integration._
 
 ## Overview
 
