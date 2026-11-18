@@ -43,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- CI: repo-health shared kit pinned to `nitsuah/.github@a0df883` (was `7d3c243`), which no longer ships the stale `msgpack` advisory row.
 - **Changed:** `.nvmrc` is now `22`, matching CI and the Dockerfile (both already Node 22). Netlify builds read `.nvmrc`, so the production server handler was still being built and run on Node 20, which is end-of-life.
 - **Changed:** Dependency refresh: vitest / @vitest/* 5.1, @hookform/resolvers 7 (supersedes #419; the package isn't imported anywhere yet), next + eslint-config-next 16.4.6, jsdom 31.0.1, prettier 3.10.1, typescript-eslint 8.72.2, tailwindcss 4.3.5, plus minor bumps (geist, lucide-react, react-hook-form, react-resizable-panels, vite, @vitejs/plugin-react, user-event).
 - **Changed:** Dependabot now groups minor and patch updates per ecosystem (`minor-and-patch`), so a week of bumps is one PR and one production deploy instead of one per package. Major updates stay separate PRs.
