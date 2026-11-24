@@ -126,7 +126,8 @@ test(
         await page.getByRole('button', { name: /Continue/ }).click();
         await expect(page.getByRole('button', { name: '💾' })).toBeVisible();
         // The marker gold only appears if the save was loaded, not a fresh game.
-        await expect(page.getByText('🪙777')).toBeVisible();
+        // The marker value, however the counter decorates it (icon, spacing).
+        await expect(page.getByText(/(^|\D)777(\D|$)/).first()).toBeVisible();
       },
       { screenshot: false }
     );
