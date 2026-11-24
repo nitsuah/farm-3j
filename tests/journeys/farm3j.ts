@@ -34,5 +34,15 @@ export function trackPageErrors(page: Page): string[] {
 /** Let fonts and CSS transitions finish before a baseline. */
 export async function settle(page: Page) {
   await page.evaluate(() => document.fonts.ready);
-  await page.waitForTimeout(400);
+  // Wait for running finite CSS transitions/animations to finish (infinite
+  // ones, e.g. idle loops, never settle and are skipped), bounded at 5 s.
+  await page.waitForFunction(
+    () =>
+      document
+        .getAnimations()
+        .filter(a => a.effect?.getComputedTiming().iterations !== Infinity)
+        .every(a => a.playState !== 'running'),
+    undefined,
+    { timeout: 5_000 },
+  );
 }
