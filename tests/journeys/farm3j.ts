@@ -10,9 +10,13 @@ export { step } from './journey';
 
 export const test = base.extend({
   page: async ({ page }, use) => {
-    await page.route(/^https:\/\/fonts\.(googleapis|gstatic)\.com\//, (route) => route.abort());
+    await page.route(/^https:\/\/fonts\.(googleapis|gstatic)\.com\//, route =>
+      route.abort()
+    );
     // Saves live in localStorage; the cloud copy is fire-and-forget.
-    await page.route('**/api/**', (route) => route.fulfill({ status: 404, json: { error: 'stubbed' } }));
+    await page.route('**/api/**', route =>
+      route.fulfill({ status: 404, json: { error: 'stubbed' } })
+    );
     await use(page);
   },
 });
@@ -20,7 +24,7 @@ export const test = base.extend({
 /** Collect uncaught page errors; the journey asserts the list is empty at the end. */
 export function trackPageErrors(page: Page): string[] {
   const errors: string[] = [];
-  page.on('pageerror', (e) => errors.push(`${e.message}\n${e.stack ?? ''}`));
+  page.on('pageerror', e => errors.push(`${e.message}\n${e.stack ?? ''}`));
   return errors;
 }
 

@@ -31,15 +31,25 @@ export interface StepOpts {
   docs?: string;
 }
 
-export async function step(page: Page, title: string, fn: () => Promise<void>, opts: StepOpts = {}) {
+export async function step(
+  page: Page,
+  title: string,
+  fn: () => Promise<void>,
+  opts: StepOpts = {}
+) {
   return test.step(title, async () => {
     await fn();
     const target = opts.target ?? page;
     if (opts.screenshot !== false) {
-      await expect(target).toHaveScreenshot(`${slug(title)}.png`, { mask: opts.mask });
+      await expect(target).toHaveScreenshot(`${slug(title)}.png`, {
+        mask: opts.mask,
+      });
     }
     if (opts.docs && process.env.DOCS_SCREENSHOTS) {
-      await target.screenshot({ path: `${process.env.DOCS_SCREENSHOTS}/${opts.docs}.png`, animations: 'disabled' });
+      await target.screenshot({
+        path: `${process.env.DOCS_SCREENSHOTS}/${opts.docs}.png`,
+        animations: 'disabled',
+      });
     }
   });
 }

@@ -36,13 +36,13 @@ jobs:
     with:
       # Keep in step with @playwright/test in package.json (1.65.1).
       image: mcr.microsoft.com/playwright:v1.65.1-jammy
-      setup: corepack enable && pnpm install --frozen-lockfile
+      setup: npm i -g pnpm@9.0.0 && pnpm install --frozen-lockfile
       command: pnpm test:journeys
       features: promo/spots.json
       kit-ref: b0a9f894a450790450aaecb2b1fb1b2ea524f64d # same commit as the workflow ref above; bump both together
       repro: |
         docker run --rm -v "$PWD:/w" -w /w -e CI=true mcr.microsoft.com/playwright:v1.65.1-jammy \
-          sh -c "corepack enable && pnpm install --frozen-lockfile && pnpm test:journeys"
+          sh -c "npm i -g pnpm@9.0.0 && pnpm install --frozen-lockfile && pnpm test:journeys"
 
   # Nightly and manual runs file and close bot:journey issues and update the
   # bot/journeys branch (BUGS.md, metrics).
@@ -55,10 +55,10 @@ jobs:
     with:
       # Keep in step with @playwright/test in package.json (1.65.1).
       image: mcr.microsoft.com/playwright:v1.65.1-jammy
-      setup: corepack enable && pnpm install --frozen-lockfile
+      setup: npm i -g pnpm@9.0.0 && pnpm install --frozen-lockfile
       command: pnpm test:journeys
       features: promo/spots.json
       kit-ref: b0a9f894a450790450aaecb2b1fb1b2ea524f64d # same commit as the workflow ref above; bump both together
       repro: |
         docker run --rm -v "$PWD:/w" -w /w -e CI=true mcr.microsoft.com/playwright:v1.65.1-jammy \
-          sh -c "corepack enable && pnpm install --frozen-lockfile && pnpm test:journeys"
+          sh -c "npm i -g pnpm@9.0.0 && pnpm install --frozen-lockfile && pnpm test:journeys"
