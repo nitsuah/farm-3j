@@ -18,7 +18,8 @@
     "type-check": "tsc --noEmit",
     "type-check:docker": "node scripts/run-in-docker.js type-check",
     "lint:docker": "node scripts/run-in-docker.js lint",
-    "test:docker": "node scripts/run-in-docker.js test:coverage"
+    "test:docker": "node scripts/run-in-docker.js test:coverage",
+    "test:journeys": "playwright test --config config/playwright.journeys.config.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^7.0.7",
@@ -77,6 +78,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "1.65.1",
     "@tailwindcss/postcss": "^4.3.5",
     "@testing-library/jest-dom": "^8.0.0",
     "@testing-library/react": "^16.3.3",

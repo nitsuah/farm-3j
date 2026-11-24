@@ -36,3 +36,7 @@ coverage/
 
 # Claude Code local config
 .claude/
+
+# Journeys
+journeys-report/
+test-results/

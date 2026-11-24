@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Nightly journeys** — `.github/workflows/journeys.yml` runs `tests/journeys` (RTS landing → save-slot picker → difficulty → game, and save → reload → continue) nightly in the pinned Playwright image against `next start` of the production build, with DOM-screen baselines; failures become deduplicated `bot:journey` issues. `promo/spots.json` records the feature map for the showcase standard.
 - Unit tests for core helpers (`tileDist`, `tileToSvg`, A* pathfinding): exact values, grid corners, contiguous/optimal paths, no-path fallback (`components/rts/game/__tests__/coreHelpers.test.ts`).
 
 ### Security

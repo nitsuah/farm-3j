@@ -35,7 +35,8 @@ files rather than a duplicated narrative here._
 
 #### Gameplay Features
 
-- [ ] Save-slot picker UI on the New Game screen (3 cloud-backed slots already shipped)
+- [x] Save-slot picker UI on the New Game screen (3 cloud-backed slots already shipped)
+  - Done 2026-11-24: shipped in 342b671 (`feat(rts): add 3-slot named save system with slot picker screen`, on main); `RTSGameRoot` opens on a three-slot picker (wave, difficulty, saved date, Continue / New Game) before the difficulty screen. `tests/journeys/rts.spec.ts` now covers it nightly.
   - Priority: P1
   - Type: Feature
 - [ ] Named unit formations — move selected group in line/wedge/box formation
