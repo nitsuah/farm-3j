@@ -15,7 +15,10 @@ export const test = base.extend({
     );
     // Saves live in localStorage; the cloud copy (/api/saves, /api/highscores) is fire-and-forget.
     await page.route(/\/api\/(saves|highscores)(\?|$)/, route =>
-      route.fulfill({ status: 404, json: { error: 'stubbed' } })
+      // No cloud copy exists (GET 404, as for a new device); writes succeed like production.
+      route.request().method() === 'GET'
+        ? route.fulfill({ status: 404, json: { error: 'no cloud save' } })
+        : route.fulfill({ status: 200, json: { ok: true } })
     );
     await use(page);
   },
