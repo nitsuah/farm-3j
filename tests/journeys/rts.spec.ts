@@ -115,8 +115,18 @@ test(
       page,
       'continue the saved game',
       async () => {
+        // Change one stable value in the saved slot so Continue can prove it restores state (the reload above autosaved, so edit after it).
+        await page.evaluate(() => {
+          const key = 'farm3j_rts_v2_slot0';
+          const save = JSON.parse(localStorage.getItem(key) ?? '{}');
+          save.resources.gold = 777;
+          localStorage.setItem(key, JSON.stringify(save));
+        });
+
         await page.getByRole('button', { name: /Continue/ }).click();
         await expect(page.getByRole('button', { name: '💾' })).toBeVisible();
+        // The marker gold only appears if the save was loaded, not a fresh game.
+        await expect(page.getByText('🪙777')).toBeVisible();
       },
       { screenshot: false }
     );
