@@ -1,0 +1,22 @@
+{
+  "product": "farm-3j",
+  "live": null,
+  "page": null,
+  "pagesDir": "public",
+  "frontend": true,
+  "features": [
+    { "id": "save-slots", "title": "Cloud Saves & Save Slots", "category": "Farm RTS", "screenshots": ["docs/screenshots/save-slots.png"], "spots": [] },
+    { "id": "farm-rts-new-game", "title": "Difficulty Selection", "category": "Farm RTS", "screenshots": ["docs/screenshots/difficulty-select.png"], "spots": [] },
+    { "id": "rts-economy", "title": "Resources, Population Cap and Building Placement", "category": "Farm RTS", "screenshots": [], "spots": [] },
+    { "id": "rts-combat", "title": "Enemy Waves, Grunts and Worker Combat", "category": "Farm RTS", "screenshots": [], "spots": [] },
+    { "id": "rts-units", "title": "Barracks, Stable, Siege and Hero Units", "category": "Farm RTS", "screenshots": [], "spots": [] },
+    { "id": "rts-controls", "title": "Box Select, Control Groups and Hotkeys", "category": "Farm RTS", "screenshots": [], "spots": [] },
+    { "id": "rts-fog-minimap", "title": "Fog of War and Minimap", "category": "Farm RTS", "screenshots": [], "spots": [] },
+    { "id": "rts-tech", "title": "Tech Research Upgrades", "category": "Farm RTS", "screenshots": [], "spots": [] },
+    { "id": "farm-tycoon", "title": "Farm Tycoon (on hold)", "category": "Legacy", "visual": "none" },
+    { "id": "core-architecture", "title": "Core Next.js Architecture", "category": "Technical", "visual": "none" }
+  ],
+  "spots": [],
+  "reels": [ { "id": "hero", "spots": [], "published": null } ],
+  "brand": { "source": null, "derived": [], "manual": [] }
+}
