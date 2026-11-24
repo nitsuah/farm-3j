@@ -13,8 +13,8 @@ export const test = base.extend({
     await page.route(/^https:\/\/fonts\.(googleapis|gstatic)\.com\//, route =>
       route.abort()
     );
-    // Saves live in localStorage; the cloud copy is fire-and-forget.
-    await page.route('**/api/**', route =>
+    // Saves live in localStorage; the cloud copy (/api/saves, /api/highscores) is fire-and-forget.
+    await page.route(/\/api\/(saves|highscores)(\?|$)/, route =>
       route.fulfill({ status: 404, json: { error: 'stubbed' } })
     );
     await use(page);
