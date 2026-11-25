@@ -15,7 +15,7 @@ Last Updated: 2026-09-24
 
 - [ ] Continue SVG component extraction — worker body shapes, enemy unit torsos, building base rects are next candidates for shared components (see iter109 pattern)
 - [ ] Profile render loop on 25×25 map with 30+ units; investigate canvas or OffscreenCanvas fallback if SVG drops below 30fps on mobile
-- [ ] Add unit tests for remaining core helpers: `tileDist`, `tileToSvg`, A\* pathfinding (damage formulas and map selectors already covered)
+- [x] Add unit tests for remaining core helpers: `tileDist`, `tileToSvg`, A\* pathfinding (damage formulas and map selectors already covered) (covered by `coreHelpers.test.ts` and `pathfinding.test.ts`)
 
 ### Gameplay Features _(carried from 2026 Q3)_
 
