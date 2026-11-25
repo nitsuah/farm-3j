@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-import { ALL_ACHIEVEMENTS, getEarnedAchievements, unlockAchievement } from '../achievements';
+import {
+  ALL_ACHIEVEMENTS,
+  getEarnedAchievements,
+  unlockAchievement,
+} from '../achievements';
 
 describe('ALL_ACHIEVEMENTS', () => {
   it('has 18 entries', () => {
@@ -61,14 +65,18 @@ describe('unlockAchievement', () => {
 
   it('stores the id exactly once', () => {
     unlockAchievement('first_blood');
-    const stored = JSON.parse(localStorage.getItem('farm3j_achievements_v1') || '[]');
+    const stored = JSON.parse(
+      localStorage.getItem('farm3j_achievements_v1') || '[]'
+    );
     expect(stored).toEqual(['first_blood']);
   });
 
   it('keeps both ids when unlocking a second achievement', () => {
     unlockAchievement('first_blood');
     unlockAchievement('warlord_slayer');
-    const stored = JSON.parse(localStorage.getItem('farm3j_achievements_v1') || '[]');
+    const stored = JSON.parse(
+      localStorage.getItem('farm3j_achievements_v1') || '[]'
+    );
     expect(stored).toContain('first_blood');
     expect(stored).toContain('warlord_slayer');
     expect(stored).toHaveLength(2);
