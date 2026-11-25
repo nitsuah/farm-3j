@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest';
 
-import { getFormationOffsets, type FormationKind } from '../formations';
+import {
+  getFormationOffsets,
+  getFormationTargets,
+  type FormationKind,
+  type TilePoint,
+} from '../formations';
 
 const kinds: FormationKind[] = ['line', 'wedge', 'box'];
 
@@ -53,6 +58,52 @@ describe('getFormationOffsets', () => {
           expect(seen.has(key)).toBe(false);
           seen.add(key);
         }
+      }
+    }
+  });
+});
+
+describe('getFormationTargets', () => {
+  const anchor: TilePoint = { x: 10, y: 10 };
+  const gridSize = 25;
+
+  it('line with 3 units centers around anchor', () => {
+    const targets = getFormationTargets('line', anchor, 3, gridSize);
+    expect(targets).toEqual([
+      { x: 9, y: 10 },
+      { x: 10, y: 10 },
+      { x: 11, y: 10 },
+    ]);
+  });
+
+  it('clamps negative coordinates at grid edge (anchor 0,0 with 3-unit line)', () => {
+    const targets = getFormationTargets('line', { x: 0, y: 0 }, 3, gridSize);
+    expect(targets.map(t => t.x)).toEqual([0, 0, 1]);
+    expect(targets.map(t => t.y)).toEqual([0, 0, 0]);
+  });
+
+  it('box of 4 at bottom-right corner (24,24) stays within 0..24', () => {
+    const targets = getFormationTargets('box', { x: 24, y: 24 }, 4, gridSize);
+    for (const t of targets) {
+      expect(t.x).toBeGreaterThanOrEqual(0);
+      expect(t.x).toBeLessThanOrEqual(24);
+      expect(t.y).toBeGreaterThanOrEqual(0);
+      expect(t.y).toBeLessThanOrEqual(24);
+    }
+  });
+
+  it('count 0 returns empty array', () => {
+    for (const kind of kinds) {
+      expect(getFormationTargets(kind, anchor, 0, gridSize)).toEqual([]);
+    }
+  });
+
+  it('length always equals count for each kind', () => {
+    for (const kind of kinds) {
+      for (let count = 1; count <= 20; count++) {
+        expect(getFormationTargets(kind, anchor, count, gridSize)).toHaveLength(
+          count
+        );
       }
     }
   });
