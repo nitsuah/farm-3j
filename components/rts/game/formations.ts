@@ -5,6 +5,11 @@ export interface TileOffset {
   dy: number;
 }
 
+export interface TilePoint {
+  x: number;
+  y: number;
+}
+
 export function getFormationOffsets(
   kind: FormationKind,
   count: number
@@ -46,4 +51,18 @@ export function getFormationOffsets(
       return offsets;
     }
   }
+}
+
+/** Absolute, in-grid target tiles for `count` units moving to `anchor` in `kind` formation. */
+export function getFormationTargets(
+  kind: FormationKind,
+  anchor: TilePoint,
+  count: number,
+  gridSize: number
+): TilePoint[] {
+  const max = gridSize - 1;
+  return getFormationOffsets(kind, count).map(({ dx, dy }) => ({
+    x: Math.min(max, Math.max(0, anchor.x + dx)),
+    y: Math.min(max, Math.max(0, anchor.y + dy)),
+  }));
 }
