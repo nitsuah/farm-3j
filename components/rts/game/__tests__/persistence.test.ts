@@ -4,17 +4,30 @@ import type { SaveData } from '../types';
 
 const legacyKey = 'farm3j_rts_v2';
 const slot0Key = 'farm3j_rts_v2_slot0';
-const save = () =>
-  ({
-    version: 2,
-    wave: 4,
-    savedAt: 123,
-    difficultyId: 'normal',
-    slotName: 'Test',
-    resources: {},
-    workers: [],
-    placedBuildings: [],
-  }) as unknown as SaveData;
+const save = (): SaveData => ({
+  version: 2,
+  wave: 4,
+  savedAt: 123,
+  difficultyId: 'normal',
+  slotName: 'Test',
+  resources: { gold: 0, lumber: 0, stone: 0, food: 0, foodCap: 0 },
+  workers: [],
+  trees: [],
+  goldMines: [],
+  stoneNodes: [],
+  placedBuildings: [],
+  buildingNextId: 1,
+  farmhouse: { built: false, level: 0 },
+  upgrades: { sharperTools: 0, swiftHarvest: 0, ironWill: 0 },
+  killCount: 0,
+  totalGold: 0,
+  totalLumber: 0,
+  totalStone: 0,
+  playerBarnHp: 0,
+  enemyBarnHp: 0,
+  rallyPoint: null,
+  fogExplored: [],
+});
 
 beforeEach(() => {
   localStorage.clear();
