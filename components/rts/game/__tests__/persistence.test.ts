@@ -5,7 +5,16 @@ import type { SaveData } from '../types';
 const legacyKey = 'farm3j_rts_v2';
 const slot0Key = 'farm3j_rts_v2_slot0';
 const save = () =>
-  ({ version: 2, wave: 4, savedAt: 123, difficultyId: 'normal', slotName: 'Test', resources: {}, workers: [], placedBuildings: [] }) as unknown as SaveData;
+  ({
+    version: 2,
+    wave: 4,
+    savedAt: 123,
+    difficultyId: 'normal',
+    slotName: 'Test',
+    resources: {},
+    workers: [],
+    placedBuildings: [],
+  }) as unknown as SaveData;
 
 beforeEach(() => {
   localStorage.clear();
@@ -42,6 +51,11 @@ describe('loadSlotMeta', () => {
   it('returns save metadata and null for an empty slot', () => {
     expect(loadSlotMeta(0)).toBeNull();
     localStorage.setItem(slot0Key, JSON.stringify(save()));
-    expect(loadSlotMeta(0)).toEqual({ wave: 4, savedAt: 123, difficultyId: 'normal', slotName: 'Test' });
+    expect(loadSlotMeta(0)).toEqual({
+      wave: 4,
+      savedAt: 123,
+      difficultyId: 'normal',
+      slotName: 'Test',
+    });
   });
 });
