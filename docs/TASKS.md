@@ -40,6 +40,7 @@ files rather than a duplicated narrative here._
   - Priority: P1
   - Type: Feature
 - [ ] Named unit formations — move selected group in line/wedge/box formation
+  - Progress: the pure offset helper getFormationOffsets (components/rts/game/formations.ts) shipped; wiring into move orders still open
   - Priority: P2
   - Type: Feature
 - [ ] Enemy hero unit — Warlord (wave 20+, unique abilities, drops loot)
