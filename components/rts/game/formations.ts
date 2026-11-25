@@ -1,15 +1,18 @@
-export type FormationKind = 'line' | 'wedge' | 'box';
+export type FormationKind = "line" | "wedge" | "box";
 
 export interface TileOffset {
   dx: number;
   dy: number;
 }
 
-export function getFormationOffsets(kind: FormationKind, count: number): TileOffset[] {
+export function getFormationOffsets(
+  kind: FormationKind,
+  count: number,
+): TileOffset[] {
   if (count <= 0) return [];
 
   switch (kind) {
-    case 'line': {
+    case "line": {
       const offsets: TileOffset[] = [];
       const center = Math.floor((count - 1) / 2);
       for (let i = 0; i < count; i++) {
@@ -17,7 +20,7 @@ export function getFormationOffsets(kind: FormationKind, count: number): TileOff
       }
       return offsets;
     }
-    case 'box': {
+    case "box": {
       const offsets: TileOffset[] = [];
       const cols = Math.ceil(Math.sqrt(count));
       const colCenter = Math.floor((cols - 1) / 2);
@@ -28,7 +31,7 @@ export function getFormationOffsets(kind: FormationKind, count: number): TileOff
       }
       return offsets;
     }
-    case 'wedge': {
+    case "wedge": {
       const offsets: TileOffset[] = [];
       let remaining = count;
       let row = 0;
