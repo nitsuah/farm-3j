@@ -101,7 +101,7 @@ describe('POST', () => {
         gold: -5,
         timeSecs: undefined,
         scoreDate: 'd'.repeat(40),
-      }),
+      })
     );
     const values = lastValues();
     expect(values[4]).toBe(0);
