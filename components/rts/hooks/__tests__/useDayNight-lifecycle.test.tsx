@@ -1,5 +1,4 @@
-import { renderHook, act } from '@testing-library/react';
-import type { RefObject } from 'react';
+import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useDayNight } from '../useDayNight';
 
@@ -8,17 +7,17 @@ vi.mock('../../game/sound', () => ({
   stopAmbient: vi.fn(),
 }));
 
-describe('useDayNight timer lifecycle', () => {
+const makeRefs = () => ({
+  isNightRef: { current: false },
+  gameOverRef: { current: null as 'victory' | 'defeat' | null },
+});
+
+describe('useDayNight lifecycle', () => {
   afterEach(() => vi.useRealTimers());
 
-  it('clears the phase interval and announcement timeout on unmount', () => {
+  it('clears timers on unmount', () => {
     vi.useFakeTimers();
-    const refs = {
-      isNightRef: { current: false } as RefObject<boolean>,
-      gameOverRef: {
-        current: null,
-      } as RefObject<'victory' | 'defeat' | null>,
-    };
+    const refs = makeRefs();
     const { result, unmount } = renderHook(() =>
       useDayNight({ ...refs, gameOver: null, soundMuted: true }),
     );
@@ -28,12 +27,9 @@ describe('useDayNight timer lifecycle', () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it('does not advance after the game-over ref is set', () => {
+  it('does not advance after game over', () => {
     vi.useFakeTimers();
-    const refs = {
-      isNightRef: { current: false } as RefObject<boolean>,
-      gameOverRef: { current: null } as RefObject<'victory' | 'defeat' | null>,
-    };
+    const refs = makeRefs();
     const { result } = renderHook(() =>
       useDayNight({ ...refs, gameOver: null, soundMuted: true }),
     );
