@@ -10,7 +10,9 @@ vi.mock('../../game/sound', () => ({
 
 const refs = () => ({
   isNightRef: { current: false } as RefObject<boolean>,
-  gameOverRef: { current: null } as RefObject<'victory' | 'defeat' | null>,
+  gameOverRef: {
+    current: null,
+  } as RefObject<'victory' | 'defeat' | null>,
 });
 
 describe('useDayNight phase transitions', () => {
@@ -27,7 +29,7 @@ describe('useDayNight phase transitions', () => {
     expect(r.isNightRef.current).toBe(false);
   });
 
-  it('changes to night after 60 seconds and back to day after 45 more', () => {
+  it('runs 60s day and 45s night phases', () => {
     vi.useFakeTimers();
     const r = refs();
     const { result } = renderHook(() =>
