@@ -18,6 +18,35 @@ describe('getFormationOffsets', () => {
     ]);
   });
 
+  it('line with 4 units places the extra unit on the positive side', () => {
+    expect(getFormationOffsets('line', 4)).toEqual([
+      { dx: -1, dy: 0 },
+      { dx: 0, dy: 0 },
+      { dx: 1, dy: 0 },
+      { dx: 2, dy: 0 },
+    ]);
+  });
+
+  it('box with 5 units leaves a partial final row', () => {
+    expect(getFormationOffsets('box', 5)).toEqual([
+      { dx: -1, dy: 0 },
+      { dx: 0, dy: 0 },
+      { dx: 1, dy: 0 },
+      { dx: -1, dy: 1 },
+      { dx: 0, dy: 1 },
+    ]);
+  });
+
+  it('wedge with 5 units leaves a partial final row', () => {
+    expect(getFormationOffsets('wedge', 5)).toEqual([
+      { dx: 0, dy: 0 },
+      { dx: -1, dy: 1 },
+      { dx: 1, dy: 1 },
+      { dx: -2, dy: 2 },
+      { dx: 0, dy: 2 },
+    ]);
+  });
+
   it('box with 4 units creates 2x2 grid', () => {
     expect(getFormationOffsets('box', 4)).toEqual([
       { dx: 0, dy: 0 },
@@ -80,6 +109,14 @@ describe('getFormationTargets', () => {
     const targets = getFormationTargets('line', { x: 0, y: 0 }, 3, gridSize);
     expect(targets.map(t => t.x)).toEqual([0, 0, 1]);
     expect(targets.map(t => t.y)).toEqual([0, 0, 0]);
+  });
+
+  it('clamps a line exactly at the far grid edge', () => {
+    expect(getFormationTargets('line', { x: 24, y: 24 }, 3, gridSize)).toEqual([
+      { x: 23, y: 24 },
+      { x: 24, y: 24 },
+      { x: 24, y: 24 },
+    ]);
   });
 
   it('box of 4 at bottom-right corner (24,24) stays within 0..24', () => {
