@@ -1,6 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { loadSaveSync, loadSlotMeta } from '../persistence';
-import type { SaveData } from '../types';
+import {
+  loadHighScores,
+  loadHighScoresSync,
+  loadSaveSync,
+  loadSlotMeta,
+  saveHighScore,
+} from '../persistence';
+import type { HighScoreEntry, SaveData } from '../types';
 
 const legacyKey = 'farm3j_rts_v2';
 const slot0Key = 'farm3j_rts_v2_slot0';
@@ -36,7 +42,7 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('loadSaveSync', () => {
-  it('returns null for empty storage, malformed JSON, and unsupported versions', () => {
+  it('returns null for empty, malformed, or unsupported saves', () => {
     expect(loadSaveSync(0)).toBeNull();
     localStorage.setItem(slot0Key, '{');
     expect(loadSaveSync(0)).toBeNull();
@@ -70,5 +76,119 @@ describe('loadSlotMeta', () => {
       difficultyId: 'normal',
       slotName: 'Test',
     });
+  });
+});
+
+const scoresKey = 'farm3j_highscores_v1';
+const entry = (over: Partial<HighScoreEntry> = {}): HighScoreEntry => ({
+  wave: 3,
+  kills: 10,
+  result: 'victory',
+  gold: 50,
+  time: 120,
+  date: '2026-01-01',
+  ...over,
+});
+
+describe('loadHighScoresSync', () => {
+  it('returns [] for empty and malformed storage', () => {
+    expect(loadHighScoresSync()).toEqual([]);
+    localStorage.setItem(scoresKey, '{');
+    expect(loadHighScoresSync()).toEqual([]);
+  });
+  it('returns stored entries and preserves non-array JSON', () => {
+    localStorage.setItem(scoresKey, JSON.stringify([entry()]));
+    expect(loadHighScoresSync()).toEqual([entry()]);
+    // Non-array JSON is returned as-is by the current implementation.
+    localStorage.setItem(scoresKey, JSON.stringify({ a: 1 }));
+    expect(loadHighScoresSync()).toEqual({ a: 1 });
+  });
+});
+
+describe('saveHighScore', () => {
+  it('persists locally and posts the full payload', async () => {
+    let storedAtFetch: string | null = null;
+    const fetchMock = vi.fn().mockImplementation(() => {
+      // Capture the local write as seen when fetch runs; assert after the call.
+      storedAtFetch = localStorage.getItem(scoresKey);
+      return new Promise(() => {});
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    await saveHighScore(entry());
+    expect(JSON.parse(storedAtFetch!)).toHaveLength(1);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(url).toBe('/api/highscores');
+    expect(init.method).toBe('POST');
+    const body = JSON.parse(init.body);
+    expect(body).toEqual({
+      deviceId: localStorage.getItem('farm3j_device_id'),
+      wave: 3,
+      kills: 10,
+      result: 'victory',
+      gold: 50,
+      timeSecs: 120,
+      scoreDate: '2026-01-01',
+    });
+    expect(body.deviceId).toBeTruthy();
+  });
+  it('sorts by wave then kills, descending', async () => {
+    await saveHighScore(entry({ wave: 2, kills: 5 }));
+    await saveHighScore(entry({ wave: 5, kills: 1 }));
+    await saveHighScore(entry({ wave: 2, kills: 9 }));
+    expect(loadHighScoresSync().map(e => [e.wave, e.kills])).toEqual([
+      [5, 1],
+      [2, 9],
+      [2, 5],
+    ]);
+  });
+  it('keeps only the top 10', async () => {
+    for (let i = 1; i <= 12; i++) await saveHighScore(entry({ wave: i }));
+    const scores = loadHighScoresSync();
+    expect(scores).toHaveLength(10);
+    expect(scores[0]!.wave).toBe(12);
+    expect(scores[9]!.wave).toBe(3);
+  });
+});
+
+describe('loadHighScores', () => {
+  it('maps API rows and defaults missing fields', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => [
+          {
+            wave: 7,
+            kills: 30,
+            result: 'victory',
+            gold: 9,
+            time_seconds: 42,
+            score_date: '2026-02-02',
+          },
+          { wave: 1, kills: 2 },
+        ],
+      })
+    );
+    expect(await loadHighScores()).toEqual([
+      {
+        wave: 7,
+        kills: 30,
+        result: 'victory',
+        gold: 9,
+        time: 42,
+        date: '2026-02-02',
+      },
+      { wave: 1, kills: 2, result: 'defeat', gold: 0, time: 0, date: '' },
+    ]);
+  });
+  it('falls back to local scores on a non-ok response', async () => {
+    localStorage.setItem(scoresKey, JSON.stringify([entry({ wave: 9 })]));
+    expect(await loadHighScores()).toEqual([entry({ wave: 9 })]);
+  });
+  it('falls back to local scores when fetch rejects', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+    localStorage.setItem(scoresKey, JSON.stringify([entry({ wave: 8 })]));
+    expect(await loadHighScores()).toEqual([entry({ wave: 8 })]);
   });
 });
