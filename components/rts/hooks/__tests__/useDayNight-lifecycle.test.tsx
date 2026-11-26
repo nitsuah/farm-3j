@@ -15,7 +15,9 @@ describe('useDayNight timer lifecycle', () => {
     vi.useFakeTimers();
     const refs = {
       isNightRef: { current: false } as RefObject<boolean>,
-      gameOverRef: { current: null } as RefObject<'victory' | 'defeat' | null>,
+      gameOverRef: {
+        current: null,
+      } as RefObject<'victory' | 'defeat' | null>,
     };
     const { result, unmount } = renderHook(() =>
       useDayNight({ ...refs, gameOver: null, soundMuted: true }),
