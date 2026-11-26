@@ -119,6 +119,16 @@ describe('getFormationTargets', () => {
     ]);
   });
 
+  it('clamps a second row that overflows the bottom edge', () => {
+    expect(getFormationTargets('box', { x: 2, y: 4 }, 5, 5)).toEqual([
+      { x: 1, y: 4 },
+      { x: 2, y: 4 },
+      { x: 3, y: 4 },
+      { x: 1, y: 4 },
+      { x: 2, y: 4 },
+    ]);
+  });
+
   it('box of 4 at bottom-right corner (24,24) stays within 0..24', () => {
     const targets = getFormationTargets('box', { x: 24, y: 24 }, 4, gridSize);
     for (const t of targets) {
