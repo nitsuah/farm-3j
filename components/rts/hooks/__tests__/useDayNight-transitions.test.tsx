@@ -9,7 +9,7 @@ vi.mock('../../game/sound', () => ({
 
 const makeRefs = () => ({
   isNightRef: { current: false },
-  gameOverRef: { current: null },
+  gameOverRef: { current: null as 'victory' | 'defeat' | null },
 });
 
 describe('useDayNight transitions', () => {
