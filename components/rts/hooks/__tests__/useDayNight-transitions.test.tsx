@@ -1,5 +1,4 @@
-import { renderHook, act } from '@testing-library/react';
-import type { RefObject } from 'react';
+import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useDayNight } from '../useDayNight';
 
@@ -8,40 +7,38 @@ vi.mock('../../game/sound', () => ({
   stopAmbient: vi.fn(),
 }));
 
-const refs = () => ({
-  isNightRef: { current: false } as RefObject<boolean>,
-  gameOverRef: {
-    current: null,
-  } as RefObject<'victory' | 'defeat' | null>,
+const makeRefs = () => ({
+  isNightRef: { current: false },
+  gameOverRef: { current: null },
 });
 
-describe('useDayNight phase transitions', () => {
+describe('useDayNight transitions', () => {
   afterEach(() => vi.useRealTimers());
 
-  it('starts in day and synchronizes isNightRef', () => {
+  it('starts in day with isNightRef false', () => {
     vi.useFakeTimers();
-    const r = refs();
+    const refs = makeRefs();
     const { result } = renderHook(() =>
-      useDayNight({ ...r, gameOver: null, soundMuted: true }),
+      useDayNight({ ...refs, gameOver: null, soundMuted: true }),
     );
     expect(result.current.dayPhase).toBe('day');
     expect(result.current.dayProgress).toBe(0);
-    expect(r.isNightRef.current).toBe(false);
+    expect(refs.isNightRef.current).toBe(false);
   });
 
-  it('runs 60s day and 45s night phases', () => {
+  it('runs 60 seconds of day and 45 seconds of night', () => {
     vi.useFakeTimers();
-    const r = refs();
+    const refs = makeRefs();
     const { result } = renderHook(() =>
-      useDayNight({ ...r, gameOver: null, soundMuted: true }),
+      useDayNight({ ...refs, gameOver: null, soundMuted: true }),
     );
     act(() => vi.advanceTimersByTime(60_000));
     expect(result.current.dayPhase).toBe('night');
-    expect(r.isNightRef.current).toBe(true);
+    expect(refs.isNightRef.current).toBe(true);
     expect(result.current.phaseAnnouncement).toContain('Night Falls');
     act(() => vi.advanceTimersByTime(45_000));
     expect(result.current.dayPhase).toBe('day');
-    expect(r.isNightRef.current).toBe(false);
+    expect(refs.isNightRef.current).toBe(false);
     expect(result.current.phaseAnnouncement).toBe('☀️ Dawn Breaks!');
   });
 });
