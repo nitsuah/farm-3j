@@ -20,7 +20,11 @@ describe('useDayNight lifecycle', () => {
     vi.useFakeTimers();
     const refs = makeRefs();
     const { result, unmount } = renderHook(() =>
-      useDayNight({ ...refs, gameOver: null, soundMuted: true })
+      useDayNight({
+        ...refs,
+        gameOver: null,
+        soundMuted: true,
+      }),
     );
     act(() => vi.advanceTimersByTime(60_000));
     expect(result.current.phaseAnnouncement).toContain('Night Falls');
@@ -32,7 +36,11 @@ describe('useDayNight lifecycle', () => {
     vi.useFakeTimers();
     const refs = makeRefs();
     const { result } = renderHook(() =>
-      useDayNight({ ...refs, gameOver: null, soundMuted: true })
+      useDayNight({
+        ...refs,
+        gameOver: null,
+        soundMuted: true,
+      }),
     );
     refs.gameOverRef.current = 'defeat';
     act(() => vi.advanceTimersByTime(61_000));
