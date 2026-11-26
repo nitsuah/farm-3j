@@ -1,11 +1,12 @@
 import { renderHook, act } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { RefObject } from 'react';
 import { useDayNight } from '../useDayNight';
 
-vi.mock('../game/sound', () => ({ startAmbient: vi.fn(), stopAmbient: vi.fn() }));
+vi.mock('../../game/sound', () => ({ startAmbient: vi.fn(), stopAmbient: vi.fn() }));
 
 const refs = () => ({
-  isNightRef: { current: false } as React.RefObject<boolean>,
+  isNightRef: { current: false } as RefObject<boolean>,
   gameOverRef: { current: null } as React.RefObject<'victory' | 'defeat' | null>,
 });
 
