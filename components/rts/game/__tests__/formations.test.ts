@@ -129,6 +129,15 @@ describe('getFormationTargets', () => {
     ]);
   });
 
+  it('clamps both rows to the top edge for an anchor above the grid', () => {
+    expect(getFormationTargets('box', { x: 5, y: -3 }, 4, gridSize)).toEqual([
+      { x: 5, y: 0 },
+      { x: 6, y: 0 },
+      { x: 5, y: 0 },
+      { x: 6, y: 0 },
+    ]);
+  });
+
   it('box of 4 at bottom-right corner (24,24) stays within 0..24', () => {
     const targets = getFormationTargets('box', { x: 24, y: 24 }, 4, gridSize);
     for (const t of targets) {
