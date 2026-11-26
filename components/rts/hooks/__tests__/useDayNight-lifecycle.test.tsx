@@ -1,9 +1,12 @@
 import { renderHook, act } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { RefObject } from 'react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useDayNight } from '../useDayNight';
 
-vi.mock('../../game/sound', () => ({ startAmbient: vi.fn(), stopAmbient: vi.fn() }));
+vi.mock('../../game/sound', () => ({
+  startAmbient: vi.fn(),
+  stopAmbient: vi.fn(),
+}));
 
 describe('useDayNight timer lifecycle', () => {
   afterEach(() => vi.useRealTimers());
@@ -12,9 +15,11 @@ describe('useDayNight timer lifecycle', () => {
     vi.useFakeTimers();
     const refs = {
       isNightRef: { current: false } as RefObject<boolean>,
-      gameOverRef: { current: null } as React.RefObject<'victory' | 'defeat' | null>,
+      gameOverRef: { current: null } as RefObject<'victory' | 'defeat' | null>,
     };
-    const { result, unmount } = renderHook(() => useDayNight({ ...refs, gameOver: null, soundMuted: true }));
+    const { result, unmount } = renderHook(() =>
+      useDayNight({ ...refs, gameOver: null, soundMuted: true }),
+    );
     act(() => vi.advanceTimersByTime(60_000));
     expect(result.current.phaseAnnouncement).toContain('Night Falls');
     unmount();
@@ -24,10 +29,12 @@ describe('useDayNight timer lifecycle', () => {
   it('does not advance after the game-over ref is set', () => {
     vi.useFakeTimers();
     const refs = {
-      isNightRef: { current: false } as React.RefObject<boolean>,
-      gameOverRef: { current: null } as React.RefObject<'victory' | 'defeat' | null>,
+      isNightRef: { current: false } as RefObject<boolean>,
+      gameOverRef: { current: null } as RefObject<'victory' | 'defeat' | null>,
     };
-    const { result } = renderHook(() => useDayNight({ ...refs, gameOver: null, soundMuted: true }));
+    const { result } = renderHook(() =>
+      useDayNight({ ...refs, gameOver: null, soundMuted: true }),
+    );
     refs.gameOverRef.current = 'defeat';
     act(() => vi.advanceTimersByTime(61_000));
     expect(result.current.dayPhase).toBe('day');
