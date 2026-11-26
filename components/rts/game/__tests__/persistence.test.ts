@@ -42,7 +42,7 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('loadSaveSync', () => {
-  it('returns null for empty storage, malformed JSON, and unsupported versions', () => {
+  it('returns null for empty, malformed, or unsupported saves', () => {
     expect(loadSaveSync(0)).toBeNull();
     localStorage.setItem(slot0Key, '{');
     expect(loadSaveSync(0)).toBeNull();
@@ -96,10 +96,10 @@ describe('loadHighScoresSync', () => {
     localStorage.setItem(scoresKey, '{');
     expect(loadHighScoresSync()).toEqual([]);
   });
-  it('returns stored entries, and passes non-array JSON through unchanged', () => {
+  it('returns stored entries and preserves non-array JSON', () => {
     localStorage.setItem(scoresKey, JSON.stringify([entry()]));
     expect(loadHighScoresSync()).toEqual([entry()]);
-    // Current behaviour: no array check, so valid non-array JSON is returned as-is.
+    // Non-array JSON is returned as-is by the current implementation.
     localStorage.setItem(scoresKey, JSON.stringify({ a: 1 }));
     expect(loadHighScoresSync()).toEqual({ a: 1 });
   });
