@@ -136,7 +136,7 @@ describe('saveHighScore', () => {
     await saveHighScore(entry({ wave: 2, kills: 5 }));
     await saveHighScore(entry({ wave: 5, kills: 1 }));
     await saveHighScore(entry({ wave: 2, kills: 9 }));
-    expect(loadHighScoresSync().map((e) => [e.wave, e.kills])).toEqual([
+    expect(loadHighScoresSync().map(e => [e.wave, e.kills])).toEqual([
       [5, 1],
       [2, 9],
       [2, 5],
@@ -168,7 +168,7 @@ describe('loadHighScores', () => {
           },
           { wave: 1, kills: 2 },
         ],
-      }),
+      })
     );
     expect(await loadHighScores()).toEqual([
       {
