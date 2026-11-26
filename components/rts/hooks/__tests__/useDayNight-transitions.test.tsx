@@ -20,7 +20,11 @@ describe('useDayNight transitions', () => {
     vi.useFakeTimers();
     const refs = makeRefs();
     const { result } = renderHook(() =>
-      useDayNight({ ...refs, gameOver: null, soundMuted: true })
+      useDayNight({
+        ...refs,
+        gameOver: null,
+        soundMuted: true,
+      }),
     );
     expect(result.current.dayPhase).toBe('day');
     expect(result.current.dayProgress).toBe(0);
@@ -31,7 +35,11 @@ describe('useDayNight transitions', () => {
     vi.useFakeTimers();
     const refs = makeRefs();
     const { result } = renderHook(() =>
-      useDayNight({ ...refs, gameOver: null, soundMuted: true })
+      useDayNight({
+        ...refs,
+        gameOver: null,
+        soundMuted: true,
+      }),
     );
     act(() => vi.advanceTimersByTime(60_000));
     expect(result.current.dayPhase).toBe('night');
