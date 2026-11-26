@@ -29,7 +29,7 @@ describe('useDayNight lifecycle', () => {
         ...refs,
         gameOver: null,
         soundMuted: true,
-      }),
+      })
     );
 
     act(() => vi.advanceTimersByTime(60_000));
@@ -49,7 +49,7 @@ describe('useDayNight lifecycle', () => {
         ...refs,
         gameOver: null,
         soundMuted: true,
-      }),
+      })
     );
 
     act(() => vi.advanceTimersByTime(60_000));
@@ -67,7 +67,7 @@ describe('useDayNight lifecycle', () => {
         ...refs,
         gameOver: null,
         soundMuted: true,
-      }),
+      })
     );
 
     refs.gameOverRef.current = 'defeat';
