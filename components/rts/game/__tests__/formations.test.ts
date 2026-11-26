@@ -18,6 +18,35 @@ describe('getFormationOffsets', () => {
     ]);
   });
 
+  it('line with 4 units places the extra unit on the positive side', () => {
+    expect(getFormationOffsets('line', 4)).toEqual([
+      { dx: -1, dy: 0 },
+      { dx: 0, dy: 0 },
+      { dx: 1, dy: 0 },
+      { dx: 2, dy: 0 },
+    ]);
+  });
+
+  it('box with 5 units leaves a partial final row', () => {
+    expect(getFormationOffsets('box', 5)).toEqual([
+      { dx: -1, dy: 0 },
+      { dx: 0, dy: 0 },
+      { dx: 1, dy: 0 },
+      { dx: -1, dy: 1 },
+      { dx: 0, dy: 1 },
+    ]);
+  });
+
+  it('wedge with 5 units leaves a partial final row', () => {
+    expect(getFormationOffsets('wedge', 5)).toEqual([
+      { dx: 0, dy: 0 },
+      { dx: -1, dy: 1 },
+      { dx: 1, dy: 1 },
+      { dx: -2, dy: 2 },
+      { dx: 0, dy: 2 },
+    ]);
+  });
+
   it('box with 4 units creates 2x2 grid', () => {
     expect(getFormationOffsets('box', 4)).toEqual([
       { dx: 0, dy: 0 },
@@ -80,6 +109,33 @@ describe('getFormationTargets', () => {
     const targets = getFormationTargets('line', { x: 0, y: 0 }, 3, gridSize);
     expect(targets.map(t => t.x)).toEqual([0, 0, 1]);
     expect(targets.map(t => t.y)).toEqual([0, 0, 0]);
+  });
+
+  it('clamps a line exactly at the far grid edge', () => {
+    expect(getFormationTargets('line', { x: 24, y: 24 }, 3, gridSize)).toEqual([
+      { x: 23, y: 24 },
+      { x: 24, y: 24 },
+      { x: 24, y: 24 },
+    ]);
+  });
+
+  it('clamps a second row that overflows the bottom edge', () => {
+    expect(getFormationTargets('box', { x: 2, y: 4 }, 5, 5)).toEqual([
+      { x: 1, y: 4 },
+      { x: 2, y: 4 },
+      { x: 3, y: 4 },
+      { x: 1, y: 4 },
+      { x: 2, y: 4 },
+    ]);
+  });
+
+  it('clamps both rows to the top edge for an anchor above the grid', () => {
+    expect(getFormationTargets('box', { x: 5, y: -3 }, 4, gridSize)).toEqual([
+      { x: 5, y: 0 },
+      { x: 6, y: 0 },
+      { x: 5, y: 0 },
+      { x: 6, y: 0 },
+    ]);
   });
 
   it('box of 4 at bottom-right corner (24,24) stays within 0..24', () => {
