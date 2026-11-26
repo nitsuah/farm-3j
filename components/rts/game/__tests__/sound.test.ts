@@ -97,7 +97,7 @@ describe('voice line tables', () => {
     }
   });
 
-  it('only has attack acknowledgements for units that have move acknowledgements', async () => {
+  it('matches attack acknowledgements to move acknowledgements', async () => {
     const { ACK_MOVE, ACK_ATTACK } = await load();
     for (const key of Object.keys(ACK_ATTACK))
       expect(ACK_MOVE).toHaveProperty(key);
