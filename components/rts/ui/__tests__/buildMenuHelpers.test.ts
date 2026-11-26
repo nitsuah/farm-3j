@@ -21,8 +21,8 @@ describe('canAfford', () => {
     expect(
       canAfford(
         { gold: 0, lumber: 0, stone: 0 },
-        { gold: 0, lumber: 0, stone: 0 },
-      ),
+        { gold: 0, lumber: 0, stone: 0 }
+      )
     ).toBe(true);
   });
 });
