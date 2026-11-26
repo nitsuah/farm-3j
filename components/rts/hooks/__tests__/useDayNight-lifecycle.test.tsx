@@ -1,5 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import { useDayNight } from '../useDayNight';
 
 vi.mock('../../game/sound', () => ({
