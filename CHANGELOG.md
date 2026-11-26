@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Unit tests for the high-scores API route.
 
 - Unit tests for RTS local save readers, legacy slot migration, and slot metadata.
 - **Nightly journeys** — `.github/workflows/journeys.yml` runs `tests/journeys` (RTS landing → save-slot picker → difficulty → game, and save → reload → continue) nightly in the pinned Playwright image against `next start` of the production build, with DOM-screen baselines; failures become deduplicated `bot:journey` issues. `promo/spots.json` records the feature map for the showcase standard.
