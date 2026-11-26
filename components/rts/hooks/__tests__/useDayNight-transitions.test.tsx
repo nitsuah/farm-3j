@@ -24,7 +24,7 @@ describe('useDayNight transitions', () => {
         ...refs,
         gameOver: null,
         soundMuted: true,
-      }),
+      })
     );
     expect(result.current.dayPhase).toBe('day');
     expect(result.current.dayProgress).toBe(0);
@@ -39,7 +39,7 @@ describe('useDayNight transitions', () => {
         ...refs,
         gameOver: null,
         soundMuted: true,
-      }),
+      })
     );
     act(() => vi.advanceTimersByTime(60_000));
     expect(result.current.dayPhase).toBe('night');
