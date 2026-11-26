@@ -60,15 +60,15 @@ describe('loadSave', () => {
 
   it.each([[null], [{ version: 9 }]])(
     'falls through to the local copy for cloud answer %j',
-    async (answer) => {
+    async answer => {
       vi.stubGlobal(
         'fetch',
-        vi.fn().mockResolvedValue({ ok: true, json: async () => answer }),
+        vi.fn().mockResolvedValue({ ok: true, json: async () => answer })
       );
       localStorage.setItem(slotKey(0), JSON.stringify(save()));
       const { loadSave } = await fresh();
       expect(await loadSave(0)).toEqual(save());
-    },
+    }
   );
 
   it('falls back locally when fetch rejects', async () => {
