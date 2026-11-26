@@ -71,7 +71,7 @@ describe('loadSave', () => {
     },
   );
 
-  it('falls back to local storage when fetch rejects, and returns null when empty', async () => {
+  it('falls back locally when fetch rejects', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
     const { loadSave } = await fresh();
     expect(await loadSave(0)).toBeNull();
