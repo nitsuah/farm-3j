@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - Unit tests for RTS high-score persistence: sync loader, `saveHighScore` ordering and truncation, API row mapping and local fallback (#435).
 
 - Unit tests for RTS local save readers, legacy slot migration, and slot metadata.
