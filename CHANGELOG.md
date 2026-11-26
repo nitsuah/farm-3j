@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - Unit tests for RTS loadSave, writeSave and clearSave.
 
 - Unit tests for RTS local save readers, legacy slot migration, and slot metadata.
