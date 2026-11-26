@@ -106,9 +106,7 @@ describe('loadHighScoresSync', () => {
 });
 
 describe('saveHighScore', () => {
-  it(
-    'persists locally before the POST resolves and posts the full payload',
-    async () => {
+  it('persists locally and posts the full payload', async () => {
     let storedAtFetch: string | null = null;
     const fetchMock = vi.fn().mockImplementation(() => {
       // Capture the local write as seen when fetch runs; assert after the call.
@@ -132,9 +130,8 @@ describe('saveHighScore', () => {
       timeSecs: 120,
       scoreDate: '2026-01-01',
     });
-      expect(body.deviceId).toBeTruthy();
-    },
-  );
+    expect(body.deviceId).toBeTruthy();
+  });
   it('sorts by wave then kills, descending', async () => {
     await saveHighScore(entry({ wave: 2, kills: 5 }));
     await saveHighScore(entry({ wave: 5, kills: 1 }));
