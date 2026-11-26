@@ -1,8 +1,9 @@
 import { renderHook, act } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { RefObject } from 'react';
 import { useDayNight } from '../useDayNight';
 
-vi.mock('../game/sound', () => ({ startAmbient: vi.fn(), stopAmbient: vi.fn() }));
+vi.mock('../../game/sound', () => ({ startAmbient: vi.fn(), stopAmbient: vi.fn() }));
 
 describe('useDayNight timer lifecycle', () => {
   afterEach(() => vi.useRealTimers());
@@ -10,7 +11,7 @@ describe('useDayNight timer lifecycle', () => {
   it('clears the phase interval and announcement timeout on unmount', () => {
     vi.useFakeTimers();
     const refs = {
-      isNightRef: { current: false } as React.RefObject<boolean>,
+      isNightRef: { current: false } as RefObject<boolean>,
       gameOverRef: { current: null } as React.RefObject<'victory' | 'defeat' | null>,
     };
     const { result, unmount } = renderHook(() => useDayNight({ ...refs, gameOver: null, soundMuted: true }));
