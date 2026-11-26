@@ -21,7 +21,7 @@ const valid = {
   timeSecs: 40.4,
   scoreDate: '2026-11-25',
 };
-// Template values of the last mockSql call (everything after the strings array).
+// Template values from the last mockSql call, after the strings array.
 const lastValues = () => mockSql.mock.calls.at(-1)!.slice(1);
 
 beforeEach(() => {
@@ -94,7 +94,7 @@ describe('POST', () => {
     expect(mockSql).not.toHaveBeenCalled();
   });
 
-  it('stores 0 for negative gold or missing time, and cuts long dates to 32 characters', async () => {
+  it('defaults invalid values and truncates dates', async () => {
     await POST(
       post({
         ...valid,
