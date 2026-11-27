@@ -3,9 +3,9 @@ import Script from 'next/script';
 import '@/app/globals.css';
 
 export const metadata = {
-  title: 'Pretty Good Farms - Fresh Local Produce',
+  title: 'PG Farms - free browser farm strategy game',
   description:
-    'Sustainable farming with a focus on community and quality produce.',
+    'A free browser real-time strategy game: gather, build and defend your farm against raiding waves.',
   generator: 'Next.js',
 };
 

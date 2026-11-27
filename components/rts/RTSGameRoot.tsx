@@ -1,6 +1,12 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import RTSMap from './RTSMap';
-import { loadSlotMeta, type SaveSlot, type SlotMeta } from './game/persistence';
+import {
+  loadSlotMeta,
+  NO_SLOT,
+  type SaveSlot,
+  type SlotMeta,
+} from './game/persistence';
+import { DesktopNotice } from './hud/DesktopNotice';
 
 export type Difficulty = 'easy' | 'normal' | 'hard' | 'demo';
 
@@ -23,7 +29,7 @@ export const DIFFICULTY_CONFIGS: Record<Difficulty, DifficultyConfig> = {
     id: 'demo',
     label: 'Demo',
     icon: '🤖',
-    desc: 'Watch an AI bot play automatically. Great for showcases and e2e testing.',
+    desc: 'Sit back and watch the computer play. Your saves are not touched.',
     startGold: 200,
     startLumber: 120,
     startStone: 40,
@@ -108,6 +114,17 @@ export const RTSGameRoot: React.FC = () => {
     setSlotMetas(([0, 1, 2] as SaveSlot[]).map(s => loadSlotMeta(s)));
   }, [gameKey]);
 
+  const startDemo = useCallback(() => {
+    setSlot(NO_SLOT);
+    setDifficulty('demo');
+  }, []);
+
+  // "Watch a demo" links here with ?demo=1.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('demo') === '1')
+      startDemo();
+  }, [startDemo]);
+
   const handleNewGame = useCallback(() => {
     setDifficulty(null);
     setScreen('slots');
@@ -117,7 +134,7 @@ export const RTSGameRoot: React.FC = () => {
   // Running the game
   if (difficulty !== null) {
     return (
-      <div className="relative h-screen w-screen overflow-hidden bg-black">
+      <div className="relative h-screen w-screen overflow-clip bg-black">
         <RTSMap
           key={gameKey}
           onNewGame={handleNewGame}
@@ -131,7 +148,8 @@ export const RTSGameRoot: React.FC = () => {
   // Difficulty picker
   if (screen === 'difficulty') {
     return (
-      <div className="relative flex h-screen w-screen flex-col items-center justify-center gap-8 overflow-hidden bg-black">
+      <div className="relative flex h-dvh w-screen flex-col items-center gap-8 overflow-y-auto bg-black px-4 py-6 [&>*]:shrink-0 [&>*:first-child]:mt-auto [&>*:last-child]:mb-auto">
+        <DesktopNotice onDemo={startDemo} />
         <div style={{ textAlign: 'center' }}>
           <button
             type="button"
@@ -248,10 +266,7 @@ export const RTSGameRoot: React.FC = () => {
               <button
                 key="demo"
                 type="button"
-                onClick={() => {
-                  setSlot(pendingSlot);
-                  setDifficulty('demo');
-                }}
+                onClick={startDemo}
                 style={{
                   background: 'rgba(167,139,250,0.08)',
                   border: '2px dashed #a78bfa',
@@ -301,7 +316,8 @@ export const RTSGameRoot: React.FC = () => {
 
   // Slot picker
   return (
-    <div className="relative flex h-screen w-screen flex-col items-center justify-center gap-6 overflow-hidden bg-black">
+    <div className="relative flex h-dvh w-screen flex-col items-center gap-6 overflow-y-auto bg-black px-4 py-6 [&>*]:shrink-0 [&>*:first-child]:mt-auto [&>*:last-child]:mb-auto">
+      <DesktopNotice onDemo={startDemo} />
       <div style={{ textAlign: 'center' }}>
         <div style={{ fontSize: 48, marginBottom: 8 }}>🌾</div>
         <h1
@@ -318,7 +334,7 @@ export const RTSGameRoot: React.FC = () => {
           Choose a save slot
         </p>
       </div>
-      <div style={{ display: 'flex', gap: 16 }}>
+      <div className="flex flex-col gap-4 sm:flex-row">
         {([0, 1, 2] as SaveSlot[]).map(s => {
           const meta = slotMetas[s] ?? null;
           const hasSave = meta !== null;

@@ -35,6 +35,8 @@ import {
   type Achievement,
 } from './game/achievements';
 import { saveHighScore, writeSave, type SaveSlot } from './game/persistence';
+import { cameraForTile, readCameraView } from './game/camera';
+import { QuickStartPanel } from './hud/QuickStartPanel';
 import { makeUnit } from './game/units';
 import { useAchievementTracking } from './hooks/useAchievementTracking';
 import { useBotCommands } from './hooks/useBotCommands';
@@ -64,7 +66,7 @@ import { useProjectiles } from './hooks/useProjectiles';
 import { useRTSGameState } from './hooks/useRTSGameState';
 import type { RTSGameContext } from './hooks/context';
 
-// Re-exported for backwards compatibility â€” previously defined in this file.
+// Re-exported for backwards compatibility — previously defined in this file.
 export { BUILDING_REQUIRES } from './game/constants';
 
 import type { DifficultyConfig } from './RTSGameRoot';
@@ -533,7 +535,7 @@ const RTSMap: React.FC<{
     return () => clearInterval(id);
   }, [addFloatingText]);
 
-  // Hero revive timer â€” ticks down, spawns hero on completion
+  // Hero revive timer — ticks down, spawns hero on completion
   useEffect(() => {
     if (heroReviveAt === null) {
       setHeroReviveCountdown(0);
@@ -568,7 +570,7 @@ const RTSMap: React.FC<{
         addFloatingText(
           BARN_POS.x,
           BARN_POS.y,
-          'ðŸ¦¸ Barnabas Returns!',
+          '🦸 Barnabas Returns!',
           '#fbbf24'
         );
       }
@@ -585,7 +587,7 @@ const RTSMap: React.FC<{
     const reviveDelay = Math.min(60000, 20000 + waveRef.current * 2000);
     setHeroReviveAt(Date.now() + reviveDelay);
     setWorkers(ws => ws.filter(w => w.unitType !== 'hero'));
-    addFloatingText(hero.x, hero.y, 'ðŸ¦¸ Barnabas Fallen!', '#f97316');
+    addFloatingText(hero.x, hero.y, '🦸 Barnabas Fallen!', '#f97316');
   }, [workers, heroRecruited, heroReviveAt, gameOver, addFloatingText]);
 
   const { projectiles, addProjectile, moveRing, setMoveRing } =
@@ -657,6 +659,13 @@ const RTSMap: React.FC<{
     setSelectedType,
   };
   const handlers = useRTSHandlers(gameCtx, handlerCtx);
+  const speedBeforeHelpRef = useRef(gameSpeed);
+
+  // Start the view on the player's barn instead of the map corner.
+  useEffect(() => {
+    const view = readCameraView(svgRef.current);
+    if (view) setCamera(cameraForTile(BARN_POS.x, BARN_POS.y, view));
+  }, [setCamera, svgRef]);
 
   // Keyboard controls (chicken wander, Escape/Space, Ctrl+A, hotkeys, control groups)
   useKeyboardControls(gameCtx, handlers, {
@@ -786,7 +795,7 @@ const RTSMap: React.FC<{
 
   return (
     <div
-      className="absolute inset-0 bg-black"
+      className="absolute inset-0 overflow-clip bg-black"
       style={
         screenShake > 0
           ? {
@@ -1144,7 +1153,7 @@ const RTSMap: React.FC<{
                 : hero,
             ];
           });
-          addFloatingText(BARN_POS.x, BARN_POS.y, 'ðŸ¦¸ Revived!', '#fbbf24');
+          addFloatingText(BARN_POS.x, BARN_POS.y, '🦸 Revived!', '#fbbf24');
         }}
         heroAbilityCooldown={heroAbilityCooldown}
         onHeroAbility={handlers.handleHeroAbility}
@@ -1215,6 +1224,15 @@ const RTSMap: React.FC<{
           })
         }
       />
+      {!isDemo && (
+        <QuickStartPanel
+          onOpen={() => {
+            speedBeforeHelpRef.current = gameSpeedRef.current;
+            setGameSpeed(0);
+          }}
+          onClose={() => setGameSpeed(speedBeforeHelpRef.current)}
+        />
+      )}
       {/* Demo mode indicator */}
       {isDemo && (
         <div
@@ -1235,7 +1253,7 @@ const RTSMap: React.FC<{
             pointerEvents: 'none',
           }}
         >
-          ðŸ¤– DEMO MODE â€” AI is playing
+          🤖 DEMO MODE — AI is playing
         </div>
       )}
       {/* Achievement panel button */}
@@ -1258,8 +1276,9 @@ const RTSMap: React.FC<{
           lineHeight: 1,
         }}
         title="Achievements"
+        aria-label="Achievements"
       >
-        ðŸ†
+        🏆
       </button>
       {/* Achievement panel */}
       {achievementPanelOpen && (

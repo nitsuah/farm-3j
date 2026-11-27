@@ -2,6 +2,7 @@
 import { useEffect } from 'react';
 import type React from 'react';
 
+import { cameraForTile, readCameraView } from '../game/camera';
 import { BARN_POS, GRID_SIZE, TILE_SIZE } from '../game/constants';
 import { INITIAL_TILES, tileToSvg } from '../game/map';
 import type { BuildingType } from '../game/types';
@@ -288,15 +289,8 @@ export function useKeyboardControls(
           const target = idleWorkers[idx] ?? idleWorkers[0];
           if (!target) return ws;
           // Pan camera to center on this worker
-          const { isoX, isoY } = tileToSvg(target.x, target.y);
-          const svgEl = svgRef.current;
-          if (svgEl) {
-            const rect = svgEl.getBoundingClientRect();
-            setCamera({
-              x: rect.width / 2 - isoX - TILE_SIZE / 2,
-              y: rect.height / 2 - isoY - 18,
-            });
-          }
+          const view = readCameraView(svgRef.current);
+          if (view) setCamera(cameraForTile(target.x, target.y, view));
           setSelectedType('worker');
           return ws.map(w => ({ ...w, selected: w.id === target.id }));
         });

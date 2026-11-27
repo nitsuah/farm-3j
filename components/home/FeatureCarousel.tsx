@@ -130,7 +130,7 @@ export const FeatureCarousel: React.FC<FeatureCarouselProps> = () => {
           >
             <span className="flex items-center gap-1 text-[11px] font-bold text-green-900 sm:gap-1.5 sm:text-sm dark:text-green-300">
               <span aria-hidden="true">{slide.icon}</span>
-              <span className="truncate">{slide.title}</span>
+              <span className="leading-tight">{slide.title}</span>
             </span>
             {i === active && (
               <span

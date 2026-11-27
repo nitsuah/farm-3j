@@ -2,10 +2,13 @@
 
 > 🧭 **farm-3j** · [Features](./docs/FEATURES.md) · [Roadmap](./docs/ROADMAP.md) · [Tasks](./docs/TASKS.md) · [Changelog](./CHANGELOG.md) · [Metrics](./docs/METRICS.md) <!-- nav -->
 
-_Automatically synced with your [v0.dev](https://v0.dev) deployments_
+A free real-time strategy game that runs in the browser: gather resources, build your farm and hold off raiding waves.
+
+**[▶ Play now](https://v0-farm-contact-website.vercel.app/rtsfarm/play)** · [Watch the demo](https://v0-farm-contact-website.vercel.app/rtsfarm/play?demo=1) · best with a mouse and keyboard
+
+![Difficulty selection screen](docs/screenshots/difficulty-select.png)
 
 [![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/austin-hardys-projects/v0-farm-contact-website)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.dev-black?style=for-the-badge)](https://v0.dev/chat/projects/9OcXcTTsfCh)
 
 **Live:** [v0-farm-contact-website.vercel.app](https://v0-farm-contact-website.vercel.app)
 
@@ -13,12 +16,11 @@ _Note: Production deploys from `main` via the connected Vercel Git integration._
 
 ## Overview
 
-Farm 3J is an interactive farm website with a full-featured isometric **Real-Time Strategy game** — think Warcraft II / Age of Empires II, built entirely in SVG + React.
+Farm 3J is a small farm-themed site built around an isometric **Real-Time Strategy game** — think Warcraft II / Age of Empires II, built entirely in SVG + React.
 
 - **Farm RTS Game** (`/rtsfarm/play`): Full RTS with workers, combat units, buildings, enemy waves, hero unit, fog of war, tech upgrades, and strategic depth
-- **Animated Homepage**: Dynamic farm scene with weather effects, day/night cycle, animated crops, trees, mountains, and wildlife
-- **Farm Tycoon Game** (`/farm`): Isometric farm simulation (legacy mode)
-- **Responsive Design**: Optimized for mobile and desktop
+- **Home page**: what the game is, a demo button and an animated feature carousel
+- **Phones**: the site pages are responsive; the game itself needs a mouse and keyboard
 
 ## Farm RTS — Key Features
 
@@ -119,7 +121,7 @@ Farm 3J is an interactive farm website with a full-featured isometric **Real-Tim
 | --------------- | ------------------------------------------------------------------------------------------------ |
 | `/`             | Animated homepage with farm scene, weather effects, day/night cycle, animated crops and wildlife |
 | `/about`        | About page with contact modal (submits to `POST /api/contact`)                                   |
-| `/farm`         | Farm Tycoon legacy isometric simulation game                                                     |
+| `/farm`         | Redirects to the RTS landing page                                                                |
 | `/rtsfarm`      | PG Farms RTS landing page — feature overview, unit roster, building catalog                      |
 | `/rtsfarm/play` | Playable Farm RTS game                                                                           |
 | `/privacy`      | Privacy & Security page — localStorage, cloud saves, device ID, and contact data policy          |
@@ -167,20 +169,11 @@ pnpm format
 | `DATABASE_URL`             | For cloud saves/scores | Neon Postgres connection string          |
 | `FARM_CONTACT_WEBHOOK_URL` | Optional               | Webhook URL for contact form submissions |
 
-This repository will stay in sync with your deployed chats on [v0.dev](https://v0.dev).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.dev](https://v0.dev).
-
 ## Deployment
 
 Live site: **[v0-farm-contact-website.vercel.app](https://v0-farm-contact-website.vercel.app)**
 
 Vercel dashboard (owner only): [vercel.com/austin-hardys-projects/v0-farm-contact-website](https://vercel.com/austin-hardys-projects/v0-farm-contact-website)
-
-## Build your app
-
-Continue building your app on:
-
-**[https://v0.dev/chat/projects/9OcXcTTsfCh](https://v0.dev/chat/projects/9OcXcTTsfCh)**
 
 ## Contact Form Delivery
 

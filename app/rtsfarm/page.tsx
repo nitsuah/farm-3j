@@ -1,3 +1,4 @@
+import { DesktopNotice } from '@/components/rts/hud/DesktopNotice';
 import type { Metadata } from 'next';
 import { SiteLayout } from '@/components/SiteLayout';
 
@@ -262,7 +263,7 @@ const MECHANICS: MechanicEntry[] = [
   {
     emoji: '💾',
     title: 'Save System',
-    desc: 'Up to 3 save slots with wave progress, resources, buildings, and units preserved. Cloud saves back up to a secure database automatically via your anonymous device ID.',
+    desc: 'Up to 3 save slots with wave progress, resources, buildings, and units preserved. Saves stay on your device; when the cloud service is available they are also backed up under an anonymous device ID.',
   },
 ];
 
@@ -274,13 +275,16 @@ export default function RTSLandingPage() {
         <section className="relative overflow-hidden bg-gradient-to-br from-green-900 via-green-800 to-yellow-800 py-20 text-center text-white">
           <div className="relative z-10 mx-auto max-w-3xl px-6">
             <div className="mb-4 text-6xl">🌾⚔️🏰</div>
-            <h1 className="mb-4 text-5xl font-bold drop-shadow-lg">
+            <h1 className="mb-4 text-5xl font-bold text-white drop-shadow-lg">
               PG Farms RTS
             </h1>
             <p className="mb-8 text-lg text-green-100 opacity-90">
               Defend your farm. Train your army. Survive the siege.
               <br />A real-time strategy game built in the browser.
             </p>
+            <div className="mb-6">
+              <DesktopNotice />
+            </div>
             <a
               href="/rtsfarm/play"
               className="inline-block rounded-xl bg-yellow-500 px-10 py-4 text-2xl font-bold text-black shadow-lg transition hover:bg-yellow-400 hover:shadow-xl"
