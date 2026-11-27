@@ -1,8 +1,7 @@
 import React from 'react';
 
+import { cameraForTile, readCameraView } from '../game/camera';
 import type { WorkerState } from '../game/types';
-import { TILE_SIZE } from '../game/constants';
-import { tileToSvg } from '../game/map';
 
 interface DamageLogEntry {
   source: string;
@@ -46,7 +45,7 @@ export const DamageLogPanel: React.FC<DamageLogPanelProps> = ({
         type="button"
         onClick={() => setDamageLogOpen(o => !o)}
         style={{
-          position: 'absolute',
+          position: 'fixed',
           bottom: 180,
           right: 8,
           background: 'rgba(15,23,42,0.9)',
@@ -64,7 +63,7 @@ export const DamageLogPanel: React.FC<DamageLogPanelProps> = ({
       {damageLogOpen && (
         <div
           style={{
-            position: 'absolute',
+            position: 'fixed',
             bottom: 210,
             right: 8,
             width: 220,
@@ -167,15 +166,8 @@ export const DamageLogPanel: React.FC<DamageLogPanelProps> = ({
                 idleWorkerIndexRef.current = (idx + 1) % idleWorkers.length;
                 const target = idleWorkers[idx] ?? idleWorkers[0];
                 if (!target) return ws;
-                const { isoX, isoY } = tileToSvg(target.x, target.y);
-                const svgEl = svgRef.current;
-                if (svgEl) {
-                  const rect = svgEl.getBoundingClientRect();
-                  setCamera({
-                    x: rect.width / 2 - isoX - TILE_SIZE / 2,
-                    y: rect.height / 2 - isoY - 18,
-                  });
-                }
+                const view = readCameraView(svgRef.current);
+                if (view) setCamera(cameraForTile(target.x, target.y, view));
                 return ws.map(w => ({ ...w, selected: w.id === target.id }));
               });
               setSelectedType('worker');

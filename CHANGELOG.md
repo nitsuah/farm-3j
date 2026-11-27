@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed (site review, 2026-11)
+
+- Text is readable again: the header animation no longer recolors headings and paragraphs, and `dark:` styles follow the theme toggle (#461).
+- Home page says what the game is and has "Watch a demo", which leaves save slots untouched; visible 404 page, labelled mobile nav, theme toggle clear of the links, robots, sitemap and favicon (#461).
+- RTS: first-game Quick Start, desktop-only notice on touch devices, menu screens that scroll on phones, repaired emoji text, camera centres on the barn and on idle workers, Combat Log no longer shifts the layout, delete asks first, and the HUD says when a save is on this device only (#461).
+
 ### CI
 
 - CI: adopt the shared risk guard workflow (#450).

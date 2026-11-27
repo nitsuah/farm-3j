@@ -12,7 +12,11 @@ import {
   ZOOM_MIN,
   ZOOM_STEP,
 } from '../game/constants';
-import { clearSave, type SaveSlot } from '../game/persistence';
+import {
+  CLOUD_SAVE_EVENT,
+  clearSave,
+  type SaveSlot,
+} from '../game/persistence';
 import type {
   BuildingType,
   EnemyGrunt,
@@ -109,6 +113,13 @@ export const ResourceBar: React.FC<ResourceBarProps> = ({
   waveTimerRemainingRef,
   zoom,
 }) => {
+  const [cloudFailed, setCloudFailed] = React.useState(false);
+  React.useEffect(() => {
+    const onCloud = (e: Event) =>
+      setCloudFailed(!(e as CustomEvent<{ ok: boolean }>).detail.ok);
+    window.addEventListener(CLOUD_SAVE_EVENT, onCloud);
+    return () => window.removeEventListener(CLOUD_SAVE_EVENT, onCloud);
+  }, []);
   const hasEnemies =
     enemyGrunts.length > 0 ||
     enemyShamans.length > 0 ||
@@ -421,6 +432,8 @@ export const ResourceBar: React.FC<ResourceBarProps> = ({
         <button
           type="button"
           onClick={doSave}
+          aria-label="Save game"
+          title={cloudFailed ? 'Saved on this device only' : 'Save game'}
           style={{
             ...btnBase,
             background:
@@ -432,11 +445,19 @@ export const ResourceBar: React.FC<ResourceBarProps> = ({
         >
           {saveStatus === 'saved' ? '✓' : '💾'}
         </button>
+        {cloudFailed && (
+          <span role="status" style={{ fontSize: 10, color: '#fcd34d' }}>
+            Saved on this device only
+          </span>
+        )}
 
         {/* New game */}
         <button
           type="button"
+          aria-label="Delete this save and start over"
+          title="Delete this save and start over"
           onClick={() => {
+            if (!window.confirm('Delete this save and start over?')) return;
             clearSave(slot);
             if (onNewGame) onNewGame();
             else window.location.reload();

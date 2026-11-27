@@ -30,7 +30,9 @@ const SLOT_KEYS = [
   'farm3j_rts_v2_slot2',
 ] as const;
 
-export type SaveSlot = 0 | 1 | 2;
+export type SaveSlot = -1 | 0 | 1 | 2;
+/** The demo plays outside the three slots: nothing is loaded, saved or cleared. */
+export const NO_SLOT = -1;
 
 // ---------- high scores ----------
 function loadHighScoresLocal(): HighScoreEntry[] {
@@ -108,7 +110,7 @@ function isValidSave(d: unknown): d is SaveData {
 // Synchronous read from localStorage — used during React render where async is not allowed.
 // The async loadSave() call should be used in useEffect for cloud sync.
 export function loadSaveSync(slot: SaveSlot): SaveData | null {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === 'undefined' || slot === NO_SLOT) return null;
   try {
     const raw = localStorage.getItem(SLOT_KEYS[slot]);
     if (!raw) {
@@ -146,7 +148,7 @@ export interface SlotMeta {
 }
 
 export function loadSlotMeta(slot: SaveSlot): SlotMeta | null {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === 'undefined' || slot === NO_SLOT) return null;
   try {
     const raw = localStorage.getItem(SLOT_KEYS[slot]);
     if (!raw) return null;
@@ -165,7 +167,7 @@ export function loadSlotMeta(slot: SaveSlot): SlotMeta | null {
 
 // ---------- load ----------
 export async function loadSave(slot: SaveSlot): Promise<SaveData | null> {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === 'undefined' || slot === NO_SLOT) return null;
 
   // Try cloud first
   try {
@@ -212,27 +214,40 @@ export async function loadSave(slot: SaveSlot): Promise<SaveData | null> {
 
 let _saveLocked = false;
 
+export const CLOUD_SAVE_EVENT = 'farm3j:cloud-save';
+
+function reportCloudSave(ok: boolean): void {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent(CLOUD_SAVE_EVENT, { detail: { ok } }));
+}
+
 export function writeSave(data: SaveData, slot: SaveSlot): void {
-  if (_saveLocked) return;
+  if (_saveLocked || slot === NO_SLOT) return;
   // Always write localStorage synchronously (game loop depends on this)
   try {
     localStorage.setItem(SLOT_KEYS[slot], JSON.stringify(data));
   } catch {
     /* ignore quota errors */
   }
-  // Fire-and-forget cloud write
+  // Cloud write: never blocks the game, but the HUD is told when only this device has the save.
   try {
-    void fetch('/api/saves', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ deviceId: getDeviceId(), slot, data }),
-    });
+    void Promise.resolve(
+      fetch('/api/saves', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deviceId: getDeviceId(), slot, data }),
+      })
+    ).then(
+      r => reportCloudSave(!!r?.ok),
+      () => reportCloudSave(false)
+    );
   } catch {
-    /* ignore */
+    reportCloudSave(false);
   }
 }
 
 export function clearSave(slot: SaveSlot): void {
+  if (slot === NO_SLOT) return;
   _saveLocked = true;
   try {
     localStorage.removeItem(SLOT_KEYS[slot]);

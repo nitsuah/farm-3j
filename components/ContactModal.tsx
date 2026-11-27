@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Cornfield } from './animations/Cornfield';
 
 interface ContactModalProps {
@@ -35,6 +35,21 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
     setFeedbackType(null);
     setFeedbackMessage('');
   };
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const opener = document.activeElement as HTMLElement | null;
+    return () => opener?.focus?.();
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || isSubmitting) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen, isSubmitting, onClose]);
 
   const handleChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -158,6 +173,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
             <input
               type="text"
               id="name"
+              autoFocus
               name="name"
               value={formData.name}
               onChange={handleChange}

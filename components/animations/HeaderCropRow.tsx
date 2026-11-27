@@ -22,65 +22,6 @@ export function HeaderCropRow() {
   useEffect(() => {
     setIsDarkMode(document.documentElement.classList.contains('dark'));
 
-    // Apply initial styles
-    const isDark = document.documentElement.classList.contains('dark');
-    if (isDark) {
-      document.body.style.backgroundColor = 'rgb(0, 0, 0)';
-      document
-        .querySelectorAll('.bg-white:not([data-theme-button])')
-        .forEach(el => {
-          (el as HTMLElement).style.backgroundColor = 'rgb(0, 0, 0)';
-        });
-      const heroGradient = document.querySelector('.dark\\:bg-black');
-      if (heroGradient) {
-        (heroGradient as HTMLElement).style.background = 'rgb(0, 0, 0)';
-        (heroGradient as HTMLElement).style.backgroundColor = 'rgb(0, 0, 0)';
-      }
-      const footer = document.querySelector('footer');
-      if (footer) {
-        footer.style.backgroundColor = 'rgb(20, 83, 45)';
-        footer.style.color = 'white';
-      }
-      document.querySelectorAll('h1, h2, h3').forEach(el => {
-        if (!(el as HTMLElement).closest('header')) {
-          (el as HTMLElement).style.color = 'white';
-        }
-      });
-      document.querySelectorAll('p').forEach(el => {
-        (el as HTMLElement).style.color = 'rgb(134, 239, 172)';
-      });
-    } else {
-      document.body.style.backgroundColor = 'rgb(240, 253, 244)';
-      document
-        .querySelectorAll('.bg-white:not([data-theme-button])')
-        .forEach(el => {
-          (el as HTMLElement).style.backgroundColor = 'white';
-        });
-      const heroGradient = document.querySelector('.dark\\:bg-black');
-      if (heroGradient) {
-        (heroGradient as HTMLElement).style.background = 'white';
-      }
-      const footer = document.querySelector('footer');
-      if (footer) {
-        footer.style.backgroundColor = 'white';
-        footer.style.color = 'rgb(20, 83, 45)';
-      }
-      document.querySelectorAll('h1, h2, h3').forEach(el => {
-        // Don't change header PG Farms text
-        if (!(el as HTMLElement).closest('header')) {
-          (el as HTMLElement).style.color = 'rgb(20, 83, 45)';
-        }
-      });
-      document.querySelectorAll('p').forEach(el => {
-        (el as HTMLElement).style.color = 'rgb(21, 128, 61)';
-      });
-      // Fix nav About link - remove any styles
-      const navAboutLinks = document.querySelectorAll('nav a[href="/about"]');
-      navAboutLinks.forEach(link => {
-        (link as HTMLElement).style.backgroundColor = '';
-        (link as HTMLElement).style.border = '';
-      });
-    }
   }, []);
 
   // Define 10 rows with different depths (scale and opacity for perspective)
@@ -222,83 +163,10 @@ export function HeaderCropRow() {
             html.classList.remove('dark');
             localStorage.setItem('theme', 'light');
             setIsDarkMode(false);
-
-            // Manually apply light mode styles
-            document.body.style.backgroundColor = 'rgb(240, 253, 244)'; // bg-green-50
-            document
-              .querySelectorAll('.bg-white:not([data-theme-button])')
-              .forEach(el => {
-                (el as HTMLElement).style.backgroundColor = 'white';
-              });
-            document.querySelectorAll('.dark\\:bg-gray-900').forEach(el => {
-              (el as HTMLElement).style.backgroundColor = 'white';
-            });
-            // Hero section gradient
-            const heroGradient = document.querySelector('.dark\\:bg-black');
-            if (heroGradient) {
-              (heroGradient as HTMLElement).style.background = 'white';
-            }
-            // Footer
-            const footer = document.querySelector('footer');
-            if (footer) {
-              footer.style.backgroundColor = 'white';
-              footer.style.color = 'rgb(20, 83, 45)';
-            }
-            // Fix text colors for light mode
-            document.querySelectorAll('h1, h2, h3').forEach(el => {
-              // Don't change header PG Farm text
-              if (!(el as HTMLElement).closest('header')) {
-                (el as HTMLElement).style.color = 'rgb(20, 83, 45)'; // green-900
-              }
-            });
-            document.querySelectorAll('p').forEach(el => {
-              (el as HTMLElement).style.color = 'rgb(21, 128, 61)'; // green-700
-            });
-            // Fix nav About link - remove any styles
-            const navAboutLinks = document.querySelectorAll(
-              'nav a[href="/about"]'
-            );
-            navAboutLinks.forEach(link => {
-              (link as HTMLElement).style.backgroundColor = '';
-              (link as HTMLElement).style.border = '';
-            });
           } else {
             html.classList.add('dark');
             localStorage.setItem('theme', 'dark');
             setIsDarkMode(true);
-
-            // Manually apply dark mode styles
-            document.body.style.backgroundColor = 'rgb(0, 0, 0)'; // black
-            document
-              .querySelectorAll('.bg-white:not([data-theme-button])')
-              .forEach(el => {
-                (el as HTMLElement).style.backgroundColor = 'rgb(0, 0, 0)';
-              });
-            document.querySelectorAll('.dark\\:bg-gray-800').forEach(el => {
-              (el as HTMLElement).style.backgroundColor = 'rgb(0, 0, 0)';
-            });
-            // Hero section solid black - force it
-            const heroGradient = document.querySelector('.dark\\:bg-black');
-            if (heroGradient) {
-              (heroGradient as HTMLElement).style.background = 'rgb(0, 0, 0)';
-              (heroGradient as HTMLElement).style.backgroundColor =
-                'rgb(0, 0, 0)';
-            }
-            // Footer
-            const footer = document.querySelector('footer');
-            if (footer) {
-              footer.style.backgroundColor = 'rgb(20, 83, 45)';
-              footer.style.color = 'white';
-            }
-            // Fix text colors for dark mode (exclude header)
-            document.querySelectorAll('h1, h2, h3').forEach(el => {
-              if (!(el as HTMLElement).closest('header')) {
-                (el as HTMLElement).style.color = 'white';
-              }
-            });
-            document.querySelectorAll('p').forEach(el => {
-              (el as HTMLElement).style.color = 'rgb(134, 239, 172)'; // green-300
-            });
           }
         }}
         className="absolute top-2 right-4 z-[20] cursor-pointer text-4xl transition-transform hover:scale-110 active:scale-95"

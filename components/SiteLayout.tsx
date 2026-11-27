@@ -7,7 +7,8 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
       <header className="relative h-[212px] shadow-sm md:h-48">
         <HeaderCropRow />
         <nav className="absolute top-0 right-0 left-0 z-10">
-          <div className="container mx-auto px-4 py-3">
+          {/* Right padding keeps the links clear of the theme toggle. */}
+          <div className="container mx-auto px-4 py-3 pr-16">
             {/* Desktop */}
             <div className="hidden items-center justify-between md:flex">
               <a
@@ -52,42 +53,24 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
                   PG Farms
                 </h1>
               </a>
-              <div className="flex w-fit flex-col gap-1">
+              <div className="flex w-fit gap-2">
                 <a
                   href="/about"
-                  className="flex items-center justify-center rounded-lg bg-black/30 p-2 backdrop-blur-sm transition-colors hover:bg-black/40"
-                  aria-label="About"
+                  className="flex items-center gap-1 rounded-lg bg-black/30 px-2 py-1 text-sm font-medium text-white drop-shadow backdrop-blur-sm"
                 >
-                  <span
-                    aria-hidden="true"
-                    className="text-xl text-white drop-shadow"
-                  >
-                    ❓
-                  </span>
+                  <span aria-hidden="true">ℹ️</span> About
                 </a>
                 <a
                   href="/rtsfarm"
-                  className="flex items-center justify-center rounded-lg bg-black/30 p-2 backdrop-blur-sm transition-colors hover:bg-black/40"
-                  aria-label="Play RTS"
+                  className="flex items-center gap-1 rounded-lg bg-black/30 px-2 py-1 text-sm font-medium text-white drop-shadow backdrop-blur-sm"
                 >
-                  <span
-                    aria-hidden="true"
-                    className="text-xl text-white drop-shadow"
-                  >
-                    ▶️
-                  </span>
+                  <span aria-hidden="true">▶️</span> Play
                 </a>
                 <a
                   href="/privacy"
-                  className="flex items-center justify-center rounded-lg bg-black/30 p-2 backdrop-blur-sm transition-colors hover:bg-black/40"
-                  aria-label="Privacy"
+                  className="flex items-center gap-1 rounded-lg bg-black/30 px-2 py-1 text-sm font-medium text-white drop-shadow backdrop-blur-sm"
                 >
-                  <span
-                    aria-hidden="true"
-                    className="text-xl text-white drop-shadow"
-                  >
-                    🔒
-                  </span>
+                  <span aria-hidden="true">🔒</span> Privacy
                 </a>
               </div>
             </div>
@@ -98,7 +81,7 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
       <footer className="bg-white py-3 text-green-900 dark:bg-black dark:text-white">
         <div className="container mx-auto px-4 text-center">
           <p className="text-sm">
-            &copy; 2025 Pretty Good Farms. All rights reserved.
+            &copy; {new Date().getFullYear()} Pretty Good Farms. All rights reserved.
           </p>
         </div>
       </footer>
