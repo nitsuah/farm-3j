@@ -1,13 +1,13 @@
 {
   "product": "farm-3j",
-  "live": null,
+  "live": "https://v0-farm-contact-website.vercel.app",
   "page": null,
   "pagesDir": "public",
   "frontend": true,
   "features": [
     {
       "id": "save-slots",
-      "title": "Cloud Saves & Save Slots",
+      "title": "Save Slots",
       "category": "Farm RTS",
       "screenshots": ["docs/screenshots/save-slots.png"],
       "spots": []
