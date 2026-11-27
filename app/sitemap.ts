@@ -1,9 +1,8 @@
 import type { MetadataRoute } from 'next';
-
-const BASE = 'https://v0-farm-contact-website.vercel.app';
+import { SITE_URL } from '@/lib/site';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return ['', '/about', '/rtsfarm', '/rtsfarm/play', '/privacy'].map(path => ({
-    url: `${BASE}${path}`,
+    url: `${SITE_URL}${path}`,
   }));
 }
