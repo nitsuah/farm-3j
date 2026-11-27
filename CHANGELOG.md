@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### CI
+
+- CI: adopt the shared risk guard workflow (#450).
+
 ### Added
 
 - Unit tests for formation partial rows, even-count line centering, and far-edge target clamping (#445).
