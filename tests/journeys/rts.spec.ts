@@ -62,8 +62,12 @@ test(
       'start on Easy and see the game HUD',
       async () => {
         await page.getByRole('button', { name: /Easy/ }).click();
+        // A first game opens Quick Start; dismiss it like a player would.
+        await page.getByRole('button', { name: 'Got it' }).click();
         await expect(page.locator('svg').first()).toBeVisible();
-        await expect(page.getByRole('button', { name: '💾' })).toBeVisible();
+        await expect(
+          page.getByRole('button', { name: 'Save game' })
+        ).toBeVisible();
       },
       { screenshot: false }
     );
@@ -90,8 +94,10 @@ test(
           .first()
           .click();
         await page.getByRole('button', { name: /Normal/ }).click();
-        await page.getByRole('button', { name: '💾' }).click();
-        await expect(page.getByRole('button', { name: '✓' })).toBeVisible();
+        await page.getByRole('button', { name: 'Got it' }).click();
+        const save = page.getByRole('button', { name: 'Save game' });
+        await save.click();
+        await expect(save).toHaveText('✓');
       },
       { screenshot: false }
     );
@@ -124,7 +130,9 @@ test(
         });
 
         await page.getByRole('button', { name: /Continue/ }).click();
-        await expect(page.getByRole('button', { name: '💾' })).toBeVisible();
+        await expect(
+          page.getByRole('button', { name: 'Save game' })
+        ).toBeVisible();
         // The marker gold only appears if the save was loaded, not a fresh game.
         // The marker value, however the counter decorates it (icon, spacing).
         await expect(page.getByText(/(^|\D)777(\D|$)/).first()).toBeVisible();
