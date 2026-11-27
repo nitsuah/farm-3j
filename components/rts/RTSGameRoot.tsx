@@ -148,7 +148,7 @@ export const RTSGameRoot: React.FC = () => {
   // Difficulty picker
   if (screen === 'difficulty') {
     return (
-      <div className="relative flex h-dvh w-screen flex-col items-center gap-8 overflow-y-auto bg-black px-4 py-6 [&>*:first-child]:mt-auto [&>*:last-child]:mb-auto [&>*]:shrink-0">
+      <div className="relative flex h-dvh w-screen flex-col items-center gap-8 overflow-y-auto bg-black px-4 py-6 [&>*]:shrink-0 [&>*:first-child]:mt-auto [&>*:last-child]:mb-auto">
         <DesktopNotice onDemo={startDemo} />
         <div style={{ textAlign: 'center' }}>
           <button
@@ -316,7 +316,7 @@ export const RTSGameRoot: React.FC = () => {
 
   // Slot picker
   return (
-    <div className="relative flex h-dvh w-screen flex-col items-center gap-6 overflow-y-auto bg-black px-4 py-6 [&>*:first-child]:mt-auto [&>*:last-child]:mb-auto [&>*]:shrink-0">
+    <div className="relative flex h-dvh w-screen flex-col items-center gap-6 overflow-y-auto bg-black px-4 py-6 [&>*]:shrink-0 [&>*:first-child]:mt-auto [&>*:last-child]:mb-auto">
       <DesktopNotice onDemo={startDemo} />
       <div style={{ textAlign: 'center' }}>
         <div style={{ fontSize: 48, marginBottom: 8 }}>🌾</div>

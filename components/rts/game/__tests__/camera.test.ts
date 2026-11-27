@@ -4,7 +4,13 @@ import { TILE_SIZE } from '../constants';
 import { tileToSvg } from '../map';
 
 describe('cameraForTile', () => {
-  const view = { width: 1000, height: 500, viewBoxWidth: 2000, viewBoxHeight: 2000, zoom: 1.5 };
+  const view = {
+    width: 1000,
+    height: 500,
+    viewBoxWidth: 2000,
+    viewBoxHeight: 2000,
+    zoom: 1.5,
+  };
 
   it('puts the tile centre in the middle of the viewport', () => {
     const camera = cameraForTile(2, 2, view);

@@ -32,15 +32,26 @@ export const DesktopNotice: React.FC<{ onDemo?: () => void }> = ({
       </p>
       <div className="flex flex-wrap justify-center gap-2">
         {onDemo ? (
-          <button type="button" onClick={onDemo} className="rounded-lg bg-yellow-500 px-3 py-2 font-bold text-black">
+          <button
+            type="button"
+            onClick={onDemo}
+            className="rounded-lg bg-yellow-500 px-3 py-2 font-bold text-black"
+          >
             Watch the demo
           </button>
         ) : (
-          <a href="/rtsfarm/play?demo=1" className="rounded-lg bg-yellow-500 px-3 py-2 font-bold text-black">
+          <a
+            href="/rtsfarm/play?demo=1"
+            className="rounded-lg bg-yellow-500 px-3 py-2 font-bold text-black"
+          >
             Watch the demo
           </a>
         )}
-        <button type="button" onClick={dismiss} className="rounded-lg border border-yellow-500 px-3 py-2">
+        <button
+          type="button"
+          onClick={dismiss}
+          className="rounded-lg border border-yellow-500 px-3 py-2"
+        >
           Continue anyway
         </button>
       </div>

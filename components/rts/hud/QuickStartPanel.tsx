@@ -62,7 +62,10 @@ export const QuickStartPanel: React.FC<QuickStartPanelProps> = ({ onOpen }) => {
             aria-labelledby="quickstart-title"
             className="w-full max-w-md rounded-xl border-2 border-yellow-500 bg-slate-900 p-5 text-slate-100"
           >
-            <h2 id="quickstart-title" className="mb-3 text-xl font-bold text-yellow-200">
+            <h2
+              id="quickstart-title"
+              className="mb-3 text-xl font-bold text-yellow-200"
+            >
               Quick Start
             </h2>
             <ol className="mb-4 list-decimal space-y-2 pl-5 text-sm">

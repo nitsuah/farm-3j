@@ -106,7 +106,8 @@ export const BuildMenu: React.FC<BuildMenuProps> = ({
           resources.lumber < (farmhouseUpgradeCosts[0]?.lumber ?? Infinity)
         }
       >
-        Set up Barn: unlocks training and building ({farmhouseUpgradeCosts[0]?.gold ?? '?'}🪙{' '}
+        Set up Barn: unlocks training and building (
+        {farmhouseUpgradeCosts[0]?.gold ?? '?'}🪙{' '}
         {farmhouseUpgradeCosts[0]?.lumber ?? '?'}🌲)
       </button>
     );

@@ -21,7 +21,6 @@ export function HeaderCropRow() {
   // Check initial theme on mount
   useEffect(() => {
     setIsDarkMode(document.documentElement.classList.contains('dark'));
-
   }, []);
 
   // Define 10 rows with different depths (scale and opacity for perspective)

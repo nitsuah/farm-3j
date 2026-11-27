@@ -81,7 +81,8 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
       <footer className="bg-white py-3 text-green-900 dark:bg-black dark:text-white">
         <div className="container mx-auto px-4 text-center">
           <p className="text-sm">
-            &copy; {new Date().getFullYear()} Pretty Good Farms. All rights reserved.
+            &copy; {new Date().getFullYear()} Pretty Good Farms. All rights
+            reserved.
           </p>
         </div>
       </footer>

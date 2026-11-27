@@ -21,10 +21,6 @@ const nextConfig = {
   reactStrictMode: true,
   // Optimize for production
   poweredByHeader: false,
-  // Browsers still ask for /favicon.ico; the site icon is app/icon.svg.
-  async redirects() {
-    return [{ source: '/favicon.ico', destination: '/icon.svg', permanent: false }];
-  },
 };
 
 export default nextConfig;
