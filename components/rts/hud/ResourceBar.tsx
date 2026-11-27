@@ -113,10 +113,14 @@ export const ResourceBar: React.FC<ResourceBarProps> = ({
   waveTimerRemainingRef,
   zoom,
 }) => {
-  const [cloudFailed, setCloudFailed] = React.useState(false);
+  const [saveWarning, setSaveWarning] = React.useState('');
   React.useEffect(() => {
-    const onCloud = (e: Event) =>
-      setCloudFailed(!(e as CustomEvent<{ ok: boolean }>).detail.ok);
+    const onCloud = (e: Event) => {
+      const { ok, local } = (e as CustomEvent<{ ok: boolean; local: boolean }>)
+        .detail;
+      if (ok) setSaveWarning('');
+      else setSaveWarning(local ? 'Saved on this device only' : 'Save failed');
+    };
     window.addEventListener(CLOUD_SAVE_EVENT, onCloud);
     return () => window.removeEventListener(CLOUD_SAVE_EVENT, onCloud);
   }, []);
@@ -433,7 +437,7 @@ export const ResourceBar: React.FC<ResourceBarProps> = ({
           type="button"
           onClick={doSave}
           aria-label="Save game"
-          title={cloudFailed ? 'Saved on this device only' : 'Save game'}
+          title={saveWarning || 'Save game'}
           style={{
             ...btnBase,
             background:
@@ -445,9 +449,9 @@ export const ResourceBar: React.FC<ResourceBarProps> = ({
         >
           {saveStatus === 'saved' ? '✓' : '💾'}
         </button>
-        {cloudFailed && (
+        {saveWarning && (
           <span role="status" style={{ fontSize: 10, color: '#fcd34d' }}>
-            Saved on this device only
+            {saveWarning}
           </span>
         )}
 

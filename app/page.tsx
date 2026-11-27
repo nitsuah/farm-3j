@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { SiteLayout } from '@/components/SiteLayout';
 import { FeatureCarousel } from '@/components/home/FeatureCarousel';
 
@@ -19,18 +20,18 @@ export default function Home() {
               defend your farm against raiding waves.
             </p>
             <div className="flex flex-wrap justify-center gap-3">
-              <a
+              <Link
                 href="/rtsfarm"
                 className="rounded-lg bg-yellow-700 px-6 py-3 text-xl text-white transition hover:bg-yellow-800"
               >
                 Play RTS
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/rtsfarm/play?demo=1"
                 className="rounded-lg border-2 border-yellow-700 px-6 py-3 text-xl text-yellow-800 transition hover:bg-yellow-50 dark:text-yellow-300 dark:hover:bg-yellow-950"
               >
                 Watch a demo
-              </a>
+              </Link>
             </div>
           </div>
         </section>

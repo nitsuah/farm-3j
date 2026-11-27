@@ -659,6 +659,7 @@ const RTSMap: React.FC<{
     setSelectedType,
   };
   const handlers = useRTSHandlers(gameCtx, handlerCtx);
+  const speedBeforeHelpRef = useRef(gameSpeed);
 
   // Start the view on the player's barn instead of the map corner.
   useEffect(() => {
@@ -1223,7 +1224,15 @@ const RTSMap: React.FC<{
           })
         }
       />
-      {!isDemo && <QuickStartPanel onOpen={() => setGameSpeed(0)} />}
+      {!isDemo && (
+        <QuickStartPanel
+          onOpen={() => {
+            speedBeforeHelpRef.current = gameSpeedRef.current;
+            setGameSpeed(0);
+          }}
+          onClose={() => setGameSpeed(speedBeforeHelpRef.current)}
+        />
+      )}
       {/* Demo mode indicator */}
       {isDemo && (
         <div

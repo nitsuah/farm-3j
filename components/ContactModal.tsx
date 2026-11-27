@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Cornfield } from './animations/Cornfield';
 
 interface ContactModalProps {
@@ -36,9 +36,13 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
     setFeedbackMessage('');
   };
 
+  const nameRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     if (!isOpen) return;
+    // Remember who opened the dialog before focus moves into it.
     const opener = document.activeElement as HTMLElement | null;
+    nameRef.current?.focus();
     return () => opener?.focus?.();
   }, [isOpen]);
 
@@ -173,7 +177,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
             <input
               type="text"
               id="name"
-              autoFocus
+              ref={nameRef}
               name="name"
               value={formData.name}
               onChange={handleChange}

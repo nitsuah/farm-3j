@@ -216,18 +216,21 @@ let _saveLocked = false;
 
 export const CLOUD_SAVE_EVENT = 'farm3j:cloud-save';
 
-function reportCloudSave(ok: boolean): void {
+function reportCloudSave(ok: boolean, local: boolean): void {
   if (typeof window === 'undefined') return;
-  window.dispatchEvent(new CustomEvent(CLOUD_SAVE_EVENT, { detail: { ok } }));
+  window.dispatchEvent(
+    new CustomEvent(CLOUD_SAVE_EVENT, { detail: { ok, local } })
+  );
 }
 
 export function writeSave(data: SaveData, slot: SaveSlot): void {
   if (_saveLocked || slot === NO_SLOT) return;
   // Always write localStorage synchronously (game loop depends on this)
+  let local = true;
   try {
     localStorage.setItem(SLOT_KEYS[slot], JSON.stringify(data));
   } catch {
-    /* ignore quota errors */
+    local = false; // quota or blocked storage
   }
   // Cloud write: never blocks the game, but the HUD is told when only this device has the save.
   try {
@@ -238,11 +241,11 @@ export function writeSave(data: SaveData, slot: SaveSlot): void {
         body: JSON.stringify({ deviceId: getDeviceId(), slot, data }),
       })
     ).then(
-      r => reportCloudSave(!!r?.ok),
-      () => reportCloudSave(false)
+      r => reportCloudSave(!!r?.ok, local),
+      () => reportCloudSave(false, local)
     );
   } catch {
-    reportCloudSave(false);
+    reportCloudSave(false, local);
   }
 }
 

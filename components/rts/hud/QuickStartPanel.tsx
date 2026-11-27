@@ -15,15 +15,26 @@ const STEPS = [
 interface QuickStartPanelProps {
   /** Called whenever the panel opens, so the game stays paused behind it. */
   onOpen: () => void;
+  /** Called when the player dismisses it. */
+  onClose: () => void;
 }
 
-export const QuickStartPanel: React.FC<QuickStartPanelProps> = ({ onOpen }) => {
+export const QuickStartPanel: React.FC<QuickStartPanelProps> = ({
+  onOpen,
+  onClose,
+}) => {
   const [open, setOpen] = useState(false);
   const onOpenRef = useRef(onOpen);
   onOpenRef.current = onOpen;
 
   useEffect(() => {
-    if (localStorage.getItem(SEEN_KEY) !== '1') setOpen(true);
+    let seen = false;
+    try {
+      seen = localStorage.getItem(SEEN_KEY) === '1';
+    } catch {
+      // blocked storage: treat as a first visit
+    }
+    if (!seen) setOpen(true);
   }, []);
 
   useEffect(() => {
@@ -32,6 +43,8 @@ export const QuickStartPanel: React.FC<QuickStartPanelProps> = ({ onOpen }) => {
     // Game hotkeys (including Space) must not act while the panel is up.
     const block = (event: KeyboardEvent) => {
       event.stopImmediatePropagation();
+      // "Got it" is the only control, so Tab keeps focus on it.
+      if (event.key === 'Tab') event.preventDefault();
       if (event.key === 'Escape') close();
     };
     window.addEventListener('keydown', block, true);
@@ -39,8 +52,13 @@ export const QuickStartPanel: React.FC<QuickStartPanelProps> = ({ onOpen }) => {
   }, [open]);
 
   function close() {
-    localStorage.setItem(SEEN_KEY, '1');
+    try {
+      localStorage.setItem(SEEN_KEY, '1');
+    } catch {
+      // storage full or blocked: still close
+    }
     setOpen(false);
+    onClose();
   }
 
   return (

@@ -12,13 +12,23 @@ export const DesktopNotice: React.FC<{ onDemo?: () => void }> = ({
 
   useEffect(() => {
     if (!window.matchMedia?.('(pointer: coarse)').matches) return;
-    setShow(sessionStorage.getItem(DISMISSED_KEY) !== '1');
+    let dismissed = false;
+    try {
+      dismissed = sessionStorage.getItem(DISMISSED_KEY) === '1';
+    } catch {
+      // blocked storage: show the notice
+    }
+    setShow(!dismissed);
   }, []);
 
   if (!show) return null;
 
   const dismiss = () => {
-    sessionStorage.setItem(DISMISSED_KEY, '1');
+    try {
+      sessionStorage.setItem(DISMISSED_KEY, '1');
+    } catch {
+      // still dismiss for this view
+    }
     setShow(false);
   };
 
